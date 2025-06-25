@@ -1,4 +1,7 @@
 from django.db import models
+from PIL import Image
+import os
+from django.conf import settings
 
 # Create your models here.
 
@@ -22,11 +25,51 @@ class AxeImage(models.Model):
     image = models.ImageField(upload_to='axe_images/') # Django hanterar filuppladdning
     description = models.CharField(max_length=255, blank=True, null=True)
 
+    @property
+    def webp_url(self):
+        if self.image and self.image.name:
+            webp_path = os.path.splitext(self.image.path)[0] + '.webp'
+            if os.path.exists(webp_path):
+                rel_path = os.path.relpath(webp_path, settings.MEDIA_ROOT)
+                return settings.MEDIA_URL + rel_path.replace('\\', '/')
+        return None
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        if self.image and self.image.name:
+            img_path = self.image.path
+            webp_path = os.path.splitext(img_path)[0] + '.webp'
+            try:
+                img = Image.open(img_path)
+                img.save(webp_path, 'WEBP', quality=85)
+            except Exception as e:
+                pass  # Kan logga fel om så önskas
+
 class ManufacturerImage(models.Model):
     manufacturer = models.ForeignKey(Manufacturer, related_name='images', on_delete=models.CASCADE) # Raderas bilden om tillverkaren raderas
     image = models.ImageField(upload_to='manufacturer_images/') # Django hanterar filuppladdning
     caption = models.CharField(max_length=255, blank=True, null=True) # Bildtext för stämplar
     description = models.TextField(blank=True, null=True) # Mer detaljerad beskrivning
+
+    @property
+    def webp_url(self):
+        if self.image and self.image.name:
+            webp_path = os.path.splitext(self.image.path)[0] + '.webp'
+            if os.path.exists(webp_path):
+                rel_path = os.path.relpath(webp_path, settings.MEDIA_ROOT)
+                return settings.MEDIA_URL + rel_path.replace('\\', '/')
+        return None
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        if self.image and self.image.name:
+            img_path = self.image.path
+            webp_path = os.path.splitext(img_path)[0] + '.webp'
+            try:
+                img = Image.open(img_path)
+                img.save(webp_path, 'WEBP', quality=85)
+            except Exception as e:
+                pass  # Kan logga fel om så önskas
 
     def __str__(self):
         return f"{self.manufacturer.name} - {self.caption or 'Bild'}"

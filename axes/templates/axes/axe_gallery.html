@@ -177,7 +177,12 @@
                     <div class="carousel-inner">
                         {% for image in current_axe.images.all %}
                         <div class="carousel-item {% if forloop.first %}active{% endif %}">
-                            <img src="{{ image.image.url }}" class="d-block w-100" alt="Yxa {{ current_axe.name }}">
+                            <picture>
+                                {% if image.webp_url %}
+                                    <source srcset="{{ image.webp_url }}" type="image/webp">
+                                {% endif %}
+                                <img src="{{ image.image.url }}" class="d-block w-100" alt="Yxa {{ current_axe.name }}">
+                            </picture>
                         </div>
                         {% endfor %}
                     </div>
@@ -200,7 +205,12 @@
                     <div class="swiper-wrapper">
                         {% for image in current_axe.images.all %}
                         <div class="swiper-slide">
-                            <img src="{{ image.image.url }}" alt="Yxa {{ current_axe.name }}">
+                            <picture>
+                                {% if image.webp_url %}
+                                    <source srcset="{{ image.webp_url }}" type="image/webp">
+                                {% endif %}
+                                <img src="{{ image.image.url }}" alt="Yxa {{ current_axe.name }}">
+                            </picture>
                         </div>
                         {% endfor %}
                     </div>
