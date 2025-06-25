@@ -1,5 +1,6 @@
 from django.contrib import admin
 from .models import Manufacturer, Axe, AxeImage, ManufacturerImage, ManufacturerLink, Measurement, Contact, Platform, Transaction
+from django.utils.safestring import mark_safe
 
 class ManufacturerImageInline(admin.TabularInline):
     model = ManufacturerImage
@@ -19,8 +20,8 @@ class ManufacturerImageAdmin(admin.ModelAdmin):
     
     def image_preview(self, obj):
         if obj.image:
-            return f'<img src="{obj.image.url}" style="max-height: 100px; max-width: 100px;" />'
-        return "Ingen bild"
+            return mark_safe(f'<img src="{obj.image.url}" style="max-height: 100px; max-width: 100px;" />')
+        return "-"
     image_preview.short_description = 'Förhandsvisning'
     image_preview.allow_tags = True
 
