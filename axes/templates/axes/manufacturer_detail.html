@@ -72,7 +72,7 @@
                                 {% if image.webp_url %}
                                     <source srcset="{{ image.webp_url }}" type="image/webp">
                                 {% endif %}
-                                <img src="{{ image.image.url }}" class="card-img-top" alt="{{ image.caption|default:'Stämpel' }}" style="max-height: 200px; object-fit: contain;">
+                                <img src="{{ image.image.url }}" class="card-img-top" alt="{{ image.caption|default:'Stämpel' }}" style="max-height: 200px; object-fit: contain;" loading="lazy">
                             </picture>
                             <div class="card-body">
                                 {% if image.caption %}
@@ -213,7 +213,7 @@
                                                 <div class="carousel-inner">
                                                     {% for img in images %}
                                                     <div class="carousel-item {% if forloop.first %}active{% endif %}">
-                                                        <img src="{{ img.webp_url|default:img.image.url }}" class="d-block w-100 img-thumbnail" style="max-width:130px;max-height:130px;">
+                                                        <img src="{{ img.webp_url|default:img.image.url }}" class="d-block w-100 img-thumbnail" style="max-width:130px;max-height:130px;" loading="lazy">
                                                     </div>
                                                     {% endfor %}
                                                 </div>
@@ -292,7 +292,7 @@
                                                 <div class="carousel-inner">
                                                     {% for img in images %}
                                                     <div class="carousel-item {% if forloop.first %}active{% endif %}">
-                                                        <img src="{{ img.webp_url|default:img.image.url }}" class="d-block w-100 img-thumbnail" style="max-width:130px;max-height:130px;">
+                                                        <img src="{{ img.webp_url|default:img.image.url }}" class="d-block w-100 img-thumbnail" style="max-width:130px;max-height:130px;" loading="lazy">
                                                     </div>
                                                     {% endfor %}
                                                 </div>

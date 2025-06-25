@@ -181,7 +181,7 @@
                                 {% if image.webp_url %}
                                     <source srcset="{{ image.webp_url }}" type="image/webp">
                                 {% endif %}
-                                <img src="{{ image.image.url }}" class="d-block w-100" alt="Yxa {{ current_axe.name }}">
+                                <img src="{{ image.image.url }}" class="d-block w-100" alt="Yxa {{ current_axe.name }}" loading="lazy">
                             </picture>
                         </div>
                         {% endfor %}
@@ -209,7 +209,7 @@
                                 {% if image.webp_url %}
                                     <source srcset="{{ image.webp_url }}" type="image/webp">
                                 {% endif %}
-                                <img src="{{ image.image.url }}" alt="Yxa {{ current_axe.name }}">
+                                <img src="{{ image.image.url }}" alt="Yxa {{ current_axe.name }}" loading="lazy">
                             </picture>
                         </div>
                         {% endfor %}

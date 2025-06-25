@@ -160,7 +160,7 @@
                                     {% if img.webp_url %}
                                         <source srcset="{{ img.webp_url }}" type="image/webp">
                                     {% endif %}
-                                    <img src="{{ img.image.url }}" class="d-block w-100 img-thumbnail" style="max-height:180px;object-fit:contain;">
+                                    <img src="{{ img.image.url }}" class="d-block w-100 img-thumbnail" style="max-height:180px;object-fit:contain;" loading="lazy">
                                 </picture>
                             </div>
                             {% endfor %}
@@ -228,7 +228,7 @@
                                     <div class="carousel-inner">
                                         {% for img in images %}
                                         <div class="carousel-item {% if forloop.first %}active{% endif %}">
-                                            <img src="{{ img.webp_url|default:img.image.url }}" class="d-block w-100 img-thumbnail" style="max-width:130px;max-height:130px;">
+                                            <img src="{{ img.webp_url|default:img.image.url }}" class="d-block w-100 img-thumbnail" style="max-width:130px;max-height:130px;" loading="lazy">
                                         </div>
                                         {% endfor %}
                                     </div>
