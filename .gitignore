@@ -14,6 +14,7 @@ __pycache__/
 
 media/axe_images/*
 media/manufacturer_images/*
+exported_csv/*
 
 # Distribution / packaging
 .Python
