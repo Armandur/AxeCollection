@@ -68,7 +68,12 @@
                     {% for image in manufacturer_images %}
                     <div class="col-md-4 mb-3">
                         <div class="card h-100">
-                            <img src="{{ image.image.url }}" class="card-img-top" alt="{{ image.caption|default:'Stämpel' }}" style="max-height: 200px; object-fit: contain;">
+                            <picture>
+                                {% if image.webp_url %}
+                                    <source srcset="{{ image.webp_url }}" type="image/webp">
+                                {% endif %}
+                                <img src="{{ image.image.url }}" class="card-img-top" alt="{{ image.caption|default:'Stämpel' }}" style="max-height: 200px; object-fit: contain;">
+                            </picture>
                             <div class="card-body">
                                 {% if image.caption %}
                                     <h6 class="card-title">{{ image.caption }}</h6>
@@ -208,7 +213,7 @@
                                                 <div class="carousel-inner">
                                                     {% for img in images %}
                                                     <div class="carousel-item {% if forloop.first %}active{% endif %}">
-                                                        <img src="{{ img.image.url }}" class="d-block w-100 img-thumbnail" style="max-width:130px;max-height:130px;">
+                                                        <img src="{{ img.webp_url|default:img.image.url }}" class="d-block w-100 img-thumbnail" style="max-width:130px;max-height:130px;">
                                                     </div>
                                                     {% endfor %}
                                                 </div>
@@ -287,7 +292,7 @@
                                                 <div class="carousel-inner">
                                                     {% for img in images %}
                                                     <div class="carousel-item {% if forloop.first %}active{% endif %}">
-                                                        <img src="{{ img.image.url }}" class="d-block w-100 img-thumbnail" style="max-width:130px;max-height:130px;">
+                                                        <img src="{{ img.webp_url|default:img.image.url }}" class="d-block w-100 img-thumbnail" style="max-width:130px;max-height:130px;">
                                                     </div>
                                                     {% endfor %}
                                                 </div>
