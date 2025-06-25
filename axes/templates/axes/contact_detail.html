@@ -76,7 +76,7 @@
 <!-- Statistik -->
 <div class="row mb-4">
     <div class="col-md-3">
-        <div class="card stats-card bg-light">
+        <div class="card stats-card bg-body-secondary">
             <div class="card-body text-center">
                 <h6 class="card-title text-muted">Antal transaktioner</h6>
                 <h4>{{ total_transactions }}</h4>
@@ -84,7 +84,7 @@
         </div>
     </div>
     <div class="col-md-3">
-        <div class="card stats-card bg-light">
+        <div class="card stats-card bg-body-secondary">
             <div class="card-body text-center">
                 <h6 class="card-title text-muted">Antal köp</h6>
                 <h4 class="text-danger">{{ buy_count }}</h4>
@@ -92,7 +92,7 @@
         </div>
     </div>
     <div class="col-md-3">
-        <div class="card stats-card bg-light">
+        <div class="card stats-card bg-body-secondary">
             <div class="card-body text-center">
                 <h6 class="card-title text-muted">Antal försäljningar</h6>
                 <h4 class="text-success">{{ sale_count }}</h4>
@@ -100,7 +100,7 @@
         </div>
     </div>
     <div class="col-md-3">
-        <div class="card stats-card bg-light">
+        <div class="card stats-card bg-body-secondary">
             <div class="card-body text-center">
                 <h6 class="card-title text-muted">Unika yxor</h6>
                 <h4>{{ unique_axes|length }}</h4>
@@ -112,7 +112,7 @@
 <!-- Ekonomisk översikt -->
 <div class="row mb-4">
     <div class="col-md-4">
-        <div class="card stats-card bg-light">
+        <div class="card stats-card bg-body-secondary">
             <div class="card-body text-center">
                 <h6 class="card-title text-muted">Total köpvärde</h6>
                 <h4 class="text-danger">{{ total_buy_value|format_decimal }} kr</h4>
@@ -120,7 +120,7 @@
         </div>
     </div>
     <div class="col-md-4">
-        <div class="card stats-card bg-light">
+        <div class="card stats-card bg-body-secondary">
             <div class="card-body text-center">
                 <h6 class="card-title text-muted">Total försäljningsvärde</h6>
                 <h4 class="text-success">{{ total_sale_value|format_decimal }} kr</h4>
@@ -128,7 +128,7 @@
         </div>
     </div>
     <div class="col-md-4">
-        <div class="card stats-card bg-light">
+        <div class="card stats-card bg-body-secondary">
             <div class="card-body text-center">
                 <h6 class="card-title text-muted">Netto vinst/förlust</h6>
                 <h4 class="{% if total_profit >= 0 %}profit-positive{% else %}profit-negative{% endif %}">

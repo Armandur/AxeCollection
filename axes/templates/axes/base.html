@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 {% load static %}
-<html lang="sv">
+<html lang="sv" data-bs-theme="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -13,7 +13,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
         body {
-            padding-top: 56px; /* Justera för fast navbar */
+            padding-top: 56px;
         }
         .stats-card {
             transition: transform 0.2s;
@@ -28,6 +28,21 @@
         .sold-axe:hover {
             opacity: 0.8;
         }
+        .theme-toggle-btn {
+            background: none;
+            border: none;
+            color: #ffc107;
+            font-size: 1.5rem;
+            margin-left: 1rem;
+            cursor: pointer;
+        }
+        .theme-toggle-btn .bi {
+            vertical-align: middle;
+        }
+        .navbar, .navbar-dark, .bg-dark {
+            background-color: #23272b !important;
+        }
+        /* Ta bort all egen bakgrundsfärg på html/body för tema, låt Bootstrap sköta det */
     </style>
     {% block extra_head %}{% endblock %}
 </head>
@@ -60,6 +75,9 @@
                     <a class="nav-link disabled" href="#">Statistik</a>
                 </li>
             </ul>
+            <button id="themeToggleBtn" class="theme-toggle-btn" title="Växla tema" aria-label="Växla tema">
+                <i id="themeIcon" class="bi bi-moon"></i>
+            </button>
         </div>
     </div>
 </nav>
@@ -82,6 +100,57 @@
 <script src="https://cdn.datatables.net/buttons/3.0.2/js/buttons.colVis.min.js"></script>
 <script src="https://cdn.datatables.net/responsive/3.0.2/js/dataTables.responsive.js"></script>
 <script src="https://cdn.datatables.net/responsive/3.0.2/js/responsive.bootstrap5.js"></script>
+
+<script>
+// Bootstrap 5.3 color mode hantering med tre lägen
+(function() {
+    function setTheme(theme) {
+        if (theme === 'dark') {
+            document.documentElement.setAttribute('data-bs-theme', 'dark');
+            document.getElementById('themeIcon').className = 'bi bi-moon-fill';
+        } else if (theme === 'light') {
+            document.documentElement.setAttribute('data-bs-theme', 'light');
+            document.getElementById('themeIcon').className = 'bi bi-sun-fill';
+        } else {
+            // Auto: följ OS
+            if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                document.documentElement.setAttribute('data-bs-theme', 'dark');
+                document.getElementById('themeIcon').className = 'bi bi-circle-half';
+            } else {
+                document.documentElement.setAttribute('data-bs-theme', 'light');
+                document.getElementById('themeIcon').className = 'bi bi-circle-half';
+            }
+        }
+    }
+    // Läs tema från localStorage
+    var savedTheme = localStorage.getItem('theme');
+    setTheme(savedTheme);
+    // Lyssna på knapp
+    document.getElementById('themeToggleBtn').addEventListener('click', function() {
+        var savedTheme = localStorage.getItem('theme');
+        if (savedTheme === 'light') {
+            localStorage.setItem('theme', 'dark');
+            setTheme('dark');
+        } else if (savedTheme === 'dark') {
+            localStorage.removeItem('theme');
+            setTheme(null);
+        } else {
+            localStorage.setItem('theme', 'light');
+            setTheme('light');
+        }
+    });
+    // Lyssna på OS-temaändring
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function(e) {
+        if (!localStorage.getItem('theme')) {
+            if (e.matches) {
+                document.documentElement.setAttribute('data-bs-theme', 'dark');
+            } else {
+                document.documentElement.setAttribute('data-bs-theme', 'light');
+            }
+        }
+    });
+})();
+</script>
 
 {% block scripts %}{% endblock %}
 
