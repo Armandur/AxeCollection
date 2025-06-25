@@ -1,0 +1,387 @@
+{% extends 'axes/base.html' %}
+{% load axe_filters %}
+
+{% block title %}{{ manufacturer.name }} - {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>{{ manufacturer.name }}</h1>
+    <div>
+        <a href="{% url 'admin:axes_manufacturer_change' manufacturer.id %}" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-pencil"></i> Redigera tillverkare
+        </a>
+        <a href="{% url 'admin:axes_manufacturerimage_add' %}?manufacturer={{ manufacturer.id }}" class="btn btn-outline-primary btn-sm">
+            <i class="bi bi-image"></i> Lägg till stämpel
+        </a>
+        <a href="{% url 'admin:axes_manufacturerlink_add' %}?manufacturer={{ manufacturer.id }}" class="btn btn-outline-info btn-sm">
+            <i class="bi bi-link-45deg"></i> Lägg till länk
+        </a>
+    </div>
+</div>
+
+<!-- Tillverkarinfo -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Information</h5>
+            </div>
+            <div class="card-body">
+                <p><strong>ID:</strong> {{ manufacturer.id }}</p>
+                {% if manufacturer.comment %}
+                    <p><strong>Kommentar:</strong> {{ manufacturer.comment }}</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Statistik</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-6">
+                        <p><strong>Antal yxor:</strong> {{ total_axes }}</p>
+                        <p><strong>Totala transaktioner:</strong> {{ total_transactions }}</p>
+                    </div>
+                    <div class="col-6">
+                        <p><strong>Köp:</strong> <span class="text-danger">{{ buy_count }}</span></p>
+                        <p><strong>Försäljningar:</strong> <span class="text-success">{{ sale_count }}</span></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Tillverkarens bilder/stämplar -->
+{% if manufacturer_images %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Stämplar från {{ manufacturer.name }}</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    {% for image in manufacturer_images %}
+                    <div class="col-md-4 mb-3">
+                        <div class="card h-100">
+                            <img src="{{ image.image.url }}" class="card-img-top" alt="{{ image.caption|default:'Stämpel' }}" style="max-height: 200px; object-fit: contain;">
+                            <div class="card-body">
+                                {% if image.caption %}
+                                    <h6 class="card-title">{{ image.caption }}</h6>
+                                {% endif %}
+                                {% if image.description %}
+                                    <p class="card-text small text-muted">{{ image.description }}</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Tillverkarens länkar -->
+{% if links_by_type %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Länkar och resurser för {{ manufacturer.name }}</h5>
+            </div>
+            <div class="card-body">
+                {% for link_type, links in links_by_type.items %}
+                <div class="mb-4">
+                    <h6 class="text-muted mb-3">
+                        {% if link_type == 'WEBSITE' %}
+                            <i class="bi bi-globe"></i> Hemsidor
+                        {% elif link_type == 'CATALOG' %}
+                            <i class="bi bi-file-earmark-text"></i> Kataloger
+                        {% elif link_type == 'VIDEO' %}
+                            <i class="bi bi-camera-video"></i> Videor och filmer
+                        {% elif link_type == 'ARTICLE' %}
+                            <i class="bi bi-journal-text"></i> Artiklar
+                        {% elif link_type == 'DOCUMENT' %}
+                            <i class="bi bi-file-earmark-pdf"></i> Dokument
+                        {% else %}
+                            <i class="bi bi-link-45deg"></i> Övriga länkar
+                        {% endif %}
+                    </h6>
+                    <div class="row">
+                        {% for link in links %}
+                        <div class="col-md-6 mb-3">
+                            <div class="card h-100 border-0 shadow-sm">
+                                <div class="card-body">
+                                    <h6 class="card-title">
+                                        <a href="{{ link.url }}" target="_blank" class="text-decoration-none">
+                                            {{ link.title }}
+                                            <i class="bi bi-box-arrow-up-right text-muted"></i>
+                                        </a>
+                                    </h6>
+                                    {% if link.description %}
+                                        <p class="card-text text-muted small">{{ link.description }}</p>
+                                    {% endif %}
+                                    <small class="text-muted">
+                                        <i class="bi bi-calendar3"></i> {{ link.created_at|date:"Y-m-d" }}
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Ekonomisk statistik -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Ekonomisk översikt</h5>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-md-3">
+                        <h6 class="text-muted">Total köpvärde</h6>
+                        <h4 class="text-danger">{{ total_buy_value|format_decimal }} kr</h4>
+                    </div>
+                    <div class="col-md-3">
+                        <h6 class="text-muted">Total försäljningsvärde</h6>
+                        <h4 class="text-success">{{ total_sale_value|format_decimal }} kr</h4>
+                    </div>
+                    <div class="col-md-3">
+                        <h6 class="text-muted">Vinst/förlust</h6>
+                        <h4 class="{% if total_profit >= 0 %}profit-positive{% else %}profit-negative{% endif %}">
+                            {{ total_profit|format_decimal }} kr
+                        </h4>
+                    </div>
+                    <div class="col-md-3">
+                        <h6 class="text-muted">Genomsnitt per yxa</h6>
+                        <h4>{% if total_axes > 0 %}{{ average_profit_per_axe|floatformat:0 }}{% else %}0{% endif %} kr</h4>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Yxor -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Yxor från {{ manufacturer.name }}</h5>
+            </div>
+            <div class="card-body">
+                {% if axes %}
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Modell</th>
+                                    <th>Kommentar</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for axe in axes %}
+                                <tr>
+                                    <td>{{ axe.id }}</td>
+                                    <td>
+                                        <a href="{% url 'axe_detail' axe.id %}" class="text-decoration-none axe-image-popover-link"
+                                           {% with images=axe.images.all %}
+                                           {% if images|length > 0 %}
+                                           tabindex="0" data-bs-toggle="popover" data-bs-html="true" data-bs-trigger="hover focus" data-bs-content='
+                                            <div id="carousel-{{ axe.id }}-{{ forloop.counter }}" class="carousel slide" data-bs-ride="carousel" data-bs-interval="800" style="width:140px;">
+                                                <div class="carousel-inner">
+                                                    {% for img in images %}
+                                                    <div class="carousel-item {% if forloop.first %}active{% endif %}">
+                                                        <img src="{{ img.image.url }}" class="d-block w-100 img-thumbnail" style="max-width:130px;max-height:130px;">
+                                                    </div>
+                                                    {% endfor %}
+                                                </div>
+                                            </div>'
+                                           {% endif %}
+                                           {% endwith %}
+                                        >
+                                            {% if axe.model %}
+                                                {{ axe.model }}
+                                            {% else %}
+                                                Yxa ID: {{ axe.id }}
+                                            {% endif %}
+                                            {% with images=axe.images.all %}
+                                            {% if images|length > 0 %}
+                                                <i class="bi bi-camera-fill ms-1"></i>
+                                            {% endif %}
+                                            {% endwith %}
+                                        </a>
+                                    </td>
+                                    <td>{{ axe.comment|default:"" }}</td>
+                                    <td>
+                                        <span class="badge {{ axe.status_class }}">{{ axe.status }}</span>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <p class="text-muted">Inga yxor registrerade för denna tillverkare.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Transaktioner -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Transaktioner</h5>
+            </div>
+            <div class="card-body">
+                {% if transactions %}
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Datum</th>
+                                    <th>Typ</th>
+                                    <th>Yxa</th>
+                                    <th>Kontakt</th>
+                                    <th>Pris</th>
+                                    <th>Frakt</th>
+                                    <th>Plattform</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for transaction in transactions %}
+                                <tr>
+                                    <td>{{ transaction.transaction_date }}</td>
+                                    <td>
+                                        {% if transaction.type == 'KÖP' %}
+                                            <span class="badge bg-danger">KÖP</span>
+                                        {% else %}
+                                            <span class="badge bg-success">SÄLJ</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% with images=transaction.axe.images.all %}
+                                        <a href="{% url 'axe_detail' transaction.axe.id %}" class="text-decoration-none axe-image-popover-link"
+                                           {% if images|length > 0 %}
+                                           tabindex="0" data-bs-toggle="popover" data-bs-html="true" data-bs-trigger="hover focus" data-bs-content='
+                                            <div id="carousel-{{ transaction.axe.id }}-{{ forloop.counter }}" class="carousel slide" data-bs-ride="carousel" data-bs-interval="800" style="width:140px;">
+                                                <div class="carousel-inner">
+                                                    {% for img in images %}
+                                                    <div class="carousel-item {% if forloop.first %}active{% endif %}">
+                                                        <img src="{{ img.image.url }}" class="d-block w-100 img-thumbnail" style="max-width:130px;max-height:130px;">
+                                                    </div>
+                                                    {% endfor %}
+                                                </div>
+                                            </div>'
+                                           {% endif %}
+                                        >
+                                            {% if transaction.axe.model %}
+                                                {{ transaction.axe.model }}
+                                            {% else %}
+                                                Yxa ID: {{ transaction.axe.id }}
+                                            {% endif %}
+                                            {% if images|length > 0 %}
+                                                <i class="bi bi-camera-fill ms-1"></i>
+                                            {% endif %}
+                                        </a>
+                                        {% endwith %}
+                                    </td>
+                                    <td>
+                                        {% if transaction.contact %}
+                                            <a href="{% url 'contact_detail' transaction.contact.id %}" class="text-decoration-none">
+                                                {{ transaction.contact.name }}
+                                            </a>
+                                        {% else %}
+                                            <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ transaction.price|format_decimal }} kr</td>
+                                    <td>{{ transaction.shipping_cost|format_decimal }} kr</td>
+                                    <td>{{ transaction.platform.name|default:"-" }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <p class="text-muted">Inga transaktioner registrerade för denna tillverkare.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Kontakter -->
+{% if unique_contacts %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Kontakter som handlat {{ manufacturer.name }}</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    {% for contact in unique_contacts %}
+                    <div class="col-md-4 mb-2">
+                        <a href="{% url 'contact_detail' contact.id %}" class="text-decoration-none">
+                            {{ contact.name }}
+                        </a>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+$(document).ready(function() {
+    // Om DataTable används på tabellen, initiera popovers i drawCallback. Annars, initiera popovers direkt och exponera en funktion för att kunna anropa vid behov.
+    function initAxeImagePopovers() {
+        var popoverTriggerList = [].slice.call(document.querySelectorAll('.axe-image-popover-link'));
+        popoverTriggerList.map(function (popoverTriggerEl) {
+            return new bootstrap.Popover(popoverTriggerEl, {
+                boundary: 'window',
+                placement: 'auto'
+            });
+        });
+    }
+    initAxeImagePopovers();
+
+    // Starta carousel när popover visas
+    $(document).on('shown.bs.popover', '.axe-image-popover-link', function () {
+        var popover = $(this);
+        var axeId = popover.closest('tr').find('td:first').text().trim();
+        var rowIndex = popover.closest('tr').index();
+        var carouselId = '#carousel-' + axeId + '-' + (rowIndex + 1);
+        var carouselEl = document.querySelector(carouselId);
+        if (carouselEl) {
+            var carousel = bootstrap.Carousel.getOrCreateInstance(carouselEl, { interval: 1200 });
+            carousel.cycle();
+        }
+    });
+});
+</script>
+{% endblock %} 

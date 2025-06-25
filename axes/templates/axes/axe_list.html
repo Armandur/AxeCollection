@@ -1,0 +1,270 @@
+{% extends 'axes/base.html' %}
+{% load axe_filters %}
+
+{% block title %}Yxsamling - {{ block.super }}{% endblock %}
+
+{% block extra_head %}
+<style>
+    /* Anpassningar specifika för Yxlistan */
+    .table-responsive {
+        border-radius: 0.375rem;
+        overflow: hidden;
+    }
+    
+    .column-toggle {
+        background: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 0.375rem;
+        padding: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    #axesTable td:nth-child(4) { /* Kommentar-kolumnen */
+        white-space: normal;
+    }
+
+    /* Klickbara rader för dator/tablett */
+    @media (min-width: 768px) {
+        #axesTable tbody tr {
+            cursor: pointer;
+        }
+    }
+    
+    .profit-positive { color: #198754; }
+    .profit-negative { color: #dc3545; }
+
+    .price-buy { color: #dc3545; font-weight: bold; }
+    .price-sell { color: #198754; font-weight: bold; }
+    .shipping-cost { font-size: 0.8em; color: #6c757d; }
+</style>
+{% endblock %}
+
+
+{% block content %}
+<h1 class="mb-4">Samling</h1>
+
+<!-- Statistik-kort -->
+<div class="row mb-4">
+    <div class="col-md-2">
+        <div class="card stats-card bg-light">
+            <div class="card-body text-center">
+                <h6 class="card-title text-muted">Antal köp</h6>
+                <h4 class="text-danger">{{ total_buys }}</h4>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card stats-card bg-light">
+            <div class="card-body text-center">
+                <h6 class="card-title text-muted">Antal försäljningar</h6>
+                <h4 class="text-success">{{ total_sales }}</h4>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card stats-card bg-light">
+            <div class="card-body text-center">
+                <h6 class="card-title text-muted">Total köpvärde</h6>
+                <h4 class="text-danger">{{ total_buy_value|format_decimal }} kr</h4>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card stats-card bg-light">
+            <div class="card-body text-center">
+                <h6 class="card-title text-muted">Total försäljningsvärde</h6>
+                <h4 class="text-success">{{ total_sale_value|format_decimal }} kr</h4>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card stats-card bg-light">
+            <div class="card-body text-center">
+                <h6 class="card-title text-muted">Total frakt köp</h6>
+                <h4 class="text-danger">{{ total_buy_shipping|format_decimal }} kr</h4>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card stats-card bg-light">
+            <div class="card-body text-center">
+                <h6 class="card-title text-muted">Total frakt försäljning</h6>
+                <h4 class="text-success">{{ total_sale_shipping|format_decimal }} kr</h4>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Total vinst/förlust -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body text-center">
+                <h5 class="card-title">Total vinst/förlust</h5>
+                <h2 class="{% if total_profit >= 0 %}profit-positive{% else %}profit-negative{% endif %}">
+                    {{ total_profit|format_decimal }} kr
+                </h2>
+                <small class="text-muted">
+                    {{ total_profit_with_shipping|format_decimal }} kr (inkl. frakt)
+                </small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Tabell -->
+<div class="table-responsive">
+    <table id="axesTable" class="table table-striped table-hover">
+        <thead class="table-dark">
+            <tr>
+                <th>ID</th>
+                <th>Tillverkare</th>
+                <th>Modell</th>
+                <th>Kommentar</th>
+                <th>Ekonomi</th>
+                <th>Bilder</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for axe in axes %}
+            <tr class="{% if axe.id in sold_axe_ids %}sold-axe{% endif %}" data-href="{% url 'axe_detail' axe.id %}">
+                <td>{{ axe.id }}</td>
+                <td>{{ axe.manufacturer.name }}</td>
+                <td>
+                    {{ axe.model }}
+                    {% if axe.id in sold_axe_ids %}
+                        <span class="badge bg-secondary ms-2">SÅLD</span>
+                    {% endif %}
+                </td>
+                <td>{{ axe.comment|default:"" }}</td>
+                <td data-order="{{ axe.net_value|default:0 }}">
+                    {% for trans in axe.transaction_set.all %}
+                        {% if trans.type == 'KÖP' %}
+                            <span class="text-danger">{{ trans.price|format_decimal }} kr</span>
+                            {% if trans.shipping_cost > 0 %}
+                                <span class="text-muted">({{ trans.shipping_cost|format_decimal }} kr)</span>
+                            {% endif %}
+                            <br>
+                        {% elif trans.type == 'SÄLJ' %}
+                             <span class="text-success">{{ trans.price|format_decimal }} kr</span>
+                             {% if trans.shipping_cost > 0 %}
+                                <span class="text-muted">({{ trans.shipping_cost|format_decimal }} kr)</span>
+                            {% endif %}
+                            <br>
+                            {% if axe.net_value != 0 %}
+                                <span class="{% if axe.net_value >= 0 %}profit-positive{% else %}profit-negative{% endif %} fw-bold">
+                                    {{ axe.net_value|format_decimal }} kr
+                                </span>
+                            {% endif %}
+                        {% endif %}
+                    {% endfor %}
+                </td>
+                <td class="text-center">
+                    {% if axe.images.all %}
+                        {% with images=axe.images.all %}
+                            {% if images|length > 0 %}
+                                <span tabindex="0" class="axe-image-popover" data-bs-toggle="popover" data-bs-html="true" data-bs-trigger="hover focus" data-bs-content='
+                                    <div id="carousel-{{ axe.id }}" class="carousel slide" data-bs-ride="carousel" data-bs-interval="800" style="width:140px;">
+                                        <div class="carousel-inner">
+                                            {% for img in images %}
+                                            <div class="carousel-item {% if forloop.first %}active{% endif %}">
+                                                <img src="{{ img.image.url }}" class="d-block w-100 img-thumbnail" style="max-width:130px;max-height:130px;">
+                                            </div>
+                                            {% endfor %}
+                                        </div>
+                                    </div>'>
+                                    <i class="bi bi-camera-fill"></i>
+                                </span>
+                            {% endif %}
+                        {% endwith %}
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
+
+
+{% block scripts %}
+<script>
+$(document).ready(function() {
+    var table = $('#axesTable').DataTable({
+        order: [[0, 'desc']],
+        language: {
+            "emptyTable": "Ingen data tillgänglig i tabellen",
+            "info": "Visar _START_ till _END_ av _TOTAL_ poster",
+            "infoEmpty": "Visar 0 till 0 av 0 poster",
+            "infoFiltered": "(filtrerat från _MAX_ totala poster)",
+            "lengthMenu": "Visa _MENU_ poster",
+            "loadingRecords": "Laddar...",
+            "processing": "Bearbetar...",
+            "search": "Sök:",
+            "zeroRecords": "Inga matchande poster hittades",
+            "paginate": {
+                "first": "Första",
+                "last": "Sista",
+                "next": "Nästa",
+                "previous": "Föregående"
+            },
+            "aria": {
+                "sortAscending": ": aktivera för att sortera kolumnen stigande",
+                "sortDescending": ": aktivera för att sortera kolumnen fallande"
+            },
+             "buttons": {
+                "copy": "Kopiera",
+                "csv": "CSV",
+                "excel": "Excel",
+                "pdf": "PDF",
+                "print": "Skriv ut",
+                "colvis": "Visa kolumner"
+            }
+        },
+        layout: {
+            topStart: 'pageLength',
+            topCenter: 'search',
+            topEnd: {
+                buttons: [
+                    'copy', 'csv', 'excel', 'pdf', 'print', 'colvis'
+                ]
+            }
+        },
+        columnDefs: [
+            // Inga specifika definitioner behövs längre här för sortering
+        ],
+        drawCallback: function(settings) {
+            // Initiera popovers på nya rader efter sidbyte/sortering/filtrering
+            var popoverTriggerList = [].slice.call(document.querySelectorAll('.axe-image-popover'));
+            popoverTriggerList.map(function (popoverTriggerEl) {
+                return new bootstrap.Popover(popoverTriggerEl, {
+                    boundary: 'window',
+                    placement: 'auto'
+                });
+            });
+        }
+    });
+
+    // Klickbara rader
+    $('#axesTable tbody').on('click', 'tr', function () {
+        // Förhindra att klicket propagerar om man klickar på en länk eller knapp inuti raden
+        if (event.target.tagName === 'A' || event.target.tagName === 'BUTTON' || $(event.target).closest('a, button').length) {
+            return;
+        }
+        var href = $(this).data('href');
+        if (href) {
+            window.location.href = href;
+        }
+    });
+
+    // Starta carousel när popover visas
+    $(document).on('shown.bs.popover', '.axe-image-popover', function () {
+        var axeId = $(this).closest('tr').find('td:first').text().trim();
+        var carouselId = '#carousel-' + axeId;
+        var carouselEl = document.querySelector(carouselId);
+        var carousel = bootstrap.Carousel.getOrCreateInstance(carouselEl, { interval: 1200 });
+        carousel.cycle();
+    });
+});
+</script>
+{% endblock %} 

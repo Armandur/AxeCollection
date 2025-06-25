@@ -1,0 +1,300 @@
+{% extends 'axes/base.html' %}
+{% load axe_filters %}
+
+{% block title %}{{ contact.name }} - {{ block.super }}{% endblock %}
+
+{% block extra_head %}
+<style>
+    .profit-positive { color: #198754; }
+    .profit-negative { color: #dc3545; }
+    
+    .contact-info {
+        background: #f8f9fa;
+        border-radius: 0.375rem;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+    }
+    
+    .stats-card {
+        border: none;
+        box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    }
+    
+    .axe-link {
+        text-decoration: none;
+        color: inherit;
+    }
+    
+    .axe-link:hover {
+        color: #0d6efd;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>{{ contact.name }}</h1>
+    <div>
+        <a href="{% url 'admin:axes_contact_change' contact.pk %}" class="btn btn-primary">
+            <i class="fas fa-edit"></i> Redigera
+        </a>
+        <a href="{% url 'contact_list' %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Tillbaka till kontakter
+        </a>
+    </div>
+</div>
+
+<!-- Kontaktinformation -->
+<div class="contact-info">
+    <div class="row">
+        <div class="col-md-6">
+            <h5>Kontaktinformation</h5>
+            {% if contact.email %}
+                <p><strong>E-post:</strong> <a href="mailto:{{ contact.email }}">{{ contact.email }}</a></p>
+            {% endif %}
+            {% if contact.phone %}
+                <p><strong>Telefon:</strong> <a href="tel:{{ contact.phone }}">{{ contact.phone }}</a></p>
+            {% endif %}
+            {% if contact.alias %}
+                <p><strong>Alias:</strong> {{ contact.alias }}</p>
+            {% endif %}
+        </div>
+        <div class="col-md-6">
+            <h5>Medlemskap</h5>
+            {% if contact.is_naj_member %}
+                <p><span class="badge bg-success">Medlem i Nordic Axe Junkies</span></p>
+            {% else %}
+                <p><span class="badge bg-secondary">Inte medlem</span></p>
+            {% endif %}
+            {% if contact.comment %}
+                <p><strong>Kommentar:</strong> {{ contact.comment }}</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Statistik -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card stats-card bg-light">
+            <div class="card-body text-center">
+                <h6 class="card-title text-muted">Antal transaktioner</h6>
+                <h4>{{ total_transactions }}</h4>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stats-card bg-light">
+            <div class="card-body text-center">
+                <h6 class="card-title text-muted">Antal köp</h6>
+                <h4 class="text-danger">{{ buy_count }}</h4>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stats-card bg-light">
+            <div class="card-body text-center">
+                <h6 class="card-title text-muted">Antal försäljningar</h6>
+                <h4 class="text-success">{{ sale_count }}</h4>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stats-card bg-light">
+            <div class="card-body text-center">
+                <h6 class="card-title text-muted">Unika yxor</h6>
+                <h4>{{ unique_axes|length }}</h4>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Ekonomisk översikt -->
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card stats-card bg-light">
+            <div class="card-body text-center">
+                <h6 class="card-title text-muted">Total köpvärde</h6>
+                <h4 class="text-danger">{{ total_buy_value|format_decimal }} kr</h4>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card stats-card bg-light">
+            <div class="card-body text-center">
+                <h6 class="card-title text-muted">Total försäljningsvärde</h6>
+                <h4 class="text-success">{{ total_sale_value|format_decimal }} kr</h4>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card stats-card bg-light">
+            <div class="card-body text-center">
+                <h6 class="card-title text-muted">Netto vinst/förlust</h6>
+                <h4 class="{% if total_profit >= 0 %}profit-positive{% else %}profit-negative{% endif %}">
+                    {{ total_profit|format_decimal }} kr
+                </h4>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Yxor som kontaktens transaktioner gäller -->
+{% if unique_axes %}
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0">Yxor i transaktioner</h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            {% for axe in unique_axes %}
+            <div class="col-md-6 col-lg-4 mb-3">
+                <div class="card h-100">
+                    {% with images=axe.images.all %}
+                    {% if images|length > 0 %}
+                    <div id="carousel-axe-{{ axe.id }}" class="carousel slide" data-bs-ride="carousel" data-bs-interval="1200" style="width:100%;max-width:220px;margin:auto;">
+                        <div class="carousel-inner">
+                            {% for img in images %}
+                            <div class="carousel-item {% if forloop.first %}active{% endif %}">
+                                <img src="{{ img.image.url }}" class="d-block w-100 img-thumbnail" style="max-height:180px;object-fit:contain;">
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+                    {% endwith %}
+                    <div class="card-body">
+                        <h6 class="card-title">
+                            <a href="{% url 'axe_detail' axe.pk %}" class="axe-link">
+                                {{ axe.manufacturer.name }} - {{ axe.model }}
+                            </a>
+                        </h6>
+                        <p class="card-text">
+                            <small class="text-muted">ID: {{ axe.id }}</small>
+                        </p>
+                        {% if axe.comment %}
+                            <p class="card-text">
+                                <small>{{ axe.comment|truncatechars:100 }}</small>
+                            </p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Transaktionshistorik -->
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0">Transaktionshistorik</h5>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-striped table-hover">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Datum</th>
+                        <th>Typ</th>
+                        <th>Yxa</th>
+                        <th>Pris</th>
+                        <th>Frakt</th>
+                        <th>Plattform</th>
+                        <th>Kommentar</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for transaction in transactions %}
+                    <tr>
+                        <td>{{ transaction.transaction_date|date:"Y-m-d" }}</td>
+                        <td>
+                            <span class="badge {% if transaction.type == 'KÖP' %}bg-danger{% else %}bg-success{% endif %}">
+                                {{ transaction.type }}
+                            </span>
+                        </td>
+                        <td>
+                            {% with images=transaction.axe.images.all %}
+                            <a href="{% url 'axe_detail' transaction.axe.pk %}" class="text-decoration-none axe-image-popover-link"
+                               {% if images|length > 0 %}
+                               tabindex="0" data-bs-toggle="popover" data-bs-html="true" data-bs-trigger="hover focus" data-bs-content='
+                                <div id="carousel-{{ transaction.axe.id }}-{{ forloop.counter }}" class="carousel slide" data-bs-ride="carousel" data-bs-interval="800" style="width:140px;">
+                                    <div class="carousel-inner">
+                                        {% for img in images %}
+                                        <div class="carousel-item {% if forloop.first %}active{% endif %}">
+                                            <img src="{{ img.image.url }}" class="d-block w-100 img-thumbnail" style="max-width:130px;max-height:130px;">
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>'
+                               {% endif %}
+                            >
+                                {{ transaction.axe.manufacturer.name }} - {{ transaction.axe.model }}
+                                {% if images|length > 0 %}
+                                    <i class="bi bi-camera-fill ms-1"></i>
+                                {% endif %}
+                            </a>
+                            {% endwith %}
+                        </td>
+                        <td>{{ transaction.price|format_decimal }} kr</td>
+                        <td>{{ transaction.shipping_cost|format_decimal }} kr</td>
+                        <td>
+                            {% if transaction.platform %}
+                                {{ transaction.platform.name }}
+                            {% else %}
+                                <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if transaction.comment %}
+                                <small>{{ transaction.comment|truncatechars:50 }}</small>
+                            {% else %}
+                                <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+$(document).ready(function() {
+    // Om DataTable används på tabellen, initiera popovers i drawCallback. Annars, initiera popovers direkt och exponera en funktion för att kunna anropa vid behov.
+    function initAxeImagePopovers() {
+        var popoverTriggerList = [].slice.call(document.querySelectorAll('.axe-image-popover-link'));
+        popoverTriggerList.map(function (popoverTriggerEl) {
+            return new bootstrap.Popover(popoverTriggerEl, {
+                boundary: 'window',
+                placement: 'auto'
+            });
+        });
+    }
+    initAxeImagePopovers();
+
+    // Starta carousel när popover visas
+    $(document).on('shown.bs.popover', '.axe-image-popover-link', function () {
+        var popover = $(this);
+        var axeId = popover.closest('tr').find('a').attr('href').split('/').filter(Boolean).pop();
+        var rowIndex = popover.closest('tr').index();
+        var carouselId = '#carousel-' + axeId + '-' + (rowIndex + 1);
+        var carouselEl = document.querySelector(carouselId);
+        if (carouselEl) {
+            var carousel = bootstrap.Carousel.getOrCreateInstance(carouselEl, { interval: 1200 });
+            carousel.cycle();
+        }
+    });
+
+    // Starta alla carousels i yxkorten automatiskt
+    document.querySelectorAll('.carousel').forEach(function(carouselEl) {
+        var carousel = bootstrap.Carousel.getOrCreateInstance(carouselEl, { interval: 1200 });
+        carousel.cycle();
+    });
+});
+</script>
+{% endblock %} 

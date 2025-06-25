@@ -1,0 +1,181 @@
+{% extends 'axes/base.html' %}
+{% load axe_filters %}
+
+{% block title %}{{ axe.manufacturer.name }} - {{ axe.model }} - {{ block.super }}{% endblock %}
+
+{% block extra_head %}
+<style>
+    .measurement-card {
+        transition: transform 0.2s;
+    }
+    .measurement-card:hover {
+        transform: translateY(-2px);
+    }
+    .image-gallery img {
+        transition: transform 0.3s;
+        cursor: pointer;
+    }
+    .image-gallery img:hover {
+        transform: scale(1.05);
+    }
+    .contact-link {
+        text-decoration: none;
+        color: inherit;
+    }
+    .contact-link:hover {
+        color: #0d6efd;
+        text-decoration: underline;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'axe_list' %}">Yxsamling</a></li>
+        <li class="breadcrumb-item active" aria-current="page">{{ axe.manufacturer.name }} - {{ axe.model }}</li>
+    </ol>
+</nav>
+
+<!-- Titel och navigering -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <h1 class="h3 mb-0">{{ axe.manufacturer.name }} - {{ axe.model }}</h1>
+            <div>
+                <a href="/admin/axes/axe/{{ axe.pk }}/change/" class="btn btn-outline-primary btn-sm me-2">
+                    <i class="bi bi-pencil"></i> Redigera
+                </a>
+                <a href="{% url 'axe_list' %}" class="btn btn-outline-secondary btn-sm">
+                    <i class="bi bi-arrow-left"></i> Tillbaka
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Vänstra kolumnen -->
+    <div class="col-md-8">
+        <!-- Yxinformation -->
+        <div class="card">
+            <div class="card-header">
+                <h4 class="mb-0">Yxinformation</h4>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <p><strong>Tillverkare:</strong> 
+                            <a href="{% url 'manufacturer_detail' axe.manufacturer.id %}" class="text-decoration-none">
+                                {{ axe.manufacturer.name }}
+                            </a>
+                        </p>
+                        <p><strong>Modell:</strong> {{ axe.model }}</p>
+                        {% if axe.comment %}
+                            <p><strong>Kommentar:</strong> {{ axe.comment }}</p>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-6">
+                        {% if axe.measurements.all %}
+                            <h6><strong>Mätningar:</strong></h6>
+                            <ul class="list-unstyled">
+                                {% for measurement in axe.measurements.all %}
+                                    <li>{{ measurement.name }}: {{ measurement.value|format_decimal }} {{ measurement.unit }}</li>
+                                {% endfor %}
+                            </ul>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Transaktionshistorik -->
+        {% if transactions %}
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h4 class="mb-0">Transaktionshistorik</h4>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Datum</th>
+                                    <th>Typ</th>
+                                    <th>Pris</th>
+                                    <th>Frakt</th>
+                                    <th>Kontakt</th>
+                                    <th>Plattform</th>
+                                    <th>Kommentar</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for transaction in transactions %}
+                                    <tr>
+                                        <td>{{ transaction.transaction_date|date:"Y-m-d" }}</td>
+                                        <td>
+                                            <span class="badge {% if transaction.type == 'KÖP' %}bg-success{% else %}bg-danger{% endif %}">
+                                                {{ transaction.type }}
+                                            </span>
+                                        </td>
+                                        <td>{{ transaction.price|format_decimal }} kr</td>
+                                        <td>{{ transaction.shipping_cost|format_decimal }} kr</td>
+                                        <td>
+                                            {% if transaction.contact %}
+                                                <a href="{% url 'contact_detail' transaction.contact.pk %}" class="contact-link">
+                                                    {% if transaction.contact.alias %}
+                                                        {{ transaction.contact.alias }}
+                                                    {% else %}
+                                                        {{ transaction.contact.name }}
+                                                    {% endif %}
+                                                </a>
+                                            {% else %}
+                                                -
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ transaction.platform.name|default:"-" }}</td>
+                                        <td>{{ transaction.comment|default:"-" }}</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Högra kolumnen -->
+    <div class="col-md-4">
+        <!-- Bildgalleri -->
+        {% if axe.images.all %}
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0">Bilder</h4>
+                </div>
+                <div class="card-body">
+                    <div id="axeCarousel" class="carousel slide" data-bs-ride="carousel">
+                        <div class="carousel-inner">
+                            {% for image in axe.images.all %}
+                                <div class="carousel-item {% if forloop.first %}active{% endif %}">
+                                    <img src="{{ image.image.url }}" class="d-block w-100" alt="Yxa {{ forloop.counter }}">
+                                </div>
+                            {% endfor %}
+                        </div>
+                        {% if axe.images.count > 1 %}
+                            <button class="carousel-control-prev" type="button" data-bs-target="#axeCarousel" data-bs-slide="prev">
+                                <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                                <span class="visually-hidden">Föregående</span>
+                            </button>
+                            <button class="carousel-control-next" type="button" data-bs-target="#axeCarousel" data-bs-slide="next">
+                                <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                                <span class="visually-hidden">Nästa</span>
+                            </button>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %} 

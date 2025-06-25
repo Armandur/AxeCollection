@@ -1,10 +1,19 @@
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
+*.pyo
+*.pyd
+*.pdb
 *$py.class
 
 # C extensions
 *.so
+
+/fixes/
+/testing/
+
+media/axe_images/*
+media/manufacturer_images/*
 
 # Distribution / packaging
 .Python
@@ -192,3 +201,28 @@ cython_debug/
 #  refer to https://docs.cursor.com/context/ignore-files
 .cursorignore
 .cursorindexingignore
+
+# --- Django ---
+*.sqlite3
+media/
+staticfiles/
+static/
+
+# --- Virtual environments ---
+.venv/
+.ENV/
+
+# --- VSCode/IDE ---
+.vscode/
+.idea/
+*.sublime-workspace
+*.sublime-project
+
+# --- OS-filer ---
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# --- Test/coverage ---
+# axes/migrations/
