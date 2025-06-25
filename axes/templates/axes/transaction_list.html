@@ -100,12 +100,7 @@
                             <div class="carousel-inner">
                                 {% for img in images %}
                                 <div class="carousel-item {% if forloop.first %}active{% endif %}">
-                                    <picture>
-                                        {% if img.webp_url %}
-                                            <source srcset="{{ img.webp_url }}" type="image/webp">
-                                        {% endif %}
-                                        <img src="{{ img.image.url }}" class="d-block w-100 img-thumbnail" style="max-width:130px;max-height:130px;" loading="lazy">
-                                    </picture>
+                                    <img src="{{ img.webp_url|default:img.image.url }}" class="d-block w-100 img-thumbnail" style="max-width:130px;max-height:130px;" loading="lazy">
                                 </div>
                                 {% endfor %}
                             </div>
