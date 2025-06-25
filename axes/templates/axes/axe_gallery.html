@@ -1,0 +1,178 @@
+{% extends 'axes/base.html' %}
+{% load static %}
+{% load axe_filters %}
+
+{% block title %}Yxgalleri{% endblock %}
+
+{% block extra_head %}
+<style>
+    .gallery-carousel img {
+        max-height: 400px;
+        object-fit: contain;
+        background: #f8f9fa;
+    }
+    .gallery-pos {
+        font-size: 1.1rem;
+        color: #888;
+        margin-bottom: 1rem;
+    }
+    .gallery-nav {
+        margin-top: 1.5rem;
+        display: flex;
+        justify-content: space-between;
+        gap: 1rem;
+    }
+    @media (max-width: 767px) {
+        .gallery-carousel img {
+            max-height: 220px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col-12 d-flex justify-content-between align-items-center">
+            <h1 class="h3 mb-0">Yxgalleri</h1>
+            <a href="{% url 'axe_list' %}" class="btn btn-outline-primary">
+                <i class="fas fa-list"></i> Visa som lista
+            </a>
+        </div>
+    </div>
+    {% if current_axe %}
+    <!-- Navigation desktop/tablet -->
+    <div class="gallery-nav d-none d-md-flex mb-3">
+        {% if prev_axe %}
+            <a href="{% url 'axe_gallery_detail' prev_axe.pk %}" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> Föregående</a>
+        {% else %}
+            <button class="btn btn-outline-secondary" disabled><i class="bi bi-arrow-left"></i> Föregående</button>
+        {% endif %}
+        <div class="gallery-pos text-center align-self-center">{{ current_index }} av {{ total_axes }} i samlingen</div>
+        {% if next_axe %}
+            <a href="{% url 'axe_gallery_detail' next_axe.pk %}" class="btn btn-outline-secondary">Nästa <i class="bi bi-arrow-right"></i></a>
+        {% else %}
+            <button class="btn btn-outline-secondary" disabled>Nästa <i class="bi bi-arrow-right"></i></button>
+        {% endif %}
+    </div>
+    <div class="row g-4">
+        <!-- Bildgalleri -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Bilder</h5>
+                </div>
+                <div class="card-body">
+                    {% if current_axe.images.all %}
+                        <div id="galleryCarousel" class="carousel slide gallery-carousel" data-bs-ride="carousel">
+                            <div class="carousel-inner">
+                                {% for image in current_axe.images.all %}
+                                    <div class="carousel-item {% if forloop.first %}active{% endif %}">
+                                        <img src="{{ image.image.url }}" class="d-block w-100" alt="Yxa {{ forloop.counter }}">
+                                    </div>
+                                {% endfor %}
+                            </div>
+                            {% if current_axe.images.count > 1 %}
+                                <button class="carousel-control-prev" type="button" data-bs-target="#galleryCarousel" data-bs-slide="prev">
+                                    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                                    <span class="visually-hidden">Föregående</span>
+                                </button>
+                                <button class="carousel-control-next" type="button" data-bs-target="#galleryCarousel" data-bs-slide="next">
+                                    <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                                    <span class="visually-hidden">Nästa</span>
+                                </button>
+                            {% endif %}
+                        </div>
+                    {% else %}
+                        <div class="text-center text-muted py-5">
+                            <i class="fas fa-image fa-3x mb-3"></i>
+                            <p>Ingen bild tillgänglig</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            <!-- Navigation mobil -->
+            <div class="d-flex d-md-none justify-content-center align-items-center mt-3 gap-4">
+                {% if prev_axe %}
+                    <a href="{% url 'axe_gallery_detail' prev_axe.pk %}" class="btn btn-lg btn-outline-secondary px-4"><i class="bi bi-chevron-left" style="font-size:2rem;"></i></a>
+                {% else %}
+                    <button class="btn btn-lg btn-outline-secondary px-4" disabled><i class="bi bi-chevron-left" style="font-size:2rem;"></i></button>
+                {% endif %}
+                <span class="gallery-pos">{{ current_index }} av {{ total_axes }}</span>
+                {% if next_axe %}
+                    <a href="{% url 'axe_gallery_detail' next_axe.pk %}" class="btn btn-lg btn-outline-secondary px-4"><i class="bi bi-chevron-right" style="font-size:2rem;"></i></a>
+                {% else %}
+                    <button class="btn btn-lg btn-outline-secondary px-4" disabled><i class="bi bi-chevron-right" style="font-size:2rem;"></i></button>
+                {% endif %}
+            </div>
+        </div>
+        <!-- Info -->
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Yxinformation</h5>
+                </div>
+                <div class="card-body">
+                    <p><strong>Tillverkare:</strong> {{ current_axe.manufacturer.name }}</p>
+                    <p><strong>Modell:</strong> {{ current_axe.model }}</p>
+                    {% if current_axe.comment %}
+                        <p><strong>Kommentar:</strong> {{ current_axe.comment }}</p>
+                    {% endif %}
+                    {% if current_axe.measurements.all %}
+                        <h6><strong>Mätningar:</strong></h6>
+                        <ul class="list-unstyled">
+                            {% for measurement in current_axe.measurements.all %}
+                                <li>{{ measurement.name }}: {{ measurement.value|format_decimal }} {{ measurement.unit }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                </div>
+            </div>
+            {% if transactions %}
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Transaktioner</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-sm mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Datum</th>
+                                    <th>Typ</th>
+                                    <th>Pris</th>
+                                    <th>Kontakt</th>
+                                    <th>Plattform</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for transaction in transactions %}
+                                    <tr>
+                                        <td>{{ transaction.transaction_date|date:"Y-m-d" }}</td>
+                                        <td>
+                                            <span class="badge {% if transaction.type == 'KÖP' %}bg-success{% else %}bg-danger{% endif %}">
+                                                {{ transaction.type }}
+                                            </span>
+                                        </td>
+                                        <td>{{ transaction.price|format_currency }}</td>
+                                        <td>{% if transaction.contact %}{{ transaction.contact.name }}{% else %}-{% endif %}</td>
+                                        <td>{% if transaction.platform %}{{ transaction.platform.name }}{% else %}-{% endif %}</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% else %}
+    <div class="alert alert-warning text-center">
+        <h4>Inga yxor hittades</h4>
+        <p>Det finns inga yxor i samlingen än.</p>
+        <a href="{% url 'axe_list' %}" class="btn btn-primary">Gå till listan</a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %} 

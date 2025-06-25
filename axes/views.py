@@ -294,3 +294,68 @@ def manufacturer_detail(request, pk):
     }
     
     return render(request, 'axes/manufacturer_detail.html', context)
+
+def axe_gallery(request, pk=None):
+    """Visa yxor i galleriformat med navigation mellan dem"""
+    # Hämta alla yxor sorterade efter ID för enkel navigation
+    all_axes = Axe.objects.all().select_related('manufacturer').prefetch_related('images').order_by('id')
+    
+    if pk:
+        # Visa specifik yxa
+        current_axe = get_object_or_404(Axe.objects.select_related('manufacturer').prefetch_related('images', 'measurements'), pk=pk)
+        
+        # Hitta position i listan för navigation
+        axe_list = list(all_axes)
+        try:
+            current_index = axe_list.index(current_axe)
+        except ValueError:
+            current_index = 0
+            
+        # Hämta föregående och nästa yxa
+        prev_axe = axe_list[current_index - 1] if current_index > 0 else None
+        next_axe = axe_list[current_index + 1] if current_index < len(axe_list) - 1 else None
+        
+        # Hämta transaktioner för denna yxa
+        transactions = Transaction.objects.filter(axe=current_axe).select_related('contact', 'platform').order_by('-transaction_date')
+        
+        # Beräkna ekonomisk statistik
+        total_cost = transactions.filter(type='KÖP').aggregate(total=Sum('price'))['total'] or 0
+        total_shipping_cost = transactions.filter(type='KÖP').aggregate(total=Sum('shipping_cost'))['total'] or 0
+        total_revenue = transactions.filter(type='SÄLJ').aggregate(total=Sum('price'))['total'] or 0
+        total_shipping_revenue = transactions.filter(type='SÄLJ').aggregate(total=Sum('shipping_cost'))['total'] or 0
+        
+        total_investment = total_cost + total_shipping_cost
+        total_income = total_revenue + total_shipping_revenue
+        profit_loss = total_income - total_investment
+        
+        context = {
+            'current_axe': current_axe,
+            'prev_axe': prev_axe,
+            'next_axe': next_axe,
+            'current_index': current_index + 1,  # 1-baserat index för visning
+            'total_axes': len(axe_list),
+            'transactions': transactions,
+            'total_cost': total_cost,
+            'total_shipping_cost': total_shipping_cost,
+            'total_revenue': total_revenue,
+            'total_shipping_revenue': total_shipping_revenue,
+            'total_investment': total_investment,
+            'total_income': total_income,
+            'profit_loss': profit_loss,
+        }
+        
+        return render(request, 'axes/axe_gallery.html', context)
+    else:
+        # Visa senaste yxan (högst id) som standard
+        if all_axes.exists():
+            last_axe = all_axes.last()
+            return axe_gallery(request, last_axe.pk)
+        else:
+            # Inga yxor finns
+            return render(request, 'axes/axe_gallery.html', {
+                'current_axe': None,
+                'prev_axe': None,
+                'next_axe': None,
+                'current_index': 0,
+                'total_axes': 0,
+            })

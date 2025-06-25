@@ -36,12 +36,69 @@
     .price-buy { color: #dc3545; font-weight: bold; }
     .price-sell { color: #198754; font-weight: bold; }
     .shipping-cost { font-size: 0.8em; color: #6c757d; }
+
+    /* Mobilanpassningar för DataTables */
+    @media (max-width: 767px) {
+        .dataTables_wrapper .dataTables_length,
+        .dataTables_wrapper .dataTables_filter,
+        .dataTables_wrapper .dataTables_info,
+        .dataTables_wrapper .dataTables_paginate {
+            text-align: center;
+            margin-bottom: 0.5rem;
+        }
+        
+        .dataTables_wrapper .dataTables_length select,
+        .dataTables_wrapper .dataTables_filter input {
+            width: 100%;
+            margin: 0.25rem 0;
+        }
+        
+        /* Ta bort klickbara rader på mobil */
+        #axesTable tbody tr {
+            cursor: default;
+        }
+        
+        #axesTable tbody tr:hover {
+            background-color: transparent !important;
+        }
+        
+        /* Stil för responsiva detaljer */
+        .dtr-details {
+            background-color: #f8f9fa;
+            border-radius: 0.375rem;
+            padding: 0.5rem;
+            margin-top: 0.5rem;
+        }
+        
+        /* Gör detaljer-knappen tydligare */
+        .dtr-control {
+            background-color: #007bff !important;
+            color: white !important;
+            border: none !important;
+            border-radius: 50% !important;
+            width: 24px !important;
+            height: 24px !important;
+            line-height: 24px !important;
+            text-align: center !important;
+            font-weight: bold !important;
+        }
+        
+        /* Stil för Visa-knappen i modal */
+        .modal-body .btn-primary {
+            margin-top: 1rem;
+        }
+    }
 </style>
 {% endblock %}
 
 
 {% block content %}
-<h1 class="mb-4">Samling</h1>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Samling</h1>
+    <a href="{% url 'axe_gallery' %}" class="btn btn-outline-primary">
+        <i class="fas fa-images"></i> Visa som galleri
+    </a>
+</div>
 
 <!-- Statistik-kort -->
 <div class="row mb-4">
@@ -192,6 +249,43 @@
 $(document).ready(function() {
     var table = $('#axesTable').DataTable({
         order: [[0, 'desc']],
+        responsive: {
+            details: {
+                display: $.fn.dataTable.Responsive.display.modal({
+                    header: function (row) {
+                        var data = row.data();
+                        return 'Detaljer för yxa ' + data[0];
+                    }
+                }),
+                renderer: function (api, rowIdx, columns) {
+                    var data = $.map(columns, function (col, i) {
+                        return col.hidden ?
+                            '<tr>' +
+                                '<td class="fw-bold">' + col.title + ':</td> ' +
+                                '<td>' + col.data + '</td>' +
+                            '</tr>' : '';
+                    }).join('');
+
+                    // Lägg till Visa-knapp
+                    var href = $(api.row(rowIdx).node()).data('href');
+                    var viewButton = '';
+                    if (href) {
+                        viewButton = '<tr><td colspan="2" class="text-center pt-3">' +
+                            '<a href="' + href + '" class="btn btn-primary btn-sm">' +
+                            '<i class="bi bi-eye"></i> Visa yxa</a></td></tr>';
+                    }
+
+                    return data ?
+                        $('<table class="table table-sm"/>')
+                            .append('<tbody>' + data + viewButton + '</tbody>') : false;
+                }
+            },
+            breakpoints: [
+                { name: 'desktop', width: Infinity },
+                { name: 'tablet', width: 1024 },
+                { name: 'phone', width: 480 }
+            ]
+        },
         language: {
             "emptyTable": "Ingen data tillgänglig i tabellen",
             "info": "Visar _START_ till _END_ av _TOTAL_ poster",
@@ -231,7 +325,20 @@ $(document).ready(function() {
             }
         },
         columnDefs: [
-            // Inga specifika definitioner behövs längre här för sortering
+            {
+                targets: [3], // Kommentar-kolumnen
+                responsivePriority: 2
+            },
+            {
+                targets: [0, 5], // ID och Bilder
+                responsivePriority: 1,
+                className: 'all' // Visa alltid
+            },
+            {
+                targets: [1, 2, 4], // Tillverkare, Modell, Ekonomi
+                responsivePriority: 2,
+                className: 'all' // Visa alltid
+            }
         ],
         drawCallback: function(settings) {
             // Initiera popovers på nya rader efter sidbyte/sortering/filtrering
@@ -245,16 +352,26 @@ $(document).ready(function() {
         }
     });
 
-    // Klickbara rader
-    $('#axesTable tbody').on('click', 'tr', function () {
+    // Klickbara rader (endast på dator/tablett)
+    $('#axesTable tbody').on('click', 'tr', function (event) {
         // Förhindra att klicket propagerar om man klickar på en länk eller knapp inuti raden
         if (event.target.tagName === 'A' || event.target.tagName === 'BUTTON' || $(event.target).closest('a, button').length) {
             return;
         }
-        var href = $(this).data('href');
-        if (href) {
-            window.location.href = href;
+        
+        // Endast aktivera klickbara rader på större skärmar
+        if (window.innerWidth > 768) {
+            var href = $(this).data('href');
+            if (href) {
+                window.location.href = href;
+            }
         }
+    });
+
+    // Hantera klick på responsiva detaljer-knappar
+    $('#axesTable tbody').on('click', 'td.dtr-control', function (event) {
+        // Låt DataTables Responsive hantera detta klick
+        return true;
     });
 
     // Starta carousel när popover visas
