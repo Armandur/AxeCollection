@@ -36,7 +36,7 @@
 <!-- Statistik-kort -->
 <div class="row mb-4">
     <div class="col-md-3">
-        <div class="card stats-card bg-light">
+        <div class="card stats-card bg-body-secondary">
             <div class="card-body text-center">
                 <h6 class="card-title text-muted">Antal tillverkare</h6>
                 <h4>{{ total_manufacturers }}</h4>
@@ -44,7 +44,7 @@
         </div>
     </div>
     <div class="col-md-3">
-        <div class="card stats-card bg-light">
+        <div class="card stats-card bg-body-secondary">
             <div class="card-body text-center">
                 <h6 class="card-title text-muted">Totala yxor</h6>
                 <h4>{{ total_axes }}</h4>
@@ -52,7 +52,7 @@
         </div>
     </div>
     <div class="col-md-3">
-        <div class="card stats-card bg-light">
+        <div class="card stats-card bg-body-secondary">
             <div class="card-body text-center">
                 <h6 class="card-title text-muted">Totala transaktioner</h6>
                 <h4>{{ total_transactions }}</h4>
@@ -60,7 +60,7 @@
         </div>
     </div>
     <div class="col-md-3">
-        <div class="card stats-card bg-light">
+        <div class="card stats-card bg-body-secondary">
             <div class="card-body text-center">
                 <h6 class="card-title text-muted">Genomsnitt yxor/tillverkare</h6>
                 <h4>{% if total_manufacturers > 0 %}{{ average_axes_per_manufacturer|floatformat:1 }}{% else %}0{% endif %}</h4>
