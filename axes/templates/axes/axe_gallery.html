@@ -7,6 +7,8 @@
 {% block extra_head %}
 <!-- Swiper CSS -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
+<!-- PhotoSwipe CSS -->
+<link rel="stylesheet" href="https://unpkg.com/photoswipe@5.4.4/dist/photoswipe.css" />
 <style>
     .gallery-container {
         max-width: 1200px;
@@ -35,6 +37,12 @@
         max-height: 400px;
         object-fit: contain;
         background: var(--bs-body-bg);
+        cursor: pointer;
+        transition: transform 0.2s ease;
+    }
+    
+    .desktop-carousel img:hover {
+        transform: scale(1.02);
     }
     
     /* Mobile Swiper */
@@ -61,6 +69,7 @@
         max-width: 100%;
         max-height: 100%;
         object-fit: contain;
+        cursor: pointer;
     }
     
     .mobile-swiper .swiper-button-next,
@@ -154,6 +163,29 @@
             display: none;
         }
     }
+    .lightbox-hint {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background: rgba(0, 0, 0, 0.7);
+        color: white;
+        padding: 5px 10px;
+        border-radius: 15px;
+        font-size: 0.8rem;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+        pointer-events: none;
+    }
+    .desktop-carousel:hover .lightbox-hint,
+    .mobile-swiper:hover .lightbox-hint {
+        opacity: 1;
+    }
+    .pswp {
+        --pswp-bg: rgba(0, 0, 0, 0.9);
+    }
+    html[data-bs-theme="dark"] .pswp {
+        --pswp-bg: rgba(0, 0, 0, 0.95);
+    }
 </style>
 {% endblock %}
 
@@ -175,17 +207,22 @@
         
         <div class="gallery-content">
             <!-- Desktop Bootstrap Carousel -->
-            <div class="desktop-carousel">
+            <div class="desktop-carousel position-relative">
+                <div class="lightbox-hint">
+                    <i class="fas fa-expand"></i> Klicka för större bild
+                </div>
                 <div id="desktopCarousel" class="carousel slide" data-bs-ride="carousel">
                     <div class="carousel-inner">
                         {% for image in current_axe.images.all %}
                         <div class="carousel-item {% if forloop.first %}active{% endif %}">
-                            <picture>
-                                {% if image.webp_url %}
-                                    <source srcset="{{ image.webp_url }}" type="image/webp">
-                                {% endif %}
-                                <img src="{{ image.image.url }}" class="d-block w-100" alt="Yxa {{ current_axe.name }}" loading="lazy">
-                            </picture>
+                            <a href="{{ image.image.url }}" data-pswp-width="{{ image.image.width }}" data-pswp-height="{{ image.image.height }}">
+                                <picture>
+                                    {% if image.webp_url %}
+                                        <source srcset="{{ image.webp_url }}" type="image/webp">
+                                    {% endif %}
+                                    <img src="{{ image.image.url }}" class="d-block w-100 gallery-lightbox-img" alt="Yxa {{ current_axe.name }}" loading="lazy">
+                                </picture>
+                            </a>
                         </div>
                         {% endfor %}
                     </div>
@@ -203,17 +240,22 @@
             </div>
             
             <!-- Mobile Swiper -->
-            <div class="mobile-swiper">
+            <div class="mobile-swiper position-relative">
+                <div class="lightbox-hint">
+                    <i class="fas fa-expand"></i> Tryck för större bild
+                </div>
                 <div class="swiper">
                     <div class="swiper-wrapper">
                         {% for image in current_axe.images.all %}
                         <div class="swiper-slide">
-                            <picture>
-                                {% if image.webp_url %}
-                                    <source srcset="{{ image.webp_url }}" type="image/webp">
-                                {% endif %}
-                                <img src="{{ image.image.url }}" alt="Yxa {{ current_axe.name }}" loading="lazy">
-                            </picture>
+                            <a href="{{ image.image.url }}" data-pswp-width="{{ image.image.width }}" data-pswp-height="{{ image.image.height }}">
+                                <picture>
+                                    {% if image.webp_url %}
+                                        <source srcset="{{ image.webp_url }}" type="image/webp">
+                                    {% endif %}
+                                    <img src="{{ image.image.url }}" alt="Yxa {{ current_axe.name }}" loading="lazy" class="gallery-lightbox-img">
+                                </picture>
+                            </a>
                         </div>
                         {% endfor %}
                     </div>
@@ -307,14 +349,27 @@
         </div>
     {% endif %}
 </div>
+<!-- PhotoSwipe Template (v5 kräver ingen extra HTML) -->
 {% endblock %}
 
 {% block scripts %}
 <!-- Swiper JS -->
 <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+<!-- PhotoSwipe JS som ES module -->
+<script type="module">
+import PhotoSwipeLightbox from 'https://unpkg.com/photoswipe@5.4.4/dist/photoswipe-lightbox.esm.js';
+import PhotoSwipe from 'https://unpkg.com/photoswipe@5.4.4/dist/photoswipe.esm.js';
+
+const lightbox = new PhotoSwipeLightbox({
+  gallery: '.gallery-content',
+  children: 'a[data-pswp-width]',
+  pswpModule: PhotoSwipe
+});
+lightbox.init();
+</script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Initiera Swiper för mobil
+    // Swiper för mobil
     const swiperElement = document.querySelector('.swiper');
     if (swiperElement) {
         const swiper = new Swiper('.swiper', {
@@ -331,9 +386,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 enabled: true,
             },
         });
-        
-        // Tangentbordsnavigation för att bläddra mellan yxor
         document.addEventListener('keydown', function(e) {
+            if (document.querySelector('.pswp--open')) return;
             if (e.key === 'ArrowLeft') {
                 const prevBtn = document.querySelector('a[href*="axe_gallery_detail"]:first-of-type');
                 if (prevBtn) prevBtn.click();
@@ -343,60 +397,42 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
-    
     // Swipe-funktionalitet för navigation mellan yxor (endast på mobil)
     const swipeArea = document.getElementById('axeSwipeArea');
     if (swipeArea && window.innerWidth <= 767) {
-        console.log('Swipe area found, initializing...');
-        
         let startX = 0;
         let startY = 0;
         let isSwiping = false;
-        
         swipeArea.addEventListener('touchstart', function(e) {
             startX = e.touches[0].clientX;
             startY = e.touches[0].clientY;
             isSwiping = true;
-            console.log('Touch start:', startX, startY);
         });
-        
         swipeArea.addEventListener('touchmove', function(e) {
             if (!isSwiping) return;
-            
             const currentX = e.touches[0].clientX;
             const currentY = e.touches[0].clientY;
             const deltaX = currentX - startX;
             const deltaY = currentY - startY;
-            
-            // Om swipe är mer vertikal än horisontell, avbryt
             if (Math.abs(deltaY) > Math.abs(deltaX)) {
                 isSwiping = false;
             }
         });
-        
         swipeArea.addEventListener('touchend', function(e) {
             if (!isSwiping) return;
-            
             const endX = e.changedTouches[0].clientX;
             const endY = e.changedTouches[0].clientY;
             const deltaX = endX - startX;
             const deltaY = endY - startY;
-            
-            console.log('Touch end:', endX, endY, 'Delta:', deltaX, deltaY);
-            
-            // Kräv minst 50px horisontell swipe
             if (Math.abs(deltaX) > 50 && Math.abs(deltaX) > Math.abs(deltaY)) {
                 if (deltaX > 0) {
-                    console.log('Swiping right - going to previous axe');
                     const prevUrl = swipeArea.dataset.prevUrl;
                     if (prevUrl) window.location.href = prevUrl;
                 } else {
-                    console.log('Swiping left - going to next axe');
                     const nextUrl = swipeArea.dataset.nextUrl;
                     if (nextUrl) window.location.href = nextUrl;
                 }
             }
-            
             isSwiping = false;
         });
     }
