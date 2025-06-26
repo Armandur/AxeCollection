@@ -4,6 +4,7 @@
 {% block title %}{{ axe.manufacturer.name }} - {{ axe.model }} - {{ block.super }}{% endblock %}
 
 {% block extra_head %}
+<link rel="stylesheet" href="https://unpkg.com/photoswipe@5.4.4/dist/photoswipe.css" />
 <style>
     .measurement-card {
         transition: transform 0.2s;
@@ -154,28 +155,46 @@
                     <h4 class="mb-0">Bilder</h4>
                 </div>
                 <div class="card-body">
-                    <div id="axeCarousel" class="carousel slide" data-bs-ride="carousel">
-                        <div class="carousel-inner">
-                            {% for image in axe.images.all %}
-                                <div class="carousel-item {% if forloop.first %}active{% endif %}">
-                                    <img src="{{ image.image.url }}" class="d-block w-100" alt="Yxa {{ forloop.counter }}" loading="lazy">
-                                </div>
-                            {% endfor %}
+                    <div class="axe-detail-images">
+                        <div id="axeCarousel" class="carousel slide" data-bs-ride="carousel">
+                            <div class="carousel-inner">
+                                {% for image in axe.images.all %}
+                                    <div class="carousel-item {% if forloop.first %}active{% endif %}">
+                                        <a href="{{ image.image.url }}" data-pswp-width="{{ image.image.width }}" data-pswp-height="{{ image.image.height }}">
+                                            <img src="{{ image.image.url }}" class="d-block w-100" alt="Yxa {{ forloop.counter }}" loading="lazy">
+                                        </a>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                            {% if axe.images.count > 1 %}
+                                <button class="carousel-control-prev" type="button" data-bs-target="#axeCarousel" data-bs-slide="prev">
+                                    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                                    <span class="visually-hidden">Föregående</span>
+                                </button>
+                                <button class="carousel-control-next" type="button" data-bs-target="#axeCarousel" data-bs-slide="next">
+                                    <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                                    <span class="visually-hidden">Nästa</span>
+                                </button>
+                            {% endif %}
                         </div>
-                        {% if axe.images.count > 1 %}
-                            <button class="carousel-control-prev" type="button" data-bs-target="#axeCarousel" data-bs-slide="prev">
-                                <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-                                <span class="visually-hidden">Föregående</span>
-                            </button>
-                            <button class="carousel-control-next" type="button" data-bs-target="#axeCarousel" data-bs-slide="next">
-                                <span class="carousel-control-next-icon" aria-hidden="true"></span>
-                                <span class="visually-hidden">Nästa</span>
-                            </button>
-                        {% endif %}
                     </div>
                 </div>
             </div>
         {% endif %}
     </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script type="module">
+import PhotoSwipeLightbox from 'https://unpkg.com/photoswipe@5.4.4/dist/photoswipe-lightbox.esm.js';
+import PhotoSwipe from 'https://unpkg.com/photoswipe@5.4.4/dist/photoswipe.esm.js';
+
+const lightbox = new PhotoSwipeLightbox({
+  gallery: '.axe-detail-images',
+  children: 'a[data-pswp-width]',
+  pswpModule: PhotoSwipe
+});
+lightbox.init();
+</script>
 {% endblock %} 
