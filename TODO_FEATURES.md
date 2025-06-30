@@ -32,18 +32,19 @@ En checklista för vidareutveckling av AxeCollection. Bocka av med [x] när klar
 
 17. [x] UI för att skapa nya yxor i samlingen – Användarvänligt formulär för att lägga till yxor.
 18. [x] UI för att redigera befintliga yxor – Möjlighet att uppdatera information efter mottagning.
-19. [ ] Arbetsflöde för inköp: 
-    - Skapa/redigera yxa (tillverkare, modell, kommentar)
-    - Ladda upp bilder från auktion/annons
+19. [x] Status-fält och filter – Status "Köpt" vs "Mottagen/Ägd" med filter och snabbåtgärder i yxlistan.
+20. [ ] Arbetsflöde för inköp: 
+    - Skapa/redigera yxa (tillverkare, modell, kommentar) ✅
+    - Ladda upp bilder från auktion/annons ✅
     - Skapa/redigera kontakt (försäljare på Tradera etc.)
     - Skapa transaktion (inköp med pris, frakt, datum)
-20. [ ] Arbetsflöde för mottagning:
-    - Lägg till fler bilder av mottagen yxa
+21. [ ] Arbetsflöde för mottagning:
+    - Lägg till fler bilder av mottagen yxa ✅
     - Mät och registrera mått
     - Uppdatera eventuell felaktig information
-21. [ ] Snabbval av tillverkare – Dropdown eller sökfunktion för att välja tillverkare.
-22. [ ] Kontakthantering – Skapa nya kontakter direkt från yxformuläret.
-23. [ ] Transaktionshantering – Koppla yxor till köp/försäljning med pris, frakt och datum.
+22. [x] Snabbval av tillverkare – Dropdown för att välja tillverkare.
+23. [ ] Kontakthantering – Skapa nya kontakter direkt från yxformuläret.
+24. [ ] Transaktionshantering – Koppla yxor till köp/försäljning med pris, frakt och datum.
 
 ## Admin och datahantering
 
