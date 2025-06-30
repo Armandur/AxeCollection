@@ -19,7 +19,7 @@
                     </h3>
                 </div>
                 <div class="card-body">
-                    <form method="post" enctype="multipart/form-data" id="axeForm">
+                    <form id="axeForm" method="post" enctype="multipart/form-data" autocomplete="off">
                         {% csrf_token %}
                         
                         <div class="row">
@@ -120,16 +120,13 @@
                             <div class="form-text">Klistra in URL:er från Tradera, eBay eller andra sidor</div>
                         </div>
 
-                        <!-- Dolda inputs för att skicka med data -->
-                        <div id="hiddenInputs"></div>
-
                         <!-- Befintliga bilder (endast i redigeringsläge) -->
                         {% if is_edit and axe.images.all %}
                             <div class="mb-4">
                                 <h6>Befintliga bilder:</h6>
                                 <div class="row" id="existingImagesContainer">
                                     {% for image in axe.images.all %}
-                                        <div class="col-6 col-md-3 mb-3 existing-image-item" data-image-id="{{ image.id }}">
+                                        <div class="col-6 col-md-3 mb-3 existing-image-item" data-image-id="{{ image.id }}" draggable="true">
                                             <div class="card position-relative">
                                                 <img src="{{ image.image.url }}" class="card-img-top" alt="Bild {{ forloop.counter }}" style="height: 150px; object-fit: cover;">
                                                 <button type="button" class="btn btn-danger btn-sm position-absolute" style="top: 5px; right: 5px; width: 30px; height: 30px; border-radius: 50%;" onclick="removeExistingImage({{ image.id }})">
@@ -151,6 +148,9 @@
                             <h6>Förhandsvisning av nya bilder:</h6>
                             <div class="row" id="previewContainer"></div>
                         </div>
+
+                        <!-- Flytta hiddenInputs hit, precis före knapparna -->
+                        <div id="hiddenInputs"></div>
 
                         <div class="d-flex justify-content-between">
                             <a href="{% if is_edit %}{% url 'axe_detail' axe.pk %}{% else %}{% url 'axe_list' %}{% endif %}" class="btn btn-secondary">
@@ -282,6 +282,25 @@
 .overlay-remove-indicator {
     padding: 0.75rem !important;
     box-sizing: border-box;
+}
+
+.preview-item {
+    cursor: grab;
+    transition: transform 0.2s ease;
+}
+
+.preview-item:active {
+    cursor: grabbing;
+}
+
+.preview-item.drag-over {
+    border: 2px dashed #007bff;
+    transform: scale(1.05);
+}
+
+.preview-item[draggable="true"]:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
 }
 </style>
 
@@ -465,21 +484,112 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function createPreview(file, id) {
         const reader = new FileReader();
-        reader.onload = (e) => {
+        reader.onload = function(e) {
+            const previewContainer = document.getElementById('imagePreview');
             const previewItem = document.createElement('div');
-            previewItem.className = 'col-6 col-md-3 preview-item';
+            previewItem.className = 'preview-item col-md-2 col-sm-3 col-6 mb-3';
+            previewItem.draggable = true;
+            previewItem.dataset.id = id;
+            
             previewItem.innerHTML = `
-                <img src="${e.target.result}" alt="Förhandsvisning">
-                <button type="button" class="remove-btn" onclick="removePreview('${id}')">
-                    <i class="fas fa-times"></i>
-                </button>
-                <div class="preview-info">
-                    <small class="text-muted">${file.name}</small>
+                <div class="position-relative">
+                    <img src="${e.target.result}" class="img-fluid rounded" style="height: 150px; width: 100%; object-fit: cover;" alt="Förhandsvisning">
+                    <div class="position-absolute top-0 end-0 p-1">
+                        <button type="button" class="btn btn-sm btn-danger" onclick="removePreview('${id}')" title="Ta bort bild">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <div class="position-absolute bottom-0 start-0 w-100 p-1">
+                        <small class="text-white bg-dark bg-opacity-75 rounded px-1">${id}</small>
+                    </div>
                 </div>
             `;
+            
+            // Lägg till drag & drop event listeners
+            previewItem.addEventListener('dragstart', handleDragStart);
+            previewItem.addEventListener('dragover', handleDragOver);
+            previewItem.addEventListener('drop', handleDrop);
+            previewItem.addEventListener('dragenter', handleDragEnter);
+            previewItem.addEventListener('dragleave', handleDragLeave);
+            
             previewContainer.appendChild(previewItem);
         };
         reader.readAsDataURL(file);
+    }
+    
+    // Drag & drop funktioner för nya bilder
+    let draggedPreviewElement = null;
+    
+    function handleDragStart(e) {
+        draggedPreviewElement = this;
+        this.style.opacity = '0.5';
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/html', this.outerHTML);
+    }
+    
+    function handleDragOver(e) {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+    }
+    
+    function handleDragEnter(e) {
+        e.preventDefault();
+        this.classList.add('drag-over');
+    }
+    
+    function handleDragLeave(e) {
+        this.classList.remove('drag-over');
+    }
+    
+    function handleDrop(e) {
+        e.preventDefault();
+        this.classList.remove('drag-over');
+        
+        if (draggedPreviewElement !== this) {
+            const previewContainer = document.getElementById('imagePreview');
+            const allItems = Array.from(previewContainer.children);
+            const draggedIndex = allItems.indexOf(draggedPreviewElement);
+            const dropIndex = allItems.indexOf(this);
+            
+            // Flytta elementet
+            if (draggedIndex < dropIndex) {
+                this.parentNode.insertBefore(draggedPreviewElement, this.nextSibling);
+            } else {
+                this.parentNode.insertBefore(draggedPreviewElement, this);
+            }
+            
+            // Uppdatera ordningen i formulärfältet
+            updateFormFileOrder();
+        }
+        
+        draggedPreviewElement.style.opacity = '1';
+        draggedPreviewElement = null;
+    }
+    
+    function updateFormFileOrder() {
+        const previewContainer = document.getElementById('imagePreview');
+        const formFileInput = document.querySelector('input[name="images"]');
+        
+        if (formFileInput) {
+            const dt = new DataTransfer();
+            const previewItems = Array.from(previewContainer.children);
+            
+            previewItems.forEach(item => {
+                const id = item.dataset.id;
+                const itemData = selectedItems.get(id);
+                if (itemData && itemData.type === 'file') {
+                    // Hitta filen i original FileList
+                    for (let i = 0; i < formFileInput.files.length; i++) {
+                        if (formFileInput.files[i].name === id) {
+                            dt.items.add(formFileInput.files[i]);
+                            break;
+                        }
+                    }
+                }
+            });
+            
+            formFileInput.files = dt.files;
+        }
     }
 
     function createUrlPreview(url, id) {
@@ -528,12 +638,96 @@ document.addEventListener('DOMContentLoaded', function() {
         updatePreviewVisibility();
     };
 
+    // Lägg till drag & drop för befintliga bilder
+    let draggedExistingElement = null; // Deklarera variabeln för befintliga bilder
+    
+    const existingImageItems = document.querySelectorAll('.existing-image-item');
+    existingImageItems.forEach(item => {
+        item.addEventListener('dragstart', handleExistingDragStart);
+        item.addEventListener('dragover', handleExistingDragOver);
+        item.addEventListener('drop', handleExistingDrop);
+        item.addEventListener('dragenter', handleExistingDragEnter);
+        item.addEventListener('dragleave', handleExistingDragLeave);
+    });
+    
+    function handleExistingDragStart(e) {
+        draggedExistingElement = this;
+        this.style.opacity = '0.5';
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/html', this.outerHTML);
+    }
+    
+    function handleExistingDragOver(e) {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+    }
+    
+    function handleExistingDragEnter(e) {
+        e.preventDefault();
+        this.classList.add('drag-over');
+    }
+    
+    function handleExistingDragLeave(e) {
+        this.classList.remove('drag-over');
+    }
+    
+    function handleExistingDrop(e) {
+        e.preventDefault();
+        this.classList.remove('drag-over');
+        
+        if (draggedExistingElement !== this) {
+            const container = document.getElementById('existingImagesContainer');
+            const allItems = Array.from(container.children);
+            const draggedIndex = allItems.indexOf(draggedExistingElement);
+            const dropIndex = allItems.indexOf(this);
+            
+            // Flytta elementet
+            if (draggedIndex < dropIndex) {
+                this.parentNode.insertBefore(draggedExistingElement, this.nextSibling);
+            } else {
+                this.parentNode.insertBefore(draggedExistingElement, this);
+            }
+            
+            // Uppdatera ordningen i backend (skicka med i formuläret)
+            updateExistingImageOrder();
+        }
+        
+        draggedExistingElement.style.opacity = '1';
+        draggedExistingElement = null;
+    }
+    
+    function updateExistingImageOrder() {
+        const container = document.getElementById('existingImagesContainer');
+        const imageItems = Array.from(container.children);
+        const orderData = imageItems.map((item, index) => ({
+            id: item.dataset.imageId,
+            order: index + 1
+        }));
+        
+        console.log('Uppdaterar bildordning:', orderData); // Debug
+        
+        // Skapa dolda inputs för ordningen
+        const hiddenInputs = document.getElementById('hiddenInputs');
+        const existingOrderInputs = hiddenInputs.querySelectorAll('input[name="image_order"]');
+        existingOrderInputs.forEach(input => input.remove());
+        
+        orderData.forEach(item => {
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'image_order';
+            input.value = `${item.id}:${item.order}`;
+            hiddenInputs.appendChild(input);
+            console.log('Lagt till input:', input.value); // Debug
+        });
+    }
+
     // Hantera formulärsubmit
     document.getElementById('axeForm').addEventListener('submit', function(e) {
-        // Skapa dolda inputs för URL:er
         const hiddenInputs = document.getElementById('hiddenInputs');
-        hiddenInputs.innerHTML = '';
-        
+        hiddenInputs.innerHTML = ''; // Rensa ALLTID först!
+        updateExistingImageOrder(); // Lägg till bildordning
+        console.log('Submit-funktionen körs'); // DEBUG
+        // Skapa dolda inputs för URL:er
         selectedItems.forEach((item, id) => {
             if (item.type === 'url') {
                 const input = document.createElement('input');
@@ -553,6 +747,9 @@ document.addEventListener('DOMContentLoaded', function() {
             input.value = imageId;
             hiddenInputs.appendChild(input);
         });
+        
+        // DEBUG: Skriv ut vad som finns i hiddenInputs
+        console.log('hiddenInputs vid submit:', hiddenInputs.innerHTML);
     });
 });
 
