@@ -67,10 +67,25 @@
                             {% endif %}
                         </div>
 
-                        <!-- Bilduppladdning med drag & drop -->
+                        <!-- Förbättrad bilduppladdning för mobil -->
                         <div class="mb-4">
                             <label class="form-label">{{ form.images.label }}</label>
-                            <div class="upload-area" id="uploadArea">
+                            
+                            <!-- Mobilvänliga knappar -->
+                            <div class="d-flex flex-wrap gap-2 mb-3 mobile-upload-buttons">
+                                <button type="button" class="btn btn-primary btn-sm" onclick="openCamera()">
+                                    <i class="fas fa-camera me-1"></i>Ta foto
+                                </button>
+                                <button type="button" class="btn btn-outline-primary btn-sm" onclick="selectFiles()">
+                                    <i class="fas fa-images me-1"></i>Välj bilder
+                                </button>
+                                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="toggleUrlInput()">
+                                    <i class="fas fa-link me-1"></i>Lägg till URL
+                                </button>
+                            </div>
+
+                            <!-- Drag & drop område (dolt på mobil) -->
+                            <div class="upload-area d-none d-md-block" id="uploadArea">
                                 <div class="upload-content">
                                     <i class="fas fa-cloud-upload-alt fa-3x text-muted mb-3"></i>
                                     <h5>Dra och släpp bilder här</h5>
@@ -79,14 +94,22 @@
                                     {{ form.images }}
                                 </div>
                             </div>
+
+                            <!-- Dolda filinputs för mobil -->
+                            <div class="d-none">
+                                {{ form.images }}
+                                <input type="file" id="cameraInput" accept="image/*" capture="environment" multiple>
+                                <input type="file" id="fileInput" accept="image/*" multiple>
+                            </div>
+
                             <div class="form-text">{{ form.images.help_text }}</div>
                             {% if form.images.errors %}
                                 <div class="text-danger">{{ form.images.errors }}</div>
                             {% endif %}
                         </div>
 
-                        <!-- URL-input för bilder -->
-                        <div class="mb-4">
+                        <!-- URL-input för bilder (kollapsbar) -->
+                        <div class="mb-4" id="urlInputSection" style="display: none;">
                             <label for="imageUrl" class="form-label">Lägg till bild från URL</label>
                             <div class="input-group">
                                 <input type="url" class="form-control" id="imageUrl" placeholder="https://example.com/bild.jpg">
@@ -106,7 +129,7 @@
                                 <h6>Befintliga bilder:</h6>
                                 <div class="row" id="existingImagesContainer">
                                     {% for image in axe.images.all %}
-                                        <div class="col-md-3 mb-3 existing-image-item" data-image-id="{{ image.id }}">
+                                        <div class="col-6 col-md-3 mb-3 existing-image-item" data-image-id="{{ image.id }}">
                                             <div class="card position-relative">
                                                 <img src="{{ image.image.url }}" class="card-img-top" alt="Bild {{ forloop.counter }}" style="height: 150px; object-fit: cover;">
                                                 <button type="button" class="btn btn-danger btn-sm position-absolute" style="top: 5px; right: 5px; width: 30px; height: 30px; border-radius: 50%;" onclick="removeExistingImage({{ image.id }})">
@@ -195,67 +218,180 @@
 .preview-item .remove-btn:hover {
     background: #c82333;
 }
+
+/* Mobiloptimeringar */
+@media (max-width: 768px) {
+    .mobile-upload-buttons {
+        justify-content: center;
+    }
+    
+    .mobile-upload-buttons .btn {
+        flex: 1;
+        min-width: 120px;
+    }
+    
+    .preview-item {
+        margin-bottom: 0.5rem;
+    }
+    
+    .preview-item img {
+        height: 120px;
+    }
+    
+    .card-body {
+        padding: 0.5rem;
+    }
+    
+    .btn {
+        font-size: 0.9rem;
+        padding: 0.375rem 0.75rem;
+    }
+}
+
+/* Animation för URL-input */
+.url-input-enter {
+    animation: slideDown 0.3s ease-out;
+}
+
+.url-input-exit {
+    animation: slideUp 0.3s ease-in;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    to {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+}
+
+.overlay-remove-indicator {
+    padding: 0.75rem !important;
+    box-sizing: border-box;
+}
 </style>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const uploadArea = document.getElementById('uploadArea');
     const fileInput = document.querySelector('input[type="file"]');
+    const cameraInput = document.getElementById('cameraInput');
+    const selectFileInput = document.getElementById('fileInput');
     const imagePreview = document.getElementById('imagePreview');
     const previewContainer = document.getElementById('previewContainer');
     const imageUrlInput = document.getElementById('imageUrl');
     const addUrlBtn = document.getElementById('addUrlBtn');
+    const urlInputSection = document.getElementById('urlInputSection');
     const selectedItems = new Map(); // Map för att hålla reda på både filer och URL:er
 
-    // Drag & drop funktionalitet
-    uploadArea.addEventListener('click', () => fileInput.click());
-    
-    uploadArea.addEventListener('dragover', (e) => {
-        e.preventDefault();
-        uploadArea.classList.add('dragover');
-    });
-    
-    uploadArea.addEventListener('dragleave', () => {
-        uploadArea.classList.remove('dragover');
-    });
-    
-    uploadArea.addEventListener('drop', (e) => {
-        e.preventDefault();
-        uploadArea.classList.remove('dragover');
-        
-        // Hantera filer
-        const files = Array.from(e.dataTransfer.files).filter(file => file.type.startsWith('image/'));
-        handleFiles(files);
-        
-        // Hantera URL:er (text)
-        const text = e.dataTransfer.getData('text');
-        if (text && isImageUrl(text)) {
-            handleImageUrl(text);
-        }
-    });
+    // Mobilvänliga funktioner
+    window.openCamera = function() {
+        cameraInput.click();
+    };
 
-    // Filval via input
-    fileInput.addEventListener('change', (e) => {
+    window.selectFiles = function() {
+        selectFileInput.click();
+    };
+
+    window.toggleUrlInput = function() {
+        if (urlInputSection.style.display === 'none') {
+            urlInputSection.style.display = 'block';
+            urlInputSection.classList.add('url-input-enter');
+            imageUrlInput.focus();
+        } else {
+            urlInputSection.classList.add('url-input-exit');
+            setTimeout(() => {
+                urlInputSection.style.display = 'none';
+                urlInputSection.classList.remove('url-input-exit');
+            }, 300);
+        }
+    };
+
+    // Kamerainput hantering
+    cameraInput.addEventListener('change', (e) => {
         const files = Array.from(e.target.files);
         handleFiles(files);
+        // Rensa input för att tillåta samma fil igen
+        cameraInput.value = '';
     });
 
-    // Klistra in (Ctrl+V)
-    document.addEventListener('paste', (e) => {
-        const items = e.clipboardData.items;
-        for (let item of items) {
-            if (item.type.startsWith('image/')) {
-                const file = item.getAsFile();
-                handleFiles([file]);
-            }
-        }
-        
-        // Hantera klistrade URL:er
-        const text = e.clipboardData.getData('text');
-        if (text && isImageUrl(text)) {
-            handleImageUrl(text);
-        }
+    // Filval input hantering
+    selectFileInput.addEventListener('change', (e) => {
+        const files = Array.from(e.target.files);
+        handleFiles(files);
+        // Rensa input för att tillåta samma fil igen
+        selectFileInput.value = '';
     });
+
+    // Drag & drop funktionalitet (endast desktop)
+    if (uploadArea) {
+        uploadArea.addEventListener('click', () => fileInput.click());
+        
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+        
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+        
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            
+            // Hantera filer
+            const files = Array.from(e.dataTransfer.files).filter(file => file.type.startsWith('image/'));
+            handleFiles(files);
+            
+            // Hantera URL:er (text)
+            const text = e.dataTransfer.getData('text');
+            if (text && isImageUrl(text)) {
+                handleImageUrl(text);
+            }
+        });
+    }
+
+    // Filval via input
+    if (fileInput) {
+        fileInput.addEventListener('change', (e) => {
+            const files = Array.from(e.target.files);
+            handleFiles(files);
+        });
+    }
+
+    // Klistra in (Ctrl+V) - endast på desktop
+    if (!isMobile()) {
+        document.addEventListener('paste', (e) => {
+            const items = e.clipboardData.items;
+            for (let item of items) {
+                if (item.type.startsWith('image/')) {
+                    const file = item.getAsFile();
+                    handleFiles([file]);
+                }
+            }
+            
+            // Hantera klistrade URL:er
+            const text = e.clipboardData.getData('text');
+            if (text && isImageUrl(text)) {
+                handleImageUrl(text);
+            }
+        });
+    }
 
     // URL-knapp
     addUrlBtn.addEventListener('click', () => {
@@ -275,6 +411,10 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
+    function isMobile() {
+        return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    }
+
     function isImageUrl(url) {
         return url.match(/\.(jpg|jpeg|png|gif|webp|bmp|svg)(\?.*)?$/i) || 
                url.includes('tradera.com') || 
@@ -288,6 +428,26 @@ document.addEventListener('DOMContentLoaded', function() {
             if (file.type.startsWith('image/') && !selectedItems.has(file.name)) {
                 selectedItems.set(file.name, { type: 'file', data: file });
                 createPreview(file, file.name);
+                
+                // Lägg till filen i det faktiska formulärfältet
+                const formFileInput = document.querySelector('input[name="images"]');
+                if (formFileInput) {
+                    // Skapa en ny FileList med den nya filen
+                    const dt = new DataTransfer();
+                    
+                    // Lägg till befintliga filer
+                    if (formFileInput.files) {
+                        for (let i = 0; i < formFileInput.files.length; i++) {
+                            dt.items.add(formFileInput.files[i]);
+                        }
+                    }
+                    
+                    // Lägg till den nya filen
+                    dt.items.add(file);
+                    
+                    // Uppdatera input-fältet
+                    formFileInput.files = dt.files;
+                }
             }
         });
         
@@ -307,7 +467,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const reader = new FileReader();
         reader.onload = (e) => {
             const previewItem = document.createElement('div');
-            previewItem.className = 'col-md-3 preview-item';
+            previewItem.className = 'col-6 col-md-3 preview-item';
             previewItem.innerHTML = `
                 <img src="${e.target.result}" alt="Förhandsvisning">
                 <button type="button" class="remove-btn" onclick="removePreview('${id}')">
@@ -324,7 +484,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function createUrlPreview(url, id) {
         const previewItem = document.createElement('div');
-        previewItem.className = 'col-md-3 preview-item';
+        previewItem.className = 'col-6 col-md-3 preview-item';
         previewItem.innerHTML = `
             <img src="${url}" alt="Förhandsvisning" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI2Y4ZjlmYSIvPjx0ZXh0IHg9IjUwIiB5PSI1MCIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjEyIiBmaWxsPSIjNmM3NTdkIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iLjNlbSI+QnJva2VuIGltYWdlPC90ZXh0Pjwvc3ZnPg=='">
             <button type="button" class="remove-btn" onclick="removePreview('${id}')">
@@ -347,6 +507,21 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Global funktion för att ta bort förhandsvisning
     window.removePreview = function(id) {
+        const item = selectedItems.get(id);
+        if (item && item.type === 'file') {
+            // Ta bort filen från formulärfältet
+            const formFileInput = document.querySelector('input[name="images"]');
+            if (formFileInput) {
+                const dt = new DataTransfer();
+                for (let i = 0; i < formFileInput.files.length; i++) {
+                    if (formFileInput.files[i].name !== id) {
+                        dt.items.add(formFileInput.files[i]);
+                    }
+                }
+                formFileInput.files = dt.files;
+            }
+        }
+        
         selectedItems.delete(id);
         const previewItem = document.querySelector(`[onclick="removePreview('${id}')"]`).closest('.preview-item');
         previewItem.remove();
@@ -399,8 +574,8 @@ window.removeExistingImage = function(imageId) {
             // Lägg till en indikator för att bilden kommer att tas bort
             const card = imageItem.querySelector('.card');
             const removeIndicator = document.createElement('div');
-            removeIndicator.className = 'position-absolute w-100 h-100 d-flex align-items-center justify-content-center';
-            removeIndicator.style.cssText = 'top: 0; left: 0; background: rgba(220, 53, 69, 0.8); color: white; font-weight: bold; border-radius: 0.375rem;';
+            removeIndicator.className = 'position-absolute w-100 h-100 d-flex align-items-center justify-content-center overlay-remove-indicator';
+            removeIndicator.style.cssText = 'top: 0; left: 0; background: rgba(220, 53, 69, 0.8); color: white; font-weight: bold; border-radius: 0.375rem; padding: 0.75rem; box-sizing: border-box;';
             removeIndicator.innerHTML = '<span>KOMMER ATT TAS BORT</span>';
             card.appendChild(removeIndicator);
         }

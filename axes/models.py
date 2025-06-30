@@ -101,6 +101,17 @@ class AxeImage(models.Model):
             except Exception as e:
                 pass  # Kan logga fel om så önskas
 
+    def delete(self, *args, **kwargs):
+        # Ta bort .webp-filen om den finns
+        if self.image and self.image.name:
+            webp_path = os.path.splitext(self.image.path)[0] + '.webp'
+            if os.path.exists(webp_path):
+                try:
+                    os.remove(webp_path)
+                except Exception as e:
+                    pass  # Kan logga fel om så önskas
+        super().delete(*args, **kwargs)
+
 class ManufacturerImage(models.Model):
     manufacturer = models.ForeignKey(Manufacturer, related_name='images', on_delete=models.CASCADE) # Raderas bilden om tillverkaren raderas
     image = models.ImageField(upload_to='manufacturer_images/') # Django hanterar filuppladdning
