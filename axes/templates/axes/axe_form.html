@@ -75,79 +75,157 @@
                                 </h6>
                             </div>
                             <div class="card-body">
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label for="{{ form.contact_name.id_for_label }}" class="form-label">
-                                                {{ form.contact_name.label }}
-                                            </label>
-                                            {{ form.contact_name }}
-                                            <div class="form-text">{{ form.contact_name.help_text }}</div>
-                                            {% if form.contact_name.errors %}
-                                                <div class="text-danger">{{ form.contact_name.errors }}</div>
-                                            {% endif %}
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label for="{{ form.contact_alias.id_for_label }}" class="form-label">
-                                                {{ form.contact_alias.label }}
-                                            </label>
-                                            {{ form.contact_alias }}
-                                            <div class="form-text">{{ form.contact_alias.help_text }}</div>
-                                            {% if form.contact_alias.errors %}
-                                                <div class="text-danger">{{ form.contact_alias.errors }}</div>
-                                            {% endif %}
-                                        </div>
-                                    </div>
+                                <!-- Sök efter befintlig kontakt -->
+                                <div class="mb-3">
+                                    <label for="{{ form.contact_search.id_for_label }}" class="form-label">
+                                        {{ form.contact_search.label }}
+                                    </label>
+                                    {{ form.contact_search }}
+                                    <div class="form-text">{{ form.contact_search.help_text }}</div>
+                                    {% if form.contact_search.errors %}
+                                        <div class="text-danger">{{ form.contact_search.errors }}</div>
+                                    {% endif %}
                                 </div>
                                 
+                                <!-- Ny kontakt (visas endast om sökning misslyckas) -->
+                                <div id="newContactSection" style="display: none;">
+                                    <hr class="my-3">
+                                    <h6 class="text-muted">Skapa ny kontakt</h6>
+                                    
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label for="{{ form.contact_name.id_for_label }}" class="form-label">
+                                                    {{ form.contact_name.label }}
+                                                </label>
+                                                {{ form.contact_name }}
+                                                <div class="form-text">{{ form.contact_name.help_text }}</div>
+                                                {% if form.contact_name.errors %}
+                                                    <div class="text-danger">{{ form.contact_name.errors }}</div>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label for="{{ form.contact_alias.id_for_label }}" class="form-label">
+                                                    {{ form.contact_alias.label }}
+                                                </label>
+                                                {{ form.contact_alias }}
+                                                <div class="form-text">{{ form.contact_alias.help_text }}</div>
+                                                {% if form.contact_alias.errors %}
+                                                    <div class="text-danger">{{ form.contact_alias.errors }}</div>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label for="{{ form.contact_email.id_for_label }}" class="form-label">
+                                                    {{ form.contact_email.label }}
+                                                </label>
+                                                {{ form.contact_email }}
+                                                <div class="form-text">{{ form.contact_email.help_text }}</div>
+                                                {% if form.contact_email.errors %}
+                                                    <div class="text-danger">{{ form.contact_email.errors }}</div>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label for="{{ form.contact_phone.id_for_label }}" class="form-label">
+                                                    {{ form.contact_phone.label }}
+                                                </label>
+                                                {{ form.contact_phone }}
+                                                <div class="form-text">{{ form.contact_phone.help_text }}</div>
+                                                {% if form.contact_phone.errors %}
+                                                    <div class="text-danger">{{ form.contact_phone.errors }}</div>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label for="{{ form.contact_comment.id_for_label }}" class="form-label">
+                                            {{ form.contact_comment.label }}
+                                        </label>
+                                        {{ form.contact_comment }}
+                                        <div class="form-text">{{ form.contact_comment.help_text }}</div>
+                                        {% if form.contact_comment.errors %}
+                                            <div class="text-danger">{{ form.contact_comment.errors }}</div>
+                                        {% endif %}
+                                    </div>
+                                    
+                                    <div class="form-check">
+                                        {{ form.is_naj_member }}
+                                        <label class="form-check-label" for="{{ form.is_naj_member.id_for_label }}">
+                                            {{ form.is_naj_member.label }}
+                                        </label>
+                                        <div class="form-text">{{ form.is_naj_member.help_text }}</div>
+                                        {% if form.is_naj_member.errors %}
+                                            <div class="text-danger">{{ form.is_naj_member.errors }}</div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Transaktionshantering -->
+                        <div class="card mb-4">
+                            <div class="card-header">
+                                <h6 class="mb-0">
+                                    <i class="fas fa-money-bill me-2"></i>Transaktion
+                                </h6>
+                            </div>
+                            <div class="card-body">
                                 <div class="row">
-                                    <div class="col-md-6">
+                                    <div class="col-md-4">
                                         <div class="mb-3">
-                                            <label for="{{ form.contact_email.id_for_label }}" class="form-label">
-                                                {{ form.contact_email.label }}
+                                            <label for="{{ form.transaction_type.id_for_label }}" class="form-label">
+                                                {{ form.transaction_type.label }}
                                             </label>
-                                            {{ form.contact_email }}
-                                            <div class="form-text">{{ form.contact_email.help_text }}</div>
-                                            {% if form.contact_email.errors %}
-                                                <div class="text-danger">{{ form.contact_email.errors }}</div>
+                                            {{ form.transaction_type }}
+                                            <div class="form-text">{{ form.transaction_type.help_text }}</div>
+                                            {% if form.transaction_type.errors %}
+                                                <div class="text-danger">{{ form.transaction_type.errors }}</div>
                                             {% endif %}
                                         </div>
                                     </div>
-                                    <div class="col-md-6">
+                                    <div class="col-md-4">
                                         <div class="mb-3">
-                                            <label for="{{ form.contact_phone.id_for_label }}" class="form-label">
-                                                {{ form.contact_phone.label }}
+                                            <label for="{{ form.transaction_price.id_for_label }}" class="form-label">
+                                                {{ form.transaction_price.label }}
                                             </label>
-                                            {{ form.contact_phone }}
-                                            <div class="form-text">{{ form.contact_phone.help_text }}</div>
-                                            {% if form.contact_phone.errors %}
-                                                <div class="text-danger">{{ form.contact_phone.errors }}</div>
+                                            {{ form.transaction_price }}
+                                            <div class="form-text">{{ form.transaction_price.help_text }}</div>
+                                            {% if form.transaction_price.errors %}
+                                                <div class="text-danger">{{ form.transaction_price.errors }}</div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="mb-3">
+                                            <label for="{{ form.transaction_shipping.id_for_label }}" class="form-label">
+                                                {{ form.transaction_shipping.label }}
+                                            </label>
+                                            {{ form.transaction_shipping }}
+                                            <div class="form-text">{{ form.transaction_shipping.help_text }}</div>
+                                            {% if form.transaction_shipping.errors %}
+                                                <div class="text-danger">{{ form.transaction_shipping.errors }}</div>
                                             {% endif %}
                                         </div>
                                     </div>
                                 </div>
                                 
                                 <div class="mb-3">
-                                    <label for="{{ form.contact_comment.id_for_label }}" class="form-label">
-                                        {{ form.contact_comment.label }}
+                                    <label for="{{ form.transaction_date.id_for_label }}" class="form-label">
+                                        {{ form.transaction_date.label }}
                                     </label>
-                                    {{ form.contact_comment }}
-                                    <div class="form-text">{{ form.contact_comment.help_text }}</div>
-                                    {% if form.contact_comment.errors %}
-                                        <div class="text-danger">{{ form.contact_comment.errors }}</div>
-                                    {% endif %}
-                                </div>
-                                
-                                <div class="form-check">
-                                    {{ form.is_naj_member }}
-                                    <label class="form-check-label" for="{{ form.is_naj_member.id_for_label }}">
-                                        {{ form.is_naj_member.label }}
-                                    </label>
-                                    <div class="form-text">{{ form.is_naj_member.help_text }}</div>
-                                    {% if form.is_naj_member.errors %}
-                                        <div class="text-danger">{{ form.is_naj_member.errors }}</div>
+                                    {{ form.transaction_date }}
+                                    <div class="form-text">{{ form.transaction_date.help_text }}</div>
+                                    {% if form.transaction_date.errors %}
+                                        <div class="text-danger">{{ form.transaction_date.errors }}</div>
                                     {% endif %}
                                 </div>
                             </div>
@@ -477,6 +555,35 @@ document.addEventListener('DOMContentLoaded', function() {
             const files = Array.from(e.target.files);
             handleFiles(files);
         });
+    }
+
+    // Kontaktsökning
+    const contactSearchInput = document.getElementById('{{ form.contact_search.id_for_label }}');
+    const newContactSection = document.getElementById('newContactSection');
+    
+    if (contactSearchInput) {
+        contactSearchInput.addEventListener('input', function() {
+            const searchValue = this.value.trim();
+            
+            if (searchValue.length > 2) {
+                // Här skulle vi normalt göra en AJAX-sökning
+                // För nu visar vi bara ny kontaktsektion om inget matchar
+                // I en riktig implementation skulle vi söka i databasen
+                newContactSection.style.display = 'block';
+            } else {
+                newContactSection.style.display = 'none';
+            }
+        });
+        
+        // Visa ny kontaktsektion om användaren börjar skriva i namn-fältet
+        const contactNameInput = document.getElementById('{{ form.contact_name.id_for_label }}');
+        if (contactNameInput) {
+            contactNameInput.addEventListener('input', function() {
+                if (this.value.trim()) {
+                    newContactSection.style.display = 'block';
+                }
+            });
+        }
     }
 
     // Klistra in (Ctrl+V) - endast på desktop
