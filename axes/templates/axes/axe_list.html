@@ -98,6 +98,57 @@
     </a>
 </div>
 
+<!-- Filter-sektion -->
+<div class="card mb-4">
+    <div class="card-body">
+        <h5 class="card-title mb-3">
+            <i class="bi bi-funnel"></i> Filter
+        </h5>
+        <form method="get" class="row g-3">
+            {% csrf_token %}
+            <div class="col-md-3">
+                <label for="status" class="form-label">Status</label>
+                <select name="status" id="status" class="form-select">
+                    <option value="">Alla yxor</option>
+                    <option value="KÖPT" {% if status_filter == 'KÖPT' %}selected{% endif %}>Köpta</option>
+                    <option value="MOTTAGEN" {% if status_filter == 'MOTTAGEN' %}selected{% endif %}>Mottagna/Ägda</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label for="manufacturer" class="form-label">Tillverkare</label>
+                <select name="manufacturer" id="manufacturer" class="form-select">
+                    <option value="">Alla tillverkare</option>
+                    {% for manufacturer in manufacturers %}
+                        <option value="{{ manufacturer.id }}" {% if manufacturer_filter == manufacturer.id|stringformat:"s" %}selected{% endif %}>
+                            {{ manufacturer.name }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary me-2">
+                    <i class="bi bi-search"></i> Filtrera
+                </button>
+                <a href="{% url 'axe_list' %}" class="btn btn-outline-secondary">
+                    <i class="bi bi-x-circle"></i> Rensa
+                </a>
+            </div>
+        </form>
+        
+        <!-- Filter-statistik -->
+        {% if status_filter or manufacturer_filter %}
+            <div class="mt-3">
+                <small class="text-muted">
+                    Visar {{ filtered_count }} yxor
+                    {% if bought_count > 0 or received_count > 0 %}
+                        ({{ bought_count }} köpta, {{ received_count }} mottagna)
+                    {% endif %}
+                </small>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
 <!-- Statistik-kort -->
 <div class="row mb-4">
     <div class="col-md-2">
@@ -175,6 +226,7 @@
                 <th>ID</th>
                 <th>Tillverkare</th>
                 <th>Modell</th>
+                <th>Status</th>
                 <th>Kommentar</th>
                 <th>Ekonomi</th>
                 <th>Bilder</th>
@@ -189,6 +241,29 @@
                     {{ axe.model }}
                     {% if axe.id in sold_axe_ids %}
                         <span class="badge bg-secondary ms-2">SÅLD</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if axe.status == 'KÖPT' %}
+                        <span class="badge bg-warning text-dark">Köpt</span>
+                        <div class="mt-1">
+                            <button class="btn btn-sm btn-outline-success status-btn" 
+                                    data-axe-id="{{ axe.id }}" 
+                                    data-new-status="MOTTAGEN"
+                                    title="Markera som mottagen">
+                                <i class="bi bi-check-circle"></i>
+                            </button>
+                        </div>
+                    {% elif axe.status == 'MOTTAGEN' %}
+                        <span class="badge bg-success">Mottagen</span>
+                        <div class="mt-1">
+                            <button class="btn btn-sm btn-outline-warning status-btn" 
+                                    data-axe-id="{{ axe.id }}" 
+                                    data-new-status="KÖPT"
+                                    title="Markera som köpt">
+                                <i class="bi bi-arrow-left-circle"></i>
+                            </button>
+                        </div>
                     {% endif %}
                 </td>
                 <td>{{ axe.comment|default:"" }}</td>
@@ -324,16 +399,16 @@ $(document).ready(function() {
         },
         columnDefs: [
             {
-                targets: [3], // Kommentar-kolumnen
+                targets: [4], // Kommentar-kolumnen (nu på position 4)
                 responsivePriority: 2
             },
             {
-                targets: [0, 5], // ID och Bilder
+                targets: [0, 6], // ID och Bilder (nu på position 6)
                 responsivePriority: 1,
                 className: 'all' // Visa alltid
             },
             {
-                targets: [1, 2, 4], // Tillverkare, Modell, Ekonomi
+                targets: [1, 2, 3, 5], // Tillverkare, Modell, Status, Ekonomi
                 responsivePriority: 2,
                 className: 'all' // Visa alltid
             }
@@ -379,6 +454,78 @@ $(document).ready(function() {
         var carouselEl = document.querySelector(carouselId);
         var carousel = bootstrap.Carousel.getOrCreateInstance(carouselEl, { interval: 1200 });
         carousel.cycle();
+    });
+
+    // Hantera status-ändringar
+    $(document).on('click', '.status-btn', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        var btn = $(this);
+        var axeId = btn.data('axe-id');
+        var newStatus = btn.data('new-status');
+        var statusCell = btn.closest('td');
+        
+        btn.prop('disabled', true).html('<i class="bi bi-hourglass-split"></i>');
+        
+        $.ajax({
+            url: '/yxor/' + axeId + '/status/',
+            method: 'POST',
+            data: {
+                'status': newStatus,
+                'csrfmiddlewaretoken': $('[name=csrfmiddlewaretoken]').val()
+            },
+            success: function(response) {
+                if (response.success) {
+                    if (newStatus === 'MOTTAGEN') {
+                        statusCell.html(`
+                            <span class="badge bg-success">Mottagen</span>
+                            <div class="mt-1">
+                                <button class="btn btn-sm btn-outline-warning status-btn" 
+                                        data-axe-id="${axeId}" 
+                                        data-new-status="KÖPT"
+                                        title="Markera som köpt">
+                                    <i class="bi bi-arrow-left-circle"></i>
+                                </button>
+                            </div>
+                        `);
+                    } else {
+                        statusCell.html(`
+                            <span class="badge bg-warning text-dark">Köpt</span>
+                            <div class="mt-1">
+                                <button class="btn btn-sm btn-outline-success status-btn" 
+                                        data-axe-id="${axeId}" 
+                                        data-new-status="MOTTAGEN"
+                                        title="Markera som mottagen">
+                                    <i class="bi bi-check-circle"></i>
+                                </button>
+                            </div>
+                        `);
+                    }
+                    
+                    btn.removeClass('btn-outline-success btn-outline-warning')
+                       .addClass('btn-success')
+                       .html('<i class="bi bi-check"></i>')
+                       .prop('disabled', true);
+                    
+                    setTimeout(function() {
+                        btn.prop('disabled', false);
+                    }, 2000);
+                }
+            },
+            error: function(xhr) {
+                btn.prop('disabled', false);
+                if (newStatus === 'MOTTAGEN') {
+                    btn.removeClass('btn-outline-success').addClass('btn-outline-success')
+                       .html('<i class="bi bi-check-circle"></i>');
+                } else {
+                    btn.removeClass('btn-outline-warning').addClass('btn-outline-warning')
+                       .html('<i class="bi bi-arrow-left-circle"></i>');
+                }
+                
+                alert('Fel vid uppdatering av status: ' + (xhr.responseJSON?.error || 'Okänt fel'));
+            }
+        });
     });
 });
 </script>

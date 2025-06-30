@@ -1,11 +1,31 @@
 from django.shortcuts import render, get_object_or_404
 from .models import Axe, Transaction, Contact, Manufacturer, ManufacturerImage, ManufacturerLink
 from django.db.models import Sum, Q
+from django.http import JsonResponse
+from django.views.decorators.http import require_POST
 
 # Create your views here.
 
 def axe_list(request):
-    axes = Axe.objects.all().select_related('manufacturer').prefetch_related('measurements', 'images', 'transaction_set').order_by('-id')
+    # Hämta filter från URL-parametrar
+    status_filter = request.GET.get('status', '')
+    manufacturer_filter = request.GET.get('manufacturer', '')
+    
+    # Starta med alla yxor
+    axes = Axe.objects.all().select_related('manufacturer').prefetch_related('measurements', 'images', 'transaction_set')
+    
+    # Applicera filter
+    if status_filter:
+        axes = axes.filter(status=status_filter)
+    
+    if manufacturer_filter:
+        axes = axes.filter(manufacturer_id=manufacturer_filter)
+    
+    # Sortera efter ID (senaste först)
+    axes = axes.order_by('-id')
+    
+    # Hämta alla tillverkare för filter-dropdown
+    manufacturers = Manufacturer.objects.all().order_by('name')
     
     # Beräkna statistik för varje yxa
     for axe in axes:
@@ -38,8 +58,19 @@ def axe_list(request):
     # Hitta sålda yxor (de som har minst en SÄLJ-transaktion)
     sold_axe_ids = set(transactions.filter(type='SÄLJ').values_list('axe_id', flat=True))
     
+    # Statistik för filtrerade yxor
+    filtered_count = axes.count()
+    bought_count = axes.filter(status='KÖPT').count()
+    received_count = axes.filter(status='MOTTAGEN').count()
+    
     return render(request, 'axes/axe_list.html', {
         'axes': axes,
+        'manufacturers': manufacturers,
+        'status_filter': status_filter,
+        'manufacturer_filter': manufacturer_filter,
+        'filtered_count': filtered_count,
+        'bought_count': bought_count,
+        'received_count': received_count,
         'total_buys': total_buys,
         'total_sales': total_sales,
         'total_buy_value': total_buy_value,
@@ -359,3 +390,31 @@ def axe_gallery(request, pk=None):
                 'current_index': 0,
                 'total_axes': 0,
             })
+
+@require_POST
+def update_axe_status(request, pk):
+    """Uppdatera yxans status via AJAX"""
+    try:
+        axe = get_object_or_404(Axe, pk=pk)
+        new_status = request.POST.get('status')
+        
+        if new_status in ['KÖPT', 'MOTTAGEN']:
+            axe.status = new_status
+            axe.save()
+            
+            return JsonResponse({
+                'success': True,
+                'status': new_status,
+                'status_display': 'Köpt' if new_status == 'KÖPT' else 'Mottagen'
+            })
+        else:
+            return JsonResponse({
+                'success': False,
+                'error': 'Ogiltig status'
+            }, status=400)
+            
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=500)

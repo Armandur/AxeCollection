@@ -19,6 +19,23 @@ En checklista för vidareutveckling av AxeCollection. Bocka av med [x] när klar
 7. [ ] Sökfunktion – Snabbt hitta yxor, tillverkare eller transaktioner.
 8. [ ] Filtrering på t.ex. tillverkare, typ, årtal, mm.
 
+## Yxhantering och inmatning
+
+21. [ ] UI för att skapa nya yxor i samlingen – Användarvänligt formulär för att lägga till yxor.
+22. [ ] UI för att redigera befintliga yxor – Möjlighet att uppdatera information efter mottagning.
+23. [ ] Arbetsflöde för inköp: 
+    - Skapa/redigera yxa (tillverkare, modell, kommentar)
+    - Ladda upp bilder från auktion/annons
+    - Skapa/redigera kontakt (försäljare på Tradera etc.)
+    - Skapa transaktion (inköp med pris, frakt, datum)
+24. [ ] Arbetsflöde för mottagning:
+    - Lägg till fler bilder av mottagen yxa
+    - Mät och registrera mått
+    - Uppdatera eventuell felaktig information
+25. [ ] Snabbval av tillverkare – Dropdown eller sökfunktion för att välja tillverkare.
+26. [ ] Kontakthantering – Skapa nya kontakter direkt från yxformuläret.
+27. [ ] Transaktionshantering – Koppla yxor till köp/försäljning med pris, frakt och datum.
+
 ## Admin och datahantering
 
 9. [ ] Batchuppladdning av bilder och yxor.
