@@ -25,7 +25,16 @@
 - Offline-funktionalitet för att spara data lokalt
 - Synkronisering när internet finns tillgängligt
 
-## Förbättringar jämfört med Access-databasen
+## Implementerade förbättringar
+
+### Bildhantering och mobilupplevelse ✅
+- **Mobilvänlig bilduppladdning**: Stöd för att ta bilder direkt med mobilkamera, välja från galleri eller klistra in URL
+- **Förhandsvisning av bilder**: Se bilder innan de sparas med möjlighet att ta bort dem
+- **Automatisk filnamnshantering**: Bilder får konsekventa namn (`[id]a.jpg`, `[id]b.webp` osv) och ordning
+- **Automatisk .webp-generering**: Skapar optimerade .webp-versioner automatiskt
+- **Visuell feedback vid borttagning**: Tydlig overlay med "KOMMER ATT TAS BORT" och padding
+- **Responsiv layout**: Fungerar bra på alla enheter med touch-vänliga knappar
+- **Robust felhantering**: Korrekt hantering av flera bilder och borttagning
 
 ### Smart funktioner
 - **Auto-save** - spara automatiskt under processen
@@ -65,15 +74,15 @@ Visa: [Alla] [Köpta] [Mottagna] [Tillverkare ▼]
 - "Lägg till bilder" knapp för mottagna yxor
 
 ## Tekniska förbättringar
-- **Drag & drop** för bilder
-- **Bildkomprimering** automatiskt
-- **Mobilvänligt** - mät mått direkt på telefonen
+- **Drag & drop** för bilder ✅
+- **Bildkomprimering** automatiskt ✅
+- **Mobilvänligt** - mät mått direkt på telefonen ✅
 - **Backup** - automatiskt spara utkast
 
 ## Prioritering
 1. Status-fält på yxor (Köpt/Mottagen)
 2. Filter i yxlistan
-3. Grundläggande formulär för att skapa/redigera yxor
+3. Grundläggande formulär för att skapa/redigera yxor ✅
 4. Smart funktioner (mallar, auto-save, etc.)
 
 ## Beslut tagna
@@ -82,6 +91,9 @@ Visa: [Alla] [Köpta] [Mottagna] [Tillverkare ▼]
 - ✅ Mallar för vanliga tillverkare/mått
 - ✅ Snabbåtgärder i yxlistan
 - ✅ Smart formulär med auto-fill
+- ✅ Mobilvänlig bilduppladdning med kamerastöd
+- ✅ Förhandsvisning och borttagning av bilder
+- ✅ Automatisk filnamnshantering och .webp-generering
 
 ## Nästa steg
 Implementera status-fält och filter i yxlistan som första prioritet. 

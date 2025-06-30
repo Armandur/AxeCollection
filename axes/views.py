@@ -1,8 +1,16 @@
-from django.shortcuts import render, get_object_or_404
-from .models import Axe, Transaction, Contact, Manufacturer, ManufacturerImage, ManufacturerLink
-from django.db.models import Sum, Q
+from django.shortcuts import render, get_object_or_404, redirect
+from .models import Axe, Transaction, Contact, Manufacturer, ManufacturerImage, ManufacturerLink, NextAxeID, AxeImage
+from django.db.models import Sum, Q, Max
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST
+from django import forms
+import requests
+from django.core.files.base import ContentFile
+from urllib.parse import urlparse
+import uuid
+import os
+from django.core.files.storage import default_storage
+from django.conf import settings
 
 # Create your views here.
 
@@ -83,7 +91,7 @@ def axe_list(request):
     })
 
 def axe_detail(request, pk):
-    axe = get_object_or_404(Axe.objects.select_related('manufacturer').prefetch_related('measurements', 'images'), pk=pk)
+    axe = get_object_or_404(Axe.objects.select_related('manufacturer').prefetch_related('measurements', 'images').prefetch_related('images'), pk=pk)
     
     # Hämta transaktioner för denna yxa
     transactions = Transaction.objects.filter(axe=axe).select_related('contact', 'platform').order_by('-transaction_date')
@@ -418,3 +426,348 @@ def update_axe_status(request, pk):
             'success': False,
             'error': str(e)
         }, status=500)
+
+# Egen widget för flera filer enligt Django-dokumentationen
+class MultipleFileInput(forms.FileInput):
+    allow_multiple_selected = True
+
+class MultipleFileField(forms.FileField):
+    def __init__(self, *args, **kwargs):
+        kwargs.setdefault("widget", MultipleFileInput())
+        super().__init__(*args, **kwargs)
+
+    def clean(self, data, initial=None):
+        single_file_clean = super().clean
+        if isinstance(data, (list, tuple)):
+            result = [single_file_clean(d, initial) for d in data]
+        else:
+            result = [single_file_clean(data, initial)]
+        return result
+
+class AxeForm(forms.ModelForm):
+    images = MultipleFileField(
+        required=False,
+        widget=MultipleFileInput(attrs={
+            'class': 'form-control',
+            'accept': 'image/*'
+        }),
+        label='Bilder',
+        help_text='Ladda upp bilder av yxan (drag & drop stöds)'
+    )
+
+    class Meta:
+        model = Axe
+        fields = ['manufacturer', 'model', 'comment', 'status']
+        labels = {
+            'manufacturer': 'Tillverkare',
+            'model': 'Modell',
+            'comment': 'Kommentar',
+            'status': 'Status',
+        }
+        widgets = {
+            'manufacturer': forms.Select(attrs={'class': 'form-select'}),
+            'model': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ange modellnamn'}),
+            'comment': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Lägg till kommentar om yxan...'}),
+            'status': forms.Select(attrs={'class': 'form-select'}),
+        }
+
+def axe_create(request):
+    if request.method == 'POST':
+        form = AxeForm(request.POST, request.FILES)
+        if form.is_valid():
+            axe = form.save()
+            
+            # Hantera bilduppladdning med MultipleFileField
+            images = form.cleaned_data.get('images', [])
+            image_counter = 0
+            
+            # Först hantera uppladdade filer
+            for image in images:
+                # Generera temporärt UUID-filnamn
+                temp_filename = f"temp_{uuid.uuid4()}{os.path.splitext(image.name)[1]}"
+                
+                # Spara med temporärt namn
+                temp_path = default_storage.save(f'axe_images/{temp_filename}', image)
+                
+                # Konvertera till permanent namn baserat på yxans ID och ordning
+                image_counter += 1
+                suffix = chr(96 + image_counter)  # a, b, c, etc.
+                permanent_filename = f"{axe.id}{suffix}{os.path.splitext(image.name)[1]}"
+                permanent_path = f'axe_images/{permanent_filename}'
+                
+                # Flytta filen till permanent namn
+                if default_storage.exists(temp_path):
+                    with default_storage.open(temp_path, 'rb') as temp_file:
+                        default_storage.save(permanent_path, temp_file)
+                    # Ta bort temporär fil
+                    default_storage.delete(temp_path)
+                
+                # Skapa AxeImage med permanent sökväg
+                AxeImage.objects.create(
+                    axe=axe,
+                    image=permanent_path,
+                    description=f'Bild {suffix.upper()} av {axe.manufacturer.name} {axe.model}',
+                    order=image_counter
+                )
+            
+            # Hantera URL:er
+            image_urls = request.POST.getlist('image_urls')
+            for url in image_urls:
+                if url.strip():
+                    try:
+                        # Hämta bilden från URL
+                        response = requests.get(url, timeout=10)
+                        response.raise_for_status()
+                        
+                        # Bestäm filändelse från Content-Type
+                        content_type = response.headers.get('content-type', '')
+                        if 'jpeg' in content_type or 'jpg' in content_type:
+                            ext = '.jpg'
+                        elif 'png' in content_type:
+                            ext = '.png'
+                        elif 'gif' in content_type:
+                            ext = '.gif'
+                        elif 'webp' in content_type:
+                            ext = '.webp'
+                        else:
+                            ext = '.jpg'  # Standard
+                        
+                        # Generera temporärt UUID-filnamn
+                        temp_filename = f"temp_{uuid.uuid4()}{ext}"
+                        temp_path = f'axe_images/{temp_filename}'
+                        
+                        # Spara med temporärt namn
+                        content_file = ContentFile(response.content, name=temp_filename)
+                        default_storage.save(temp_path, content_file)
+                        
+                        # Konvertera till permanent namn
+                        image_counter += 1
+                        suffix = chr(96 + image_counter)  # a, b, c, etc.
+                        permanent_filename = f"{axe.id}{suffix}{ext}"
+                        permanent_path = f'axe_images/{permanent_filename}'
+                        
+                        # Flytta filen till permanent namn
+                        if default_storage.exists(temp_path):
+                            with default_storage.open(temp_path, 'rb') as temp_file:
+                                default_storage.save(permanent_path, temp_file)
+                            # Ta bort temporär fil
+                            default_storage.delete(temp_path)
+                        
+                        # Skapa AxeImage med permanent sökväg
+                        AxeImage.objects.create(
+                            axe=axe,
+                            image=permanent_path,
+                            description=f'Bild {suffix.upper()} från URL: {axe.manufacturer.name} {axe.model}',
+                            order=image_counter
+                        )
+                    except Exception as e:
+                        # Logga fel men fortsätt med andra bilder
+                        print(f"Kunde inte ladda bild från {url}: {e}")
+            
+            return redirect('axe_detail', pk=axe.pk)
+    else:
+        form = AxeForm()
+    
+    # Hämta nästa ID som ska användas
+    next_id = NextAxeID.objects.get_or_create(id=1, defaults={'next_id': 1})[0].next_id
+    
+    return render(request, 'axes/axe_form.html', {
+        'form': form,
+        'next_id': next_id
+    })
+
+def axe_edit(request, pk):
+    """Redigera en befintlig yxa och lägg till bilder"""
+    axe = get_object_or_404(Axe.objects.select_related('manufacturer').prefetch_related('images'), pk=pk)
+    
+    if request.method == 'POST':
+        form = AxeForm(request.POST, request.FILES, instance=axe)
+        if form.is_valid():
+            axe = form.save()
+            
+            # Hantera bilduppladdning med MultipleFileField
+            images = form.cleaned_data.get('images', [])
+            image_urls = request.POST.getlist('image_urls')
+            removed_images = request.POST.getlist('removed_images')
+            
+            # Hantera bildordning från drag & drop
+            image_orders = request.POST.getlist('image_order')
+            print(f"Fick bildordning: {image_orders}")  # Debug
+            if image_orders:
+                for order_data in image_orders:
+                    if ':' in order_data:
+                        image_id, new_order = order_data.split(':', 1)
+                        try:
+                            image = AxeImage.objects.get(id=image_id, axe=axe)
+                            print(f"Uppdaterar bild {image_id} till ordning {new_order}")  # Debug
+                            image.order = int(new_order)
+                            image.save()
+                        except (AxeImage.DoesNotExist, ValueError) as e:
+                            print(f"Kunde inte uppdatera bild {image_id}: {e}")  # Debug
+                            pass  # Ignorera ogiltiga data
+            
+            # Ta bort markerade bilder först
+            if removed_images:
+                for image_id in removed_images:
+                    try:
+                        image_to_delete = AxeImage.objects.get(id=image_id, axe=axe)
+                        # Ta bort filen från disk
+                        if image_to_delete.image:
+                            default_storage.delete(image_to_delete.image.name)
+                        # Ta bort från databasen
+                        image_to_delete.delete()
+                    except AxeImage.DoesNotExist:
+                        pass  # Bilden finns inte, ignorera
+            
+            # Omnumrera alla återstående bilder efter borttagning
+            remaining_images = list(axe.images.all().order_by('order'))
+            temp_paths = []
+            temp_webps = []
+            # Steg 1: Döp om till temporära namn
+            for idx, image in enumerate(remaining_images, 1):
+                old_path = image.image.name
+                file_ext = os.path.splitext(old_path)[1]
+                temp_filename = f"{axe.id}_tmp_{idx}{file_ext}"
+                temp_path = f'axe_images/{temp_filename}'
+                # Temporärt namn för .webp
+                old_webp = os.path.splitext(old_path)[0] + '.webp'
+                temp_webp = f'axe_images/{axe.id}_tmp_{idx}.webp'
+                # Döp om originalfilen
+                if old_path != temp_path and default_storage.exists(old_path):
+                    with default_storage.open(old_path, 'rb') as old_file:
+                        default_storage.save(temp_path, old_file)
+                    default_storage.delete(old_path)
+                temp_paths.append((image, temp_path, file_ext))
+                # Döp om .webp om den finns
+                if os.path.exists(os.path.join(settings.MEDIA_ROOT, old_webp)):
+                    try:
+                        os.rename(
+                            os.path.join(settings.MEDIA_ROOT, old_webp),
+                            os.path.join(settings.MEDIA_ROOT, temp_webp)
+                        )
+                    except Exception as e:
+                        pass
+                temp_webps.append(temp_webp)
+            # Steg 2: Döp om till slutgiltiga namn
+            for idx, (image, temp_path, file_ext) in enumerate(temp_paths, 1):
+                final_filename = f"{axe.id}{chr(96 + idx)}{file_ext}"
+                final_path = f'axe_images/{final_filename}'
+                # Döp om originalfilen
+                if temp_path != final_path and default_storage.exists(temp_path):
+                    with default_storage.open(temp_path, 'rb') as temp_file:
+                        default_storage.save(final_path, temp_file)
+                    default_storage.delete(temp_path)
+                # Döp om .webp om den finns
+                temp_webp = temp_webps[idx-1]
+                final_webp = f'axe_images/{axe.id}{chr(96 + idx)}.webp'
+                if os.path.exists(os.path.join(settings.MEDIA_ROOT, temp_webp)):
+                    try:
+                        os.rename(
+                            os.path.join(settings.MEDIA_ROOT, temp_webp),
+                            os.path.join(settings.MEDIA_ROOT, final_webp)
+                        )
+                    except Exception as e:
+                        pass
+                # Uppdatera databasen
+                image.image = final_path
+                image.order = idx
+                image.description = f'Bild {chr(96 + idx).upper()} av {axe.manufacturer.name} {axe.model}'
+                image.save()  # Skapar även ny .webp om det behövs
+            
+            # Hämta nuvarande högsta ordning för denna yxa
+            max_order = axe.images.aggregate(Max('order'))['order__max'] or 0
+            image_counter = max_order
+            
+            # Hantera endast nya uppladdade filer
+            # I redigeringsläge ska vi bara hantera faktiskt nya filer
+            # Befintliga bilder hanteras inte via MultipleFileField
+            for image in images:
+                # Generera temporärt UUID-filnamn
+                temp_filename = f"temp_{uuid.uuid4()}{os.path.splitext(image.name)[1]}"
+                
+                # Spara med temporärt namn
+                temp_path = default_storage.save(f'axe_images/{temp_filename}', image)
+                
+                # Konvertera till permanent namn baserat på yxans ID och ordning
+                image_counter += 1
+                suffix = chr(96 + image_counter)  # a, b, c, etc.
+                permanent_filename = f"{axe.id}{suffix}{os.path.splitext(image.name)[1]}"
+                permanent_path = f'axe_images/{permanent_filename}'
+                
+                # Flytta filen till permanent namn
+                if default_storage.exists(temp_path):
+                    with default_storage.open(temp_path, 'rb') as temp_file:
+                        default_storage.save(permanent_path, temp_file)
+                    # Ta bort temporär fil
+                    default_storage.delete(temp_path)
+                
+                # Skapa AxeImage med permanent sökväg
+                AxeImage.objects.create(
+                    axe=axe,
+                    image=permanent_path,
+                    description=f'Bild {suffix.upper()} av {axe.manufacturer.name} {axe.model}',
+                    order=image_counter
+                )
+            
+            # Hantera URL:er
+            for url in image_urls:
+                if url.strip():
+                    try:
+                        # Hämta bilden från URL
+                        response = requests.get(url, timeout=10)
+                        response.raise_for_status()
+                        
+                        # Bestäm filändelse från Content-Type
+                        content_type = response.headers.get('content-type', '')
+                        if 'jpeg' in content_type or 'jpg' in content_type:
+                            ext = '.jpg'
+                        elif 'png' in content_type:
+                            ext = '.png'
+                        elif 'gif' in content_type:
+                            ext = '.gif'
+                        elif 'webp' in content_type:
+                            ext = '.webp'
+                        else:
+                            ext = '.jpg'  # Standard
+                        
+                        # Generera temporärt UUID-filnamn
+                        temp_filename = f"temp_{uuid.uuid4()}{ext}"
+                        temp_path = f'axe_images/{temp_filename}'
+                        
+                        # Spara med temporärt namn
+                        content_file = ContentFile(response.content, name=temp_filename)
+                        default_storage.save(temp_path, content_file)
+                        
+                        # Konvertera till permanent namn
+                        image_counter += 1
+                        suffix = chr(96 + image_counter)  # a, b, c, etc.
+                        permanent_filename = f"{axe.id}{suffix}{ext}"
+                        permanent_path = f'axe_images/{permanent_filename}'
+                        
+                        # Flytta filen till permanent namn
+                        if default_storage.exists(temp_path):
+                            with default_storage.open(temp_path, 'rb') as temp_file:
+                                default_storage.save(permanent_path, temp_file)
+                            # Ta bort temporär fil
+                            default_storage.delete(temp_path)
+                        
+                        # Skapa AxeImage med permanent sökväg
+                        AxeImage.objects.create(
+                            axe=axe,
+                            image=permanent_path,
+                            description=f'Bild {suffix.upper()} från URL: {axe.manufacturer.name} {axe.model}',
+                            order=image_counter
+                        )
+                    except Exception as e:
+                        # Logga fel men fortsätt med andra bilder
+                        print(f"Kunde inte ladda bild från {url}: {e}")
+            
+            return redirect('axe_detail', pk=axe.pk)
+    else:
+        form = AxeForm(instance=axe)
+    
+    return render(request, 'axes/axe_form.html', {
+        'form': form,
+        'axe': axe,
+        'is_edit': True
+    })
