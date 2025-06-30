@@ -70,6 +70,7 @@
                                     <i class="fas fa-cloud-upload-alt fa-3x text-muted mb-3"></i>
                                     <h5>Dra och släpp bilder här</h5>
                                     <p class="text-muted">eller klicka för att välja filer</p>
+                                    <p class="text-muted small">Du kan också klistra in bilder (Ctrl+V) eller dra URL:er från webbläsaren</p>
                                     {{ form.images }}
                                 </div>
                             </div>
@@ -78,6 +79,21 @@
                                 <div class="text-danger">{{ form.images.errors }}</div>
                             {% endif %}
                         </div>
+
+                        <!-- URL-input för bilder -->
+                        <div class="mb-4">
+                            <label for="imageUrl" class="form-label">Lägg till bild från URL</label>
+                            <div class="input-group">
+                                <input type="url" class="form-control" id="imageUrl" placeholder="https://example.com/bild.jpg">
+                                <button class="btn btn-outline-secondary" type="button" id="addUrlBtn">
+                                    <i class="fas fa-plus"></i> Lägg till
+                                </button>
+                            </div>
+                            <div class="form-text">Klistra in URL:er från Tradera, eBay eller andra sidor</div>
+                        </div>
+
+                        <!-- Dolda inputs för att skicka med data -->
+                        <div id="hiddenInputs"></div>
 
                         <!-- Förhandsvisning av bilder -->
                         <div id="imagePreview" class="mb-4" style="display: none;">
@@ -159,7 +175,9 @@ document.addEventListener('DOMContentLoaded', function() {
     const fileInput = document.querySelector('input[type="file"]');
     const imagePreview = document.getElementById('imagePreview');
     const previewContainer = document.getElementById('previewContainer');
-    const selectedFiles = new Set();
+    const imageUrlInput = document.getElementById('imageUrl');
+    const addUrlBtn = document.getElementById('addUrlBtn');
+    const selectedItems = new Map(); // Map för att hålla reda på både filer och URL:er
 
     // Drag & drop funktionalitet
     uploadArea.addEventListener('click', () => fileInput.click());
@@ -176,8 +194,16 @@ document.addEventListener('DOMContentLoaded', function() {
     uploadArea.addEventListener('drop', (e) => {
         e.preventDefault();
         uploadArea.classList.remove('dragover');
+        
+        // Hantera filer
         const files = Array.from(e.dataTransfer.files).filter(file => file.type.startsWith('image/'));
         handleFiles(files);
+        
+        // Hantera URL:er (text)
+        const text = e.dataTransfer.getData('text');
+        if (text && isImageUrl(text)) {
+            handleImageUrl(text);
+        }
     });
 
     // Filval via input
@@ -186,44 +212,135 @@ document.addEventListener('DOMContentLoaded', function() {
         handleFiles(files);
     });
 
+    // Klistra in (Ctrl+V)
+    document.addEventListener('paste', (e) => {
+        const items = e.clipboardData.items;
+        for (let item of items) {
+            if (item.type.startsWith('image/')) {
+                const file = item.getAsFile();
+                handleFiles([file]);
+            }
+        }
+        
+        // Hantera klistrade URL:er
+        const text = e.clipboardData.getData('text');
+        if (text && isImageUrl(text)) {
+            handleImageUrl(text);
+        }
+    });
+
+    // URL-knapp
+    addUrlBtn.addEventListener('click', () => {
+        const url = imageUrlInput.value.trim();
+        if (url && isImageUrl(url)) {
+            handleImageUrl(url);
+            imageUrlInput.value = '';
+        } else {
+            alert('Vänligen ange en giltig bild-URL');
+        }
+    });
+
+    // Enter i URL-fältet
+    imageUrlInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            addUrlBtn.click();
+        }
+    });
+
+    function isImageUrl(url) {
+        return url.match(/\.(jpg|jpeg|png|gif|webp|bmp|svg)(\?.*)?$/i) || 
+               url.includes('tradera.com') || 
+               url.includes('ebay.com') ||
+               url.includes('bilder') ||
+               url.includes('image');
+    }
+
     function handleFiles(files) {
         files.forEach(file => {
-            if (file.type.startsWith('image/') && !selectedFiles.has(file.name)) {
-                selectedFiles.add(file.name);
-                createPreview(file);
+            if (file.type.startsWith('image/') && !selectedItems.has(file.name)) {
+                selectedItems.set(file.name, { type: 'file', data: file });
+                createPreview(file, file.name);
             }
         });
         
-        if (selectedFiles.size > 0) {
-            imagePreview.style.display = 'block';
-        }
+        updatePreviewVisibility();
     }
 
-    function createPreview(file) {
+    function handleImageUrl(url) {
+        const urlId = 'url_' + Date.now();
+        if (!selectedItems.has(urlId)) {
+            selectedItems.set(urlId, { type: 'url', data: url });
+            createUrlPreview(url, urlId);
+        }
+        updatePreviewVisibility();
+    }
+
+    function createPreview(file, id) {
         const reader = new FileReader();
         reader.onload = (e) => {
             const previewItem = document.createElement('div');
             previewItem.className = 'col-md-3 preview-item';
             previewItem.innerHTML = `
                 <img src="${e.target.result}" alt="Förhandsvisning">
-                <button type="button" class="remove-btn" onclick="removePreview(this, '${file.name}')">
+                <button type="button" class="remove-btn" onclick="removePreview('${id}')">
                     <i class="fas fa-times"></i>
                 </button>
+                <div class="preview-info">
+                    <small class="text-muted">${file.name}</small>
+                </div>
             `;
             previewContainer.appendChild(previewItem);
         };
         reader.readAsDataURL(file);
     }
 
-    // Global funktion för att ta bort förhandsvisning
-    window.removePreview = function(button, fileName) {
-        selectedFiles.delete(fileName);
-        button.closest('.preview-item').remove();
-        
-        if (selectedFiles.size === 0) {
+    function createUrlPreview(url, id) {
+        const previewItem = document.createElement('div');
+        previewItem.className = 'col-md-3 preview-item';
+        previewItem.innerHTML = `
+            <img src="${url}" alt="Förhandsvisning" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI2Y4ZjlmYSIvPjx0ZXh0IHg9IjUwIiB5PSI1MCIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjEyIiBmaWxsPSIjNmM3NTdkIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iLjNlbSI+QnJva2VuIGltYWdlPC90ZXh0Pjwvc3ZnPg=='">
+            <button type="button" class="remove-btn" onclick="removePreview('${id}')">
+                <i class="fas fa-times"></i>
+            </button>
+            <div class="preview-info">
+                <small class="text-muted">URL-bild</small>
+            </div>
+        `;
+        previewContainer.appendChild(previewItem);
+    }
+
+    function updatePreviewVisibility() {
+        if (selectedItems.size > 0) {
+            imagePreview.style.display = 'block';
+        } else {
             imagePreview.style.display = 'none';
         }
+    }
+
+    // Global funktion för att ta bort förhandsvisning
+    window.removePreview = function(id) {
+        selectedItems.delete(id);
+        const previewItem = document.querySelector(`[onclick="removePreview('${id}')"]`).closest('.preview-item');
+        previewItem.remove();
+        updatePreviewVisibility();
     };
+
+    // Hantera formulärsubmit
+    document.getElementById('axeForm').addEventListener('submit', function(e) {
+        // Skapa dolda inputs för URL:er
+        const hiddenInputs = document.getElementById('hiddenInputs');
+        hiddenInputs.innerHTML = '';
+        
+        selectedItems.forEach((item, id) => {
+            if (item.type === 'url') {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = 'image_urls';
+                input.value = item.data;
+                hiddenInputs.appendChild(input);
+            }
+        });
+    });
 });
 </script>
 {% endblock %} 

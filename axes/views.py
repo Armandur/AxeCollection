@@ -464,6 +464,10 @@ class AxeForm(forms.ModelForm):
             'status': forms.Select(attrs={'class': 'form-select'}),
         }
 
+import requests
+from django.core.files.base import ContentFile
+from urllib.parse import urlparse
+
 def axe_create(request):
     if request.method == 'POST':
         form = AxeForm(request.POST, request.FILES)
@@ -478,6 +482,32 @@ def axe_create(request):
                     image=image,
                     description=f'Bild av {axe.manufacturer.name} {axe.model}'
                 )
+            
+            # Hantera URL:er
+            image_urls = request.POST.getlist('image_urls')
+            for url in image_urls:
+                if url.strip():
+                    try:
+                        # Hämta bilden från URL
+                        response = requests.get(url, timeout=10)
+                        response.raise_for_status()
+                        
+                        # Skapa filnamn från URL
+                        parsed_url = urlparse(url)
+                        filename = parsed_url.path.split('/')[-1] or 'image.jpg'
+                        if not filename.lower().endswith(('.jpg', '.jpeg', '.png', '.gif', '.webp')):
+                            filename += '.jpg'
+                        
+                        # Skapa AxeImage med ContentFile
+                        content_file = ContentFile(response.content, name=filename)
+                        AxeImage.objects.create(
+                            axe=axe,
+                            image=content_file,
+                            description=f'Bild från URL: {axe.manufacturer.name} {axe.model}'
+                        )
+                    except Exception as e:
+                        # Logga fel men fortsätt med andra bilder
+                        print(f"Kunde inte ladda bild från {url}: {e}")
             
             return redirect('axe_detail', pk=axe.pk)
     else:
