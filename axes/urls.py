@@ -16,4 +16,6 @@ urlpatterns = [
     path('kontakt/<int:pk>/', views.contact_detail, name='contact_detail'),
     path('tillverkare/', views.manufacturer_list, name='manufacturer_list'),
     path('tillverkare/<int:pk>/', views.manufacturer_detail, name='manufacturer_detail'),
+    path('api/search/contacts/', views.search_contacts, name='search_contacts'),
+    path('api/search/platforms/', views.search_platforms, name='search_platforms'),
 ] 

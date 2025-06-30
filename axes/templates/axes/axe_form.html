@@ -68,6 +68,7 @@
                         </div>
 
                         <!-- Kontakthantering -->
+                        {% if not is_edit %}
                         <div class="card mb-4">
                             <div class="card-header">
                                 <h6 class="mb-0">
@@ -80,7 +81,12 @@
                                     <label for="{{ form.contact_search.id_for_label }}" class="form-label">
                                         {{ form.contact_search.label }}
                                     </label>
-                                    {{ form.contact_search }}
+                                    <div class="position-relative">
+                                        {{ form.contact_search }}
+                                        <div id="contactSearchResults" class="dropdown-menu w-100" style="display: none; position: absolute; z-index: 1000; max-height: 200px; overflow-y: auto;">
+                                            <!-- Sökresultat visas här -->
+                                        </div>
+                                    </div>
                                     <div class="form-text">{{ form.contact_search.help_text }}</div>
                                     {% if form.contact_search.errors %}
                                         <div class="text-danger">{{ form.contact_search.errors }}</div>
@@ -170,8 +176,56 @@
                                 </div>
                             </div>
                         </div>
+                        {% endif %}
+
+                        <!-- Plattformshantering -->
+                        {% if not is_edit %}
+                        <div class="card mb-4">
+                            <div class="card-header">
+                                <h6 class="mb-0">
+                                    <i class="fas fa-globe me-2"></i>Plattform
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                <!-- Sök efter befintlig plattform -->
+                                <div class="mb-3">
+                                    <label for="{{ form.platform_search.id_for_label }}" class="form-label">
+                                        {{ form.platform_search.label }}
+                                    </label>
+                                    <div class="position-relative">
+                                        {{ form.platform_search }}
+                                        <div id="platformSearchResults" class="dropdown-menu w-100" style="display: none; position: absolute; z-index: 1000; max-height: 200px; overflow-y: auto;">
+                                            <!-- Sökresultat visas här -->
+                                        </div>
+                                    </div>
+                                    <div class="form-text">{{ form.platform_search.help_text }}</div>
+                                    {% if form.platform_search.errors %}
+                                        <div class="text-danger">{{ form.platform_search.errors }}</div>
+                                    {% endif %}
+                                </div>
+                                
+                                <!-- Ny plattform (visas endast om sökning misslyckas) -->
+                                <div id="newPlatformSection" style="display: none;">
+                                    <hr class="my-3">
+                                    <h6 class="text-muted">Skapa ny plattform</h6>
+                                    
+                                    <div class="mb-3">
+                                        <label for="{{ form.platform_name.id_for_label }}" class="form-label">
+                                            {{ form.platform_name.label }}
+                                        </label>
+                                        {{ form.platform_name }}
+                                        <div class="form-text">{{ form.platform_name.help_text }}</div>
+                                        {% if form.platform_name.errors %}
+                                            <div class="text-danger">{{ form.platform_name.errors }}</div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
 
                         <!-- Transaktionshantering -->
+                        {% if not is_edit %}
                         <div class="card mb-4">
                             <div class="card-header">
                                 <h6 class="mb-0">
@@ -180,31 +234,24 @@
                             </div>
                             <div class="card-body">
                                 <div class="row">
-                                    <div class="col-md-4">
-                                        <div class="mb-3">
-                                            <label for="{{ form.transaction_type.id_for_label }}" class="form-label">
-                                                {{ form.transaction_type.label }}
-                                            </label>
-                                            {{ form.transaction_type }}
-                                            <div class="form-text">{{ form.transaction_type.help_text }}</div>
-                                            {% if form.transaction_type.errors %}
-                                                <div class="text-danger">{{ form.transaction_type.errors }}</div>
-                                            {% endif %}
-                                        </div>
-                                    </div>
-                                    <div class="col-md-4">
-                                        <div class="mb-3">
+                                    <div class="col-md-6">
+                                        <div class="mb-3 position-relative">
                                             <label for="{{ form.transaction_price.id_for_label }}" class="form-label">
                                                 {{ form.transaction_price.label }}
                                             </label>
-                                            {{ form.transaction_price }}
-                                            <div class="form-text">{{ form.transaction_price.help_text }}</div>
-                                            {% if form.transaction_price.errors %}
-                                                <div class="text-danger">{{ form.transaction_price.errors }}</div>
-                                            {% endif %}
+                                            <div class="input-group">
+                                                {{ form.transaction_price }}
+                                                <span id="transaction-type-badge" class="input-group-text ms-2">
+                                                    <!-- Badge placeras här av JS -->
+                                                </span>
+                                            </div>
                                         </div>
+                                        <div class="form-text">{{ form.transaction_price.help_text }}</div>
+                                        {% if form.transaction_price.errors %}
+                                            <div class="text-danger">{{ form.transaction_price.errors }}</div>
+                                        {% endif %}
                                     </div>
-                                    <div class="col-md-4">
+                                    <div class="col-md-6">
                                         <div class="mb-3">
                                             <label for="{{ form.transaction_shipping.id_for_label }}" class="form-label">
                                                 {{ form.transaction_shipping.label }}
@@ -228,8 +275,20 @@
                                         <div class="text-danger">{{ form.transaction_date.errors }}</div>
                                     {% endif %}
                                 </div>
+                                
+                                <div class="mb-3">
+                                    <label for="{{ form.transaction_comment.id_for_label }}" class="form-label">
+                                        {{ form.transaction_comment.label }}
+                                    </label>
+                                    {{ form.transaction_comment }}
+                                    <div class="form-text">{{ form.transaction_comment.help_text }}</div>
+                                    {% if form.transaction_comment.errors %}
+                                        <div class="text-danger">{{ form.transaction_comment.errors }}</div>
+                                    {% endif %}
+                                </div>
                             </div>
                         </div>
+                        {% endif %}
 
                         <!-- Förbättrad bilduppladdning för mobil -->
                         <div class="mb-4">
@@ -560,17 +619,40 @@ document.addEventListener('DOMContentLoaded', function() {
     // Kontaktsökning
     const contactSearchInput = document.getElementById('{{ form.contact_search.id_for_label }}');
     const newContactSection = document.getElementById('newContactSection');
+    const contactSearchResults = document.getElementById('contactSearchResults');
+    let contactSearchTimeout;
     
     if (contactSearchInput) {
         contactSearchInput.addEventListener('input', function() {
             const searchValue = this.value.trim();
             
-            if (searchValue.length > 2) {
-                // Här skulle vi normalt göra en AJAX-sökning
-                // För nu visar vi bara ny kontaktsektion om inget matchar
-                // I en riktig implementation skulle vi söka i databasen
-                newContactSection.style.display = 'block';
+            // Rensa tidigare timeout
+            clearTimeout(contactSearchTimeout);
+            
+            if (searchValue.length >= 2) {
+                // Debounce sökningen
+                contactSearchTimeout = setTimeout(() => {
+                    fetch(`{% url 'search_contacts' %}?q=${encodeURIComponent(searchValue)}`)
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.results.length > 0) {
+                                // Visa dropdown med resultat
+                                showContactResults(data.results);
+                                newContactSection.style.display = 'none';
+                            } else {
+                                // Inga resultat, visa ny kontaktsektion
+                                hideContactResults();
+                                newContactSection.style.display = 'block';
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Sökfel:', error);
+                            hideContactResults();
+                            newContactSection.style.display = 'block';
+                        });
+                }, 300);
             } else {
+                hideContactResults();
                 newContactSection.style.display = 'none';
             }
         });
@@ -580,10 +662,134 @@ document.addEventListener('DOMContentLoaded', function() {
         if (contactNameInput) {
             contactNameInput.addEventListener('input', function() {
                 if (this.value.trim()) {
+                    hideContactResults();
                     newContactSection.style.display = 'block';
                 }
             });
         }
+        
+        // Dölj dropdown när användaren klickar utanför
+        document.addEventListener('click', function(e) {
+            if (!contactSearchInput.contains(e.target) && !contactSearchResults.contains(e.target)) {
+                hideContactResults();
+            }
+        });
+    }
+    
+    function showContactResults(results) {
+        contactSearchResults.innerHTML = '';
+        results.forEach(contact => {
+            const item = document.createElement('div');
+            item.className = 'dropdown-item';
+            item.innerHTML = `
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <strong>${contact.name}</strong>
+                        ${contact.alias ? `<br><small class="text-muted">${contact.alias}</small>` : ''}
+                        ${contact.email ? `<br><small class="text-muted">${contact.email}</small>` : ''}
+                    </div>
+                    <span class="badge bg-success">Matchad</span>
+                </div>
+            `;
+            item.addEventListener('click', () => {
+                contactSearchInput.value = contact.name;
+                hideContactResults();
+                newContactSection.style.display = 'none';
+            });
+            contactSearchResults.appendChild(item);
+        });
+        contactSearchResults.style.display = 'block';
+    }
+    
+    function hideContactResults() {
+        contactSearchResults.style.display = 'none';
+    }
+
+    // Plattformssökning
+    const platformSearchInput = document.getElementById('{{ form.platform_search.id_for_label }}');
+    const newPlatformSection = document.getElementById('newPlatformSection');
+    const platformSearchResults = document.getElementById('platformSearchResults');
+    let platformSearchTimeout;
+    
+    if (platformSearchInput) {
+        platformSearchInput.addEventListener('input', function() {
+            const searchValue = this.value.trim();
+            
+            // Rensa tidigare timeout
+            clearTimeout(platformSearchTimeout);
+            
+            if (searchValue.length >= 2) {
+                // Debounce sökningen
+                platformSearchTimeout = setTimeout(() => {
+                    fetch(`{% url 'search_platforms' %}?q=${encodeURIComponent(searchValue)}`)
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.results.length > 0) {
+                                // Visa dropdown med resultat
+                                showPlatformResults(data.results);
+                                newPlatformSection.style.display = 'none';
+                            } else {
+                                // Inga resultat, visa ny plattformsektion
+                                hidePlatformResults();
+                                newPlatformSection.style.display = 'block';
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Sökfel:', error);
+                            hidePlatformResults();
+                            newPlatformSection.style.display = 'block';
+                        });
+                }, 300);
+            } else {
+                hidePlatformResults();
+                newPlatformSection.style.display = 'none';
+            }
+        });
+        
+        // Visa ny plattformsektion om användaren börjar skriva i namn-fältet
+        const platformNameInput = document.getElementById('{{ form.platform_name.id_for_label }}');
+        if (platformNameInput) {
+            platformNameInput.addEventListener('input', function() {
+                if (this.value.trim()) {
+                    hidePlatformResults();
+                    newPlatformSection.style.display = 'block';
+                }
+            });
+        }
+        
+        // Dölj dropdown när användaren klickar utanför
+        document.addEventListener('click', function(e) {
+            if (!platformSearchInput.contains(e.target) && !platformSearchResults.contains(e.target)) {
+                hidePlatformResults();
+            }
+        });
+    }
+    
+    function showPlatformResults(results) {
+        platformSearchResults.innerHTML = '';
+        results.forEach(platform => {
+            const item = document.createElement('div');
+            item.className = 'dropdown-item';
+            item.innerHTML = `
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <strong>${platform.name}</strong>
+                    </div>
+                    <span class="badge bg-success">Matchad</span>
+                </div>
+            `;
+            item.addEventListener('click', () => {
+                platformSearchInput.value = platform.name;
+                hidePlatformResults();
+                newPlatformSection.style.display = 'none';
+            });
+            platformSearchResults.appendChild(item);
+        });
+        platformSearchResults.style.display = 'block';
+    }
+    
+    function hidePlatformResults() {
+        platformSearchResults.style.display = 'none';
     }
 
     // Klistra in (Ctrl+V) - endast på desktop
@@ -971,5 +1177,29 @@ window.removeExistingImage = function(imageId) {
         }
     }
 };
+
+function updateTransactionTypeBadge() {
+    const priceInput = document.getElementById('{{ form.transaction_price.id_for_label }}');
+    const badge = document.getElementById('transaction-type-badge');
+    let value = parseFloat(priceInput.value.replace(',', '.'));
+    if (isNaN(value)) {
+        badge.innerHTML = '';
+        return;
+    }
+    if (value < 0) {
+        badge.innerHTML = '<span class="badge bg-danger"><i class="bi bi-arrow-down-circle me-1"></i>KÖP</span>';
+    } else if (value > 0) {
+        badge.innerHTML = '<span class="badge bg-success"><i class="bi bi-arrow-up-circle me-1"></i>SÄLJ</span>';
+    } else {
+        badge.innerHTML = '';
+    }
+}
+document.addEventListener('DOMContentLoaded', function() {
+    const priceInput = document.getElementById('{{ form.transaction_price.id_for_label }}');
+    if (priceInput) {
+        priceInput.addEventListener('input', updateTransactionTypeBadge);
+        updateTransactionTypeBadge();
+    }
+});
 </script>
 {% endblock %} 

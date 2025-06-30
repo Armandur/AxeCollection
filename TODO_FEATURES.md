@@ -68,4 +68,6 @@ En checklista för vidareutveckling av AxeCollection. Bocka av med [x] när klar
 32. [x] Bättre visuell presentation av galleriet, t.ex. lightbox för bilder.
 33. [ ] Visa statistik (t.ex. antal yxor, mest populära tillverkare, dyraste köp).
 34. [ ] QR-kod för att snabbt visa en yxa på mobilen.
-35. [ ] Hantera många stämpelbilder på tillverkarsidan (t.ex. paginering, grid, lightbox eller liknande UX-lösning). 
+35. [ ] Hantera många stämpelbilder på tillverkarsidan (t.ex. paginering, grid, lightbox eller liknande UX-lösning).
+
+- Möjlighet att redigera transaktion, plattform och kontakt för en yxa via detaljvyn (t.ex. klicka på en transaktion och få upp ett redigeringsformulär). 
