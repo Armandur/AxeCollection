@@ -76,6 +76,10 @@ class AxeImage(models.Model):
     axe = models.ForeignKey(Axe, related_name='images', on_delete=models.CASCADE) # Raderas bilden om yxan raderas
     image = models.ImageField(upload_to='axe_images/') # Django hanterar filuppladdning
     description = models.CharField(max_length=255, blank=True, null=True)
+    order = models.PositiveIntegerField(default=0) # Ordning för bilderna (a=1, b=2, c=3, etc.)
+    
+    class Meta:
+        ordering = ['order']
 
     @property
     def webp_url(self):

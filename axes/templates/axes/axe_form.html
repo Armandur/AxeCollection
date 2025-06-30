@@ -1,6 +1,6 @@
 {% extends 'axes/base.html' %}
 
-{% block title %}Skapa ny yxa{% endblock %}
+{% block title %}{% if is_edit %}Redigera yxa{% else %}Skapa ny yxa{% endif %}{% endblock %}
 
 {% block content %}
 <div class="container mt-4">
@@ -9,8 +9,13 @@
             <div class="card">
                 <div class="card-header">
                     <h3 class="mb-0">
-                        <i class="fas fa-plus-circle me-2"></i>Skapa ny yxa
-                        <span class="badge bg-secondary ms-2">ID: {{ next_id }}</span>
+                        {% if is_edit %}
+                            <i class="fas fa-edit me-2"></i>Redigera yxa
+                            <span class="badge bg-secondary ms-2">ID: {{ axe.id }}</span>
+                        {% else %}
+                            <i class="fas fa-plus-circle me-2"></i>Skapa ny yxa
+                            <span class="badge bg-secondary ms-2">ID: {{ next_id }}</span>
+                        {% endif %}
                     </h3>
                 </div>
                 <div class="card-body">
@@ -95,18 +100,41 @@
                         <!-- Dolda inputs för att skicka med data -->
                         <div id="hiddenInputs"></div>
 
-                        <!-- Förhandsvisning av bilder -->
+                        <!-- Befintliga bilder (endast i redigeringsläge) -->
+                        {% if is_edit and axe.images.all %}
+                            <div class="mb-4">
+                                <h6>Befintliga bilder:</h6>
+                                <div class="row" id="existingImagesContainer">
+                                    {% for image in axe.images.all %}
+                                        <div class="col-md-3 mb-3 existing-image-item" data-image-id="{{ image.id }}">
+                                            <div class="card position-relative">
+                                                <img src="{{ image.image.url }}" class="card-img-top" alt="Bild {{ forloop.counter }}" style="height: 150px; object-fit: cover;">
+                                                <button type="button" class="btn btn-danger btn-sm position-absolute" style="top: 5px; right: 5px; width: 30px; height: 30px; border-radius: 50%;" onclick="removeExistingImage({{ image.id }})">
+                                                    <i class="fas fa-times"></i>
+                                                </button>
+                                                <div class="card-body p-2">
+                                                    <small class="text-muted">{{ image.description|default:"Bild" }}</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                                <div id="removedImagesContainer"></div>
+                            </div>
+                        {% endif %}
+
+                        <!-- Förhandsvisning av nya bilder -->
                         <div id="imagePreview" class="mb-4" style="display: none;">
-                            <h6>Förhandsvisning:</h6>
+                            <h6>Förhandsvisning av nya bilder:</h6>
                             <div class="row" id="previewContainer"></div>
                         </div>
 
                         <div class="d-flex justify-content-between">
-                            <a href="{% url 'axe_list' %}" class="btn btn-secondary">
+                            <a href="{% if is_edit %}{% url 'axe_detail' axe.pk %}{% else %}{% url 'axe_list' %}{% endif %}" class="btn btn-secondary">
                                 <i class="fas fa-arrow-left me-2"></i>Tillbaka
                             </a>
                             <button type="submit" class="btn btn-primary">
-                                <i class="fas fa-save me-2"></i>Spara yxa
+                                <i class="fas fa-save me-2"></i>{% if is_edit %}Uppdatera yxa{% else %}Spara yxa{% endif %}
                             </button>
                         </div>
                     </form>
@@ -340,7 +368,43 @@ document.addEventListener('DOMContentLoaded', function() {
                 hiddenInputs.appendChild(input);
             }
         });
+        
+        // Lägg till dolda inputs för borttagna bilder
+        const removedImages = window.removedExistingImages || [];
+        removedImages.forEach(imageId => {
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'removed_images';
+            input.value = imageId;
+            hiddenInputs.appendChild(input);
+        });
     });
 });
+
+// Global funktion för att ta bort befintliga bilder
+window.removeExistingImage = function(imageId) {
+    if (confirm('Är du säker på att du vill ta bort denna bild?')) {
+        const imageItem = document.querySelector(`[data-image-id="${imageId}"]`);
+        if (imageItem) {
+            // Lägg till i listan över borttagna bilder
+            if (!window.removedExistingImages) {
+                window.removedExistingImages = [];
+            }
+            window.removedExistingImages.push(imageId);
+            
+            // Dölj bilden (lägg till opacity och disabled state)
+            imageItem.style.opacity = '0.5';
+            imageItem.style.pointerEvents = 'none';
+            
+            // Lägg till en indikator för att bilden kommer att tas bort
+            const card = imageItem.querySelector('.card');
+            const removeIndicator = document.createElement('div');
+            removeIndicator.className = 'position-absolute w-100 h-100 d-flex align-items-center justify-content-center';
+            removeIndicator.style.cssText = 'top: 0; left: 0; background: rgba(220, 53, 69, 0.8); color: white; font-weight: bold; border-radius: 0.375rem;';
+            removeIndicator.innerHTML = '<span>KOMMER ATT TAS BORT</span>';
+            card.appendChild(removeIndicator);
+        }
+    }
+};
 </script>
 {% endblock %} 
