@@ -15,6 +15,7 @@ En checklista för vidareutveckling av AxeCollection. Bocka av med [x] när klar
 9. [x] Responsiv layout för bildhantering – Fungerar bra på alla enheter.
 10. [x] Bugfix: Duplicering och förhandsvisning av bilder – Korrekt hantering av flera bilder.
 11. [x] Bugfix: Felhantering vid bildborttagning – Robust hantering av borttagning.
+12. [ ] Motsvarande bildhantering för tillverkare – Implementera samma avancerade bildhantering (drag & drop, ordning, .webp-stöd) för tillverkarbilder som redan finns för yxbilder.
 
 ## Användarupplevelse
 
