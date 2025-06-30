@@ -1,8 +1,9 @@
-from django.shortcuts import render, get_object_or_404
-from .models import Axe, Transaction, Contact, Manufacturer, ManufacturerImage, ManufacturerLink
+from django.shortcuts import render, get_object_or_404, redirect
+from .models import Axe, Transaction, Contact, Manufacturer, ManufacturerImage, ManufacturerLink, NextAxeID
 from django.db.models import Sum, Q
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST
+from django import forms
 
 # Create your views here.
 
@@ -418,3 +419,37 @@ def update_axe_status(request, pk):
             'success': False,
             'error': str(e)
         }, status=500)
+
+class AxeForm(forms.ModelForm):
+    class Meta:
+        model = Axe
+        fields = ['manufacturer', 'model', 'comment', 'status']
+        labels = {
+            'manufacturer': 'Tillverkare',
+            'model': 'Modell',
+            'comment': 'Kommentar',
+            'status': 'Status',
+        }
+        widgets = {
+            'manufacturer': forms.Select(attrs={'class': 'form-select'}),
+            'model': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ange modellnamn'}),
+            'comment': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Lägg till kommentar om yxan...'}),
+            'status': forms.Select(attrs={'class': 'form-select'}),
+        }
+
+def axe_create(request):
+    if request.method == 'POST':
+        form = AxeForm(request.POST)
+        if form.is_valid():
+            axe = form.save()
+            return redirect('axe_detail', pk=axe.pk)
+    else:
+        form = AxeForm()
+    
+    # Hämta nästa ID som ska användas
+    next_id = NextAxeID.objects.get_or_create(id=1, defaults={'next_id': 1})[0].next_id
+    
+    return render(request, 'axes/axe_form.html', {
+        'form': form,
+        'next_id': next_id
+    })

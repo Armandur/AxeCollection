@@ -5,6 +5,7 @@ from . import views
 urlpatterns = [
     path('', RedirectView.as_view(url='yxor/', permanent=True)),
     path('yxor/', views.axe_list, name='axe_list'),
+    path('yxor/ny/', views.axe_create, name='axe_create'),
     path('yxor/<int:pk>/', views.axe_detail, name='axe_detail'),
     path('yxor/<int:pk>/status/', views.update_axe_status, name='update_axe_status'),
     path('galleri/', views.axe_gallery, name='axe_gallery'),

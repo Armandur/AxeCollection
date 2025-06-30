@@ -5,6 +5,33 @@ from django.conf import settings
 
 # Create your models here.
 
+class NextAxeID(models.Model):
+    """Håller reda på nästa ID som ska användas för nya yxor"""
+    next_id = models.IntegerField(default=1)
+    
+    class Meta:
+        verbose_name = "Nästa yx-ID"
+        verbose_name_plural = "Nästa yx-ID"
+    
+    @classmethod
+    def get_next_id(cls):
+        """Hämta nästa ID och öka räknaren"""
+        obj, created = cls.objects.get_or_create(id=1, defaults={'next_id': 1})
+        next_id = obj.next_id
+        obj.next_id += 1
+        obj.save()
+        return next_id
+    
+    @classmethod
+    def reset_if_last_axe_deleted(cls, deleted_id):
+        """Återställ nästa ID om den senaste yxan togs bort"""
+        # Kontrollera om det finns några yxor med högre ID
+        if not Axe.objects.filter(id__gt=deleted_id).exists():
+            # Det var den senaste yxan, återställ nästa ID
+            obj, created = cls.objects.get_or_create(id=1, defaults={'next_id': 1})
+            obj.next_id = deleted_id
+            obj.save()
+
 class Manufacturer(models.Model):
     name = models.CharField(max_length=200)
     comment = models.TextField(blank=True, null=True)
@@ -22,6 +49,25 @@ class Axe(models.Model):
     model = models.CharField(max_length=200)
     comment = models.TextField(blank=True, null=True)
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='KÖPT')
+
+    def save(self, *args, **kwargs):
+        # Om det är en ny yxa (ingen ID än), använd nästa ID
+        if not self.pk:
+            self.id = NextAxeID.get_next_id()
+        super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        # Spara ID:t innan radering för att kunna återställa nästa ID
+        deleted_id = self.id
+        result = super().delete(*args, **kwargs)
+        # Återställ nästa ID om det var den senaste yxan
+        NextAxeID.reset_if_last_axe_deleted(deleted_id)
+        return result
+
+    @property
+    def display_id(self):
+        """Returnerar ID:t (samma som visnings-ID)"""
+        return self.id
 
     def __str__(self):
         return f"{self.manufacturer.name} - {self.model}"
