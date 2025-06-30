@@ -1,0 +1,36 @@
+{% extends "admin/delete_confirmation.html" %}
+
+{% block content %}
+  <form method="post" {% if has_file_field %}enctype="multipart/form-data"{% endif %}>
+    {% csrf_token %}
+    {{ form.as_p }}
+    <div style="margin-bottom:2em;">
+      <strong style="font-size:1.1em;">Följande kommer att tas bort:</strong>
+      <ul style="margin-top:0.7em; margin-bottom:0.7em;">
+        {% for obj in deleted_objects_flat %}
+          <li>{{ obj|safe }}</li>
+        {% endfor %}
+      </ul>
+    </div>
+    {% if perms_lacking %}
+      <p class="errornote">{{ perms_lacking }}</p>
+    {% endif %}
+    {% if protected %}
+      <p class="errornote">{{ protected }}</p>
+    {% endif %}
+    <div style="margin-top:2em; margin-bottom:1em;">
+      {% if delete_images_field %}
+        <label style="font-weight:normal;">
+          {{ delete_images_field.delete_images }}
+          <span style="font-weight:600;">{{ delete_images_field.delete_images.label }}</span>
+        </label>
+        <br>
+        <span style="font-size:0.95em; color:#aaa;">{{ delete_images_field.delete_images.help_text }}</span>
+      {% endif %}
+    </div>
+    <div class="submit-row">
+      <input type="submit" class="button btn-danger" value="{{ action_checkbox_name|default:'Ja, jag är säker' }}">
+      <a href="{{ admin_url }}" class="button cancel-link">Avbryt</a>
+    </div>
+  </form>
+{% endblock %} 
