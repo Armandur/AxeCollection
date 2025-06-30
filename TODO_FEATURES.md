@@ -32,7 +32,7 @@ En checklista för vidareutveckling av AxeCollection. Bocka av med [x] när klar
 
 17. [x] UI för att skapa nya yxor i samlingen – Användarvänligt formulär för att lägga till yxor.
 18. [x] UI för att redigera befintliga yxor – Möjlighet att uppdatera information efter mottagning.
-19. [x] Status-fält och filter – Status "Köpt" vs "Mottagen/Ägd" med filter och snabbåtgärder i yxlistan.
+19. [x] Status-fält och filter – Status "Köpt" vs "Mottagen/Ägd" med filter och snabbåtgärder (markera som mottagen) i yxlistan.
 20. [ ] Arbetsflöde för inköp: 
     - Skapa/redigera yxa (tillverkare, modell, kommentar) ✅
     - Ladda upp bilder från auktion/annons ✅
