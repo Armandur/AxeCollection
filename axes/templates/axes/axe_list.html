@@ -275,24 +275,17 @@
                 <td>{{ axe.comment|default:"" }}</td>
                 <td data-order="{{ axe.net_value|default:0 }}">
                     {% for trans in axe.transaction_set.all %}
-                        {% if trans.type == 'KÖP' %}
-                            <span class="text-danger">{{ trans.price|format_decimal }} kr</span>
-                            {% if trans.shipping_cost > 0 %}
-                                <span class="text-muted">({{ trans.shipping_cost|format_decimal }} kr)</span>
-                            {% endif %}
-                            <br>
-                        {% elif trans.type == 'SÄLJ' %}
-                             <span class="text-success">{{ trans.price|format_decimal }} kr</span>
-                             {% if trans.shipping_cost > 0 %}
-                                <span class="text-muted">({{ trans.shipping_cost|format_decimal }} kr)</span>
-                            {% endif %}
-                            <br>
-                            {% if axe.net_value != 0 %}
-                                <span class="{% if axe.net_value >= 0 %}profit-positive{% else %}profit-negative{% endif %} fw-bold">
-                                    {{ axe.net_value|format_decimal }} kr
-                                </span>
-                            {% endif %}
+                        <span class="badge {% if trans.type == 'KÖP' %}bg-danger{% else %}bg-success{% endif %}">
+                            <i class="bi {% if trans.type == 'KÖP' %}bi-arrow-down-circle{% else %}bi-arrow-up-circle{% endif %} me-1"></i>
+                            {{ trans.type }}
+                        </span>
+                        <span class="{% if trans.type == 'KÖP' %}text-danger{% else %}text-success{% endif %}">
+                            {{ trans.price|format_decimal }} kr
+                        </span>
+                        {% if trans.shipping_cost > 0 %}
+                            <span class="text-muted">({{ trans.shipping_cost|format_decimal }} kr)</span>
                         {% endif %}
+                        <br>
                     {% endfor %}
                 </td>
                 <td class="text-center">

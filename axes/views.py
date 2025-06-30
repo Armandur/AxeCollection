@@ -1,5 +1,5 @@
 from django.shortcuts import render, get_object_or_404, redirect
-from .models import Axe, Transaction, Contact, Manufacturer, ManufacturerImage, ManufacturerLink, NextAxeID, AxeImage
+from .models import Axe, Transaction, Contact, Manufacturer, ManufacturerImage, ManufacturerLink, NextAxeID, AxeImage, Platform
 from django.db.models import Sum, Q, Max
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST
@@ -428,6 +428,31 @@ def update_axe_status(request, pk):
             'error': str(e)
         }, status=500)
 
+def search_contacts(request):
+    """AJAX-endpoint för att söka efter kontakter"""
+    query = request.GET.get('q', '').strip()
+    if len(query) < 2:
+        return JsonResponse({'results': []})
+    
+    contacts = Contact.objects.filter(
+        Q(name__icontains=query) | 
+        Q(alias__icontains=query) |
+        Q(email__icontains=query)
+    )[:10]  # Begränsa till 10 resultat
+    
+    results = [{'id': c.id, 'name': c.name, 'alias': c.alias or '', 'email': c.email or ''} for c in contacts]
+    return JsonResponse({'results': results})
+
+def search_platforms(request):
+    """AJAX-endpoint för att söka efter plattformar"""
+    query = request.GET.get('q', '').strip()
+    if len(query) < 2:
+        return JsonResponse({'results': []})
+    
+    platforms = Platform.objects.filter(name__icontains=query)[:10]  # Begränsa till 10 resultat
+    results = [{'id': p.id, 'name': p.name} for p in platforms]
+    return JsonResponse({'results': results})
+
 # Egen widget för flera filer enligt Django-dokumentationen
 class MultipleFileInput(forms.FileInput):
     allow_multiple_selected = True
@@ -554,23 +579,15 @@ class AxeForm(forms.ModelForm):
     )
     
     # Transaktionsrelaterade fält
-    transaction_type = forms.ChoiceField(
-        choices=[('KÖP', 'Köp'), ('SÄLJ', 'Sälj')],
-        initial='KÖP',
-        widget=forms.Select(attrs={'class': 'form-select'}),
-        label='Transaktionstyp',
-        help_text='Typ av transaktion'
-    )
-    
     transaction_price = forms.DecimalField(
         required=False,
         max_digits=10,
         decimal_places=2,
+        initial=0.00,
         widget=forms.NumberInput(attrs={
             'class': 'form-control',
             'placeholder': '0.00',
-            'step': '0.01',
-            'min': '0'
+            'step': '0.01'
         }),
         label='Pris (kr)',
         help_text='Pris för yxan (negativt för köp, positivt för sälj)'
@@ -580,12 +597,11 @@ class AxeForm(forms.ModelForm):
         required=False,
         max_digits=10,
         decimal_places=2,
-        initial=0,
+        initial=0.00,
         widget=forms.NumberInput(attrs={
             'class': 'form-control',
             'placeholder': '0.00',
-            'step': '0.01',
-            'min': '0'
+            'step': '0.01'
         }),
         label='Fraktkostnad (kr)',
         help_text='Fraktkostnad (negativt för köp, positivt för sälj)'
@@ -593,12 +609,47 @@ class AxeForm(forms.ModelForm):
     
     transaction_date = forms.DateField(
         required=False,
+        initial=timezone.now().date,
         widget=forms.DateInput(attrs={
             'class': 'form-control',
             'type': 'date'
         }),
         label='Transaktionsdatum',
         help_text='Datum för transaktionen'
+    )
+    
+    transaction_comment = forms.CharField(
+        required=False,
+        widget=forms.Textarea(attrs={
+            'class': 'form-control',
+            'rows': 2,
+            'placeholder': 'Lägg till kommentar om transaktionen...'
+        }),
+        label='Transaktionskommentar',
+        help_text='Kommentar om transaktionen (t.ex. betalningsmetod)'
+    )
+    
+    # Plattformsrelaterade fält
+    platform_search = forms.CharField(
+        required=False,
+        max_length=100,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Sök efter befintlig plattform eller ange ny...'
+        }),
+        label='Plattform',
+        help_text='Sök efter befintlig plattform eller ange namn för ny plattform'
+    )
+    
+    platform_name = forms.CharField(
+        required=False,
+        max_length=100,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Ange plattformens namn'
+        }),
+        label='Namn (ny plattform)',
+        help_text='Namn på plattformen (t.ex. Tradera, eBay, Blocket)'
     )
 
     class Meta:
@@ -651,29 +702,58 @@ def axe_create(request):
                             is_naj_member=form.cleaned_data.get('is_naj_member', False)
                         )
             
+            # Hantera plattformshantering
+            platform_search = form.cleaned_data.get('platform_search')
+            platform = None
+            
+            if platform_search:
+                # Försök hitta befintlig plattform
+                existing_platform = Platform.objects.filter(
+                    name__icontains=platform_search
+                ).first()
+                
+                if existing_platform:
+                    # Använd befintlig plattform
+                    platform = existing_platform
+                else:
+                    # Skapa ny plattform om namn anges
+                    platform_name = form.cleaned_data.get('platform_name')
+                    if platform_name:
+                        platform = Platform.objects.create(name=platform_name)
+            
             # Hantera transaktion
             if contact and (form.cleaned_data.get('transaction_price') or form.cleaned_data.get('transaction_shipping')):
-                transaction_type = form.cleaned_data.get('transaction_type', 'KÖP')
                 price = form.cleaned_data.get('transaction_price', 0)
                 shipping = form.cleaned_data.get('transaction_shipping', 0)
                 transaction_date = form.cleaned_data.get('transaction_date') or timezone.now().date()
+                transaction_comment = form.cleaned_data.get('transaction_comment', '')
                 
-                # Gör priset negativt för köp, positivt för sälj
-                if transaction_type == 'KÖP':
-                    price = -abs(price) if price else 0
-                    shipping = -abs(shipping) if shipping else 0
-                else:  # SÄLJ
-                    price = abs(price) if price else 0
-                    shipping = abs(shipping) if shipping else 0
+                # Bestäm transaktionstyp baserat på summan (negativ = köp, positiv = sälj)
+                total_amount = (price or 0) + (shipping or 0)
+                transaction_type = 'KÖP' if total_amount < 0 else 'SÄLJ'
+                
+                # Spara alltid pris och frakt som positiva värden
+                def abs_decimal(val):
+                    try:
+                        return abs(val)
+                    except Exception:
+                        return 0
+
+                price = abs_decimal(price)
+                shipping = abs_decimal(shipping)
+                
+                # Skapa kommentar
+                final_comment = transaction_comment  # Spara bara det användaren skriver
                 
                 Transaction.objects.create(
                     axe=axe,
                     contact=contact,
+                    platform=platform,
                     transaction_date=transaction_date,
                     type=transaction_type,
                     price=price,
                     shipping_cost=shipping,
-                    comment=f'Skapad från yxformuläret - {contact.name}'
+                    comment=final_comment
                 )
             
             # Hantera bilduppladdning med MultipleFileField
@@ -776,15 +856,21 @@ def axe_create(request):
     })
 
 def axe_edit(request, pk):
-    """Redigera en befintlig yxa och lägg till bilder"""
     axe = get_object_or_404(Axe.objects.select_related('manufacturer').prefetch_related('images'), pk=pk)
     
     if request.method == 'POST':
+        # Skapa formuläret utan transaktions-/kontakt-/plattformfält
         form = AxeForm(request.POST, request.FILES, instance=axe)
+        # Ta bort transaktions-/kontakt-/plattformfält från form.fields
+        for field in [
+            'transaction_price', 'transaction_shipping', 'transaction_date', 'transaction_comment',
+            'contact_search', 'contact_name', 'contact_email', 'contact_phone', 'contact_alias', 'contact_comment', 'is_naj_member',
+            'platform_search', 'platform_name']:
+            if field in form.fields:
+                form.fields.pop(field)
         if form.is_valid():
             axe = form.save()
-            
-            # Hantera bilduppladdning med MultipleFileField
+            # Hantera endast bilder och bildordning
             images = form.cleaned_data.get('images', [])
             image_urls = request.POST.getlist('image_urls')
             removed_images = request.POST.getlist('removed_images')
@@ -964,7 +1050,12 @@ def axe_edit(request, pk):
             return redirect('axe_detail', pk=axe.pk)
     else:
         form = AxeForm(instance=axe)
-    
+        for field in [
+            'transaction_price', 'transaction_shipping', 'transaction_date', 'transaction_comment',
+            'contact_search', 'contact_name', 'contact_email', 'contact_phone', 'contact_alias', 'contact_comment', 'is_naj_member',
+            'platform_search', 'platform_name']:
+            if field in form.fields:
+                form.fields.pop(field)
     return render(request, 'axes/axe_form.html', {
         'form': form,
         'axe': axe,

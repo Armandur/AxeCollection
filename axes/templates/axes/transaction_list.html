@@ -88,6 +88,7 @@
                 <td>{{ transaction.transaction_date|date:"Y-m-d" }}</td>
                 <td>
                     <span class="badge {% if transaction.type == 'KÖP' %}bg-danger{% else %}bg-success{% endif %}">
+                        <i class="bi {% if transaction.type == 'KÖP' %}bi-arrow-down-circle{% else %}bi-arrow-up-circle{% endif %} me-1"></i>
                         {{ transaction.type }}
                     </span>
                 </td>
