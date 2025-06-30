@@ -1,72 +1,97 @@
 {% extends 'axes/base.html' %}
+
+{% block title %}Skapa ny yxa{% endblock %}
+
 {% block content %}
 <div class="container mt-4">
-    <div class="row justify-content-center">
-        <div class="col-md-8">
+    <div class="row">
+        <div class="col-md-8 mx-auto">
             <div class="card">
                 <div class="card-header">
-                    <h1 class="h3 mb-0">
-                        <i class="bi bi-plus-circle"></i> Lägg till ny yxa
-                    </h1>
+                    <h3 class="mb-0">
+                        <i class="fas fa-plus-circle me-2"></i>Skapa ny yxa
+                        <span class="badge bg-secondary ms-2">ID: {{ next_id }}</span>
+                    </h3>
                 </div>
                 <div class="card-body">
-                    <div class="alert alert-info">
-                        <i class="bi bi-info-circle"></i>
-                        Den nya yxan kommer att få ID: <strong>{{ next_id }}</strong>
-                    </div>
-                    
-                    <form method="post">
+                    <form method="post" enctype="multipart/form-data" id="axeForm">
                         {% csrf_token %}
                         
                         <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="{{ form.manufacturer.id_for_label }}" class="form-label">
-                                    {{ form.manufacturer.label }}
-                                </label>
-                                {{ form.manufacturer }}
-                                {% if form.manufacturer.errors %}
-                                    <div class="text-danger small">{{ form.manufacturer.errors.0 }}</div>
-                                {% endif %}
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.manufacturer.id_for_label }}" class="form-label">
+                                        {{ form.manufacturer.label }}
+                                    </label>
+                                    {{ form.manufacturer }}
+                                    {% if form.manufacturer.errors %}
+                                        <div class="text-danger">{{ form.manufacturer.errors }}</div>
+                                    {% endif %}
+                                </div>
                             </div>
-                            
-                            <div class="col-md-6 mb-3">
-                                <label for="{{ form.status.id_for_label }}" class="form-label">
-                                    {{ form.status.label }}
-                                </label>
-                                {{ form.status }}
-                                {% if form.status.errors %}
-                                    <div class="text-danger small">{{ form.status.errors.0 }}</div>
-                                {% endif %}
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.model.id_for_label }}" class="form-label">
+                                        {{ form.model.label }}
+                                    </label>
+                                    {{ form.model }}
+                                    {% if form.model.errors %}
+                                        <div class="text-danger">{{ form.model.errors }}</div>
+                                    {% endif %}
+                                </div>
                             </div>
                         </div>
-                        
+
                         <div class="mb-3">
-                            <label for="{{ form.model.id_for_label }}" class="form-label">
-                                {{ form.model.label }}
-                            </label>
-                            {{ form.model }}
-                            {% if form.model.errors %}
-                                <div class="text-danger small">{{ form.model.errors.0 }}</div>
-                            {% endif %}
-                        </div>
-                        
-                        <div class="mb-4">
                             <label for="{{ form.comment.id_for_label }}" class="form-label">
                                 {{ form.comment.label }}
                             </label>
                             {{ form.comment }}
                             {% if form.comment.errors %}
-                                <div class="text-danger small">{{ form.comment.errors.0 }}</div>
+                                <div class="text-danger">{{ form.comment.errors }}</div>
                             {% endif %}
                         </div>
-                        
-                        <div class="d-flex gap-2">
-                            <button type="submit" class="btn btn-primary">
-                                <i class="bi bi-check-circle"></i> Spara yxa
-                            </button>
-                            <a href="{% url 'axe_list' %}" class="btn btn-outline-secondary">
-                                <i class="bi bi-x-circle"></i> Avbryt
+
+                        <div class="mb-3">
+                            <label for="{{ form.status.id_for_label }}" class="form-label">
+                                {{ form.status.label }}
+                            </label>
+                            {{ form.status }}
+                            {% if form.status.errors %}
+                                <div class="text-danger">{{ form.status.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Bilduppladdning med drag & drop -->
+                        <div class="mb-4">
+                            <label class="form-label">{{ form.images.label }}</label>
+                            <div class="upload-area" id="uploadArea">
+                                <div class="upload-content">
+                                    <i class="fas fa-cloud-upload-alt fa-3x text-muted mb-3"></i>
+                                    <h5>Dra och släpp bilder här</h5>
+                                    <p class="text-muted">eller klicka för att välja filer</p>
+                                    {{ form.images }}
+                                </div>
+                            </div>
+                            <div class="form-text">{{ form.images.help_text }}</div>
+                            {% if form.images.errors %}
+                                <div class="text-danger">{{ form.images.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Förhandsvisning av bilder -->
+                        <div id="imagePreview" class="mb-4" style="display: none;">
+                            <h6>Förhandsvisning:</h6>
+                            <div class="row" id="previewContainer"></div>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'axe_list' %}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left me-2"></i>Tillbaka
                             </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-2"></i>Spara yxa
+                            </button>
                         </div>
                     </form>
                 </div>
@@ -74,4 +99,131 @@
         </div>
     </div>
 </div>
+
+<style>
+.upload-area {
+    border: 2px dashed #dee2e6;
+    border-radius: 8px;
+    padding: 2rem;
+    text-align: center;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    background-color: #f8f9fa;
+}
+
+.upload-area:hover,
+.upload-area.dragover {
+    border-color: #007bff;
+    background-color: #e3f2fd;
+}
+
+.upload-area input[type="file"] {
+    display: none;
+}
+
+.preview-item {
+    position: relative;
+    margin-bottom: 1rem;
+}
+
+.preview-item img {
+    width: 100%;
+    height: 150px;
+    object-fit: cover;
+    border-radius: 8px;
+    border: 2px solid #dee2e6;
+}
+
+.preview-item .remove-btn {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    background: #dc3545;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.preview-item .remove-btn:hover {
+    background: #c82333;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const uploadArea = document.getElementById('uploadArea');
+    const fileInput = document.querySelector('input[type="file"]');
+    const imagePreview = document.getElementById('imagePreview');
+    const previewContainer = document.getElementById('previewContainer');
+    const selectedFiles = new Set();
+
+    // Drag & drop funktionalitet
+    uploadArea.addEventListener('click', () => fileInput.click());
+    
+    uploadArea.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        uploadArea.classList.add('dragover');
+    });
+    
+    uploadArea.addEventListener('dragleave', () => {
+        uploadArea.classList.remove('dragover');
+    });
+    
+    uploadArea.addEventListener('drop', (e) => {
+        e.preventDefault();
+        uploadArea.classList.remove('dragover');
+        const files = Array.from(e.dataTransfer.files).filter(file => file.type.startsWith('image/'));
+        handleFiles(files);
+    });
+
+    // Filval via input
+    fileInput.addEventListener('change', (e) => {
+        const files = Array.from(e.target.files);
+        handleFiles(files);
+    });
+
+    function handleFiles(files) {
+        files.forEach(file => {
+            if (file.type.startsWith('image/') && !selectedFiles.has(file.name)) {
+                selectedFiles.add(file.name);
+                createPreview(file);
+            }
+        });
+        
+        if (selectedFiles.size > 0) {
+            imagePreview.style.display = 'block';
+        }
+    }
+
+    function createPreview(file) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const previewItem = document.createElement('div');
+            previewItem.className = 'col-md-3 preview-item';
+            previewItem.innerHTML = `
+                <img src="${e.target.result}" alt="Förhandsvisning">
+                <button type="button" class="remove-btn" onclick="removePreview(this, '${file.name}')">
+                    <i class="fas fa-times"></i>
+                </button>
+            `;
+            previewContainer.appendChild(previewItem);
+        };
+        reader.readAsDataURL(file);
+    }
+
+    // Global funktion för att ta bort förhandsvisning
+    window.removePreview = function(button, fileName) {
+        selectedFiles.delete(fileName);
+        button.closest('.preview-item').remove();
+        
+        if (selectedFiles.size === 0) {
+            imagePreview.style.display = 'none';
+        }
+    };
+});
+</script>
 {% endblock %} 

@@ -95,19 +95,24 @@
     <div class="d-flex align-items-center gap-3">
         <h1>Samling</h1>
         <a href="{% url 'axe_create' %}" class="btn btn-success ms-2">
-            <i class="bi bi-plus-circle"></i> Lägg till ny yxa
+            <i class="fas fa-plus-circle"></i> Lägg till ny yxa
         </a>
     </div>
-    <a href="{% url 'axe_gallery' %}" class="btn btn-outline-primary">
-        <i class="fas fa-images"></i> Visa som galleri
-    </a>
+    <div class="d-flex gap-2">
+        <a href="{% url 'axe_gallery' %}" class="btn btn-outline-primary">
+            <i class="fas fa-images"></i> Visa som galleri
+        </a>
+        <a href="{% url 'axe_create' %}" class="btn btn-outline-info" title="Skapa ny yxa med bilder">
+            <i class="fas fa-camera"></i> Ny yxa med bilder
+        </a>
+    </div>
 </div>
 
 <!-- Filter-sektion -->
 <div class="card mb-4">
     <div class="card-body">
         <h5 class="card-title mb-3">
-            <i class="bi bi-funnel"></i> Filter
+            <i class="fas fa-filter"></i> Filter
         </h5>
         <form method="get" class="row g-3">
             {% csrf_token %}
@@ -132,10 +137,10 @@
             </div>
             <div class="col-md-3 d-flex align-items-end">
                 <button type="submit" class="btn btn-primary me-2">
-                    <i class="bi bi-search"></i> Filtrera
+                    <i class="fas fa-search"></i> Filtrera
                 </button>
                 <a href="{% url 'axe_list' %}" class="btn btn-outline-secondary">
-                    <i class="bi bi-x-circle"></i> Rensa
+                    <i class="fas fa-times"></i> Rensa
                 </a>
             </div>
         </form>
@@ -256,7 +261,7 @@
                                     data-axe-id="{{ axe.id }}" 
                                     data-new-status="MOTTAGEN"
                                     title="Markera som mottagen">
-                                <i class="bi bi-check-circle"></i>
+                                <i class="fas fa-check-circle"></i>
                             </button>
                         </div>
                     {% elif axe.status == 'MOTTAGEN' %}
@@ -266,7 +271,7 @@
                                     data-axe-id="{{ axe.id }}" 
                                     data-new-status="KÖPT"
                                     title="Markera som köpt">
-                                <i class="bi bi-arrow-left-circle"></i>
+                                <i class="fas fa-arrow-left"></i>
                             </button>
                         </div>
                     {% endif %}
@@ -308,7 +313,7 @@
                                             {% endfor %}
                                         </div>
                                     </div>'>
-                                    <i class="bi bi-camera-fill"></i>
+                                    <i class="fas fa-camera"></i>
                                 </span>
                             {% endif %}
                         {% endwith %}
@@ -350,7 +355,7 @@ $(document).ready(function() {
                     if (href) {
                         viewButton = '<tr><td colspan="2" class="text-center pt-3">' +
                             '<a href="' + href + '" class="btn btn-primary btn-sm">' +
-                            '<i class="bi bi-eye"></i> Visa yxa</a></td></tr>';
+                            '<i class="fas fa-eye"></i> Visa yxa</a></td></tr>';
                     }
 
                     return data ?
@@ -471,7 +476,7 @@ $(document).ready(function() {
         var newStatus = btn.data('new-status');
         var statusCell = btn.closest('td');
         
-        btn.prop('disabled', true).html('<i class="bi bi-hourglass-split"></i>');
+        btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i>');
         
         $.ajax({
             url: '/yxor/' + axeId + '/status/',
@@ -490,7 +495,7 @@ $(document).ready(function() {
                                         data-axe-id="${axeId}" 
                                         data-new-status="KÖPT"
                                         title="Markera som köpt">
-                                    <i class="bi bi-arrow-left-circle"></i>
+                                    <i class="fas fa-arrow-left"></i>
                                 </button>
                             </div>
                         `);
@@ -502,7 +507,7 @@ $(document).ready(function() {
                                         data-axe-id="${axeId}" 
                                         data-new-status="MOTTAGEN"
                                         title="Markera som mottagen">
-                                    <i class="bi bi-check-circle"></i>
+                                    <i class="fas fa-check-circle"></i>
                                 </button>
                             </div>
                         `);

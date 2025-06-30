@@ -1,5 +1,5 @@
 from django.shortcuts import render, get_object_or_404, redirect
-from .models import Axe, Transaction, Contact, Manufacturer, ManufacturerImage, ManufacturerLink, NextAxeID
+from .models import Axe, Transaction, Contact, Manufacturer, ManufacturerImage, ManufacturerLink, NextAxeID, AxeImage
 from django.db.models import Sum, Q
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST
@@ -420,7 +420,34 @@ def update_axe_status(request, pk):
             'error': str(e)
         }, status=500)
 
+# Egen widget för flera filer enligt Django-dokumentationen
+class MultipleFileInput(forms.FileInput):
+    allow_multiple_selected = True
+
+class MultipleFileField(forms.FileField):
+    def __init__(self, *args, **kwargs):
+        kwargs.setdefault("widget", MultipleFileInput())
+        super().__init__(*args, **kwargs)
+
+    def clean(self, data, initial=None):
+        single_file_clean = super().clean
+        if isinstance(data, (list, tuple)):
+            result = [single_file_clean(d, initial) for d in data]
+        else:
+            result = [single_file_clean(data, initial)]
+        return result
+
 class AxeForm(forms.ModelForm):
+    images = MultipleFileField(
+        required=False,
+        widget=MultipleFileInput(attrs={
+            'class': 'form-control',
+            'accept': 'image/*'
+        }),
+        label='Bilder',
+        help_text='Ladda upp bilder av yxan (drag & drop stöds)'
+    )
+
     class Meta:
         model = Axe
         fields = ['manufacturer', 'model', 'comment', 'status']
@@ -439,9 +466,19 @@ class AxeForm(forms.ModelForm):
 
 def axe_create(request):
     if request.method == 'POST':
-        form = AxeForm(request.POST)
+        form = AxeForm(request.POST, request.FILES)
         if form.is_valid():
             axe = form.save()
+            
+            # Hantera bilduppladdning med MultipleFileField
+            images = form.cleaned_data.get('images', [])
+            for image in images:
+                AxeImage.objects.create(
+                    axe=axe,
+                    image=image,
+                    description=f'Bild av {axe.manufacturer.name} {axe.model}'
+                )
+            
             return redirect('axe_detail', pk=axe.pk)
     else:
         form = AxeForm()
