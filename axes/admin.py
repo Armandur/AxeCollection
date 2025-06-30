@@ -1,6 +1,9 @@
 from django.contrib import admin
 from .models import Manufacturer, Axe, AxeImage, ManufacturerImage, ManufacturerLink, Measurement, Contact, Platform, Transaction
 from django.utils.safestring import mark_safe
+from django import forms
+from django.utils.translation import gettext_lazy as _
+import os
 
 class ManufacturerImageInline(admin.TabularInline):
     model = ManufacturerImage
@@ -37,9 +40,72 @@ class ManufacturerAdmin(admin.ModelAdmin):
     search_fields = ('name', 'comment')
     inlines = [ManufacturerImageInline, ManufacturerLinkInline]
 
+class AxeDeleteForm(forms.Form):
+    delete_images = forms.BooleanField(
+        label=_('Ta bort bildfiler från disken vid radering'),
+        required=False,
+        initial=True,
+        help_text=_('Om ibockad tas både original- och webp-bilder bort permanent från filsystemet.')
+    )
+
+class AxeAdmin(admin.ModelAdmin):
+    list_display = ('id', 'manufacturer', 'model', 'status', 'display_id')
+    list_filter = ('manufacturer', 'status')
+    search_fields = ('manufacturer__name', 'model', 'comment')
+    readonly_fields = ('display_id',)
+    
+    def get_queryset(self, request):
+        return super().get_queryset(request).select_related('manufacturer')
+    
+    def delete_model(self, request, obj):
+        # Hantera bockruta för att ta bort bilder
+        delete_images = True
+        if request.method == 'POST':
+            delete_images = request.POST.get('delete_images', 'on') == 'on'
+        # Radera transaktioner först
+        obj.transaction_set.all().delete()
+        # Radera mått
+        obj.measurements.all().delete()
+        # Radera bilder (AxeImage raderas automatiskt via CASCADE)
+        if delete_images:
+            for img in obj.images.all():
+                # Ta bort originalbild
+                if img.image and os.path.isfile(img.image.path):
+                    try:
+                        os.remove(img.image.path)
+                    except Exception:
+                        pass
+                # Ta bort webp-bild
+                webp_path = os.path.splitext(img.image.path)[0] + '.webp'
+                if os.path.isfile(webp_path):
+                    try:
+                        os.remove(webp_path)
+                    except Exception:
+                        pass
+        # Radera yxan själv
+        super().delete_model(request, obj)
+
+    def get_flat_deleted_objects(self, deleted_objects):
+        flat = []
+        for obj in deleted_objects:
+            if isinstance(obj, (list, tuple)):
+                for sub in obj:
+                    flat.append(str(sub))
+            else:
+                flat.append(str(obj))
+        return flat
+
+    def delete_view(self, request, object_id, extra_context=None):
+        response = super().delete_view(request, object_id, extra_context=extra_context)
+        # Förhandsgranska deleted_objects och platta ut
+        if hasattr(response, 'context_data') and 'deleted_objects' in response.context_data:
+            flat = self.get_flat_deleted_objects(response.context_data['deleted_objects'])
+            response.context_data['deleted_objects_flat'] = flat
+        return response
+
 # "Registrera" dina modeller så de dyker upp i admin-gränssnittet
 admin.site.register(Manufacturer, ManufacturerAdmin)
-admin.site.register(Axe)
+admin.site.register(Axe, AxeAdmin)
 admin.site.register(AxeImage)
 admin.site.register(ManufacturerImage, ManufacturerImageAdmin)
 admin.site.register(ManufacturerLink, ManufacturerLinkAdmin)

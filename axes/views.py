@@ -4,6 +4,7 @@ from django.db.models import Sum, Q, Max
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST
 from django import forms
+from django.utils import timezone
 import requests
 from django.core.files.base import ContentFile
 from urllib.parse import urlparse
@@ -444,6 +445,29 @@ class MultipleFileField(forms.FileField):
             result = [single_file_clean(data, initial)]
         return result
 
+class ContactForm(forms.ModelForm):
+    """Formulär för att skapa/redigera kontakter"""
+    
+    class Meta:
+        model = Contact
+        fields = ['name', 'email', 'phone', 'alias', 'comment', 'is_naj_member']
+        labels = {
+            'name': 'Namn',
+            'email': 'E-post',
+            'phone': 'Telefon',
+            'alias': 'Alias (Tradera/eBay)',
+            'comment': 'Kommentar',
+            'is_naj_member': 'NAJ-medlem',
+        }
+        widgets = {
+            'name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ange namn'}),
+            'email': forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'namn@example.com'}),
+            'phone': forms.TextInput(attrs={'class': 'form-control', 'placeholder': '070-123 45 67'}),
+            'alias': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Användarnamn på Tradera/eBay'}),
+            'comment': forms.Textarea(attrs={'class': 'form-control', 'rows': 2, 'placeholder': 'Lägg till kommentar...'}),
+            'is_naj_member': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+        }
+
 class AxeForm(forms.ModelForm):
     images = MultipleFileField(
         required=False,
@@ -453,6 +477,128 @@ class AxeForm(forms.ModelForm):
         }),
         label='Bilder',
         help_text='Ladda upp bilder av yxan (drag & drop stöds)'
+    )
+
+    # Kontaktrelaterade fält
+    contact_search = forms.CharField(
+        required=False,
+        max_length=200,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Sök efter befintlig kontakt eller ange ny...'
+        }),
+        label='Försäljare',
+        help_text='Sök efter befintlig kontakt eller ange namn för ny kontakt'
+    )
+    
+    contact_name = forms.CharField(
+        required=False,
+        max_length=200,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Ange försäljarens namn'
+        }),
+        label='Namn (ny kontakt)',
+        help_text='Namn på försäljaren (t.ex. från Tradera, eBay)'
+    )
+    
+    contact_email = forms.EmailField(
+        required=False,
+        widget=forms.EmailInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'namn@example.com'
+        }),
+        label='E-post (ny kontakt)',
+        help_text='Försäljarens e-postadress'
+    )
+    
+    contact_phone = forms.CharField(
+        required=False,
+        max_length=50,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': '070-123 45 67'
+        }),
+        label='Telefon (ny kontakt)',
+        help_text='Försäljarens telefonnummer'
+    )
+    
+    contact_alias = forms.CharField(
+        required=False,
+        max_length=100,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Användarnamn på Tradera/eBay'
+        }),
+        label='Alias (ny kontakt)',
+        help_text='Användarnamn på plattformen (t.ex. Tradera, eBay)'
+    )
+    
+    contact_comment = forms.CharField(
+        required=False,
+        widget=forms.Textarea(attrs={
+            'class': 'form-control',
+            'rows': 2,
+            'placeholder': 'Lägg till kommentar om försäljaren...'
+        }),
+        label='Kommentar (ny kontakt)',
+        help_text='Kommentar om försäljaren'
+    )
+    
+    is_naj_member = forms.BooleanField(
+        required=False,
+        initial=False,
+        widget=forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+        label='NAJ-medlem (ny kontakt)',
+        help_text='Är försäljaren medlem i Nordic Axe Junkies?'
+    )
+    
+    # Transaktionsrelaterade fält
+    transaction_type = forms.ChoiceField(
+        choices=[('KÖP', 'Köp'), ('SÄLJ', 'Sälj')],
+        initial='KÖP',
+        widget=forms.Select(attrs={'class': 'form-select'}),
+        label='Transaktionstyp',
+        help_text='Typ av transaktion'
+    )
+    
+    transaction_price = forms.DecimalField(
+        required=False,
+        max_digits=10,
+        decimal_places=2,
+        widget=forms.NumberInput(attrs={
+            'class': 'form-control',
+            'placeholder': '0.00',
+            'step': '0.01',
+            'min': '0'
+        }),
+        label='Pris (kr)',
+        help_text='Pris för yxan (negativt för köp, positivt för sälj)'
+    )
+    
+    transaction_shipping = forms.DecimalField(
+        required=False,
+        max_digits=10,
+        decimal_places=2,
+        initial=0,
+        widget=forms.NumberInput(attrs={
+            'class': 'form-control',
+            'placeholder': '0.00',
+            'step': '0.01',
+            'min': '0'
+        }),
+        label='Fraktkostnad (kr)',
+        help_text='Fraktkostnad (negativt för köp, positivt för sälj)'
+    )
+    
+    transaction_date = forms.DateField(
+        required=False,
+        widget=forms.DateInput(attrs={
+            'class': 'form-control',
+            'type': 'date'
+        }),
+        label='Transaktionsdatum',
+        help_text='Datum för transaktionen'
     )
 
     class Meta:
@@ -476,6 +622,59 @@ def axe_create(request):
         form = AxeForm(request.POST, request.FILES)
         if form.is_valid():
             axe = form.save()
+            
+            # Hantera kontakthantering
+            contact_search = form.cleaned_data.get('contact_search')
+            contact = None
+            
+            if contact_search:
+                # Först försök hitta befintlig kontakt
+                existing_contact = Contact.objects.filter(
+                    Q(name__icontains=contact_search) | 
+                    Q(alias__icontains=contact_search) |
+                    Q(email__icontains=contact_search)
+                ).first()
+                
+                if existing_contact:
+                    # Använd befintlig kontakt
+                    contact = existing_contact
+                else:
+                    # Skapa ny kontakt om namn anges
+                    contact_name = form.cleaned_data.get('contact_name')
+                    if contact_name:
+                        contact = Contact.objects.create(
+                            name=contact_name,
+                            email=form.cleaned_data.get('contact_email', ''),
+                            phone=form.cleaned_data.get('contact_phone', ''),
+                            alias=form.cleaned_data.get('contact_alias', ''),
+                            comment=form.cleaned_data.get('contact_comment', ''),
+                            is_naj_member=form.cleaned_data.get('is_naj_member', False)
+                        )
+            
+            # Hantera transaktion
+            if contact and (form.cleaned_data.get('transaction_price') or form.cleaned_data.get('transaction_shipping')):
+                transaction_type = form.cleaned_data.get('transaction_type', 'KÖP')
+                price = form.cleaned_data.get('transaction_price', 0)
+                shipping = form.cleaned_data.get('transaction_shipping', 0)
+                transaction_date = form.cleaned_data.get('transaction_date') or timezone.now().date()
+                
+                # Gör priset negativt för köp, positivt för sälj
+                if transaction_type == 'KÖP':
+                    price = -abs(price) if price else 0
+                    shipping = -abs(shipping) if shipping else 0
+                else:  # SÄLJ
+                    price = abs(price) if price else 0
+                    shipping = abs(shipping) if shipping else 0
+                
+                Transaction.objects.create(
+                    axe=axe,
+                    contact=contact,
+                    transaction_date=transaction_date,
+                    type=transaction_type,
+                    price=price,
+                    shipping_cost=shipping,
+                    comment=f'Skapad från yxformuläret - {contact.name}'
+                )
             
             # Hantera bilduppladdning med MultipleFileField
             images = form.cleaned_data.get('images', [])
