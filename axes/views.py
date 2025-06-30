@@ -4,6 +4,7 @@ from django.db.models import Sum, Q, Max
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST
 from django import forms
+from django.utils import timezone
 import requests
 from django.core.files.base import ContentFile
 from urllib.parse import urlparse
@@ -444,6 +445,29 @@ class MultipleFileField(forms.FileField):
             result = [single_file_clean(data, initial)]
         return result
 
+class ContactForm(forms.ModelForm):
+    """Formulär för att skapa/redigera kontakter"""
+    
+    class Meta:
+        model = Contact
+        fields = ['name', 'email', 'phone', 'alias', 'comment', 'is_naj_member']
+        labels = {
+            'name': 'Namn',
+            'email': 'E-post',
+            'phone': 'Telefon',
+            'alias': 'Alias (Tradera/eBay)',
+            'comment': 'Kommentar',
+            'is_naj_member': 'NAJ-medlem',
+        }
+        widgets = {
+            'name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ange namn'}),
+            'email': forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'namn@example.com'}),
+            'phone': forms.TextInput(attrs={'class': 'form-control', 'placeholder': '070-123 45 67'}),
+            'alias': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Användarnamn på Tradera/eBay'}),
+            'comment': forms.Textarea(attrs={'class': 'form-control', 'rows': 2, 'placeholder': 'Lägg till kommentar...'}),
+            'is_naj_member': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+        }
+
 class AxeForm(forms.ModelForm):
     images = MultipleFileField(
         required=False,
@@ -453,6 +477,69 @@ class AxeForm(forms.ModelForm):
         }),
         label='Bilder',
         help_text='Ladda upp bilder av yxan (drag & drop stöds)'
+    )
+
+    # Kontaktrelaterade fält
+    contact_name = forms.CharField(
+        required=False,
+        max_length=200,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Ange försäljarens namn'
+        }),
+        label='Försäljare',
+        help_text='Namn på försäljaren (t.ex. från Tradera, eBay)'
+    )
+    
+    contact_email = forms.EmailField(
+        required=False,
+        widget=forms.EmailInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'namn@example.com'
+        }),
+        label='E-post',
+        help_text='Försäljarens e-postadress'
+    )
+    
+    contact_phone = forms.CharField(
+        required=False,
+        max_length=50,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': '070-123 45 67'
+        }),
+        label='Telefon',
+        help_text='Försäljarens telefonnummer'
+    )
+    
+    contact_alias = forms.CharField(
+        required=False,
+        max_length=100,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Användarnamn på Tradera/eBay'
+        }),
+        label='Alias',
+        help_text='Användarnamn på plattformen (t.ex. Tradera, eBay)'
+    )
+    
+    contact_comment = forms.CharField(
+        required=False,
+        widget=forms.Textarea(attrs={
+            'class': 'form-control',
+            'rows': 2,
+            'placeholder': 'Lägg till kommentar om försäljaren...'
+        }),
+        label='Kommentar',
+        help_text='Kommentar om försäljaren'
+    )
+    
+    is_naj_member = forms.BooleanField(
+        required=False,
+        initial=False,
+        widget=forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+        label='NAJ-medlem',
+        help_text='Är försäljaren medlem i Nordic Axe Junkies?'
     )
 
     class Meta:
@@ -476,6 +563,64 @@ def axe_create(request):
         form = AxeForm(request.POST, request.FILES)
         if form.is_valid():
             axe = form.save()
+            
+            # Hantera kontakthantering
+            contact_name = form.cleaned_data.get('contact_name')
+            if contact_name:
+                # Kontrollera om kontakten redan finns
+                existing_contact = Contact.objects.filter(
+                    Q(name__iexact=contact_name) | 
+                    Q(alias__iexact=contact_name)
+                ).first()
+                
+                if existing_contact:
+                    # Uppdatera befintlig kontakt om ny information finns
+                    updated = False
+                    if form.cleaned_data.get('contact_email') and not existing_contact.email:
+                        existing_contact.email = form.cleaned_data['contact_email']
+                        updated = True
+                    if form.cleaned_data.get('contact_phone') and not existing_contact.phone:
+                        existing_contact.phone = form.cleaned_data['contact_phone']
+                        updated = True
+                    if form.cleaned_data.get('contact_alias') and not existing_contact.alias:
+                        existing_contact.alias = form.cleaned_data['contact_alias']
+                        updated = True
+                    if form.cleaned_data.get('contact_comment'):
+                        if existing_contact.comment:
+                            existing_contact.comment += f"\n\n{form.cleaned_data['contact_comment']}"
+                        else:
+                            existing_contact.comment = form.cleaned_data['contact_comment']
+                        updated = True
+                    if form.cleaned_data.get('is_naj_member') and not existing_contact.is_naj_member:
+                        existing_contact.is_naj_member = True
+                        updated = True
+                    
+                    if updated:
+                        existing_contact.save()
+                    
+                    contact = existing_contact
+                else:
+                    # Skapa ny kontakt
+                    contact = Contact.objects.create(
+                        name=contact_name,
+                        email=form.cleaned_data.get('contact_email', ''),
+                        phone=form.cleaned_data.get('contact_phone', ''),
+                        alias=form.cleaned_data.get('contact_alias', ''),
+                        comment=form.cleaned_data.get('contact_comment', ''),
+                        is_naj_member=form.cleaned_data.get('is_naj_member', False)
+                    )
+                
+                # Skapa transaktion om yxan är köpt
+                if axe.status == 'KÖPT':
+                    Transaction.objects.create(
+                        axe=axe,
+                        contact=contact,
+                        transaction_date=request.POST.get('transaction_date') or timezone.now().date(),
+                        type='KÖP',
+                        price=0,  # Sätts senare
+                        shipping_cost=0,  # Sätts senare
+                        comment=f'Automatiskt skapad från yxformuläret - {contact.name}'
+                    )
             
             # Hantera bilduppladdning med MultipleFileField
             images = form.cleaned_data.get('images', [])
