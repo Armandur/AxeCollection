@@ -13,9 +13,15 @@ class Manufacturer(models.Model):
         return self.name
 
 class Axe(models.Model):
+    STATUS_CHOICES = [
+        ('KÖPT', 'Köpt'),
+        ('MOTTAGEN', 'Mottagen/Ägd'),
+    ]
+    
     manufacturer = models.ForeignKey(Manufacturer, on_delete=models.PROTECT) # Skyddar mot att radera tillverkare som har yxor kopplade
     model = models.CharField(max_length=200)
     comment = models.TextField(blank=True, null=True)
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='KÖPT')
 
     def __str__(self):
         return f"{self.manufacturer.name} - {self.model}"
