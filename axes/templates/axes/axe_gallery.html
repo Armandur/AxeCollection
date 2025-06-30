@@ -125,6 +125,10 @@
         .mobile-swiper .swiper-button-prev {
             display: none !important;
         }
+        .btn.btn-sm {
+            font-size: 0.95rem;
+            padding: 0.3rem 0.6rem;
+        }
     }
     
     /* Swipe-område för navigation mellan yxor */
@@ -194,9 +198,18 @@
     <div class="row mb-4">
         <div class="col-12 d-flex justify-content-between align-items-center">
             <h1 class="h3 mb-0">Yxgalleri</h1>
-            <a href="{% url 'axe_list' %}" class="btn btn-outline-primary">
-                <i class="fas fa-list"></i> Visa som lista
-            </a>
+            <div class="d-flex gap-1">
+                {% if current_axe and current_axe.pk %}
+                <a href="{% url 'axe_detail' current_axe.pk %}" class="btn btn-outline-info btn-sm ms-2" title="Alla detaljer">
+                    <i class="fas fa-info-circle"></i>
+                    <span class="d-none d-md-inline">Alla detaljer</span>
+                </a>
+                <a href="{% url 'axe_edit' current_axe.pk %}" class="btn btn-outline-secondary btn-sm ms-2" title="Redigera yxa">
+                    <i class="fas fa-edit"></i>
+                    <span class="d-none d-md-inline">Redigera yxa</span>
+                </a>
+                {% endif %}
+            </div>
         </div>
     </div>
     
