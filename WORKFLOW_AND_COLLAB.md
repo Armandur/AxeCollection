@@ -1,6 +1,8 @@
 # Arbetsflöde och samarbetsprinciper (AI & utvecklare)
 
-Denna fil sammanfattar hur vi har resonerat kring arbetsflöde, branch-hantering och samarbete i projektet, baserat på diskussioner mellan utvecklare och AI-assistent.
+**Målgrupp:** Denna fil är primärt skriven för AI-assistenter som ska hjälpa till med projektet. Den innehåller instruktioner, historik och beslut som hjälper AI:n att förstå kontext och arbetsflöden.
+
+**Syfte:** Ge AI-assistenter bästa möjliga start för att fortsätta arbetet utan att behöva gå igenom hela chathistoriken. Filen dokumenterar hur vi har resonerat kring arbetsflöde, branch-hantering och samarbete i projektet, baserat på diskussioner mellan utvecklare och AI-assistent.
 
 ## Branch-strategi
 - **Feature branches:** Varje större funktionalitet utvecklas i en egen branch, t.ex. `feature/axe-create-edit`, `feature/dark-mode`, `feature/contact-integration`.
@@ -100,12 +102,62 @@ Denna fil sammanfattar hur vi har resonerat kring arbetsflöde, branch-hantering
 ### Framtida riktlinjer (uppdatering)
 - Publik/inloggad vy: Plan för att i framtiden ha både publik och inloggad vy, där känsliga uppgifter maskeras i den publika delen.
 
+### TODO-hantering och dokumentation (2025-01-01)
+- **Konsekvent TODO-hantering:** Vi bockar av delmål löpande i TODO_FEATURES.md och lägger till nya förbättringsförslag direkt i filen.
+- **Redundanshantering:** Vi regelbundet går igenom TODO-listan för att identifiera och ta bort duplicerade punkter, samt flyttar punkter till rätt sektioner baserat på funktionalitet.
+- **Sektionsorganisering:** Vi grupperar punkter logiskt (t.ex. bildhantering, yxhantering, säkerhet) och flyttar punkter som hamnat i fel sektion (t.ex. säkerhetsrelaterade punkter till "Säkerhet och användare").
+- **Implementationsstatus:** Vi kontrollerar och uppdaterar [x] markeringar baserat på vad som faktiskt är implementerat, inte bara antar att något är klart.
+- **Numrering:** Vi uppdaterar numrering konsekvent när vi flyttar punkter mellan sektioner.
+
+### Kodgranskningsprocess
+- **Periodisk stegvis kodgranskning:** Vi går igenom koden i omgångar för att identifiera och åtgärda refaktoreringsbehov, buggfixar och tillsnyggning.
+- **Testning per steg:** Varje steg testas innan nästa påbörjas för att säkerställa att ändringar fungerar som förväntat.
+- **Kontinuerlig process:** Detta är en pågående aktivitet, inte en engångsgrej.
+
+### Markdown-standarder och formatering
+- **TODO_FEATURES.md:** Använder numrerade listor med [ ] för att bocka av (punkt 1, 2, 3...)
+- **WORKFLOW_AND_COLLAB.md:** Använder punktlistor med - och **fet text** för rubriker
+- **Konsekvent formatering:** Vi följer befintliga standarder i varje fil och uppdaterar inte bara innehåll utan också formatering
+
+### UX-arbete och responsiv design (2025-01-01)
+- **Iterativ UX-förbättring:** Vi förbättrar UX stegvis baserat på feedback och testning, inte i stora klumpar.
+- **Mobil-först approach:** Vi designar för mobil först och anpassar sedan för desktop, inte tvärtom.
+- **Knappplacering och text:** Vi har tydliga riktlinjer för när text ska döljas på mobil (endast ikon) vs alltid visas:
+  - Endast ikon på mobil: Transaktionsknappar, redigeringsknappar i listor
+  - Alltid text synlig: "Lägg till transaktion" när inga transaktioner finns, viktiga funktioner
+- **Responsiv design:** Vi testar alltid på både mobil och desktop innan vi anser något klart.
+- **Konsekvent UI:** Vi använder samma mönster för liknande funktioner (t.ex. AJAX-sökning för kontakter och plattformar).
+
+### AJAX och JavaScript-implementation
+- **AJAX-flöden:** Vi implementerar fullständiga AJAX-flöden med felhantering och feedback, inte bara enkla requests.
+- **Modal-hantering:** Vi använder modaler för komplexa formulär men undviker dem för enkla listor på mobil.
+- **DOM-manipulation:** Vi säkerställer att formulär och fält alltid finns i DOM:en innan vi försöker manipulera dem.
+- **Event-hantering:** Vi använder event delegation där det är lämpligt och hanterar cleanup ordentligt.
+- **Felhantering:** Vi visar tydlig feedback i UI:n när AJAX-anrop misslyckas, inte bara i konsolen.
+
+### Transaktionsflöde och datamodell
+- **Automatisk typbestämning:** Transaktionstyper bestäms automatiskt baserat på pris (negativ = köp, positiv = sälj).
+- **Värdehantering:** Vi sparar alltid positiva värden i databasen men visar negativa för köp i UI:n.
+- **Formulärlogik:** Vi använder separata formulär för skapande vs redigering med olika fält beroende på kontext.
+- **Smart defaults:** Vi sätter smarta standardvärden (t.ex. dagens datum för transaktioner).
+
+### Arbetsflöde för större ändringar
+- **Planering:** Vi diskuterar och planerar större ändringar innan implementation
+- **Iterativ utveckling:** Vi arbetar stegvis och testar varje del innan vi går vidare
+- **Dokumentation:** Vi uppdaterar både TODO-listan och arbetsflödesdokumentationen löpande
+- **Git-hantering:** Vi committar och pushar regelbundet för att spara framsteg
+
 ## Framtida riktlinjer
 - **Testa alltid:** Testa funktionalitet i webbläsaren innan commit
 - **Dokumentera beslut:** Skriv ner tekniska beslut och varför de togs
 - **Iterativ feedback:** Ta emot feedback och förbättra iterativt
 - **Kodkvalitet:** Håll koden ren och kommenterad för framtida underhåll
+- **Periodvis stegvis kodgranskning:** Vi går igenom koden i omgångar för att identifiera och åtgärda refaktoreringsbehov, buggfixar och tillsnyggning. Varje steg testas innan nästa påbörjas.
+- **TODO-underhåll:** Regelbundet rensa upp och organisera TODO-listan för att hålla den aktuell och användbar
+- **Sektionslogik:** Placera nya punkter i rätt sektion från början och flytta befintliga när de hamnat fel
 
 ---
+
+**För AI-assistenter:** Läs igenom denna fil noggrant innan du börjar arbeta med projektet. Den innehåller viktig kontext om arbetsflöden, beslut och riktlinjer som hjälper dig att fortsätta arbetet effektivt.
 
 *Senast uppdaterad: 2025-01-01* 
