@@ -6,7 +6,8 @@
     /* Anpassningar specifika för Yxlistan */
     .table-responsive {
         border-radius: 0.375rem;
-        overflow: hidden;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
     }
     
     .column-toggle {
@@ -321,43 +322,6 @@
 $(document).ready(function() {
     var table = $('#axesTable').DataTable({
         order: [[0, 'desc']],
-        responsive: {
-            details: {
-                display: $.fn.dataTable.Responsive.display.modal({
-                    header: function (row) {
-                        var data = row.data();
-                        return 'Detaljer för yxa ' + data[0];
-                    }
-                }),
-                renderer: function (api, rowIdx, columns) {
-                    var data = $.map(columns, function (col, i) {
-                        return col.hidden ?
-                            '<tr>' +
-                                '<td class="fw-bold">' + col.title + ':</td> ' +
-                                '<td>' + col.data + '</td>' +
-                            '</tr>' : '';
-                    }).join('');
-
-                    // Lägg till Visa-knapp
-                    var href = $(api.row(rowIdx).node()).data('href');
-                    var viewButton = '';
-                    if (href) {
-                        viewButton = '<tr><td colspan="2" class="text-center pt-3">' +
-                            '<a href="' + href + '" class="btn btn-primary btn-sm">' +
-                            '<i class="fas fa-eye"></i> Visa yxa</a></td></tr>';
-                    }
-
-                    return data ?
-                        $('<table class="table table-sm"/>')
-                            .append('<tbody>' + data + viewButton + '</tbody>') : false;
-                }
-            },
-            breakpoints: [
-                { name: 'desktop', width: Infinity },
-                { name: 'tablet', width: 1024 },
-                { name: 'phone', width: 480 }
-            ]
-        },
         language: {
             "emptyTable": "Ingen data tillgänglig i tabellen",
             "info": "Visar _START_ till _END_ av _TOTAL_ poster",
@@ -430,13 +394,10 @@ $(document).ready(function() {
         if (event.target.tagName === 'A' || event.target.tagName === 'BUTTON' || $(event.target).closest('a, button').length) {
             return;
         }
-        
-        // Endast aktivera klickbara rader på större skärmar
-        if (window.innerWidth > 768) {
-            var href = $(this).data('href');
-            if (href) {
-                window.location.href = href;
-            }
+        // Alltid aktivera klickbara rader (även på mobil)
+        var href = $(this).data('href');
+        if (href) {
+            window.location.href = href;
         }
     });
 
