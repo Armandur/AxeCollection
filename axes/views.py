@@ -1,7 +1,7 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from .models import Axe, Transaction, Contact, Manufacturer, ManufacturerImage, ManufacturerLink, NextAxeID, AxeImage, Platform
 from django.db.models import Sum, Q, Max
-from django.http import JsonResponse
+from django.http import JsonResponse, Http404
 from django.views.decorators.http import require_POST
 from django import forms
 from django.utils import timezone
@@ -12,6 +12,9 @@ import uuid
 import os
 from django.core.files.storage import default_storage
 from django.conf import settings
+from .forms import TransactionForm
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_http_methods
 
 # Create your views here.
 
@@ -107,7 +110,59 @@ def axe_detail(request, pk):
     total_investment = total_cost + total_shipping_cost
     total_income = total_revenue + total_shipping_revenue
     profit_loss = total_income - total_investment
-    
+
+    # Hantera POST för att lägga till ny transaktion, oavsett om det finns transaktioner
+    if request.method == 'POST' and 'addTransactionForm' in request.POST.get('form_id', 'addTransactionForm'):
+        transaction_form = TransactionForm(request.POST)
+        if transaction_form.is_valid():
+            transaction = transaction_form.save(commit=False)
+            transaction.axe = axe
+            # Hantera kontakt
+            selected_contact_id = request.POST.get('selected_contact_id')
+            if selected_contact_id:
+                try:
+                    transaction.contact = Contact.objects.get(id=selected_contact_id)
+                except Contact.DoesNotExist:
+                    pass
+            else:
+                contact_name = request.POST.get('contact_name')
+                if contact_name:
+                    contact, created = Contact.objects.get_or_create(
+                        name=contact_name,
+                        defaults={
+                            'alias': request.POST.get('contact_alias', ''),
+                            'email': request.POST.get('contact_email', ''),
+                            'phone': request.POST.get('contact_phone', ''),
+                            'comment': request.POST.get('contact_comment', ''),
+                            'is_naj_member': request.POST.get('is_naj_member') == 'on'
+                        }
+                    )
+                    transaction.contact = contact
+            # Hantera plattform
+            selected_platform_id = request.POST.get('selected_platform_id')
+            if selected_platform_id:
+                try:
+                    transaction.platform = Platform.objects.get(id=selected_platform_id)
+                except Platform.DoesNotExist:
+                    pass
+            else:
+                platform_search = request.POST.get('platform_search')
+                if platform_search and platform_search.strip():
+                    platform, created = Platform.objects.get_or_create(name=platform_search.strip())
+                    transaction.platform = platform
+            # Sätt typ automatiskt utifrån priset
+            if transaction.price < 0 or transaction.shipping_cost < 0:
+                transaction.type = 'KÖP'
+                transaction.price = abs(transaction.price)
+                transaction.shipping_cost = abs(transaction.shipping_cost)
+            else:
+                transaction.type = 'SÄLJ'
+                transaction.shipping_cost = abs(transaction.shipping_cost)
+            transaction.save()
+            return redirect('axe_detail', pk=axe.pk)
+    else:
+        transaction_form = TransactionForm()
+
     context = {
         'axe': axe,
         'transactions': transactions,
@@ -118,6 +173,7 @@ def axe_detail(request, pk):
         'total_investment': total_investment,
         'total_income': total_income,
         'profit_loss': profit_loss,
+        'transaction_form': transaction_form,
     }
     
     return render(request, 'axes/axe_detail.html', context)
@@ -638,18 +694,7 @@ class AxeForm(forms.ModelForm):
             'placeholder': 'Sök efter befintlig plattform eller ange ny...'
         }),
         label='Plattform',
-        help_text='Sök efter befintlig plattform eller ange namn för ny plattform'
-    )
-    
-    platform_name = forms.CharField(
-        required=False,
-        max_length=100,
-        widget=forms.TextInput(attrs={
-            'class': 'form-control',
-            'placeholder': 'Ange plattformens namn'
-        }),
-        label='Namn (ny plattform)',
-        help_text='Namn på plattformen (t.ex. Tradera, eBay, Blocket)'
+        help_text='Börja skriva för att söka efter befintlig plattform eller skapa ny'
     )
 
     class Meta:
@@ -716,10 +761,8 @@ def axe_create(request):
                     # Använd befintlig plattform
                     platform = existing_platform
                 else:
-                    # Skapa ny plattform om namn anges
-                    platform_name = form.cleaned_data.get('platform_name')
-                    if platform_name:
-                        platform = Platform.objects.create(name=platform_name)
+                    # Skapa ny plattform med sökvärdet som namn
+                    platform = Platform.objects.create(name=platform_search.strip())
             
             # Hantera transaktion
             if contact and (form.cleaned_data.get('transaction_price') or form.cleaned_data.get('transaction_shipping')):
@@ -865,7 +908,7 @@ def axe_edit(request, pk):
         for field in [
             'transaction_price', 'transaction_shipping', 'transaction_date', 'transaction_comment',
             'contact_search', 'contact_name', 'contact_email', 'contact_phone', 'contact_alias', 'contact_comment', 'is_naj_member',
-            'platform_search', 'platform_name']:
+            'platform_search']:
             if field in form.fields:
                 form.fields.pop(field)
         if form.is_valid():
@@ -1053,7 +1096,7 @@ def axe_edit(request, pk):
         for field in [
             'transaction_price', 'transaction_shipping', 'transaction_date', 'transaction_comment',
             'contact_search', 'contact_name', 'contact_email', 'contact_phone', 'contact_alias', 'contact_comment', 'is_naj_member',
-            'platform_search', 'platform_name']:
+            'platform_search']:
             if field in form.fields:
                 form.fields.pop(field)
     return render(request, 'axes/axe_form.html', {
@@ -1061,3 +1104,110 @@ def axe_edit(request, pk):
         'axe': axe,
         'is_edit': True
     })
+
+def api_transaction_detail(request, pk):
+    """Returnerar JSON-data för en enskild transaktion (för AJAX-redigering)"""
+    try:
+        transaction = Transaction.objects.select_related('contact', 'platform').get(pk=pk)
+    except Transaction.DoesNotExist:
+        raise Http404("Transaktion finns inte")
+    data = {
+        'id': transaction.id,
+        'axe_id': transaction.axe_id,
+        'contact_id': transaction.contact.id if transaction.contact else None,
+        'contact_name': transaction.contact.name if transaction.contact else '',
+        'contact_alias': transaction.contact.alias if transaction.contact else '',
+        'contact_email': transaction.contact.email if transaction.contact else '',
+        'contact_phone': transaction.contact.phone if transaction.contact else '',
+        'platform_id': transaction.platform.id if transaction.platform else None,
+        'platform_name': transaction.platform.name if transaction.platform else '',
+        'price': float(transaction.price) if transaction.price is not None else '',
+        'shipping_cost': float(transaction.shipping_cost) if transaction.shipping_cost is not None else '',
+        'transaction_date': transaction.transaction_date.strftime('%Y-%m-%d') if transaction.transaction_date else '',
+        'comment': transaction.comment or '',
+        'type': transaction.type,
+    }
+    return JsonResponse(data)
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def api_transaction_update(request, pk):
+    """Uppdatera en transaktion via AJAX (POST)."""
+    try:
+        transaction = Transaction.objects.get(pk=pk)
+    except Transaction.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Transaktion finns inte.'}, status=404)
+
+    # Hämta data
+    data = request.POST
+    errors = {}
+
+    # Datum
+    transaction.transaction_date = data.get('transaction_date') or transaction.transaction_date
+
+    # Pris och frakt
+    try:
+        price = float(data.get('price', ''))
+        shipping = float(data.get('shipping_cost', ''))
+    except (TypeError, ValueError):
+        errors['price'] = 'Ogiltigt pris eller frakt.'
+        price = transaction.price
+        shipping = transaction.shipping_cost
+
+    # Typ: negativt = KÖP, positivt = SÄLJ
+    if price < 0 or shipping < 0:
+        transaction.type = 'KÖP'
+        transaction.price = abs(price)
+        transaction.shipping_cost = abs(shipping)
+    else:
+        transaction.type = 'SÄLJ'
+        transaction.price = abs(price)
+        transaction.shipping_cost = abs(shipping)
+
+    # Kommentar
+    transaction.comment = data.get('comment', transaction.comment)
+
+    # Kontakt
+    selected_contact_id = data.get('selected_contact_id')
+    if selected_contact_id:
+        try:
+            transaction.contact = Contact.objects.get(id=selected_contact_id)
+        except Contact.DoesNotExist:
+            errors['contact'] = 'Kontakt finns inte.'
+    else:
+        contact_name = data.get('contact_name')
+        if contact_name:
+            contact, created = Contact.objects.get_or_create(
+                name=contact_name,
+                defaults={
+                    'alias': data.get('contact_alias', ''),
+                    'email': data.get('contact_email', ''),
+                    'phone': data.get('contact_phone', ''),
+                    'comment': data.get('contact_comment', ''),
+                    'is_naj_member': data.get('is_naj_member') == 'on'
+                }
+            )
+            transaction.contact = contact
+        else:
+            transaction.contact = None
+
+    # Plattform
+    selected_platform_id = data.get('selected_platform_id')
+    if selected_platform_id:
+        try:
+            transaction.platform = Platform.objects.get(id=selected_platform_id)
+        except Platform.DoesNotExist:
+            errors['platform'] = 'Plattform finns inte.'
+    else:
+        platform_search = data.get('platform_search')
+        if platform_search and platform_search.strip():
+            platform, created = Platform.objects.get_or_create(name=platform_search.strip())
+            transaction.platform = platform
+        else:
+            transaction.platform = None
+
+    if errors:
+        return JsonResponse({'success': False, 'errors': errors}, status=400)
+
+    transaction.save()
+    return JsonResponse({'success': True})

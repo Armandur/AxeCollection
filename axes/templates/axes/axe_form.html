@@ -198,27 +198,10 @@
                                             <!-- Sökresultat visas här -->
                                         </div>
                                     </div>
-                                    <div class="form-text">{{ form.platform_search.help_text }}</div>
+                                    <div class="form-text">Börja skriva för att söka efter befintlig plattform eller skapa ny</div>
                                     {% if form.platform_search.errors %}
                                         <div class="text-danger">{{ form.platform_search.errors }}</div>
                                     {% endif %}
-                                </div>
-                                
-                                <!-- Ny plattform (visas endast om sökning misslyckas) -->
-                                <div id="newPlatformSection" style="display: none;">
-                                    <hr class="my-3">
-                                    <h6 class="text-muted">Skapa ny plattform</h6>
-                                    
-                                    <div class="mb-3">
-                                        <label for="{{ form.platform_name.id_for_label }}" class="form-label">
-                                            {{ form.platform_name.label }}
-                                        </label>
-                                        {{ form.platform_name }}
-                                        <div class="form-text">{{ form.platform_name.help_text }}</div>
-                                        {% if form.platform_name.errors %}
-                                            <div class="text-danger">{{ form.platform_name.errors }}</div>
-                                        {% endif %}
-                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -682,13 +665,11 @@ document.addEventListener('DOMContentLoaded', function() {
             const item = document.createElement('div');
             item.className = 'dropdown-item';
             item.innerHTML = `
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <strong>${contact.name}</strong>
-                        ${contact.alias ? `<br><small class="text-muted">${contact.alias}</small>` : ''}
-                        ${contact.email ? `<br><small class="text-muted">${contact.email}</small>` : ''}
-                    </div>
-                    <span class="badge bg-success">Matchad</span>
+                <div>
+                    <strong>${contact.name}</strong>
+                    ${contact.alias ? `<br><small class="text-muted">${contact.alias}</small>` : ''}
+                    ${contact.email ? `<br><small class="text-muted">${contact.email}</small>` : ''}
+                    ${contact.phone ? `<br><small class="text-muted">${contact.phone}</small>` : ''}
                 </div>
             `;
             item.addEventListener('click', () => {
@@ -707,7 +688,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Plattformssökning
     const platformSearchInput = document.getElementById('{{ form.platform_search.id_for_label }}');
-    const newPlatformSection = document.getElementById('newPlatformSection');
     const platformSearchResults = document.getElementById('platformSearchResults');
     let platformSearchTimeout;
     
@@ -724,72 +704,55 @@ document.addEventListener('DOMContentLoaded', function() {
                     fetch(`{% url 'search_platforms' %}?q=${encodeURIComponent(searchValue)}`)
                         .then(response => response.json())
                         .then(data => {
-                            if (data.results.length > 0) {
+                            platformSearchResults.innerHTML = '';
+                            if (data.results && data.results.length > 0) {
                                 // Visa dropdown med resultat
-                                showPlatformResults(data.results);
-                                newPlatformSection.style.display = 'none';
+                                data.results.forEach(platform => {
+                                    const item = document.createElement('div');
+                                    item.className = 'dropdown-item';
+                                    item.innerHTML = `
+                                        <div><strong>${platform.name}</strong></div>
+                                    `;
+                                    item.addEventListener('click', () => {
+                                        platformSearchInput.value = platform.name;
+                                        platformSearchResults.style.display = 'none';
+                                    });
+                                    platformSearchResults.appendChild(item);
+                                });
+                                platformSearchResults.style.display = 'block';
                             } else {
-                                // Inga resultat, visa ny plattformsektion
-                                hidePlatformResults();
-                                newPlatformSection.style.display = 'block';
+                                // Om ingen match, visa "Skapa ny"
+                                platformSearchResults.innerHTML = `
+                                    <div class="dropdown-item">
+                                        <a href="#" class="text-decoration-none text-dark">
+                                            <i class="fas fa-plus-circle me-1"></i> Skapa ny plattform: "${searchValue}"
+                                        </a>
+                                    </div>
+                                `;
+                                platformSearchResults.style.display = 'block';
                             }
                         })
                         .catch(error => {
                             console.error('Sökfel:', error);
-                            hidePlatformResults();
-                            newPlatformSection.style.display = 'block';
+                            platformSearchResults.innerHTML = `
+                                <div class="dropdown-item text-danger">
+                                    Fel vid sökning: ${error.message}
+                                </div>
+                            `;
+                            platformSearchResults.style.display = 'block';
                         });
                 }, 300);
             } else {
-                hidePlatformResults();
-                newPlatformSection.style.display = 'none';
+                platformSearchResults.style.display = 'none';
             }
         });
-        
-        // Visa ny plattformsektion om användaren börjar skriva i namn-fältet
-        const platformNameInput = document.getElementById('{{ form.platform_name.id_for_label }}');
-        if (platformNameInput) {
-            platformNameInput.addEventListener('input', function() {
-                if (this.value.trim()) {
-                    hidePlatformResults();
-                    newPlatformSection.style.display = 'block';
-                }
-            });
-        }
         
         // Dölj dropdown när användaren klickar utanför
         document.addEventListener('click', function(e) {
             if (!platformSearchInput.contains(e.target) && !platformSearchResults.contains(e.target)) {
-                hidePlatformResults();
+                platformSearchResults.style.display = 'none';
             }
         });
-    }
-    
-    function showPlatformResults(results) {
-        platformSearchResults.innerHTML = '';
-        results.forEach(platform => {
-            const item = document.createElement('div');
-            item.className = 'dropdown-item';
-            item.innerHTML = `
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <strong>${platform.name}</strong>
-                    </div>
-                    <span class="badge bg-success">Matchad</span>
-                </div>
-            `;
-            item.addEventListener('click', () => {
-                platformSearchInput.value = platform.name;
-                hidePlatformResults();
-                newPlatformSection.style.display = 'none';
-            });
-            platformSearchResults.appendChild(item);
-        });
-        platformSearchResults.style.display = 'block';
-    }
-    
-    function hidePlatformResults() {
-        platformSearchResults.style.display = 'none';
     }
 
     // Klistra in (Ctrl+V) - endast på desktop

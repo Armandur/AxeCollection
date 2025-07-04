@@ -86,6 +86,20 @@ Denna fil sammanfattar hur vi har resonerat kring arbetsflöde, branch-hantering
 - **Separata formulär:** Olika fält för skapande vs redigering
 - **Bättre feedback:** Tydligare meddelanden och validering
 
+### Transaktionsflöde och AJAX (2025-07-04)
+- Fullständigt AJAX-flöde för transaktioner: lägga till, redigera och ta bort sker nu med AJAX, inklusive bekräftelse och felhantering.
+- Responsiv och enhetlig UI: Knappar och modaler är anpassade för både desktop och mobil, med endast ikon på mobil där det är relevant.
+- Automatisk typbestämning: Vid redigering visas negativa värden för köp, positiva för sälj.
+- Placering av knappar: "Lägg till transaktion" visas nu logiskt under yxinformationen när inga transaktioner finns.
+- Iterativ UX-förbättring: Placering, utseende och funktion för knappar och modaler har förbättrats stegvis utifrån feedback och testning.
+
+### Arbetsflöde och TODO
+- Konsekvent användning av TODO_FEATURES.md: Delmål bockas av löpande, och nya förbättringsförslag läggs till direkt i filen.
+- Dokumentation av UI/UX-beslut: Beslut om t.ex. när text ska döljas på mobil, och när den alltid ska visas, dokumenteras för framtida utveckling.
+
+### Framtida riktlinjer (uppdatering)
+- Publik/inloggad vy: Plan för att i framtiden ha både publik och inloggad vy, där känsliga uppgifter maskeras i den publika delen.
+
 ## Framtida riktlinjer
 - **Testa alltid:** Testa funktionalitet i webbläsaren innan commit
 - **Dokumentera beslut:** Skriv ner tekniska beslut och varför de togs
