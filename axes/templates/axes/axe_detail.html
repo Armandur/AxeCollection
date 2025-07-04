@@ -89,6 +89,166 @@
                         {% endif %}
                     </div>
                 </div>
+                
+                {# Lägg till transaktion-knapp om inga transaktioner finns #}
+                {% if not transactions %}
+                <div class="mt-4">
+                    <button class="btn btn-primary" id="addTransactionBtn" data-bs-toggle="modal" data-bs-target="#addTransactionModal">
+                        <i class="fas fa-plus-circle me-1"></i> Lägg till transaktion
+                    </button>
+                </div>
+                
+                <!-- Modal för att lägga till transaktion -->
+                <div class="modal fade" id="addTransactionModal" tabindex="-1" aria-labelledby="addTransactionModalLabel" aria-hidden="true">
+                  <div class="modal-dialog">
+                    <div class="modal-content">
+                      <div class="modal-header">
+                        <h5 class="modal-title" id="addTransactionModalLabel">Lägg till transaktion</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Stäng"></button>
+                      </div>
+                      <div class="modal-body">
+                        <!-- Här kommer formuläret för att lägga till transaktion att visas -->
+                        {% if transaction_form %}
+                            <form method="post" id="addTransactionForm">
+                                {% csrf_token %}
+                                
+                                <!-- Datum -->
+                                <div class="mb-3">
+                                    <label for="{{ transaction_form.transaction_date.id_for_label }}" class="form-label">
+                                        {{ transaction_form.transaction_date.label }}
+                                    </label>
+                                    {{ transaction_form.transaction_date }}
+                                    <div class="form-text">{{ transaction_form.transaction_date.help_text }}</div>
+                                    {% if transaction_form.transaction_date.errors %}
+                                        <div class="text-danger">{{ transaction_form.transaction_date.errors }}</div>
+                                    {% endif %}
+                                </div>
+                                
+                                <!-- Kontakthantering -->
+                                <div class="mb-3">
+                                    <label for="contactSearchInput" class="form-label">Kontakt</label>
+                                    <div class="position-relative">
+                                        <input type="text" id="contactSearchInput" name="contact_search" class="form-control" placeholder="Sök efter befintlig kontakt eller ange ny...">
+                                        <input type="hidden" id="selectedContactId" name="selected_contact_id" value="">
+                                        <div id="contactSearchResults" class="dropdown-menu w-100" style="display: none; position: absolute; z-index: 1000; max-height: 200px; overflow-y: auto;">
+                                            <!-- Sökresultat visas här -->
+                                        </div>
+                                    </div>
+                                    <div class="form-text">Börja skriva för att söka efter befintlig kontakt</div>
+                                </div>
+                                
+                                <!-- Ny kontakt (visas endast om sökning misslyckas) -->
+                                <div id="newContactSection" style="display: none;">
+                                    <hr class="my-3">
+                                    <h6 class="text-muted">Skapa ny kontakt</h6>
+                                    
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label for="contactName" class="form-label">Namn</label>
+                                                <input type="text" id="contactName" name="contact_name" class="form-control">
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label for="contactAlias" class="form-label">Alias</label>
+                                                <input type="text" id="contactAlias" name="contact_alias" class="form-control">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label for="contactEmail" class="form-label">E-post</label>
+                                                <input type="email" id="contactEmail" name="contact_email" class="form-control">
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label for="contactPhone" class="form-label">Telefon</label>
+                                                <input type="text" id="contactPhone" name="contact_phone" class="form-control">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label for="contactComment" class="form-label">Kommentar</label>
+                                        <textarea id="contactComment" name="contact_comment" class="form-control" rows="2"></textarea>
+                                    </div>
+                                    
+                                    <div class="form-check">
+                                        <input type="checkbox" id="isNajMember" name="is_naj_member" class="form-check-input">
+                                        <label class="form-check-label" for="isNajMember">NAJ-medlem</label>
+                                    </div>
+                                </div>
+                                
+                                <!-- Plattformshantering -->
+                                <div class="mb-3">
+                                    <label for="platformSearchInput" class="form-label">Plattform</label>
+                                    <div class="position-relative">
+                                        <input type="text" id="platformSearchInput" name="platform_search" class="form-control" placeholder="Sök efter befintlig plattform eller ange ny...">
+                                        <input type="hidden" id="selectedPlatformId" name="selected_platform_id" value="">
+                                        <div id="platformSearchResults" class="dropdown-menu w-100" style="display: none; position: absolute; z-index: 1000; max-height: 200px; overflow-y: auto;">
+                                            <!-- Sökresultat visas här -->
+                                        </div>
+                                    </div>
+                                    <div class="form-text">Börja skriva för att söka efter befintlig plattform eller skapa ny</div>
+                                </div>
+                                
+                                <!-- Kostnader -->
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="{{ transaction_form.price.id_for_label }}" class="form-label">
+                                                {{ transaction_form.price.label }}
+                                            </label>
+                                            {{ transaction_form.price }}
+                                            <div class="form-text">{{ transaction_form.price.help_text }}</div>
+                                            {% if transaction_form.price.errors %}
+                                                <div class="text-danger">{{ transaction_form.price.errors }}</div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="{{ transaction_form.shipping_cost.id_for_label }}" class="form-label">
+                                                {{ transaction_form.shipping_cost.label }}
+                                            </label>
+                                            {{ transaction_form.shipping_cost }}
+                                            <div class="form-text">{{ transaction_form.shipping_cost.help_text }}</div>
+                                            {% if transaction_form.shipping_cost.errors %}
+                                                <div class="text-danger">{{ transaction_form.shipping_cost.errors }}</div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Kommentar -->
+                                <div class="mb-3">
+                                    <label for="{{ transaction_form.comment.id_for_label }}" class="form-label">
+                                        {{ transaction_form.comment.label }}
+                                    </label>
+                                    {{ transaction_form.comment }}
+                                    <div class="form-text">{{ transaction_form.comment.help_text }}</div>
+                                    {% if transaction_form.comment.errors %}
+                                        <div class="text-danger">{{ transaction_form.comment.errors }}</div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Stäng</button>
+                                    <button type="submit" class="btn btn-primary">Spara</button>
+                                </div>
+                            </form>
+                        {% else %}
+                            <div class="alert alert-info">Formulär för att lägga till transaktion kommer här.</div>
+                        {% endif %}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                {% endif %}
             </div>
         </div>
 
@@ -199,5 +359,149 @@ const lightbox = new PhotoSwipeLightbox({
   pswpModule: PhotoSwipe
 });
 lightbox.init();
+</script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // --- AJAX-sökning för kontakt ---
+    const contactSearchInput = document.getElementById('contactSearchInput');
+    const newContactSection = document.getElementById('newContactSection');
+    const contactSearchResults = document.getElementById('contactSearchResults');
+    const selectedContactId = document.getElementById('selectedContactId');
+    let contactSearchTimeout;
+    if (contactSearchInput) {
+        contactSearchInput.addEventListener('input', function() {
+            const searchValue = this.value.trim();
+            clearTimeout(contactSearchTimeout);
+            // Rensa vald kontakt när användaren skriver
+            selectedContactId.value = '';
+            if (searchValue.length >= 2) {
+                contactSearchTimeout = setTimeout(() => {
+                    fetch('/api/search/contacts/?q=' + encodeURIComponent(searchValue))
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.results && data.results.length > 0) {
+                                showContactResults(data.results);
+                                newContactSection.style.display = 'none';
+                            } else {
+                                newContactSection.style.display = 'block';
+                                contactSearchResults.style.display = 'none';
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error:', error);
+                            newContactSection.style.display = 'block';
+                            contactSearchResults.style.display = 'none';
+                        });
+                }, 300);
+            } else {
+                contactSearchResults.style.display = 'none';
+                newContactSection.style.display = 'none';
+            }
+        });
+        
+        // Dölj dropdown när användaren klickar utanför
+        document.addEventListener('click', function(e) {
+            if (!contactSearchInput.contains(e.target) && !contactSearchResults.contains(e.target)) {
+                contactSearchResults.style.display = 'none';
+            }
+        });
+    }
+    function showContactResults(results) {
+        contactSearchResults.innerHTML = '';
+        results.forEach(contact => {
+            const item = document.createElement('div');
+            item.className = 'dropdown-item';
+            item.innerHTML = `
+                <div>
+                    <strong>${contact.name}</strong>
+                    ${contact.alias ? `<br><small class='text-muted'>${contact.alias}</small>` : ''}
+                    ${contact.email ? `<br><small class='text-muted'>${contact.email}</small>` : ''}
+                    ${contact.phone ? `<br><small class='text-muted'>${contact.phone}</small>` : ''}
+                </div>
+            `;
+            item.addEventListener('click', () => {
+                contactSearchInput.value = contact.name;
+                selectedContactId.value = contact.id;
+                hideContactResults();
+                newContactSection.style.display = 'none';
+            });
+            contactSearchResults.appendChild(item);
+        });
+        contactSearchResults.style.display = 'block';
+    }
+    function hideContactResults() {
+        contactSearchResults.style.display = 'none';
+    }
+    // --- AJAX-sökning för plattform ---
+    const platformSearchInput = document.getElementById('platformSearchInput');
+    const platformSearchResults = document.getElementById('platformSearchResults');
+    const selectedPlatformId = document.getElementById('selectedPlatformId');
+    let platformSearchTimeout;
+    if (platformSearchInput) {
+        platformSearchInput.addEventListener('input', function() {
+            const searchValue = this.value.trim();
+            clearTimeout(platformSearchTimeout);
+            // Rensa vald plattform när användaren skriver
+            selectedPlatformId.value = '';
+            if (searchValue.length >= 2) {
+                platformSearchTimeout = setTimeout(() => {
+                    fetch('/api/search/platforms/?q=' + encodeURIComponent(searchValue))
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.results && data.results.length > 0) {
+                                showPlatformResults(data.results);
+                            } else {
+                                // Om ingen match, visa "Skapa ny"
+                                platformSearchResults.innerHTML = `
+                                    <div class="dropdown-item">
+                                        <a href="#" class="text-decoration-none text-dark" onclick="createNewPlatform('${encodeURIComponent(searchValue)}')">
+                                            <i class="fas fa-plus-circle me-1"></i> Skapa ny plattform: "${searchValue}"
+                                        </a>
+                                    </div>
+                                `;
+                                platformSearchResults.style.display = 'block';
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error:', error);
+                            platformSearchResults.innerHTML = `
+                                <div class="dropdown-item text-danger">
+                                    Fel vid sökning: ${error.message}
+                                </div>
+                            `;
+                            platformSearchResults.style.display = 'block';
+                        });
+                }, 300);
+            } else {
+                platformSearchResults.style.display = 'none';
+            }
+        });
+        
+        // Dölj dropdown när användaren klickar utanför
+        document.addEventListener('click', function(e) {
+            if (!platformSearchInput.contains(e.target) && !platformSearchResults.contains(e.target)) {
+                platformSearchResults.style.display = 'none';
+            }
+        });
+    }
+    function showPlatformResults(results) {
+        platformSearchResults.innerHTML = '';
+        results.forEach(platform => {
+            const item = document.createElement('div');
+            item.className = 'dropdown-item';
+            item.innerHTML = `<div><strong>${platform.name}</strong></div>`;
+            item.addEventListener('click', () => {
+                platformSearchInput.value = platform.name;
+                selectedPlatformId.value = platform.id;
+                hidePlatformResults();
+            });
+            platformSearchResults.appendChild(item);
+        });
+        platformSearchResults.style.display = 'block';
+    }
+    function hidePlatformResults() {
+        platformSearchResults.style.display = 'none';
+    }
+});
 </script>
 {% endblock %} 

@@ -29,6 +29,13 @@ En checklista för vidareutveckling av AxeCollection. Bocka av med [x] när klar
 17. [x] AJAX-sökning för plattformar – Realtidssökning med dropdown-resultat för befintliga plattformar.
 18. [ ] Sökfunktion för yxor och tillverkare – Snabbt hitta yxor, tillverkare eller transaktioner.
 19. [ ] Filtrering på t.ex. tillverkare, typ, årtal, mm.
+19. [ ] Redigera transaktion, plattform och kontakt för en yxa via detaljvyn
+    - [ ] 19.1 Visa "Lägg till transaktion"-knapp om ingen transaktion finns
+    - [ ] 19.2 Visa "Redigera transaktioner"-knapp om en eller flera transaktioner finns
+    - [ ] 19.3 Bygg formulär för att lägga till/redigera transaktion (pris, frakt, kontakt, plattform, kommentar, datum)
+    - [ ] 19.4 Implementera AJAX-sökning för kontakt och plattform i formuläret
+    - [ ] 19.5 Möjlighet att skapa ny kontakt/plattform direkt i formuläret
+    - [ ] 19.6 (Ev.) Möjlighet att ta bort transaktion
 
 ## Yxhantering och inmatning
 
