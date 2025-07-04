@@ -110,16 +110,16 @@
                     </div>
                 </div>
                 
-                {# Lägg till transaktion-knapp om inga transaktioner finns #}
-                {% if not transactions %}
-                <div class="mt-4">
-                    <button class="btn btn-primary" id="addTransactionBtn" data-bs-toggle="modal" data-bs-target="#addTransactionModal">
-                        <i class="fas fa-plus-circle me-1"></i> Lägg till transaktion
-                    </button>
-                </div>
-                {% endif %}
-            </div>
-        </div>
+            </div> <!-- card-body -->
+        </div> <!-- card -->
+
+{% if not transactions %}
+<div class="mt-4">
+    <button class="btn btn-primary" id="addTransactionBtn" type="button">
+        <i class="fas fa-plus-circle me-1"></i> Lägg till transaktion
+    </button>
+</div>
+{% endif %}
 
         <!-- Transaktionshistorik -->
         {% if transactions %}
@@ -672,6 +672,30 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
+
+    // --- Ta bort transaktion ---
+    const deleteTransactionBtns = document.querySelectorAll('.delete-transaction-btn');
+    deleteTransactionBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            const transactionId = this.getAttribute('data-transaction-id');
+            if (confirm('Är du säker på att du vill ta bort denna transaktion?')) {
+                fetch(`/api/transaction/${transactionId}/delete/`, {
+                    method: 'POST'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        location.reload();
+                    } else {
+                        alert('Kunde inte ta bort transaktionen: ' + (data.error || 'Okänt fel.'));
+                    }
+                })
+                .catch(() => {
+                    alert('Något gick fel vid borttagning.');
+                });
+            }
+        });
+    });
 });
 </script>
 {% endblock %} 
