@@ -27,6 +27,26 @@
         color: #0d6efd;
         text-decoration: underline;
     }
+    .edit-col {
+        white-space: nowrap;
+    }
+    .edit-transaction-btn,
+    .delete-transaction-btn {
+        display: inline-block;
+        margin-right: 0.25rem;
+        margin-bottom: 0;
+        vertical-align: middle;
+    }
+    @media (max-width: 480px) {
+        .edit-col {
+            text-align: center;
+        }
+        .edit-transaction-btn,
+        .delete-transaction-btn {
+            font-size: 1rem;
+            padding: 0.3rem 0.5rem;
+        }
+    }
     @media (max-width: 767px) {
         .btn.btn-sm {
             font-size: 0.95rem;
@@ -97,20 +117,139 @@
                         <i class="fas fa-plus-circle me-1"></i> Lägg till transaktion
                     </button>
                 </div>
-                
-                <!-- Modal för att lägga till transaktion -->
-                <div class="modal fade" id="addTransactionModal" tabindex="-1" aria-labelledby="addTransactionModalLabel" aria-hidden="true">
-                  <div class="modal-dialog">
-                    <div class="modal-content">
-                      <div class="modal-header">
-                        <h5 class="modal-title" id="addTransactionModalLabel">Lägg till transaktion</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Stäng"></button>
-                      </div>
-                      <div class="modal-body">
-                        <!-- Här kommer formuläret för att lägga till transaktion att visas -->
-                        {% if transaction_form %}
-                            <form method="post" id="addTransactionForm">
-                                {% csrf_token %}
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Transaktionshistorik -->
+        {% if transactions %}
+            <div class="card mt-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0">Transaktionshistorik</h4>
+                    <div>
+                        <button class="btn btn-primary btn-sm me-2" id="addTransactionBtn" type="button">
+                            <i class="fas fa-plus-circle me-1"></i>
+                            <span class="d-none d-md-inline">Lägg till transaktion</span>
+                        </button>
+                        <button id="toggleEditTransactions" class="btn btn-outline-secondary btn-sm" type="button">
+                            <span id="toggleEditIcon"><i class="bi bi-pencil-square me-1"></i></span>
+                            <span id="toggleEditText" class="d-none d-md-inline">Redigera</span>
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-sm" id="transactionTable">
+                            <thead>
+                                <tr>
+                                    <th>Datum</th>
+                                    <th>Typ</th>
+                                    <th>Pris</th>
+                                    <th>Frakt</th>
+                                    <th>Kontakt</th>
+                                    <th>Plattform</th>
+                                    <th>Kommentar</th>
+                                    <th class="edit-col" style="display:none;">Åtgärder</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for transaction in transactions %}
+                                    <tr>
+                                        <td>{{ transaction.transaction_date|date:"Y-m-d" }}</td>
+                                        <td>
+                                            <span class="badge {% if transaction.type == 'KÖP' %}bg-danger{% else %}bg-success{% endif %}">
+                                                <i class="bi {% if transaction.type == 'KÖP' %}bi-arrow-down-circle{% else %}bi-arrow-up-circle{% endif %} me-1"></i>
+                                                {{ transaction.type }}
+                                            </span>
+                                        </td>
+                                        <td>{{ transaction.price|format_decimal }} kr</td>
+                                        <td>{{ transaction.shipping_cost|format_decimal }} kr</td>
+                                        <td>
+                                            {% if transaction.contact %}
+                                                <a href="{% url 'contact_detail' transaction.contact.pk %}" class="contact-link">
+                                                    {% if transaction.contact.alias %}
+                                                        {{ transaction.contact.alias }}
+                                                    {% else %}
+                                                        {{ transaction.contact.name }}
+                                                    {% endif %}
+                                                </a>
+                                            {% else %}
+                                                -
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ transaction.platform.name|default:"-" }}</td>
+                                        <td>{{ transaction.comment|default:"-" }}</td>
+                                        <td class="edit-col" style="display:none;">
+                                            <button class="btn btn-outline-primary btn-sm edit-transaction-btn" data-transaction-id="{{ transaction.id }}" title="Redigera">
+                                                <i class="bi bi-pencil"></i>
+                                                <span class="d-none d-md-inline">Redigera</span>
+                                            </button>
+                                            <button class="btn btn-outline-danger btn-sm delete-transaction-btn ms-1" data-transaction-id="{{ transaction.id }}" title="Ta bort">
+                                                <i class="bi bi-trash"></i>
+                                                <span class="d-none d-md-inline">Ta bort</span>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Högra kolumnen -->
+    <div class="col-md-4">
+        <!-- Bildgalleri -->
+        {% if axe.images.all %}
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0">Bilder</h4>
+                </div>
+                <div class="card-body">
+                    <div class="axe-detail-images">
+                        <div id="axeCarousel" class="carousel slide" data-bs-ride="carousel">
+                            <div class="carousel-inner">
+                                {% for image in axe.images.all %}
+                                    <div class="carousel-item {% if forloop.first %}active{% endif %}">
+                                        <a href="{{ image.image.url }}" data-pswp-width="{{ image.image.width }}" data-pswp-height="{{ image.image.height }}">
+                                            <img src="{{ image.image.url }}" class="d-block w-100" alt="Yxa {{ forloop.counter }}" loading="lazy">
+                                        </a>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                            {% if axe.images.count > 1 %}
+                                <button class="carousel-control-prev" type="button" data-bs-target="#axeCarousel" data-bs-slide="prev">
+                                    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                                    <span class="visually-hidden">Föregående</span>
+                                </button>
+                                <button class="carousel-control-next" type="button" data-bs-target="#axeCarousel" data-bs-slide="next">
+                                    <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                                    <span class="visually-hidden">Nästa</span>
+                                </button>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Modal för att lägga till/redigera transaktion (alltid i DOM) -->
+<div class="modal fade" id="addTransactionModal" tabindex="-1" aria-labelledby="addTransactionModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="addTransactionModalLabel">Lägg till transaktion</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Stäng"></button>
+      </div>
+      <div class="modal-body">
+        <!-- Här kommer formuläret för att lägga till/redigera transaktion att visas -->
+        {% if transaction_form %}
+            <form method="post" id="addTransactionForm">
+                {% csrf_token %}
                                 
                                 <!-- Datum -->
                                 <div class="mb-3">
@@ -241,110 +380,12 @@
                                     <button type="submit" class="btn btn-primary">Spara</button>
                                 </div>
                             </form>
-                        {% else %}
-                            <div class="alert alert-info">Formulär för att lägga till transaktion kommer här.</div>
-                        {% endif %}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                {% endif %}
-            </div>
-        </div>
-
-        <!-- Transaktionshistorik -->
-        {% if transactions %}
-            <div class="card mt-4">
-                <div class="card-header">
-                    <h4 class="mb-0">Transaktionshistorik</h4>
-                </div>
-                <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table table-sm">
-                            <thead>
-                                <tr>
-                                    <th>Datum</th>
-                                    <th>Typ</th>
-                                    <th>Pris</th>
-                                    <th>Frakt</th>
-                                    <th>Kontakt</th>
-                                    <th>Plattform</th>
-                                    <th>Kommentar</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for transaction in transactions %}
-                                    <tr>
-                                        <td>{{ transaction.transaction_date|date:"Y-m-d" }}</td>
-                                        <td>
-                                            <span class="badge {% if transaction.type == 'KÖP' %}bg-danger{% else %}bg-success{% endif %}">
-                                                <i class="bi {% if transaction.type == 'KÖP' %}bi-arrow-down-circle{% else %}bi-arrow-up-circle{% endif %} me-1"></i>
-                                                {{ transaction.type }}
-                                            </span>
-                                        </td>
-                                        <td>{{ transaction.price|format_decimal }} kr</td>
-                                        <td>{{ transaction.shipping_cost|format_decimal }} kr</td>
-                                        <td>
-                                            {% if transaction.contact %}
-                                                <a href="{% url 'contact_detail' transaction.contact.pk %}" class="contact-link">
-                                                    {% if transaction.contact.alias %}
-                                                        {{ transaction.contact.alias }}
-                                                    {% else %}
-                                                        {{ transaction.contact.name }}
-                                                    {% endif %}
-                                                </a>
-                                            {% else %}
-                                                -
-                                            {% endif %}
-                                        </td>
-                                        <td>{{ transaction.platform.name|default:"-" }}</td>
-                                        <td>{{ transaction.comment|default:"-" }}</td>
-                                    </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
+        {% else %}
+            <div class="alert alert-info">Formulär för att lägga till transaktion kommer här.</div>
         {% endif %}
+      </div>
     </div>
-
-    <!-- Högra kolumnen -->
-    <div class="col-md-4">
-        <!-- Bildgalleri -->
-        {% if axe.images.all %}
-            <div class="card">
-                <div class="card-header">
-                    <h4 class="mb-0">Bilder</h4>
-                </div>
-                <div class="card-body">
-                    <div class="axe-detail-images">
-                        <div id="axeCarousel" class="carousel slide" data-bs-ride="carousel">
-                            <div class="carousel-inner">
-                                {% for image in axe.images.all %}
-                                    <div class="carousel-item {% if forloop.first %}active{% endif %}">
-                                        <a href="{{ image.image.url }}" data-pswp-width="{{ image.image.width }}" data-pswp-height="{{ image.image.height }}">
-                                            <img src="{{ image.image.url }}" class="d-block w-100" alt="Yxa {{ forloop.counter }}" loading="lazy">
-                                        </a>
-                                    </div>
-                                {% endfor %}
-                            </div>
-                            {% if axe.images.count > 1 %}
-                                <button class="carousel-control-prev" type="button" data-bs-target="#axeCarousel" data-bs-slide="prev">
-                                    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-                                    <span class="visually-hidden">Föregående</span>
-                                </button>
-                                <button class="carousel-control-next" type="button" data-bs-target="#axeCarousel" data-bs-slide="next">
-                                    <span class="carousel-control-next-icon" aria-hidden="true"></span>
-                                    <span class="visually-hidden">Nästa</span>
-                                </button>
-                            {% endif %}
-                        </div>
-                    </div>
-                </div>
-            </div>
-        {% endif %}
-    </div>
+  </div>
 </div>
 {% endblock %}
 
@@ -362,6 +403,72 @@ lightbox.init();
 </script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // --- Gemensamma variabler för modalhantering ---
+    const addTransactionBtn = document.getElementById('addTransactionBtn');
+    const addTransactionModal = document.getElementById('addTransactionModal');
+    const addTransactionModalLabel = document.getElementById('addTransactionModalLabel');
+    const addTransactionForm = document.getElementById('addTransactionForm');
+    const submitBtn = addTransactionForm ? addTransactionForm.querySelector('button[type="submit"]') : null;
+    let editingTransactionId = null;
+
+    // Lägg till transaktion-knapp öppnar alltid tom modal
+    if (addTransactionBtn && addTransactionModal) {
+        addTransactionBtn.addEventListener('click', function() {
+            if (addTransactionForm) addTransactionForm.reset();
+            document.getElementById('selectedContactId').value = '';
+            document.getElementById('contactSearchInput').value = '';
+            document.getElementById('platformSearchInput').value = '';
+            document.getElementById('selectedPlatformId').value = '';
+            document.getElementById('newContactSection').style.display = 'none';
+            addTransactionModalLabel.textContent = 'Lägg till transaktion';
+            if (submitBtn) submitBtn.textContent = 'Spara';
+            editingTransactionId = null;
+            const modal = new bootstrap.Modal(addTransactionModal);
+            modal.show();
+        });
+    }
+
+    // --- Redigera transaktion ---
+    const editTransactionBtns = document.querySelectorAll('.edit-transaction-btn');
+    editTransactionBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            const transactionId = this.getAttribute('data-transaction-id');
+            fetch(`/api/transaction/${transactionId}/`)
+                .then(response => response.json())
+                .then(data => {
+                    let price = data.price || '';
+                    let shipping = data.shipping_cost || '';
+                    if (data.type === 'KÖP') {
+                        price = price ? -Math.abs(price) : '';
+                        shipping = shipping ? -Math.abs(shipping) : '';
+                    }
+                    document.getElementById('id_price').value = price;
+                    document.getElementById('id_shipping_cost').value = shipping;
+                    document.getElementById('id_transaction_date').value = data.transaction_date || '';
+                    document.getElementById('id_comment').value = data.comment || '';
+                    document.getElementById('selectedContactId').value = data.contact_id || '';
+                    document.getElementById('contactSearchInput').value = data.contact_name || '';
+                    document.getElementById('platformSearchInput').value = data.platform_name || '';
+                    document.getElementById('selectedPlatformId').value = data.platform_id || '';
+                    document.getElementById('newContactSection').style.display = 'none';
+                    addTransactionModalLabel.textContent = 'Redigera transaktion';
+                    if (submitBtn) submitBtn.textContent = 'Spara ändringar';
+                    editingTransactionId = data.id;
+                    const modal = new bootstrap.Modal(addTransactionModal);
+                    modal.show();
+                });
+        });
+    });
+    // Återställ modal vid stängning
+    if (addTransactionModal) {
+        addTransactionModal.addEventListener('hidden.bs.modal', function() {
+            addTransactionModalLabel.textContent = 'Lägg till transaktion';
+            if (submitBtn) submitBtn.textContent = 'Spara';
+            editingTransactionId = null;
+            if (addTransactionForm) addTransactionForm.reset();
+        });
+    }
+
     // --- AJAX-sökning för kontakt ---
     const contactSearchInput = document.getElementById('contactSearchInput');
     const newContactSection = document.getElementById('newContactSection');
@@ -501,6 +608,69 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     function hidePlatformResults() {
         platformSearchResults.style.display = 'none';
+    }
+
+    const toggleEditBtn = document.getElementById('toggleEditTransactions');
+    const editCols = document.querySelectorAll('.edit-col');
+    let editMode = false;
+    if (toggleEditBtn) {
+        toggleEditBtn.addEventListener('click', function() {
+            editMode = !editMode;
+            editCols.forEach(col => {
+                col.style.display = editMode ? '' : 'none';
+            });
+            toggleEditBtn.classList.toggle('btn-primary', editMode);
+            toggleEditBtn.classList.toggle('btn-outline-secondary', !editMode);
+            // Byta text på knappen
+            const iconSpan = toggleEditBtn.querySelector('#toggleEditIcon');
+            const textSpan = toggleEditBtn.querySelector('#toggleEditText');
+            if (editMode) {
+                iconSpan.innerHTML = '<i class="bi bi-x-lg me-1"></i>';
+                textSpan.textContent = 'Avsluta redigering';
+            } else {
+                iconSpan.innerHTML = '<i class="bi bi-pencil-square me-1"></i>';
+                textSpan.textContent = 'Redigera';
+            }
+        });
+    }
+
+    // --- Hantera submit för lägg till/redigera transaktion ---
+    if (addTransactionForm) {
+        addTransactionForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            if (editingTransactionId) {
+                // Redigera: AJAX-anrop
+                const formData = new FormData(addTransactionForm);
+                fetch(`/api/transaction/${editingTransactionId}/update/`, {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Stäng modal och ladda om sidan (eller uppdatera tabell via JS)
+                        const modal = bootstrap.Modal.getInstance(addTransactionModal);
+                        if (modal) modal.hide();
+                        location.reload();
+                    } else {
+                        // Visa felmeddelanden
+                        let errorMsg = 'Fel vid uppdatering:';
+                        if (data.errors) {
+                            errorMsg += '\n' + Object.values(data.errors).join('\n');
+                        } else if (data.error) {
+                            errorMsg += '\n' + data.error;
+                        }
+                        alert(errorMsg);
+                    }
+                })
+                .catch(() => {
+                    alert('Något gick fel vid uppdatering.');
+                });
+            } else {
+                // Skicka som vanligt (lägg till ny transaktion)
+                addTransactionForm.submit();
+            }
+        });
     }
 });
 </script>

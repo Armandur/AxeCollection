@@ -18,4 +18,6 @@ urlpatterns = [
     path('tillverkare/<int:pk>/', views.manufacturer_detail, name='manufacturer_detail'),
     path('api/search/contacts/', views.search_contacts, name='search_contacts'),
     path('api/search/platforms/', views.search_platforms, name='search_platforms'),
+    path('api/transaction/<int:pk>/', views.api_transaction_detail, name='api_transaction_detail'),
+    path('api/transaction/<int:pk>/update/', views.api_transaction_update, name='api_transaction_update'),
 ] 

@@ -90,3 +90,5 @@ En checklista för vidareutveckling av AxeCollection. Bocka av med [x] när klar
 46. [ ] Förbättrad felhantering och validering i formulär.
 47. [ ] Snabbare AJAX-sökningar med caching.
 48. [ ] Drag & drop för bildordning i redigeringsläge. 
+- Inför inloggning/adminvy så att endast inloggade kan redigera, och visa en publik vy där känsliga uppgifter (t.ex. kontaktnamn, personuppgifter och ev. priser) maskeras eller döljs. 
+- Gå igenom alla knappar i mobilvy och visa endast ikon (utan text) där det är relevant, t.ex. i transaktionsvyn och liknande listor. 
