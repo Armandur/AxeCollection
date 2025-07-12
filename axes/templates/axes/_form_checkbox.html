@@ -1,0 +1,13 @@
+<!-- Användning: axes/_form_checkbox.html med field parameter -->
+<div class="form-check mb-3">
+    {{ field }}
+    <label class="form-check-label" for="{{ field.id_for_label }}">
+        {{ field.label }}
+    </label>
+    {% if field.help_text %}
+        <div class="form-text">{{ field.help_text }}</div>
+    {% endif %}
+    {% if field.errors %}
+        <div class="text-danger">{{ field.errors }}</div>
+    {% endif %}
+</div> 
