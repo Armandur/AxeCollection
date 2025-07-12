@@ -823,12 +823,8 @@ document.addEventListener('DOMContentLoaded', function() {
     if (platformSearchInput) {
         platformSearchInput.addEventListener('input', function() {
             const searchValue = this.value.trim();
-            
-            // Rensa tidigare timeout
             clearTimeout(platformSearchTimeout);
-            
             if (searchValue.length >= 2) {
-                // Debounce sökningen
                 platformSearchTimeout = setTimeout(() => {
                     fetch(`{% url 'search_platforms' %}?q=${encodeURIComponent(searchValue)}`)
                         .then(response => response.json())
@@ -839,9 +835,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                 data.results.forEach(platform => {
                                     const item = document.createElement('div');
                                     item.className = 'dropdown-item';
-                                    item.innerHTML = `
-                                        <div><strong>${platform.name}</strong></div>
-                                    `;
+                                    item.innerHTML = `<div><strong>${platform.name}</strong></div>`;
                                     item.addEventListener('click', () => {
                                         platformSearchInput.value = platform.name;
                                         platformSearchResults.style.display = 'none';
@@ -855,31 +849,47 @@ document.addEventListener('DOMContentLoaded', function() {
                                 platformSearchResults.style.display = 'block';
                             } else {
                                 // Om ingen match, visa "Skapa ny"
+                                const newId = 'showNewPlatformLink_' + Date.now();
                                 platformSearchResults.innerHTML = `
                                     <div class="dropdown-item">
-                                        <a href="#" class="text-decoration-none text-dark" onclick="showNewPlatformSection('${searchValue}')">
+                                        <a href="#" class="text-decoration-none text-dark" id="${newId}">
                                             <i class="fas fa-plus-circle me-1"></i> Skapa ny plattform: "${searchValue}"
                                         </a>
                                     </div>
                                 `;
                                 platformSearchResults.style.display = 'block';
+                                setTimeout(() => {
+                                    const link = document.getElementById(newId);
+                                    if (link) {
+                                        link.addEventListener('click', function(e) {
+                                            e.preventDefault();
+                                            showNewPlatformSection(searchValue);
+                                        });
+                                    }
+                                }, 0);
                             }
                         })
                         .catch(error => {
                             console.error('Sökfel:', error);
                             platformSearchResults.innerHTML = `
-                                <div class="dropdown-item">
-                                    <a href="#" class="text-decoration-none text-dark" onclick="showNewPlatformSection('${searchValue}')">
-                                        <i class="fas fa-plus-circle me-1"></i> Skapa ny plattform: "${searchValue}"
-                                    </a>
+                                <div class="dropdown-item text-danger">
+                                    Fel vid sökning: ${error.message}
                                 </div>
                             `;
                             platformSearchResults.style.display = 'block';
                         });
-                    }
-                });
+                }, 300);
+            } else {
+                platformSearchResults.style.display = 'none';
+            }
+        });
+        // Dölj dropdown när användaren klickar utanför
+        document.addEventListener('click', function(e) {
+            if (!platformSearchInput.contains(e.target) && !platformSearchResults.contains(e.target)) {
+                platformSearchResults.style.display = 'none';
             }
         });
     }
-    
-    {% endblock %}
+}); 
+</script>
+{% endblock %}
