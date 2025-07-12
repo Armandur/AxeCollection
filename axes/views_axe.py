@@ -1,0 +1,455 @@
+from django.shortcuts import render, get_object_or_404, redirect
+from .models import Axe, AxeImage, Measurement, NextAxeID, MeasurementTemplate, Transaction, Contact, Platform, Manufacturer
+from .forms import AxeForm, MeasurementForm, TransactionForm
+from django.db.models import Sum, Q, Max
+from django.http import JsonResponse, Http404
+from django.views.decorators.http import require_POST
+from django.utils import timezone
+from django.core.files.base import ContentFile
+from django.core.files.storage import default_storage
+from django.conf import settings
+import requests
+import uuid
+import os
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_http_methods
+from urllib.parse import urlparse
+
+# --- Yx-relaterade vyer ---
+
+def axe_list(request):
+    # Hämta filter från URL-parametrar
+    status_filter = request.GET.get('status', '')
+    manufacturer_filter = request.GET.get('manufacturer', '')
+    
+    # Starta med alla yxor
+    axes = Axe.objects.all().select_related('manufacturer').prefetch_related('measurements', 'images', 'transaction_set')
+    
+    # Applicera filter
+    if status_filter:
+        axes = axes.filter(status=status_filter)
+    
+    if manufacturer_filter:
+        axes = axes.filter(manufacturer_id=manufacturer_filter)
+    
+    # Sortera efter ID (senaste först)
+    axes = axes.order_by('-id')
+    
+    # Hämta alla tillverkare för filter-dropdown
+    manufacturers = Manufacturer.objects.all().order_by('name')
+    
+    # Statistik för hela samlingen
+    transactions = Transaction.objects.all()
+    total_buys = transactions.filter(type='KÖP').count()
+    total_sales = transactions.filter(type='SÄLJ').count()
+    total_buy_value = transactions.filter(type='KÖP').aggregate(total=Sum('price'))['total'] or 0
+    total_sale_value = transactions.filter(type='SÄLJ').aggregate(total=Sum('price'))['total'] or 0
+    total_buy_shipping = transactions.filter(type='KÖP').aggregate(total=Sum('shipping_cost'))['total'] or 0
+    total_sale_shipping = transactions.filter(type='SÄLJ').aggregate(total=Sum('shipping_cost'))['total'] or 0
+    total_profit = total_sale_value - total_buy_value
+    total_profit_with_shipping = (total_sale_value + total_sale_shipping) - (total_buy_value + total_buy_shipping)
+    
+    # Hitta sålda yxor (de som har minst en SÄLJ-transaktion)
+    sold_axe_ids = set(transactions.filter(type='SÄLJ').values_list('axe_id', flat=True))
+    
+    # Statistik för filtrerade yxor
+    filtered_count = axes.count()
+    bought_count = axes.filter(status='KÖPT').count()
+    received_count = axes.filter(status='MOTTAGEN').count()
+    
+    return render(request, 'axes/axe_list.html', {
+        'axes': axes,
+        'manufacturers': manufacturers,
+        'status_filter': status_filter,
+        'manufacturer_filter': manufacturer_filter,
+        'filtered_count': filtered_count,
+        'bought_count': bought_count,
+        'received_count': received_count,
+        'total_buys': total_buys,
+        'total_sales': total_sales,
+        'total_buy_value': total_buy_value,
+        'total_sale_value': total_sale_value,
+        'total_buy_shipping': total_buy_shipping,
+        'total_sale_shipping': total_sale_shipping,
+        'total_profit': total_profit,
+        'total_profit_with_shipping': total_profit_with_shipping,
+        'sold_axe_ids': sold_axe_ids,
+    })
+
+def axe_detail(request, pk):
+    axe = get_object_or_404(Axe.objects.select_related('manufacturer').prefetch_related('measurements', 'images').prefetch_related('images'), pk=pk)
+    # Hämta transaktioner för denna yxa
+    transactions = Transaction.objects.filter(axe=axe).select_related('contact', 'platform').order_by('-transaction_date')
+    # Beräkna totala kostnader och intäkter
+    total_cost = transactions.filter(type='KÖP').aggregate(total=Sum('price'))['total'] or 0
+    total_shipping_cost = transactions.filter(type='KÖP').aggregate(total=Sum('shipping_cost'))['total'] or 0
+    total_revenue = transactions.filter(type='SÄLJ').aggregate(total=Sum('price'))['total'] or 0
+    total_shipping_revenue = transactions.filter(type='SÄLJ').aggregate(total=Sum('shipping_cost'))['total'] or 0
+    # Beräkna vinst/förlust
+    total_investment = total_cost + total_shipping_cost
+    total_income = total_revenue + total_shipping_revenue
+    profit_loss = total_income - total_investment
+    if request.method == 'POST' and 'addTransactionForm' in request.POST.get('form_id', 'addTransactionForm'):
+        transaction_form = TransactionForm(request.POST)
+        if transaction_form.is_valid():
+            transaction = transaction_form.save(commit=False)
+            transaction.axe = axe
+            selected_contact_id = request.POST.get('selected_contact_id')
+            if selected_contact_id:
+                try:
+                    transaction.contact = Contact.objects.get(id=selected_contact_id)
+                except Contact.DoesNotExist:
+                    pass
+            else:
+                contact_name = request.POST.get('contact_name')
+                if contact_name:
+                    contact, created = Contact.objects.get_or_create(
+                        name=contact_name,
+                        defaults={
+                            'alias': request.POST.get('contact_alias', ''),
+                            'email': request.POST.get('contact_email', ''),
+                            'phone': request.POST.get('contact_phone', ''),
+                            'comment': request.POST.get('contact_comment', ''),
+                            'is_naj_member': request.POST.get('is_naj_member') == 'on'
+                        }
+                    )
+                    transaction.contact = contact
+            selected_platform_id = request.POST.get('selected_platform_id')
+            if selected_platform_id:
+                try:
+                    transaction.platform = Platform.objects.get(id=selected_platform_id)
+                except Platform.DoesNotExist:
+                    pass
+            else:
+                platform_search = request.POST.get('platform_search')
+                if platform_search and platform_search.strip():
+                    platform, created = Platform.objects.get_or_create(name=platform_search.strip())
+                    transaction.platform = platform
+            if transaction.price < 0 or transaction.shipping_cost < 0:
+                transaction.type = 'KÖP'
+                transaction.price = abs(transaction.price)
+                transaction.shipping_cost = abs(transaction.shipping_cost)
+            else:
+                transaction.type = 'SÄLJ'
+                transaction.shipping_cost = abs(transaction.shipping_cost)
+            transaction.save()
+            return redirect('axe_detail', pk=axe.pk)
+    else:
+        transaction_form = TransactionForm()
+    context = {
+        'axe': axe,
+        'transactions': transactions,
+        'total_cost': total_cost,
+        'total_shipping_cost': total_shipping_cost,
+        'total_revenue': total_revenue,
+        'total_shipping_revenue': total_shipping_revenue,
+        'total_investment': total_investment,
+        'total_income': total_income,
+        'profit_loss': profit_loss,
+        'transaction_form': transaction_form,
+        'breadcrumbs': [
+            {'text': 'Yxsamling', 'url': '/yxor/'},
+            {'text': axe.manufacturer.name, 'url': f'/tillverkare/{axe.manufacturer.id}/'},
+            {'text': f'{axe.display_id} - {axe.model}'}
+        ],
+    }
+    return render(request, 'axes/axe_detail.html', context)
+
+def axe_create(request):
+    if request.method == 'POST':
+        form = AxeForm(request.POST, request.FILES)
+        if form.is_valid():
+            axe = form.save(commit=False)
+            axe.created_by = request.user
+            axe.save()
+            
+            # Hantera bilder
+            if 'images' in request.FILES:
+                for image_file in request.FILES.getlist('images'):
+                    # Hantera URL-bilder
+                    if hasattr(image_file, 'name') and image_file.name.startswith('http'):
+                        try:
+                            response = requests.get(image_file.name)
+                            if response.status_code == 200:
+                                # Skapa en unik filnamn
+                                file_extension = os.path.splitext(urlparse(image_file.name).path)[1] or '.jpg'
+                                filename = f"{axe.id}_{uuid.uuid4().hex[:8]}{file_extension}"
+                                image_file = ContentFile(response.content, name=filename)
+                            else:
+                                continue
+                        except:
+                            continue
+                    
+                    # Spara bilden
+                    try:
+                        axe_image = AxeImage(axe=axe, image=image_file)
+                        axe_image.save()
+                    except Exception as e:
+                        print(f"Fel vid sparande av bild: {e}")
+            
+            # Hantera kontakt
+            contact = None
+            contact_search = form.cleaned_data.get('contact_search', '').strip()
+            if contact_search:
+                # Försök hitta befintlig kontakt
+                try:
+                    contact = Contact.objects.get(name__iexact=contact_search)
+                except Contact.DoesNotExist:
+                    # Skapa ny kontakt
+                    contact_name = form.cleaned_data.get('contact_name', '').strip()
+                    if contact_name:
+                        contact, created = Contact.objects.get_or_create(
+                            name=contact_name,
+                            defaults={
+                                'alias': form.cleaned_data.get('contact_alias', ''),
+                                'email': form.cleaned_data.get('contact_email', ''),
+                                'phone': form.cleaned_data.get('contact_phone', ''),
+                                'comment': form.cleaned_data.get('contact_comment', ''),
+                                'is_naj_member': form.cleaned_data.get('is_naj_member', False)
+                            }
+                        )
+                    else:
+                        # Använd sökvärdet som namn
+                        contact, created = Contact.objects.get_or_create(
+                            name=contact_search,
+                            defaults={
+                                'alias': form.cleaned_data.get('contact_alias', ''),
+                                'email': form.cleaned_data.get('contact_email', ''),
+                                'phone': form.cleaned_data.get('contact_phone', ''),
+                                'comment': form.cleaned_data.get('contact_comment', ''),
+                                'is_naj_member': form.cleaned_data.get('is_naj_member', False)
+                            }
+                        )
+            
+            # Hantera plattform
+            platform = None
+            platform_name = form.cleaned_data.get('platform_name', '').strip()
+            platform_url = form.cleaned_data.get('platform_url', '').strip()
+            platform_comment = form.cleaned_data.get('platform_comment', '').strip()
+            platform_search = form.cleaned_data.get('platform_search', '').strip()
+            if platform_name:
+                # Skapa ny plattform med endast namn (url och comment finns ej i modellen)
+                platform, created = Platform.objects.get_or_create(
+                    name=platform_name
+                )
+            elif platform_search:
+                try:
+                    platform = Platform.objects.get(name=platform_search)
+                except Platform.DoesNotExist:
+                    platform = None
+            
+            # Hantera transaktion
+            transaction_price = form.cleaned_data.get('transaction_price')
+            transaction_shipping = form.cleaned_data.get('transaction_shipping')
+            transaction_date = form.cleaned_data.get('transaction_date')
+            transaction_comment = form.cleaned_data.get('transaction_comment', '')
+            
+            if transaction_price is not None or transaction_shipping is not None or transaction_date:
+                # Skapa transaktion
+                if transaction_price is None:
+                    transaction_price = 0
+                if transaction_shipping is None:
+                    transaction_shipping = 0
+                if not transaction_date:
+                    transaction_date = timezone.now().date()
+                
+                # Bestäm transaktionstyp baserat på tecken
+                if transaction_price < 0 or transaction_shipping < 0:
+                    transaction_type = 'KÖP'
+                    transaction_price = abs(transaction_price)
+                    transaction_shipping = abs(transaction_shipping)
+                else:
+                    transaction_type = 'SÄLJ'
+                    transaction_shipping = abs(transaction_shipping)
+                
+                Transaction.objects.create(
+                    axe=axe,
+                    contact=contact,
+                    platform=platform,
+                    transaction_date=transaction_date,
+                    type=transaction_type,
+                    price=transaction_price,
+                    shipping_cost=transaction_shipping,
+                    comment=transaction_comment
+                )
+            
+            return redirect('axe_detail', pk=axe.pk)
+    else:
+        form = AxeForm()
+    
+    # Hämta nästa ID utan att öka räknaren
+    next_id = NextAxeID.peek_next_id()
+    
+    # Skicka samma context som i edit
+    context = {
+        'form': form,
+        'axe': None,
+        'is_edit': False,
+        'next_id': next_id,
+        'measurements': [],
+        'measurement_form': MeasurementForm(),
+        'measurement_templates': {},
+    }
+    return render(request, 'axes/axe_form.html', context)
+
+def axe_edit(request, pk):
+    axe = get_object_or_404(Axe, pk=pk)
+    if request.method == 'POST':
+        form = AxeForm(request.POST, instance=axe)
+        if form.is_valid():
+            axe = form.save(commit=False)
+            axe.updated_by = request.user
+            axe.save()
+            return redirect('axe_list')
+    else:
+        form = AxeForm(instance=axe)
+    # Hämta måttdata för templaten
+    measurements = axe.measurements.all().order_by('name') if hasattr(axe, 'measurements') else []
+    measurement_form = MeasurementForm()
+    measurement_templates = {}
+    templates = MeasurementTemplate.objects.filter(is_active=True).prefetch_related('items__measurement_type')
+    for template in templates:
+        measurement_templates[template.name] = [
+            {
+                'name': item.measurement_type.name,
+                'unit': item.measurement_type.unit
+            }
+            for item in template.items.all()
+        ]
+    context = {
+        'form': form,
+        'axe': axe,
+        'is_edit': True,
+        'measurements': measurements,
+        'measurement_form': measurement_form,
+        'measurement_templates': measurement_templates,
+    }
+    return render(request, 'axes/axe_form.html', context)
+
+def axe_gallery(request, pk=None):
+    """Visa yxor i galleriformat med navigation mellan dem"""
+    all_axes = Axe.objects.all().select_related('manufacturer').prefetch_related('images').order_by('id')
+    if pk:
+        current_axe = get_object_or_404(
+            Axe.objects.select_related('manufacturer').prefetch_related('images', 'measurements'), pk=pk
+        )
+        axe_list = list(all_axes)
+        try:
+            current_index = axe_list.index(current_axe)
+        except ValueError:
+            current_index = 0
+        prev_axe = axe_list[current_index - 1] if current_index > 0 else None
+        next_axe = axe_list[current_index + 1] if current_index < len(axe_list) - 1 else None
+        transactions = Transaction.objects.filter(axe=current_axe).select_related('contact', 'platform').order_by('-transaction_date')
+        total_cost = transactions.filter(type='KÖP').aggregate(total=Sum('price'))['total'] or 0
+        total_shipping_cost = transactions.filter(type='KÖP').aggregate(total=Sum('shipping_cost'))['total'] or 0
+        total_revenue = transactions.filter(type='SÄLJ').aggregate(total=Sum('price'))['total'] or 0
+        total_shipping_revenue = transactions.filter(type='SÄLJ').aggregate(total=Sum('shipping_cost'))['total'] or 0
+        total_investment = total_cost + total_shipping_cost
+        total_income = total_revenue + total_shipping_revenue
+        profit_loss = total_income - total_investment
+        context = {
+            'current_axe': current_axe,
+            'prev_axe': prev_axe,
+            'next_axe': next_axe,
+            'current_index': current_index + 1,  # 1-baserat index för visning
+            'total_axes': len(axe_list),
+            'transactions': transactions,
+            'total_cost': total_cost,
+            'total_shipping_cost': total_shipping_cost,
+            'total_revenue': total_revenue,
+            'total_shipping_revenue': total_shipping_revenue,
+            'total_investment': total_investment,
+            'total_income': total_income,
+            'profit_loss': profit_loss,
+        }
+        return render(request, 'axes/axe_gallery.html', context)
+    else:
+        if all_axes.exists():
+            last_axe = all_axes.last()
+            return axe_gallery(request, last_axe.pk)
+        else:
+            return render(request, 'axes/axe_gallery.html', {
+                'current_axe': None,
+                'prev_axe': None,
+                'next_axe': None,
+                'current_index': 0,
+                'total_axes': 0,
+            })
+
+def receiving_workflow(request, pk):
+    axe = get_object_or_404(Axe, pk=pk)
+    if request.method == 'POST':
+        if 'status' in request.POST:
+            new_status = request.POST['status']
+            if new_status in ['KÖPT', 'MOTTAGEN', 'SÄLJD']:
+                axe.status = new_status
+                axe.save()
+                return redirect('axe_list')
+            else:
+                return render(request, 'axes/receiving_workflow.html', {'axe': axe, 'error': 'Invalid status.'})
+    return render(request, 'axes/receiving_workflow.html', {'axe': axe})
+
+@require_POST
+def add_measurement(request, pk):
+    axe = get_object_or_404(Axe, pk=pk)
+    if request.method == 'POST':
+        measurement_form = MeasurementForm(request.POST)
+        if measurement_form.is_valid():
+            measurement = measurement_form.save(commit=False)
+            measurement.axe = axe
+            measurement.save()
+            return redirect('axe_detail', pk=axe.pk)
+    else:
+        measurement_form = MeasurementForm()
+    return render(request, 'axes/add_measurement.html', {'axe': axe, 'measurement_form': measurement_form})
+
+@require_POST
+def add_measurements_from_template(request, pk):
+    axe = get_object_or_404(Axe, pk=pk)
+    template_id = request.POST.get('measurement_template_id')
+    if not template_id:
+        return JsonResponse({'error': 'No template selected.'}, status=400)
+    
+    try:
+        template = MeasurementTemplate.objects.get(id=template_id)
+    except MeasurementTemplate.DoesNotExist:
+        return JsonResponse({'error': 'Template not found.'}, status=404)
+    
+    for measurement_data in template.measurements:
+        measurement = Measurement(axe=axe, **measurement_data)
+        measurement.save()
+    
+    return JsonResponse({'message': f'{len(template.measurements)} measurements added from template.'})
+
+@require_POST
+def delete_measurement(request, pk, measurement_id):
+    axe = get_object_or_404(Axe, pk=pk)
+    try:
+        measurement = Measurement.objects.get(id=measurement_id)
+        if measurement.axe == axe:
+            measurement.delete()
+            return JsonResponse({'message': 'Measurement deleted successfully.'})
+        else:
+            return JsonResponse({'error': 'Invalid measurement ID.'}, status=400)
+    except Measurement.DoesNotExist:
+        return JsonResponse({'error': 'Measurement not found.'}, status=404)
+
+@require_POST
+def update_measurement(request, pk, measurement_id):
+    axe = get_object_or_404(Axe, pk=pk)
+    try:
+        measurement = Measurement.objects.get(id=measurement_id)
+        if measurement.axe == axe:
+            measurement_form = MeasurementForm(request.POST, instance=measurement)
+            if measurement_form.is_valid():
+                measurement = measurement_form.save(commit=False)
+                measurement.axe = axe
+                measurement.save()
+                return JsonResponse({'message': 'Measurement updated successfully.'})
+            else:
+                return JsonResponse({'error': 'Invalid measurement data.'}, status=400)
+        else:
+            return JsonResponse({'error': 'Invalid measurement ID.'}, status=400)
+    except Measurement.DoesNotExist:
+        return JsonResponse({'error': 'Measurement not found.'}, status=404)

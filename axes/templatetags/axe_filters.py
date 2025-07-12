@@ -1,5 +1,6 @@
 from django import template
 from decimal import Decimal, ROUND_HALF_UP, InvalidOperation
+from django.utils.safestring import mark_safe
 
 register = template.Library()
 
@@ -66,4 +67,61 @@ def format_currency(value, currency="kr"):
         return ""
     
     # Använd non-breaking space mellan tal och valuta
-    return f"{formatted_value}\u00A0{currency}" 
+    return f"{formatted_value}\u00A0{currency}"
+
+@register.filter(name='status_badge')
+def status_badge(status):
+    """
+    Returnerar Bootstrap badge-klass för olika status.
+    """
+    status_classes = {
+        'KÖPT': 'bg-warning text-dark',
+        'MOTTAGEN': 'bg-success',
+        'SÅLD': 'bg-secondary',
+    }
+    return status_classes.get(status, 'bg-secondary')
+
+@register.filter(name='transaction_badge')
+def transaction_badge(transaction_type):
+    """
+    Returnerar Bootstrap badge-klass för transaktionstyper.
+    """
+    if transaction_type == 'KÖP':
+        return 'bg-danger'
+    elif transaction_type == 'SÄLJ':
+        return 'bg-success'
+    else:
+        return 'bg-secondary'
+
+@register.filter(name='transaction_icon')
+def transaction_icon(transaction_type):
+    """
+    Returnerar Bootstrap ikon för transaktionstyper.
+    """
+    if transaction_type == 'KÖP':
+        return 'bi-arrow-down-circle'
+    elif transaction_type == 'SÄLJ':
+        return 'bi-arrow-up-circle'
+    else:
+        return 'bi-question-circle'
+
+@register.filter(name='default_if_empty')
+def default_if_empty(value, default="-"):
+    """
+    Returnerar default-värde om värdet är tomt eller None.
+    """
+    if value is None or value == "":
+        return default
+    return value
+
+@register.simple_tag
+def breadcrumb_item(text, url=None, is_active=False):
+    """
+    Skapar en breadcrumb-item med rätt CSS-klasser.
+    """
+    if is_active:
+        return mark_safe(f'<li class="breadcrumb-item active" aria-current="page">{text}</li>')
+    elif url:
+        return mark_safe(f'<li class="breadcrumb-item"><a href="{url}">{text}</a></li>')
+    else:
+        return mark_safe(f'<li class="breadcrumb-item">{text}</li>') 

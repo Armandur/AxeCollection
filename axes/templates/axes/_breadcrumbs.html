@@ -1,0 +1,12 @@
+{% load axe_filters %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        {% for item in breadcrumbs %}
+            {% if forloop.last %}
+                {% breadcrumb_item item.text is_active=True %}
+            {% else %}
+                {% breadcrumb_item item.text item.url %}
+            {% endif %}
+        {% endfor %}
+    </ol>
+</nav> 

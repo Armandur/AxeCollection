@@ -34,6 +34,9 @@
 - **Filter-begränsningar:** Django templates tillåter inte alla Python-filter. Lösning: Hantera komplex logik i Python och skicka färdig data till templates.
 - **Nested lists:** Platta ut nästlade listor i Python innan de skickas till templates för enklare rendering.
 - **Safe rendering:** Använd `|safe` filter för HTML-innehåll som ska renderas som HTML.
+- **DRY-principer:** Skapa återanvändbara includes för återkommande UI-komponenter för att undvika duplicerad kod.
+- **Template-struktur:** Organisera templates med includes för statistik-kort, filter-sektioner och andra återkommande element.
+- **Filter-laddning:** Ladda custom filters i includes med `{% load axe_filters %}` för att säkerställa att de fungerar.
 
 ### AJAX och JavaScript
 - **Debouncing:** Använd timeout för AJAX-sökningar för att undvika för många requests.
@@ -114,6 +117,34 @@
 - **Testning per steg:** Varje steg testas innan nästa påbörjas för att säkerställa att ändringar fungerar som förväntat.
 - **Kontinuerlig process:** Detta är en pågående aktivitet, inte en engångsgrej.
 
+### Template-förbättringar och DRY-principer (2025-07-12)
+- **Återanvändbara includes:** Vi skapar includes för återkommande UI-komponenter för att undvika duplicerad kod.
+- **Model-properties:** Flyttar komplexa beräkningar från vyer till model-properties för bättre separation av ansvar.
+- **Template-struktur:** Organiserar templates med includes för statistik-kort, filter-sektioner och andra återkommande element.
+- **Implementation:**
+  - Skapade `_stat_card.html` för generiska statistik-kort
+  - Skapade `_axe_stats_cards.html` för yxlistans statistik (6 kort + vinst/förlust)
+  - Skapade `_contact_stats_cards.html` för kontaktlistans statistik (3 kort)
+  - Skapade `_transaction_stats_cards.html` för transaktionslistans statistik (4 kort + vinst/förlust)
+  - Uppdaterade alla list-templates för att använda nya includes
+  - Lade till `{% load axe_filters %}` i includes för att säkerställa att custom filters fungerar
+  - Skapade återanvändbara includes för transaktionsrader, status-badges och breadcrumbs
+  - Förbättrade breadcrumbs och rubrik på detaljsidan: ID - Tillverkare - Modell
+- **Fördelar:** Minskad kodduplicering, enklare underhåll, konsekvent utseende
+
+### Kodstruktur och refaktorering (2025-07-12)
+- **Vy-separation:** Delade upp stora vy-filer i mindre, fokuserade filer:
+  - `views_axe.py` - yxrelaterade vyer
+  - `views_contact.py` - kontaktrelaterade vyer  
+  - `views_manufacturer.py` - tillverkare-relaterade vyer
+  - `views_transaction.py` - transaktionsrelaterade vyer
+- **Model-properties för statistik:** Flyttade komplexa beräkningar från vyer till model-properties:
+  - `Axe.total_buy_value`, `Axe.total_sale_value`, `Axe.net_value`
+  - `Manufacturer.total_buy_value`, `Manufacturer.total_sale_value`, `Manufacturer.net_value`
+  - `Contact.total_buy_value`, `Contact.total_sale_value`, `Contact.net_value`
+- **Fördelar:** Renare vyer, bättre testbarhet, återanvändbar logik
+- **URL-struktur:** Uppdaterade `urls.py` för att importera från nya vy-filer
+
 ### Markdown-standarder och formatering
 - **TODO_FEATURES.md:** Använder numrerade listor med [ ] för att bocka av (punkt 1, 2, 3...)
 - **WORKFLOW_AND_COLLAB.md:** Använder punktlistor med - och **fet text** för rubriker
@@ -135,6 +166,22 @@
 - **Event-hantering:** Vi använder event delegation där det är lämpligt och hanterar cleanup ordentligt.
 - **Felhantering:** Vi visar tydlig feedback i UI:n när AJAX-anrop misslyckas, inte bara i konsolen.
 
+### Felsökning och buggfixar (2025-07-12)
+- **TemplateSyntaxError:** Löstes genom att lägga till `{% load axe_filters %}` i include-filer för att säkerställa att custom filters fungerar.
+- **Loader/spinner-problem:** Identifierade och löste problem med laddningsindikatorer på tillverkarsidorna med global CSS/JS-fix.
+- **Debug-kod:** Lade till och tog bort debug-kod för att identifiera frontend-problem.
+- **NoReverseMatch-fel:** Åtgärdade fel för `search_contacts` och `search_platforms` genom att lägga tillbaka URL-mappning i `urls.py`.
+- **404-fel:** Löstes genom att redirecta till senaste yxan och återställa galleri-navigationen.
+
+### Mått-UX och användarfeedback (2025-07-12)
+- **Notifikationer före sidladdning:** Användare behöver se bekräftelse innan sidan laddas om. Vi använder `setTimeout` för att fördröja sidladdning så att notifikationer hinner visas.
+- **Animationer för feedback:** Smooth övergångar (fade out, slide) ger professionell känsla och tydlig visuell feedback.
+- **Laddningsindikatorer:** Spinner och inaktiverade knappar under pågående operationer förhindrar dubbel-submit och ger tydlig feedback.
+- **Inline-redigering:** Minskar behovet av sidladdningar och förbättrar flödet. Använd AJAX för små ändringar, sidladdning för stora uppdateringar.
+- **Batch-operationer:** Effektivt för att hantera flera objekt samtidigt med tydlig feedback om antal tillagda objekt.
+- **DOM-manipulation:** Ta bort element från DOM med animation istället för `location.reload()` för smidigare användarupplevelse.
+- **Felhantering:** Återställ UI-tillstånd vid fel för bättre användarupplevelse (knappar, formulär, etc.).
+
 ### Transaktionsflöde och datamodell
 - **Automatisk typbestämning:** Transaktionstyper bestäms automatiskt baserat på pris (negativ = köp, positiv = sälj).
 - **Värdehantering:** Vi sparar alltid positiva värden i databasen men visar negativa för köp i UI:n.
@@ -146,6 +193,8 @@
 - **Iterativ utveckling:** Vi arbetar stegvis och testar varje del innan vi går vidare
 - **Dokumentation:** Vi uppdaterar både TODO-listan och arbetsflödesdokumentationen löpande
 - **Git-hantering:** Vi committar och pushar regelbundet för att spara framsteg
+- **Branch-strategi:** Vi använder feature branches för större ändringar och pushar till GitHub för säkerhet
+- **Testning:** Vi testar alltid funktionalitet i webbläsaren innan commit
 
 ## Framtida riktlinjer
 - **Testa alltid:** Testa funktionalitet i webbläsaren innan commit
@@ -156,8 +205,21 @@
 - **TODO-underhåll:** Regelbundet rensa upp och organisera TODO-listan för att hålla den aktuell och användbar
 - **Sektionslogik:** Placera nya punkter i rätt sektion från början och flytta befintliga när de hamnat fel
 
+## Vanliga template-fel och debuggtips
+
+- Kontrollera alltid att varje {% block %} avslutas med {% endblock %} allra sist i filen.
+- Lägg aldrig {% endblock %} inuti JavaScript-strängar eller HTML-element.
+- Om du får TemplateSyntaxError: Unclosed tag, kontrollera block-taggar och includes.
+- Vid problem med next_id: kör python manage.py init_next_axe_id.
+- Vid problem med återanvändbara includes: kontrollera att rätt context skickas in (field=...)
+
+### Senaste förbättringar (juli 2025)
+- Refaktorering av formulär med återanvändbara komponenter (_form_field, _form_checkbox, _form_input_group)
+- Modernisering av AJAX-sökning och sektioner för kontakt/plattform
+- Fix av next_id och TemplateSyntaxError
+
 ---
 
 **För AI-assistenter:** Läs igenom denna fil noggrant innan du börjar arbeta med projektet. Den innehåller viktig kontext om arbetsflöden, beslut och riktlinjer som hjälper dig att fortsätta arbetet effektivt.
 
-*Senast uppdaterad: 2025-01-01* 
+*Senast uppdaterad: 2025-07-12* 

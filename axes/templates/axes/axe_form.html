@@ -3,6 +3,15 @@
 {% block title %}{% if is_edit %}Redigera yxa{% else %}Skapa ny yxa{% endif %}{% endblock %}
 
 {% block content %}
+<style>
+/* Tvinga dropdown direkt under inputfältet */
+.position-relative .dropdown-menu {
+    top: 100% !important;
+    left: 0 !important;
+    right: 0 !important;
+    margin-top: 0 !important;
+}
+</style>
 <div class="container mt-4">
     <div class="row">
         <div class="col-md-8 mx-auto">
@@ -83,102 +92,35 @@
                             </div>
                             <div class="card-body">
                                 <!-- Sök efter befintlig kontakt -->
-                                <div class="mb-3">
-                                    <label for="{{ form.contact_search.id_for_label }}" class="form-label">
-                                        {{ form.contact_search.label }}
-                                    </label>
-                                    <div class="position-relative">
-                                        {{ form.contact_search }}
-                                        <div id="contactSearchResults" class="dropdown-menu w-100" style="display: none; position: absolute; z-index: 1000; max-height: 200px; overflow-y: auto;">
-                                            <!-- Sökresultat visas här -->
-                                        </div>
+                                <div class="position-relative">
+                                    {% include 'axes/_form_field.html' with field=form.contact_search %}
+                                    <!-- Dropdown för sökresultat -->
+                                    <div id="contactSearchResults" class="dropdown-menu w-100" style="display: none; position: absolute; z-index: 1000; max-height: 200px; overflow-y: auto;">
+                                        <!-- Sökresultat visas här -->
                                     </div>
-                                    <div class="form-text">{{ form.contact_search.help_text }}</div>
-                                    {% if form.contact_search.errors %}
-                                        <div class="text-danger">{{ form.contact_search.errors }}</div>
-                                    {% endif %}
                                 </div>
-                                
                                 <!-- Ny kontakt (visas endast om sökning misslyckas) -->
                                 <div id="newContactSection" style="display: none;">
                                     <hr class="my-3">
                                     <h6 class="text-muted">Skapa ny kontakt</h6>
-                                    
                                     <div class="row">
                                         <div class="col-md-6">
-                                            <div class="mb-3">
-                                                <label for="{{ form.contact_name.id_for_label }}" class="form-label">
-                                                    {{ form.contact_name.label }}
-                                                </label>
-                                                {{ form.contact_name }}
-                                                <div class="form-text">{{ form.contact_name.help_text }}</div>
-                                                {% if form.contact_name.errors %}
-                                                    <div class="text-danger">{{ form.contact_name.errors }}</div>
-                                                {% endif %}
-                                            </div>
+                                            {% include 'axes/_form_field.html' with field=form.contact_name %}
                                         </div>
                                         <div class="col-md-6">
-                                            <div class="mb-3">
-                                                <label for="{{ form.contact_alias.id_for_label }}" class="form-label">
-                                                    {{ form.contact_alias.label }}
-                                                </label>
-                                                {{ form.contact_alias }}
-                                                <div class="form-text">{{ form.contact_alias.help_text }}</div>
-                                                {% if form.contact_alias.errors %}
-                                                    <div class="text-danger">{{ form.contact_alias.errors }}</div>
-                                                {% endif %}
-                                            </div>
+                                            {% include 'axes/_form_field.html' with field=form.contact_alias %}
                                         </div>
                                     </div>
-                                    
                                     <div class="row">
                                         <div class="col-md-6">
-                                            <div class="mb-3">
-                                                <label for="{{ form.contact_email.id_for_label }}" class="form-label">
-                                                    {{ form.contact_email.label }}
-                                                </label>
-                                                {{ form.contact_email }}
-                                                <div class="form-text">{{ form.contact_email.help_text }}</div>
-                                                {% if form.contact_email.errors %}
-                                                    <div class="text-danger">{{ form.contact_email.errors }}</div>
-                                                {% endif %}
-                                            </div>
+                                            {% include 'axes/_form_field.html' with field=form.contact_email %}
                                         </div>
                                         <div class="col-md-6">
-                                            <div class="mb-3">
-                                                <label for="{{ form.contact_phone.id_for_label }}" class="form-label">
-                                                    {{ form.contact_phone.label }}
-                                                </label>
-                                                {{ form.contact_phone }}
-                                                <div class="form-text">{{ form.contact_phone.help_text }}</div>
-                                                {% if form.contact_phone.errors %}
-                                                    <div class="text-danger">{{ form.contact_phone.errors }}</div>
-                                                {% endif %}
-                                            </div>
+                                            {% include 'axes/_form_field.html' with field=form.contact_phone %}
                                         </div>
                                     </div>
-                                    
-                                    <div class="mb-3">
-                                        <label for="{{ form.contact_comment.id_for_label }}" class="form-label">
-                                            {{ form.contact_comment.label }}
-                                        </label>
-                                        {{ form.contact_comment }}
-                                        <div class="form-text">{{ form.contact_comment.help_text }}</div>
-                                        {% if form.contact_comment.errors %}
-                                            <div class="text-danger">{{ form.contact_comment.errors }}</div>
-                                        {% endif %}
-                                    </div>
-                                    
-                                    <div class="form-check">
-                                        {{ form.is_naj_member }}
-                                        <label class="form-check-label" for="{{ form.is_naj_member.id_for_label }}">
-                                            {{ form.is_naj_member.label }}
-                                        </label>
-                                        <div class="form-text">{{ form.is_naj_member.help_text }}</div>
-                                        {% if form.is_naj_member.errors %}
-                                            <div class="text-danger">{{ form.is_naj_member.errors }}</div>
-                                        {% endif %}
-                                    </div>
+                                    {% include 'axes/_form_field.html' with field=form.contact_comment %}
+                                    {% include 'axes/_form_checkbox.html' with field=form.is_naj_member %}
                                 </div>
                             </div>
                         </div>
@@ -194,20 +136,20 @@
                             </div>
                             <div class="card-body">
                                 <!-- Sök efter befintlig plattform -->
-                                <div class="mb-3">
-                                    <label for="{{ form.platform_search.id_for_label }}" class="form-label">
-                                        {{ form.platform_search.label }}
-                                    </label>
-                                    <div class="position-relative">
-                                        {{ form.platform_search }}
-                                        <div id="platformSearchResults" class="dropdown-menu w-100" style="display: none; position: absolute; z-index: 1000; max-height: 200px; overflow-y: auto;">
-                                            <!-- Sökresultat visas här -->
-                                        </div>
+                                <div class="position-relative">
+                                    {% include 'axes/_form_field.html' with field=form.platform_search %}
+                                    <!-- Dropdown för sökresultat -->
+                                    <div id="platformSearchResults" class="dropdown-menu w-100" style="display: none; position: absolute; z-index: 1000; max-height: 200px; overflow-y: auto;">
+                                        <!-- Sökresultat visas här -->
                                     </div>
-                                    <div class="form-text">Börja skriva för att söka efter befintlig plattform eller skapa ny</div>
-                                    {% if form.platform_search.errors %}
-                                        <div class="text-danger">{{ form.platform_search.errors }}</div>
-                                    {% endif %}
+                                </div>
+                                <!-- Ny plattform (visas endast om sökning misslyckas) -->
+                                <div id="newPlatformSection" style="display: none;">
+                                    <hr class="my-3">
+                                    <h6 class="text-muted">Skapa ny plattform</h6>
+                                    {% include 'axes/_form_field.html' with field=form.platform_name %}
+                                    {% include 'axes/_form_field.html' with field=form.platform_url %}
+                                    {% include 'axes/_form_field.html' with field=form.platform_comment %}
                                 </div>
                             </div>
                         </div>
@@ -224,21 +166,7 @@
                             <div class="card-body">
                                 <div class="row">
                                     <div class="col-md-6">
-                                        <div class="mb-3 position-relative">
-                                            <label for="{{ form.transaction_price.id_for_label }}" class="form-label">
-                                                {{ form.transaction_price.label }}
-                                            </label>
-                                            <div class="input-group">
-                                                {{ form.transaction_price }}
-                                                <span id="transaction-type-badge" class="input-group-text ms-2">
-                                                    <!-- Badge placeras här av JS -->
-                                                </span>
-                                            </div>
-                                        </div>
-                                        <div class="form-text">{{ form.transaction_price.help_text }}</div>
-                                        {% if form.transaction_price.errors %}
-                                            <div class="text-danger">{{ form.transaction_price.errors }}</div>
-                                        {% endif %}
+                                        {% include 'axes/_form_input_group.html' with field=form.transaction_price addon_after='<span id="transaction-type-badge" class="input-group-text ms-2"></span>' %}
                                     </div>
                                     <div class="col-md-6">
                                         <div class="mb-3">
@@ -781,13 +709,13 @@ document.addEventListener('DOMContentLoaded', function() {
                             } else {
                                 // Inga resultat, visa ny kontaktsektion
                                 hideContactResults();
-                                newContactSection.style.display = 'block';
+                                showNewContactSection(searchValue);
                             }
                         })
                         .catch(error => {
                             console.error('Sökfel:', error);
                             hideContactResults();
-                            newContactSection.style.display = 'block';
+                            showNewContactSection(searchValue);
                         });
                 }, 300);
             } else {
@@ -802,7 +730,7 @@ document.addEventListener('DOMContentLoaded', function() {
             contactNameInput.addEventListener('input', function() {
                 if (this.value.trim()) {
                     hideContactResults();
-                    newContactSection.style.display = 'block';
+                    showNewContactSection(this.value.trim());
                 }
             });
         }
@@ -831,7 +759,10 @@ document.addEventListener('DOMContentLoaded', function() {
             item.addEventListener('click', () => {
                 contactSearchInput.value = contact.name;
                 hideContactResults();
-                newContactSection.style.display = 'none';
+                const newContactSection = document.getElementById('newContactSection');
+                if (newContactSection) {
+                    newContactSection.style.display = 'none';
+                }
             });
             contactSearchResults.appendChild(item);
         });
@@ -841,6 +772,48 @@ document.addEventListener('DOMContentLoaded', function() {
     function hideContactResults() {
         contactSearchResults.style.display = 'none';
     }
+    
+    // Funktioner för att visa/dölja sektioner för nya kontakter och plattformar
+    function showNewContactSection(searchValue = '') {
+        hideContactResults();
+        const newContactSection = document.getElementById('newContactSection');
+        const contactNameInput = document.getElementById('{{ form.contact_name.id_for_label }}');
+        
+        if (newContactSection) {
+            newContactSection.style.display = 'block';
+        }
+        
+        if (contactNameInput && searchValue) {
+            contactNameInput.value = searchValue;
+        }
+    }
+    
+    window.showNewPlatformSection = function(searchValue = '') {
+        const platformSearchResults = document.getElementById('platformSearchResults');
+        const newPlatformSection = document.getElementById('newPlatformSection');
+        const platformNameInput = document.getElementById('{{ form.platform_name.id_for_label }}');
+        const platformUrlInput = document.getElementById('{{ form.platform_url.id_for_label }}');
+        const platformCommentInput = document.getElementById('{{ form.platform_comment.id_for_label }}');
+        
+        if (platformSearchResults) {
+            platformSearchResults.style.display = 'none';
+        }
+        
+        if (newPlatformSection) {
+            newPlatformSection.style.display = 'block';
+        }
+        
+        if (platformNameInput) {
+            platformNameInput.value = searchValue;
+            platformNameInput.focus();
+        }
+        if (platformUrlInput) {
+            platformUrlInput.value = '';
+        }
+        if (platformCommentInput) {
+            platformCommentInput.value = '';
+        }
+    };
 
     // Plattformssökning
     const platformSearchInput = document.getElementById('{{ form.platform_search.id_for_label }}');
@@ -872,6 +845,10 @@ document.addEventListener('DOMContentLoaded', function() {
                                     item.addEventListener('click', () => {
                                         platformSearchInput.value = platform.name;
                                         platformSearchResults.style.display = 'none';
+                                        const newPlatformSection = document.getElementById('newPlatformSection');
+                                        if (newPlatformSection) {
+                                            newPlatformSection.style.display = 'none';
+                                        }
                                     });
                                     platformSearchResults.appendChild(item);
                                 });
@@ -880,7 +857,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                 // Om ingen match, visa "Skapa ny"
                                 platformSearchResults.innerHTML = `
                                     <div class="dropdown-item">
-                                        <a href="#" class="text-decoration-none text-dark">
+                                        <a href="#" class="text-decoration-none text-dark" onclick="showNewPlatformSection('${searchValue}')">
                                             <i class="fas fa-plus-circle me-1"></i> Skapa ny plattform: "${searchValue}"
                                         </a>
                                     </div>
@@ -891,737 +868,18 @@ document.addEventListener('DOMContentLoaded', function() {
                         .catch(error => {
                             console.error('Sökfel:', error);
                             platformSearchResults.innerHTML = `
-                                <div class="dropdown-item text-danger">
-                                    Fel vid sökning: ${error.message}
+                                <div class="dropdown-item">
+                                    <a href="#" class="text-decoration-none text-dark" onclick="showNewPlatformSection('${searchValue}')">
+                                        <i class="fas fa-plus-circle me-1"></i> Skapa ny plattform: "${searchValue}"
+                                    </a>
                                 </div>
                             `;
                             platformSearchResults.style.display = 'block';
                         });
-                }, 300);
-            } else {
-                platformSearchResults.style.display = 'none';
-            }
-        });
-        
-        // Dölj dropdown när användaren klickar utanför
-        document.addEventListener('click', function(e) {
-            if (!platformSearchInput.contains(e.target) && !platformSearchResults.contains(e.target)) {
-                platformSearchResults.style.display = 'none';
-            }
-        });
-    }
-
-    // Klistra in (Ctrl+V) - endast på desktop
-    if (!isMobile()) {
-        document.addEventListener('paste', (e) => {
-            const items = e.clipboardData.items;
-            for (let item of items) {
-                if (item.type.startsWith('image/')) {
-                    const file = item.getAsFile();
-                    handleFiles([file]);
-                }
-            }
-            
-            // Hantera klistrade URL:er
-            const text = e.clipboardData.getData('text');
-            if (text && isImageUrl(text)) {
-                handleImageUrl(text);
-            }
-        });
-    }
-
-    // URL-knapp
-    addUrlBtn.addEventListener('click', () => {
-        const url = imageUrlInput.value.trim();
-        if (url && isImageUrl(url)) {
-            handleImageUrl(url);
-            imageUrlInput.value = '';
-        } else {
-            alert('Vänligen ange en giltig bild-URL');
-        }
-    });
-
-    // Enter i URL-fältet
-    imageUrlInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') {
-            addUrlBtn.click();
-        }
-    });
-
-    function isMobile() {
-        return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-    }
-
-    function isImageUrl(url) {
-        return url.match(/\.(jpg|jpeg|png|gif|webp|bmp|svg)(\?.*)?$/i) || 
-               url.includes('tradera.com') || 
-               url.includes('ebay.com') ||
-               url.includes('bilder') ||
-               url.includes('image');
-    }
-
-    function handleFiles(files) {
-        files.forEach(file => {
-            if (file.type.startsWith('image/') && !selectedItems.has(file.name)) {
-                selectedItems.set(file.name, { type: 'file', data: file });
-                createPreview(file, file.name);
-                
-                // Lägg till filen i det faktiska formulärfältet
-                const formFileInput = document.querySelector('input[name="images"]');
-                if (formFileInput) {
-                    // Skapa en ny FileList med den nya filen
-                    const dt = new DataTransfer();
-                    
-                    // Lägg till befintliga filer
-                    if (formFileInput.files) {
-                        for (let i = 0; i < formFileInput.files.length; i++) {
-                            dt.items.add(formFileInput.files[i]);
-                        }
                     }
-                    
-                    // Lägg till den nya filen
-                    dt.items.add(file);
-                    
-                    // Uppdatera input-fältet
-                    formFileInput.files = dt.files;
-                }
+                });
             }
         });
-        
-        updatePreviewVisibility();
-    }
-
-    function handleImageUrl(url) {
-        const urlId = 'url_' + Date.now();
-        if (!selectedItems.has(urlId)) {
-            selectedItems.set(urlId, { type: 'url', data: url });
-            createUrlPreview(url, urlId);
-        }
-        updatePreviewVisibility();
-    }
-
-    function createPreview(file, id) {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            const previewContainer = document.getElementById('imagePreview');
-            const previewItem = document.createElement('div');
-            previewItem.className = 'preview-item col-md-2 col-sm-3 col-6 mb-3';
-            previewItem.draggable = true;
-            previewItem.dataset.id = id;
-            
-            previewItem.innerHTML = `
-                <div class="position-relative">
-                    <img src="${e.target.result}" class="img-fluid rounded" style="height: 150px; width: 100%; object-fit: cover;" alt="Förhandsvisning">
-                    <div class="position-absolute top-0 end-0 p-1">
-                        <button type="button" class="btn btn-sm btn-danger" onclick="removePreview('${id}')" title="Ta bort bild">
-                            <i class="fas fa-times"></i>
-                        </button>
-                    </div>
-                    <div class="position-absolute bottom-0 start-0 w-100 p-1">
-                        <small class="text-white bg-dark bg-opacity-75 rounded px-1">${id}</small>
-                    </div>
-                </div>
-            `;
-            
-            // Lägg till drag & drop event listeners
-            previewItem.addEventListener('dragstart', handleDragStart);
-            previewItem.addEventListener('dragover', handleDragOver);
-            previewItem.addEventListener('drop', handleDrop);
-            previewItem.addEventListener('dragenter', handleDragEnter);
-            previewItem.addEventListener('dragleave', handleDragLeave);
-            
-            previewContainer.appendChild(previewItem);
-        };
-        reader.readAsDataURL(file);
     }
     
-    // Drag & drop funktioner för nya bilder
-    let draggedPreviewElement = null;
-    
-    function handleDragStart(e) {
-        draggedPreviewElement = this;
-        this.style.opacity = '0.5';
-        e.dataTransfer.effectAllowed = 'move';
-        e.dataTransfer.setData('text/html', this.outerHTML);
-    }
-    
-    function handleDragOver(e) {
-        e.preventDefault();
-        e.dataTransfer.dropEffect = 'move';
-    }
-    
-    function handleDragEnter(e) {
-        e.preventDefault();
-        this.classList.add('drag-over');
-    }
-    
-    function handleDragLeave(e) {
-        this.classList.remove('drag-over');
-    }
-    
-    function handleDrop(e) {
-        e.preventDefault();
-        this.classList.remove('drag-over');
-        
-        if (draggedPreviewElement !== this) {
-            const previewContainer = document.getElementById('imagePreview');
-            const allItems = Array.from(previewContainer.children);
-            const draggedIndex = allItems.indexOf(draggedPreviewElement);
-            const dropIndex = allItems.indexOf(this);
-            
-            // Flytta elementet
-            if (draggedIndex < dropIndex) {
-                this.parentNode.insertBefore(draggedPreviewElement, this.nextSibling);
-            } else {
-                this.parentNode.insertBefore(draggedPreviewElement, this);
-            }
-            
-            // Uppdatera ordningen i formulärfältet
-            updateFormFileOrder();
-        }
-        
-        draggedPreviewElement.style.opacity = '1';
-        draggedPreviewElement = null;
-    }
-    
-    function updateFormFileOrder() {
-        const previewContainer = document.getElementById('imagePreview');
-        const formFileInput = document.querySelector('input[name="images"]');
-        
-        if (formFileInput) {
-            const dt = new DataTransfer();
-            const previewItems = Array.from(previewContainer.children);
-            
-            previewItems.forEach(item => {
-                const id = item.dataset.id;
-                const itemData = selectedItems.get(id);
-                if (itemData && itemData.type === 'file') {
-                    // Hitta filen i original FileList
-                    for (let i = 0; i < formFileInput.files.length; i++) {
-                        if (formFileInput.files[i].name === id) {
-                            dt.items.add(formFileInput.files[i]);
-                            break;
-                        }
-                    }
-                }
-            });
-            
-            formFileInput.files = dt.files;
-        }
-    }
-
-    function createUrlPreview(url, id) {
-        const previewItem = document.createElement('div');
-        previewItem.className = 'col-6 col-md-3 preview-item';
-        previewItem.innerHTML = `
-            <img src="${url}" alt="Förhandsvisning" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI2Y4ZjlmYSIvPjx0ZXh0IHg9IjUwIiB5PSI1MCIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjEyIiBmaWxsPSIjNmM3NTdkIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iLjNlbSI+QnJva2VuIGltYWdlPC90ZXh0Pjwvc3ZnPg=='">
-            <button type="button" class="remove-btn" onclick="removePreview('${id}')">
-                <i class="fas fa-times"></i>
-            </button>
-            <div class="preview-info">
-                <small class="text-muted">URL-bild</small>
-            </div>
-        `;
-        previewContainer.appendChild(previewItem);
-    }
-
-    function updatePreviewVisibility() {
-        if (selectedItems.size > 0) {
-            imagePreview.style.display = 'block';
-        } else {
-            imagePreview.style.display = 'none';
-        }
-    }
-
-    // Global funktion för att ta bort förhandsvisning
-    window.removePreview = function(id) {
-        const item = selectedItems.get(id);
-        if (item && item.type === 'file') {
-            // Ta bort filen från formulärfältet
-            const formFileInput = document.querySelector('input[name="images"]');
-            if (formFileInput) {
-                const dt = new DataTransfer();
-                for (let i = 0; i < formFileInput.files.length; i++) {
-                    if (formFileInput.files[i].name !== id) {
-                        dt.items.add(formFileInput.files[i]);
-                    }
-                }
-                formFileInput.files = dt.files;
-            }
-        }
-        
-        selectedItems.delete(id);
-        const previewItem = document.querySelector(`[onclick="removePreview('${id}')"]`).closest('.preview-item');
-        previewItem.remove();
-        updatePreviewVisibility();
-    };
-
-    // Lägg till drag & drop för befintliga bilder
-    let draggedExistingElement = null; // Deklarera variabeln för befintliga bilder
-    
-    const existingImageItems = document.querySelectorAll('.existing-image-item');
-    existingImageItems.forEach(item => {
-        item.addEventListener('dragstart', handleExistingDragStart);
-        item.addEventListener('dragover', handleExistingDragOver);
-        item.addEventListener('drop', handleExistingDrop);
-        item.addEventListener('dragenter', handleExistingDragEnter);
-        item.addEventListener('dragleave', handleExistingDragLeave);
-    });
-    
-    function handleExistingDragStart(e) {
-        draggedExistingElement = this;
-        this.style.opacity = '0.5';
-        e.dataTransfer.effectAllowed = 'move';
-        e.dataTransfer.setData('text/html', this.outerHTML);
-    }
-    
-    function handleExistingDragOver(e) {
-        e.preventDefault();
-        e.dataTransfer.dropEffect = 'move';
-    }
-    
-    function handleExistingDragEnter(e) {
-        e.preventDefault();
-        this.classList.add('drag-over');
-    }
-    
-    function handleExistingDragLeave(e) {
-        this.classList.remove('drag-over');
-    }
-    
-    function handleExistingDrop(e) {
-        e.preventDefault();
-        this.classList.remove('drag-over');
-        
-        if (draggedExistingElement !== this) {
-            const container = document.getElementById('existingImagesContainer');
-            const allItems = Array.from(container.children);
-            const draggedIndex = allItems.indexOf(draggedExistingElement);
-            const dropIndex = allItems.indexOf(this);
-            
-            // Flytta elementet
-            if (draggedIndex < dropIndex) {
-                this.parentNode.insertBefore(draggedExistingElement, this.nextSibling);
-            } else {
-                this.parentNode.insertBefore(draggedExistingElement, this);
-            }
-            
-            // Uppdatera ordningen i backend (skicka med i formuläret)
-            updateExistingImageOrder();
-        }
-        
-        draggedExistingElement.style.opacity = '1';
-        draggedExistingElement = null;
-    }
-    
-    function updateExistingImageOrder() {
-        const container = document.getElementById('existingImagesContainer');
-        const imageItems = Array.from(container.children);
-        const orderData = imageItems.map((item, index) => ({
-            id: item.dataset.imageId,
-            order: index + 1
-        }));
-        
-        console.log('Uppdaterar bildordning:', orderData); // Debug
-        
-        // Skapa dolda inputs för ordningen
-        const hiddenInputs = document.getElementById('hiddenInputs');
-        const existingOrderInputs = hiddenInputs.querySelectorAll('input[name="image_order"]');
-        existingOrderInputs.forEach(input => input.remove());
-        
-        orderData.forEach(item => {
-            const input = document.createElement('input');
-            input.type = 'hidden';
-            input.name = 'image_order';
-            input.value = `${item.id}:${item.order}`;
-            hiddenInputs.appendChild(input);
-            console.log('Lagt till input:', input.value); // Debug
-        });
-    }
-
-    // Hantera formulärsubmit
-    document.getElementById('axeForm').addEventListener('submit', function(e) {
-        const hiddenInputs = document.getElementById('hiddenInputs');
-        hiddenInputs.innerHTML = ''; // Rensa ALLTID först!
-        updateExistingImageOrder(); // Lägg till bildordning
-        console.log('Submit-funktionen körs'); // DEBUG
-        // Skapa dolda inputs för URL:er
-        selectedItems.forEach((item, id) => {
-            if (item.type === 'url') {
-                const input = document.createElement('input');
-                input.type = 'hidden';
-                input.name = 'image_urls';
-                input.value = item.data;
-                hiddenInputs.appendChild(input);
-            }
-        });
-        
-        // Lägg till dolda inputs för borttagna bilder
-        const removedImages = window.removedExistingImages || [];
-        removedImages.forEach(imageId => {
-            const input = document.createElement('input');
-            input.type = 'hidden';
-            input.name = 'removed_images';
-            input.value = imageId;
-            hiddenInputs.appendChild(input);
-        });
-        
-        // DEBUG: Skriv ut vad som finns i hiddenInputs
-        console.log('hiddenInputs vid submit:', hiddenInputs.innerHTML);
-    });
-});
-
-// Global funktion för att ta bort befintliga bilder
-window.removeExistingImage = function(imageId) {
-    if (confirm('Är du säker på att du vill ta bort denna bild?')) {
-        const imageItem = document.querySelector(`[data-image-id="${imageId}"]`);
-        if (imageItem) {
-            // Lägg till i listan över borttagna bilder
-            if (!window.removedExistingImages) {
-                window.removedExistingImages = [];
-            }
-            window.removedExistingImages.push(imageId);
-            
-            // Dölj bilden (lägg till opacity och disabled state)
-            imageItem.style.opacity = '0.5';
-            imageItem.style.pointerEvents = 'none';
-            
-            // Lägg till en indikator för att bilden kommer att tas bort
-            const card = imageItem.querySelector('.card');
-            const removeIndicator = document.createElement('div');
-            removeIndicator.className = 'position-absolute w-100 h-100 d-flex align-items-center justify-content-center overlay-remove-indicator';
-            removeIndicator.style.cssText = 'top: 0; left: 0; background: rgba(220, 53, 69, 0.8); color: white; font-weight: bold; border-radius: 0.375rem; padding: 0.75rem; box-sizing: border-box;';
-            removeIndicator.innerHTML = '<span>KOMMER ATT TAS BORT</span>';
-            card.appendChild(removeIndicator);
-        }
-    }
-};
-
-function updateTransactionTypeBadge() {
-    const priceInput = document.getElementById('{{ form.transaction_price.id_for_label }}');
-    const badge = document.getElementById('transaction-type-badge');
-    let value = parseFloat(priceInput.value.replace(',', '.'));
-    if (isNaN(value)) {
-        badge.innerHTML = '';
-        return;
-    }
-    if (value < 0) {
-        badge.innerHTML = '<span class="badge bg-danger"><i class="bi bi-arrow-down-circle me-1"></i>KÖP</span>';
-    } else if (value > 0) {
-        badge.innerHTML = '<span class="badge bg-success"><i class="bi bi-arrow-up-circle me-1"></i>SÄLJ</span>';
-    } else {
-        badge.innerHTML = '';
-    }
-}
-document.addEventListener('DOMContentLoaded', function() {
-    const priceInput = document.getElementById('{{ form.transaction_price.id_for_label }}');
-    if (priceInput) {
-        priceInput.addEventListener('input', updateTransactionTypeBadge);
-        updateTransactionTypeBadge();
-    }
-});
-
-// Notifikationsfunktion
-function showNotification(message, type = 'success') {
-    const notification = document.getElementById('notification');
-    const messageSpan = document.getElementById('notification-message');
-    
-    // Ta bort tidigare klasser
-    notification.className = 'alert';
-    
-    // Lägg till rätt klass och ikon
-    if (type === 'success') {
-        notification.classList.add('alert-success');
-        messageSpan.innerHTML = `<i class="fas fa-check-circle me-2"></i>${message}`;
-    } else if (type === 'error') {
-        notification.classList.add('alert-danger');
-        messageSpan.innerHTML = `<i class="fas fa-exclamation-circle me-2"></i>${message}`;
-    } else if (type === 'warning') {
-        notification.classList.add('alert-warning');
-        messageSpan.innerHTML = `<i class="fas fa-exclamation-triangle me-2"></i>${message}`;
-    }
-    
-    // Visa notifikationen
-    notification.style.display = 'block';
-    
-    // Scrolla till notifikationen
-    notification.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    
-    // Dölj efter 3 sekunder
-    setTimeout(() => {
-        notification.style.display = 'none';
-    }, 3000);
-}
-
-// Hantera formulärsubmit
-document.getElementById('axeForm').addEventListener('submit', function(e) {
-    e.preventDefault();
-    
-    const form = this;
-    const formData = new FormData(form);
-    const submitButton = form.querySelector('button[type="submit"]');
-    const originalText = submitButton.innerHTML;
-    
-    // Visa laddningsindikator
-    submitButton.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Sparar...';
-    submitButton.disabled = true;
-    
-    fetch(form.action, {
-        method: 'POST',
-        body: formData
-    })
-    .then(response => {
-        if (response.redirected) {
-            // Om vi får en redirect, följ den
-            window.location.href = response.url;
-            return;
-        }
-        return response.text();
-    })
-    .then(data => {
-        if (data) {
-            // Om vi fick data tillbaka, visa notifikation
-            showNotification('Yxan har uppdaterats framgångsrikt!', 'success');
-            
-            // Återställ knappen
-            submitButton.innerHTML = originalText;
-            submitButton.disabled = false;
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        showNotification('Ett fel uppstod vid uppdatering av yxan.', 'error');
-        
-        // Återställ knappen
-        submitButton.innerHTML = originalText;
-        submitButton.disabled = false;
-    });
-});
-
-{% if is_edit %}
-// Måttfunktionalitet (endast i redigeringsläge)
-const measurementTemplates = {{ measurement_templates|safe }};
-
-function loadTemplate(templateName) {
-    const template = measurementTemplates[templateName];
-    if (!template) {
-        alert(`Mall "${templateName}" hittades inte.`);
-        return;
-    }
-    // Visa batchformuläret
-    const container = document.getElementById('batchMeasurementFormContainer');
-    const rows = document.getElementById('batchMeasurementRows');
-    rows.innerHTML = '';
-    template.forEach((m, idx) => {
-        rows.innerHTML += `
-            <div class="row mb-2 align-items-end">
-                <div class="col-md-4">
-                    <label class="form-label">Måttyp</label>
-                    <input type="text" class="form-control" name="measurements[${idx}][name]" value="${m.name}" readonly>
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label">Värde</label>
-                    <input type="number" step="any" class="form-control" name="measurements[${idx}][value]" required>
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label">Enhet</label>
-                    <input type="text" class="form-control" name="measurements[${idx}][unit]" value="${m.unit}" required>
-                </div>
-            </div>
-        `;
-    });
-    container.style.display = '';
-    // Scrolla till formuläret
-    container.scrollIntoView({behavior: 'smooth'});
-}
-
-function hideBatchForm() {
-    document.getElementById('batchMeasurementFormContainer').style.display = 'none';
-}
-
-function updateMeasurement(measurementId, value, unit) {
-    const formData = new FormData();
-    formData.append('value', value);
-    formData.append('unit', unit);
-    
-    fetch(`/yxor/{{ axe.pk }}/matt/${measurementId}/update/`, {
-        method: 'POST',
-        headers: {
-            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
-        },
-        body: formData
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            // Visa bekräftelse
-            const row = document.querySelector(`[data-measurement-id="${measurementId}"]`);
-            if (row) {
-                row.style.backgroundColor = '#d4edda';
-                setTimeout(() => {
-                    row.style.backgroundColor = '';
-                }, 1000);
-            }
-            showNotification('Måttet har uppdaterats!', 'success');
-        } else {
-            showNotification('Fel vid uppdatering av mått: ' + (data.error || 'Okänt fel'), 'error');
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        showNotification('Fel vid uppdatering av mått', 'error');
-    });
-}
-
-function deleteMeasurement(measurementId) {
-    if (!confirm('Är du säker på att du vill ta bort detta mått?')) return;
-    
-    // Hitta raden som ska tas bort
-    const row = document.querySelector(`[data-measurement-id="${measurementId}"]`);
-    if (!row) {
-        showNotification('Kunde inte hitta måttet att ta bort', 'error');
-        return;
-    }
-    
-    fetch(`/yxor/{{ axe.pk }}/matt/${measurementId}/`, {
-        method: 'POST',
-        headers: {
-            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
-        }
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            // Ta bort raden från DOM med en snygg animation
-            row.style.transition = 'all 0.3s ease';
-            row.style.opacity = '0';
-            row.style.transform = 'translateX(-100%)';
-            
-            setTimeout(() => {
-                row.remove();
-                showNotification('Måttet har tagits bort!', 'success');
-            }, 300);
-        } else {
-            showNotification('Fel vid borttagning av mått: ' + (data.error || 'Okänt fel'), 'error');
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        showNotification('Fel vid borttagning av mått', 'error');
-    });
-}
-
-// Hantera batchformulär submit
-if (document.getElementById('batchMeasurementForm')) {
-    document.getElementById('batchMeasurementForm').addEventListener('submit', function(e) {
-        e.preventDefault();
-        const form = this;
-        const formData = new FormData(form);
-        
-        // Visa laddningsindikator på knappen
-        const submitBtn = form.querySelector('button[type="submit"]');
-        const originalText = submitBtn.innerHTML;
-        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Lägger till mått...';
-        submitBtn.disabled = true;
-        
-        fetch(form.action, {
-            method: 'POST',
-            body: formData
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                // Räkna hur många mått som lades till
-                const formRows = form.querySelectorAll('input[name*="[value]"]');
-                const addedCount = formRows.length;
-                showNotification(`${addedCount} mått har lagts till framgångsrikt!`, 'success');
-                // Ladda om sidan efter 2 sekunder så att notifikationen hinner visas
-                setTimeout(() => {
-                    location.reload();
-                }, 2000);
-            } else {
-                showNotification('Fel vid tillägg av mått: ' + (data.error || 'Okänt fel'), 'error');
-                // Återställ knappen vid fel
-                submitBtn.innerHTML = originalText;
-                submitBtn.disabled = false;
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            showNotification('Fel vid tillägg av mått', 'error');
-            // Återställ knappen vid fel
-            submitBtn.innerHTML = originalText;
-            submitBtn.disabled = false;
-        });
-    });
-}
-
-// Hantera måttformulär
-if (document.getElementById('measurementForm')) {
-    document.getElementById('measurementForm').addEventListener('submit', function(e) {
-        e.preventDefault();
-        
-        const form = this;
-        const formData = new FormData(form);
-        
-        // Visa laddningsindikator på knappen
-        const submitBtn = form.querySelector('button[type="submit"]');
-        const originalText = submitBtn.innerHTML;
-        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Lägger till mått...';
-        submitBtn.disabled = true;
-        
-        fetch(form.action, {
-            method: 'POST',
-            body: formData
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                showNotification('Mått har lagts till framgångsrikt!', 'success');
-                // Ladda om sidan efter 2 sekunder så att notifikationen hinner visas
-                setTimeout(() => {
-                    location.reload();
-                }, 2000);
-            } else {
-                showNotification('Fel vid tillägg av mått: ' + (data.error || 'Okänt fel'), 'error');
-                // Återställ knappen vid fel
-                submitBtn.innerHTML = originalText;
-                submitBtn.disabled = false;
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            showNotification('Fel vid tillägg av mått', 'error');
-            // Återställ knappen vid fel
-            submitBtn.innerHTML = originalText;
-            submitBtn.disabled = false;
-        });
-    });
-}
-
-// Hantera anpassade fält
-const nameSelect = document.getElementById('measurement-name');
-const unitInput = document.getElementById('measurement-unit');
-const customNameField = document.getElementById('custom-name-field');
-
-if (nameSelect) {
-    nameSelect.addEventListener('change', function() {
-        if (this.value === 'Övrigt') {
-            customNameField.classList.add('show');
-        } else {
-            customNameField.classList.remove('show');
-            
-            // Automatiskt fylla i enheten om det är en fördefinierad måtttyp
-            const selectedOption = this.options[this.selectedIndex];
-            if (selectedOption && selectedOption.textContent.includes('(')) {
-                const unitMatch = selectedOption.textContent.match(/\(([^)]+)\)/);
-                if (unitMatch) {
-                    unitInput.value = unitMatch[1];
-                }
-            }
-        }
-    });
-}
-{% endif %}
-</script>
-{% endblock %} 
+    {% endblock %}

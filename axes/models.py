@@ -2,6 +2,7 @@ from django.db import models
 from PIL import Image
 import os
 from django.conf import settings
+from django.db.models import Sum
 
 # Create your models here.
 
@@ -32,12 +33,54 @@ class NextAxeID(models.Model):
             obj.next_id = deleted_id
             obj.save()
 
+    @classmethod
+    def peek_next_id(cls):
+        obj, created = cls.objects.get_or_create(id=1, defaults={'next_id': 1})
+        return obj.next_id
+
 class Manufacturer(models.Model):
     name = models.CharField(max_length=200)
     comment = models.TextField(blank=True, null=True)
 
     def __str__(self):
         return self.name
+
+    @property
+    def axes(self):
+        return self.axe_set.all()
+
+    @property
+    def axe_count(self):
+        return self.axes.count()
+
+    @property
+    def transactions(self):
+        from axes.models import Transaction
+        return Transaction.objects.filter(axe__manufacturer=self)
+
+    @property
+    def buy_count(self):
+        return self.transactions.filter(type='KÖP').count()
+
+    @property
+    def sale_count(self):
+        return self.transactions.filter(type='SÄLJ').count()
+
+    @property
+    def total_buy_value(self):
+        return self.transactions.filter(type='KÖP').aggregate(total=Sum('price'))['total'] or 0
+
+    @property
+    def total_sale_value(self):
+        return self.transactions.filter(type='SÄLJ').aggregate(total=Sum('price'))['total'] or 0
+
+    @property
+    def net_value(self):
+        return self.total_sale_value - self.total_buy_value
+
+    @property
+    def average_profit_per_axe(self):
+        return self.net_value / self.axe_count if self.axe_count > 0 else 0
 
 class Axe(models.Model):
     STATUS_CHOICES = [
@@ -71,6 +114,34 @@ class Axe(models.Model):
 
     def __str__(self):
         return f"{self.manufacturer.name} - {self.model}"
+
+    @property
+    def transactions(self):
+        return self.transaction_set.all()
+
+    @property
+    def total_buy_value(self):
+        return self.transactions.filter(type='KÖP').aggregate(total=Sum('price'))['total'] or 0
+
+    @property
+    def total_buy_shipping(self):
+        return self.transactions.filter(type='KÖP').aggregate(total=Sum('shipping_cost'))['total'] or 0
+
+    @property
+    def total_sale_value(self):
+        return self.transactions.filter(type='SÄLJ').aggregate(total=Sum('price'))['total'] or 0
+
+    @property
+    def total_sale_shipping(self):
+        return self.transactions.filter(type='SÄLJ').aggregate(total=Sum('shipping_cost'))['total'] or 0
+
+    @property
+    def net_value(self):
+        return self.total_sale_value - self.total_buy_value
+
+    @property
+    def profit_loss(self):
+        return (self.total_sale_value + self.total_sale_shipping) - (self.total_buy_value + self.total_buy_shipping)
 
 class AxeImage(models.Model):
     axe = models.ForeignKey(Axe, related_name='images', on_delete=models.CASCADE) # Raderas bilden om yxan raderas
@@ -241,6 +312,35 @@ class Contact(models.Model):
 
     def __str__(self):
         return self.name
+
+    @property
+    def transactions(self):
+        from axes.models import Transaction
+        return Transaction.objects.filter(contact=self)
+
+    @property
+    def total_transactions(self):
+        return self.transactions.count()
+
+    @property
+    def buy_count(self):
+        return self.transactions.filter(type='KÖP').count()
+
+    @property
+    def sale_count(self):
+        return self.transactions.filter(type='SÄLJ').count()
+
+    @property
+    def total_buy_value(self):
+        return self.transactions.filter(type='KÖP').aggregate(total=Sum('price'))['total'] or 0
+
+    @property
+    def total_sale_value(self):
+        return self.transactions.filter(type='SÄLJ').aggregate(total=Sum('price'))['total'] or 0
+
+    @property
+    def net_value(self):
+        return self.total_sale_value - self.total_buy_value
 
 class Platform(models.Model):
     name = models.CharField(max_length=100)
