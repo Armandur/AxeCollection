@@ -1,5 +1,5 @@
 from django.shortcuts import render, get_object_or_404, redirect
-from .models import Axe, Transaction, Contact, Manufacturer, ManufacturerImage, ManufacturerLink, NextAxeID, AxeImage, Platform
+from .models import Axe, Transaction, Contact, Manufacturer, ManufacturerImage, ManufacturerLink, NextAxeID, AxeImage, Platform, Measurement
 from django.db.models import Sum, Q, Max
 from django.http import JsonResponse, Http404
 from django.views.decorators.http import require_POST
@@ -12,7 +12,7 @@ import uuid
 import os
 from django.core.files.storage import default_storage
 from django.conf import settings
-from .forms import TransactionForm
+from .forms import TransactionForm, MeasurementForm
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 
@@ -1211,3 +1211,102 @@ def api_transaction_update(request, pk):
 
     transaction.save()
     return JsonResponse({'success': True})
+
+@require_POST
+def add_measurement(request, pk):
+    """Lägg till mått på en yxa via AJAX"""
+    try:
+        axe = get_object_or_404(Axe, pk=pk)
+        form = MeasurementForm(request.POST)
+        
+        if form.is_valid():
+            measurement = form.save(commit=False)
+            measurement.axe = axe
+            measurement.save()
+            
+            return JsonResponse({
+                'success': True,
+                'measurement': {
+                    'id': measurement.id,
+                    'name': measurement.name,
+                    'value': str(measurement.value),
+                    'unit': measurement.unit
+                }
+            })
+        else:
+            return JsonResponse({
+                'success': False,
+                'errors': form.errors
+            }, status=400)
+            
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=500)
+
+
+@require_POST
+def delete_measurement(request, pk, measurement_id):
+    """Ta bort mått från en yxa via AJAX"""
+    try:
+        axe = get_object_or_404(Axe, pk=pk)
+        measurement = get_object_or_404(Measurement, pk=measurement_id, axe=axe)
+        measurement.delete()
+        
+        return JsonResponse({
+            'success': True
+        })
+        
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=500)
+
+
+def receiving_workflow(request, pk):
+    """Mottagningsarbetsflöde för en yxa"""
+    axe = get_object_or_404(Axe.objects.select_related('manufacturer').prefetch_related('measurements', 'images'), pk=pk)
+    
+    # Hämta befintliga mått
+    measurements = axe.measurements.all().order_by('name')
+    
+    # Hämta befintliga bilder
+    images = axe.images.all().order_by('order')
+    
+    # Skapa formulär för mått
+    measurement_form = MeasurementForm()
+    
+    # Fördefinierade måttmallar för olika yxtyper
+    measurement_templates = {
+        'default': [
+            {'name': 'Bladlängd', 'unit': 'mm'},
+            {'name': 'Bladbredd', 'unit': 'mm'},
+            {'name': 'Skaftlängd', 'unit': 'mm'},
+            {'name': 'Total längd', 'unit': 'mm'},
+            {'name': 'Vikt', 'unit': 'gram'},
+        ],
+        'fällkniv': [
+            {'name': 'Bladlängd', 'unit': 'mm'},
+            {'name': 'Bladbredd', 'unit': 'mm'},
+            {'name': 'Handtag', 'unit': 'mm'},
+            {'name': 'Vikt', 'unit': 'gram'},
+        ],
+        'köksyxa': [
+            {'name': 'Bladlängd', 'unit': 'mm'},
+            {'name': 'Bladbredd', 'unit': 'mm'},
+            {'name': 'Skaftlängd', 'unit': 'mm'},
+            {'name': 'Vikt', 'unit': 'gram'},
+        ]
+    }
+    
+    context = {
+        'axe': axe,
+        'measurements': measurements,
+        'images': images,
+        'measurement_form': measurement_form,
+        'measurement_templates': measurement_templates,
+    }
+    
+    return render(request, 'axes/receiving_workflow.html', context)
