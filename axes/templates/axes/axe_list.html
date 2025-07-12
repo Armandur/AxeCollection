@@ -260,6 +260,11 @@
                                     title="Markera som mottagen">
                                 <i class="fas fa-check-circle"></i>
                             </button>
+                            <a href="{% url 'receiving_workflow' axe.id %}" 
+                               class="btn btn-sm btn-outline-primary"
+                               title="Mottagningsarbetsflöde">
+                                <i class="fas fa-box-open"></i>
+                            </a>
                         </div>
                     {% elif axe.status == 'MOTTAGEN' %}
                         <span class="badge bg-success">Mottagen</span>

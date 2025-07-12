@@ -1,0 +1,476 @@
+{% extends 'axes/base.html' %}
+{% load axe_filters %}
+
+{% block title %}Mottagning - {{ axe.manufacturer.name }} - {{ axe.model }} - {{ block.super }}{% endblock %}
+
+{% block extra_head %}
+<style>
+    .workflow-step {
+        border-left: 4px solid #dee2e6;
+        padding-left: 1rem;
+        margin-bottom: 2rem;
+    }
+    .workflow-step.active {
+        border-left-color: #0d6efd;
+    }
+    .workflow-step.completed {
+        border-left-color: #198754;
+    }
+    .measurement-card {
+        transition: transform 0.2s;
+    }
+    .measurement-card:hover {
+        transform: translateY(-2px);
+    }
+    .template-btn {
+        margin: 0.25rem;
+    }
+    .image-upload-area {
+        border: 2px dashed #dee2e6;
+        border-radius: 0.5rem;
+        padding: 2rem;
+        text-align: center;
+        transition: border-color 0.3s;
+    }
+    .image-upload-area:hover {
+        border-color: #0d6efd;
+    }
+    .image-upload-area.dragover {
+        border-color: #0d6efd;
+        background-color: rgba(13, 110, 253, 0.1);
+    }
+    .measurement-form {
+        background-color: #f8f9fa;
+        border-radius: 0.5rem;
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+    }
+    .custom-field {
+        display: none;
+    }
+    .custom-field.show {
+        display: block;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'axe_list' %}">Yxsamling</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'axe_detail' axe.pk %}">{{ axe.manufacturer.name }} - {{ axe.model }}</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Mottagning</li>
+    </ol>
+</nav>
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="h3 mb-0">
+                    <i class="fas fa-box-open me-2"></i>
+                    Mottagning: {{ axe.manufacturer.name }} - {{ axe.model }}
+                </h1>
+                <div>
+                    <a href="{% url 'axe_detail' axe.pk %}" class="btn btn-outline-secondary me-2">
+                        <i class="fas fa-arrow-left me-1"></i>
+                        <span class="d-none d-md-inline">Tillbaka till yxa</span>
+                    </a>
+                    <a href="{% url 'axe_edit' axe.pk %}" class="btn btn-outline-primary">
+                        <i class="fas fa-edit me-1"></i>
+                        <span class="d-none d-md-inline">Redigera yxa</span>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Status-indikator -->
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle me-2"></i>
+                <strong>Status:</strong> 
+                {% if axe.status == 'KÖPT' %}
+                    <span class="badge bg-warning text-dark">Köpt - Väntar på mottagning</span>
+                {% else %}
+                    <span class="badge bg-success">Mottagen/Ägd</span>
+                {% endif %}
+            </div>
+
+            <!-- Arbetsflödessteg -->
+            <div class="row">
+                <div class="col-lg-8">
+                    <!-- Steg 1: Måttinmatning -->
+                    <div class="workflow-step active" id="step-measurements">
+                        <h3 class="h5 mb-3">
+                            <i class="fas fa-ruler me-2"></i>
+                            Steg 1: Mät och registrera mått
+                        </h3>
+                        
+                        <!-- Måttmallar -->
+                        <div class="card mb-3">
+                            <div class="card-header">
+                                <h6 class="mb-0">Måttmallar</h6>
+                            </div>
+                            <div class="card-body">
+                                {% if measurement_templates %}
+                                    <p class="text-muted small mb-2">Välj en mall för att snabbt lägga till vanliga mått:</p>
+                                    <div class="d-flex flex-wrap">
+                                        {% for template_name, measurements in measurement_templates.items %}
+                                        <button class="btn btn-outline-primary btn-sm template-btn" 
+                                                onclick="loadTemplate('{{ template_name }}')"
+                                                title="{{ template_name }}: {{ measurements|length }} mått">
+                                            <i class="fas fa-list me-1"></i>{{ template_name }}
+                                        </button>
+                                        {% endfor %}
+                                    </div>
+                                {% else %}
+                                    <p class="text-muted small mb-2">
+                                        <i class="fas fa-info-circle me-1"></i>
+                                        Inga måttmallar konfigurerade än. 
+                                        <a href="/admin/axes/measurementtemplate/" target="_blank">Skapa mallar i admin</a>
+                                    </p>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Måttformulär -->
+                        <div class="measurement-form">
+                            <h6 class="mb-3">Lägg till nytt mått</h6>
+                            <form id="measurementForm" method="post" action="{% url 'add_measurement' axe.pk %}">
+                                {% csrf_token %}
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        {{ measurement_form.name.label_tag }}
+                                        {{ measurement_form.name }}
+                                        <div class="custom-field" id="custom-name-field">
+                                            {{ measurement_form.custom_name.label_tag }}
+                                            {{ measurement_form.custom_name }}
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        {{ measurement_form.value.label_tag }}
+                                        {{ measurement_form.value }}
+                                    </div>
+                                    <div class="col-md-3">
+                                        {{ measurement_form.unit.label_tag }}
+                                        {{ measurement_form.unit }}
+                                    </div>
+                                    <div class="col-md-2 d-flex align-items-end">
+                                        <button type="submit" class="btn btn-primary w-100">
+                                            <i class="fas fa-plus me-1"></i>
+                                            <span class="d-none d-md-inline">Lägg till</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+
+                        <!-- Batch-måttformulär (dolt från början) -->
+                        <div class="measurement-form mt-3" id="batchMeasurementFormContainer" style="display:none;">
+                            <h6 class="mb-3">Lägg till flera mått från mall</h6>
+                            <form id="batchMeasurementForm" method="post" action="{% url 'add_measurements_from_template' axe.pk %}">
+                                {% csrf_token %}
+                                <div id="batchMeasurementRows"></div>
+                                <div class="text-end mt-2">
+                                    <button type="submit" class="btn btn-success">
+                                        <i class="fas fa-plus me-1"></i>Lägg till alla
+                                    </button>
+                                    <button type="button" class="btn btn-link text-danger" onclick="hideBatchForm()">Avbryt</button>
+                                </div>
+                            </form>
+                        </div>
+
+                        <!-- Befintliga mått -->
+                        <div class="card">
+                            <div class="card-header">
+                                <h6 class="mb-0">Registrerade mått ({{ measurements.count }})</h6>
+                            </div>
+                            <div class="card-body">
+                                {% if measurements %}
+                                    <div class="row" id="measurementsList">
+                                        {% for measurement in measurements %}
+                                        <div class="col-md-6 col-lg-4 mb-3">
+                                            <div class="card measurement-card h-100">
+                                                <div class="card-body">
+                                                    <h6 class="card-title">{{ measurement.name }}</h6>
+                                                    <p class="card-text">
+                                                        <span class="h5 text-primary">{{ measurement.value|format_decimal }}</span>
+                                                        <small class="text-muted">{{ measurement.unit }}</small>
+                                                    </p>
+                                                    <button class="btn btn-sm btn-outline-danger" 
+                                                            onclick="deleteMeasurement({{ measurement.id }})">
+                                                        <i class="fas fa-trash me-1"></i>Ta bort
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+                                {% else %}
+                                    <p class="text-muted text-center py-3">
+                                        <i class="fas fa-ruler fa-2x mb-2"></i><br>
+                                        Inga mått registrerade än. Lägg till ditt första mått ovan.
+                                    </p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Steg 2: Mottagningsbilder -->
+                    <div class="workflow-step" id="step-images">
+                        <h3 class="h5 mb-3">
+                            <i class="fas fa-camera me-2"></i>
+                            Steg 2: Lägg till mottagningsbilder
+                        </h3>
+                        
+                        <div class="card">
+                            <div class="card-header">
+                                <h6 class="mb-0">Bilder ({{ images.count }})</h6>
+                            </div>
+                            <div class="card-body">
+                                {% if images %}
+                                    <div class="row">
+                                        {% for image in images %}
+                                        <div class="col-md-4 col-lg-3 mb-3">
+                                            <div class="card">
+                                                <img src="{{ image.webp_url|default:image.image.url }}" 
+                                                     class="card-img-top" 
+                                                     alt="{{ image.description|default:'Yxbild' }}"
+                                                     style="height: 150px; object-fit: cover;">
+                                                <div class="card-body">
+                                                    <p class="card-text small">{{ image.description|default:'Ingen beskrivning' }}</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+                                {% else %}
+                                    <p class="text-muted text-center py-3">
+                                        <i class="fas fa-camera fa-2x mb-2"></i><br>
+                                        Inga bilder uppladdade än.
+                                    </p>
+                                {% endif %}
+                                
+                                <div class="text-center mt-3">
+                                    <a href="{% url 'axe_edit' axe.pk %}" class="btn btn-primary">
+                                        <i class="fas fa-plus me-1"></i>
+                                        Lägg till bilder
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Steg 3: Slutför mottagning -->
+                    <div class="workflow-step" id="step-complete">
+                        <h3 class="h5 mb-3">
+                            <i class="fas fa-check-circle me-2"></i>
+                            Steg 3: Slutför mottagning
+                        </h3>
+                        
+                        <div class="card">
+                            <div class="card-body text-center">
+                                <i class="fas fa-box-open fa-3x text-success mb-3"></i>
+                                <h5>Redo att markera som mottagen?</h5>
+                                <p class="text-muted">
+                                    När du är nöjd med måtten och bilderna kan du markera yxan som mottagen.
+                                </p>
+                                <button class="btn btn-success btn-lg" onclick="markAsReceived()">
+                                    <i class="fas fa-check me-2"></i>
+                                    Markera som mottagen
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sidopanel med yxinfo -->
+                <div class="col-lg-4">
+                    <div class="card sticky-top" style="top: 1rem;">
+                        <div class="card-header">
+                            <h6 class="mb-0">Yxinformation</h6>
+                        </div>
+                        <div class="card-body">
+                            <p><strong>Tillverkare:</strong><br>{{ axe.manufacturer.name }}</p>
+                            <p><strong>Modell:</strong><br>{{ axe.model }}</p>
+                            {% if axe.comment %}
+                                <p><strong>Kommentar:</strong><br>{{ axe.comment }}</p>
+                            {% endif %}
+                            
+                            <hr>
+                            
+                            <div class="d-grid gap-2">
+                                <a href="{% url 'axe_detail' axe.pk %}" class="btn btn-outline-secondary btn-sm">
+                                    <i class="fas fa-eye me-1"></i>Visa yxa
+                                </a>
+                                <a href="{% url 'axe_edit' axe.pk %}" class="btn btn-outline-primary btn-sm">
+                                    <i class="fas fa-edit me-1"></i>Redigera yxa
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Måttmallar data -->
+<script>
+const measurementTemplates = {{ measurement_templates|safe }};
+
+function loadTemplate(templateName) {
+    const template = measurementTemplates[templateName];
+    if (!template) {
+        alert(`Mall "${templateName}" hittades inte.`);
+        return;
+    }
+    // Visa batchformuläret
+    const container = document.getElementById('batchMeasurementFormContainer');
+    const rows = document.getElementById('batchMeasurementRows');
+    rows.innerHTML = '';
+    template.forEach((m, idx) => {
+        rows.innerHTML += `
+            <div class="row mb-2 align-items-end">
+                <div class="col-md-4">
+                    <label class="form-label">Måttyp</label>
+                    <input type="text" class="form-control" name="measurements[${idx}][name]" value="${m.name}" readonly>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Värde</label>
+                    <input type="number" step="any" class="form-control" name="measurements[${idx}][value]" required>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Enhet</label>
+                    <input type="text" class="form-control" name="measurements[${idx}][unit]" value="${m.unit}" required>
+                </div>
+            </div>
+        `;
+    });
+    container.style.display = '';
+    // Scrolla till formuläret
+    container.scrollIntoView({behavior: 'smooth'});
+}
+function hideBatchForm() {
+    document.getElementById('batchMeasurementFormContainer').style.display = 'none';
+}
+// Hantera batchformulär submit
+if (document.getElementById('batchMeasurementForm')) {
+    document.getElementById('batchMeasurementForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const form = this;
+        const formData = new FormData(form);
+        fetch(form.action, {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Fel vid tillägg av mått: ' + (data.error || 'Okänt fel'));
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Fel vid tillägg av mått');
+        });
+    });
+}
+
+function deleteMeasurement(measurementId) {
+    if (!confirm('Är du säker på att du vill ta bort detta mått?')) return;
+    
+    fetch(`/yxor/{{ axe.pk }}/matt/${measurementId}/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert('Fel vid borttagning av mått: ' + (data.error || 'Okänt fel'));
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Fel vid borttagning av mått');
+    });
+}
+
+function markAsReceived() {
+    if (!confirm('Är du säker på att du vill markera yxan som mottagen?')) return;
+    
+    fetch(`/yxor/{{ axe.pk }}/status/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: 'status=MOTTAGEN'
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.href = '{% url "axe_detail" axe.pk %}';
+        } else {
+            alert('Fel vid uppdatering av status: ' + (data.error || 'Okänt fel'));
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Fel vid uppdatering av status');
+    });
+}
+
+// Hantera anpassade fält
+document.addEventListener('DOMContentLoaded', function() {
+    const nameSelect = document.getElementById('measurement-name');
+    const unitInput = document.getElementById('measurement-unit');
+    const customNameField = document.getElementById('custom-name-field');
+    
+    nameSelect.addEventListener('change', function() {
+        if (this.value === 'Övrigt') {
+            customNameField.classList.add('show');
+        } else {
+            customNameField.classList.remove('show');
+            
+            // Automatiskt fylla i enheten om det är en fördefinierad måtttyp
+            const selectedOption = this.options[this.selectedIndex];
+            if (selectedOption && selectedOption.textContent.includes('(')) {
+                const unitMatch = selectedOption.textContent.match(/\(([^)]+)\)/);
+                if (unitMatch) {
+                    unitInput.value = unitMatch[1];
+                }
+            }
+        }
+    });
+    
+    // Hantera måttformulär
+    document.getElementById('measurementForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const formData = new FormData(this);
+        
+        fetch(this.action, {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Fel vid tillägg av mått: ' + (data.error || 'Okänt fel'));
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Fel vid tillägg av mått');
+        });
+    });
+});
+</script>
+{% endblock %} 

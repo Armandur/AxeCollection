@@ -1,23 +1,27 @@
 from django.urls import path
-from django.views.generic.base import RedirectView
 from . import views
 
 urlpatterns = [
-    path('', RedirectView.as_view(url='yxor/', permanent=True)),
+    path('', views.axe_list, name='axe_list'),
     path('yxor/', views.axe_list, name='axe_list'),
     path('yxor/ny/', views.axe_create, name='axe_create'),
     path('yxor/<int:pk>/', views.axe_detail, name='axe_detail'),
     path('yxor/<int:pk>/redigera/', views.axe_edit, name='axe_edit'),
     path('yxor/<int:pk>/status/', views.update_axe_status, name='update_axe_status'),
+    path('yxor/<int:pk>/mottagning/', views.receiving_workflow, name='receiving_workflow'),
+    path('yxor/<int:pk>/matt/', views.add_measurement, name='add_measurement'),
+    path('yxor/<int:pk>/matt/mall/', views.add_measurements_from_template, name='add_measurements_from_template'),
+    path('yxor/<int:pk>/matt/<int:measurement_id>/', views.delete_measurement, name='delete_measurement'),
+    path('yxor/<int:pk>/matt/<int:measurement_id>/update/', views.update_measurement, name='update_measurement'),
+    path('yxor/<int:pk>/transaktion/<int:transaction_id>/api/', views.api_transaction_update, name='api_transaction_update'),
+    path('yxor/<int:pk>/transaktion/<int:transaction_id>/api/detail/', views.api_transaction_detail, name='api_transaction_detail'),
     path('galleri/', views.axe_gallery, name='axe_gallery'),
     path('galleri/<int:pk>/', views.axe_gallery, name='axe_gallery_detail'),
-    path('transaktioner/', views.transaction_list, name='transaction_list'),
     path('kontakter/', views.contact_list, name='contact_list'),
-    path('kontakt/<int:pk>/', views.contact_detail, name='contact_detail'),
+    path('kontakter/<int:pk>/', views.contact_detail, name='contact_detail'),
     path('tillverkare/', views.manufacturer_list, name='manufacturer_list'),
     path('tillverkare/<int:pk>/', views.manufacturer_detail, name='manufacturer_detail'),
+    path('transaktioner/', views.transaction_list, name='transaction_list'),
     path('api/search/contacts/', views.search_contacts, name='search_contacts'),
     path('api/search/platforms/', views.search_platforms, name='search_platforms'),
-    path('api/transaction/<int:pk>/', views.api_transaction_detail, name='api_transaction_detail'),
-    path('api/transaction/<int:pk>/update/', views.api_transaction_update, name='api_transaction_update'),
 ] 

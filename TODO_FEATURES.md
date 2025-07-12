@@ -49,10 +49,14 @@ En checklista för vidareutveckling av AxeCollection. Bocka av med [x] när klar
     - Ladda upp bilder från auktion/annons ✅
     - Skapa/redigera kontakt (försäljare på Tradera etc.) ✅
     - Skapa transaktion (inköp med pris, frakt, datum) ✅
-27. [ ] Arbetsflöde för mottagning:
-    - Lägg till fler bilder av mottagen yxa
-    - Mät och registrera mått
-    - Uppdatera eventuell felaktig information
+27. [x] Arbetsflöde för mottagning:
+    - [x] Lägg till fler bilder av mottagen yxa (via befintlig redigeringsfunktionalitet)
+    - [x] Mät och registrera mått (nytt måttinmatningsformulär med mallar)
+    - [x] Uppdatera eventuell felaktig information (via befintlig redigeringsfunktionalitet)
+    - [x] Dedikerat mottagningsarbetsflöde med steg-för-steg process
+    - [x] Måttmallar för olika yxtyper (standard, fällkniv, köksyxa)
+    - [x] AJAX-hantering för måttinmatning och borttagning
+    - [x] Länkar till mottagningsarbetsflödet från yxlistan och yxdetail
 28. [x] Snabbval av tillverkare – Dropdown för att välja tillverkare.
 29. [x] Kontakthantering – Skapa nya kontakter direkt från yxformuläret med smart matchning.
 30. [x] Transaktionshantering – Koppla yxor till köp/försäljning med pris, frakt och datum.

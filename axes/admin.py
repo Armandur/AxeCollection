@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Manufacturer, Axe, AxeImage, ManufacturerImage, ManufacturerLink, Measurement, Contact, Platform, Transaction
+from .models import Manufacturer, Axe, AxeImage, ManufacturerImage, ManufacturerLink, Measurement, Contact, Platform, Transaction, NextAxeID, MeasurementType, MeasurementTemplate, MeasurementTemplateItem
 from django.utils.safestring import mark_safe
 from django import forms
 from django.utils.translation import gettext_lazy as _
@@ -103,6 +103,33 @@ class AxeAdmin(admin.ModelAdmin):
             response.context_data['deleted_objects_flat'] = flat
         return response
 
+class MeasurementTypeAdmin(admin.ModelAdmin):
+    list_display = ('name', 'unit', 'is_active', 'sort_order', 'created_at')
+    list_filter = ('is_active', 'created_at')
+    search_fields = ('name', 'description')
+    ordering = ('sort_order', 'name')
+    list_editable = ('is_active', 'sort_order')
+
+
+class MeasurementTemplateItemInline(admin.TabularInline):
+    model = MeasurementTemplateItem
+    extra = 1
+    ordering = ('sort_order',)
+
+
+class MeasurementTemplateAdmin(admin.ModelAdmin):
+    list_display = ('name', 'description', 'is_active', 'sort_order', 'item_count', 'created_at')
+    list_filter = ('is_active', 'created_at')
+    search_fields = ('name', 'description')
+    ordering = ('sort_order', 'name')
+    list_editable = ('is_active', 'sort_order')
+    inlines = [MeasurementTemplateItemInline]
+    
+    def item_count(self, obj):
+        return obj.items.count()
+    item_count.short_description = 'Antal mått'
+
+
 # "Registrera" dina modeller så de dyker upp i admin-gränssnittet
 admin.site.register(Manufacturer, ManufacturerAdmin)
 admin.site.register(Axe, AxeAdmin)
@@ -113,3 +140,5 @@ admin.site.register(Measurement)
 admin.site.register(Contact)
 admin.site.register(Platform)
 admin.site.register(Transaction)
+admin.site.register(MeasurementType, MeasurementTypeAdmin)
+admin.site.register(MeasurementTemplate, MeasurementTemplateAdmin)
