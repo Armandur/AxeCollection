@@ -13,6 +13,7 @@ import uuid
 import os
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
+from urllib.parse import urlparse
 
 # --- Yx-relaterade vyer ---
 
@@ -36,23 +37,6 @@ def axe_list(request):
     
     # Hämta alla tillverkare för filter-dropdown
     manufacturers = Manufacturer.objects.all().order_by('name')
-    
-    # Beräkna statistik för varje yxa
-    for axe in axes:
-        transactions = axe.transaction_set.all()
-        buy_transactions = transactions.filter(type='KÖP')
-        sale_transactions = transactions.filter(type='SÄLJ')
-        
-        # Summa köp
-        axe.total_buy_value = buy_transactions.aggregate(total=Sum('price'))['total'] or 0
-        axe.total_buy_shipping = buy_transactions.aggregate(total=Sum('shipping_cost'))['total'] or 0
-        
-        # Summa försäljning
-        axe.total_sale_value = sale_transactions.aggregate(total=Sum('price'))['total'] or 0
-        axe.total_sale_shipping = sale_transactions.aggregate(total=Sum('shipping_cost'))['total'] or 0
-        
-        # Netto (försäljning - köp)
-        axe.net_value = axe.total_sale_value - axe.total_buy_value
     
     # Statistik för hela samlingen
     transactions = Transaction.objects.all()
@@ -163,24 +147,145 @@ def axe_detail(request, pk):
         'total_income': total_income,
         'profit_loss': profit_loss,
         'transaction_form': transaction_form,
+        'breadcrumbs': [
+            {'text': 'Yxsamling', 'url': '/yxor/'},
+            {'text': axe.manufacturer.name, 'url': f'/tillverkare/{axe.manufacturer.id}/'},
+            {'text': f'{axe.display_id} - {axe.model}'}
+        ],
     }
     return render(request, 'axes/axe_detail.html', context)
 
 def axe_create(request):
     if request.method == 'POST':
-        form = AxeForm(request.POST)
+        form = AxeForm(request.POST, request.FILES)
         if form.is_valid():
             axe = form.save(commit=False)
             axe.created_by = request.user
             axe.save()
-            return redirect('axe_list')
+            
+            # Hantera bilder
+            if 'images' in request.FILES:
+                for image_file in request.FILES.getlist('images'):
+                    # Hantera URL-bilder
+                    if hasattr(image_file, 'name') and image_file.name.startswith('http'):
+                        try:
+                            response = requests.get(image_file.name)
+                            if response.status_code == 200:
+                                # Skapa en unik filnamn
+                                file_extension = os.path.splitext(urlparse(image_file.name).path)[1] or '.jpg'
+                                filename = f"{axe.id}_{uuid.uuid4().hex[:8]}{file_extension}"
+                                image_file = ContentFile(response.content, name=filename)
+                            else:
+                                continue
+                        except:
+                            continue
+                    
+                    # Spara bilden
+                    try:
+                        axe_image = AxeImage(axe=axe, image=image_file)
+                        axe_image.save()
+                    except Exception as e:
+                        print(f"Fel vid sparande av bild: {e}")
+            
+            # Hantera kontakt
+            contact = None
+            contact_search = form.cleaned_data.get('contact_search', '').strip()
+            if contact_search:
+                # Försök hitta befintlig kontakt
+                try:
+                    contact = Contact.objects.get(name__iexact=contact_search)
+                except Contact.DoesNotExist:
+                    # Skapa ny kontakt
+                    contact_name = form.cleaned_data.get('contact_name', '').strip()
+                    if contact_name:
+                        contact, created = Contact.objects.get_or_create(
+                            name=contact_name,
+                            defaults={
+                                'alias': form.cleaned_data.get('contact_alias', ''),
+                                'email': form.cleaned_data.get('contact_email', ''),
+                                'phone': form.cleaned_data.get('contact_phone', ''),
+                                'comment': form.cleaned_data.get('contact_comment', ''),
+                                'is_naj_member': form.cleaned_data.get('is_naj_member', False)
+                            }
+                        )
+                    else:
+                        # Använd sökvärdet som namn
+                        contact, created = Contact.objects.get_or_create(
+                            name=contact_search,
+                            defaults={
+                                'alias': form.cleaned_data.get('contact_alias', ''),
+                                'email': form.cleaned_data.get('contact_email', ''),
+                                'phone': form.cleaned_data.get('contact_phone', ''),
+                                'comment': form.cleaned_data.get('contact_comment', ''),
+                                'is_naj_member': form.cleaned_data.get('is_naj_member', False)
+                            }
+                        )
+            
+            # Hantera plattform
+            platform = None
+            platform_name = form.cleaned_data.get('platform_name', '').strip()
+            platform_url = form.cleaned_data.get('platform_url', '').strip()
+            platform_comment = form.cleaned_data.get('platform_comment', '').strip()
+            platform_search = form.cleaned_data.get('platform_search', '').strip()
+            if platform_name:
+                # Skapa ny plattform med endast namn (url och comment finns ej i modellen)
+                platform, created = Platform.objects.get_or_create(
+                    name=platform_name
+                )
+            elif platform_search:
+                try:
+                    platform = Platform.objects.get(name=platform_search)
+                except Platform.DoesNotExist:
+                    platform = None
+            
+            # Hantera transaktion
+            transaction_price = form.cleaned_data.get('transaction_price')
+            transaction_shipping = form.cleaned_data.get('transaction_shipping')
+            transaction_date = form.cleaned_data.get('transaction_date')
+            transaction_comment = form.cleaned_data.get('transaction_comment', '')
+            
+            if transaction_price is not None or transaction_shipping is not None or transaction_date:
+                # Skapa transaktion
+                if transaction_price is None:
+                    transaction_price = 0
+                if transaction_shipping is None:
+                    transaction_shipping = 0
+                if not transaction_date:
+                    transaction_date = timezone.now().date()
+                
+                # Bestäm transaktionstyp baserat på tecken
+                if transaction_price < 0 or transaction_shipping < 0:
+                    transaction_type = 'KÖP'
+                    transaction_price = abs(transaction_price)
+                    transaction_shipping = abs(transaction_shipping)
+                else:
+                    transaction_type = 'SÄLJ'
+                    transaction_shipping = abs(transaction_shipping)
+                
+                Transaction.objects.create(
+                    axe=axe,
+                    contact=contact,
+                    platform=platform,
+                    transaction_date=transaction_date,
+                    type=transaction_type,
+                    price=transaction_price,
+                    shipping_cost=transaction_shipping,
+                    comment=transaction_comment
+                )
+            
+            return redirect('axe_detail', pk=axe.pk)
     else:
         form = AxeForm()
+    
+    # Hämta nästa ID utan att öka räknaren
+    next_id = NextAxeID.peek_next_id()
+    
     # Skicka samma context som i edit
     context = {
         'form': form,
         'axe': None,
         'is_edit': False,
+        'next_id': next_id,
         'measurements': [],
         'measurement_form': MeasurementForm(),
         'measurement_templates': {},

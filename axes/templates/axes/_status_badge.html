@@ -1,0 +1,12 @@
+{% load axe_filters %}
+<span class="badge {{ status|status_badge }}">
+    {% if status == 'KÖPT' %}
+        Köpt
+    {% elif status == 'MOTTAGEN' %}
+        Mottagen
+    {% elif status == 'SÅLD' %}
+        Såld
+    {% else %}
+        {{ status }}
+    {% endif %}
+</span> 

@@ -28,32 +28,7 @@
 <h1 class="mb-4">Kontakter</h1>
 
 <!-- Statistik-kort -->
-<div class="row mb-4">
-    <div class="col-md-4">
-        <div class="card stats-card bg-body-secondary">
-            <div class="card-body text-center">
-                <h6 class="card-title text-muted">Antal kontakter</h6>
-                <h4>{{ total_contacts }}</h4>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-4">
-        <div class="card stats-card bg-body-secondary">
-            <div class="card-body text-center">
-                <h6 class="card-title text-muted">Totala transaktioner</h6>
-                <h4>{{ total_transactions }}</h4>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-4">
-        <div class="card stats-card bg-body-secondary">
-            <div class="card-body text-center">
-                <h6 class="card-title text-muted">NAJ-medlemmar</h6>
-                <h4>{{ total_naj_members }}</h4>
-            </div>
-        </div>
-    </div>
-</div>
+{% include 'axes/_contact_stats_cards.html' %}
 
 <!-- Kontaktertabell -->
 <div class="table-responsive">

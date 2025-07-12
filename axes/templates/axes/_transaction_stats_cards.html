@@ -1,0 +1,50 @@
+{% load axe_filters %}
+<!-- Statistik-kort för transaktionslistan -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card stats-card bg-body-secondary">
+            <div class="card-body text-center">
+                <h6 class="card-title text-muted">Antal köp</h6>
+                <h4 class="text-danger">{{ total_buys }}</h4>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stats-card bg-body-secondary">
+            <div class="card-body text-center">
+                <h6 class="card-title text-muted">Antal försäljningar</h6>
+                <h4 class="text-success">{{ total_sales }}</h4>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stats-card bg-body-secondary">
+            <div class="card-body text-center">
+                <h6 class="card-title text-muted">Total köpvärde</h6>
+                <h4 class="text-danger">{{ total_buy_value|format_decimal }} kr</h4>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stats-card bg-body-secondary">
+            <div class="card-body text-center">
+                <h6 class="card-title text-muted">Total försäljningsvärde</h6>
+                <h4 class="text-success">{{ total_sale_value|format_decimal }} kr</h4>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Total vinst/förlust -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body text-center">
+                <h5 class="card-title">Total vinst/förlust</h5>
+                <h2 class="{% if total_profit >= 0 %}profit-positive{% else %}profit-negative{% endif %}">
+                    {{ total_profit|format_decimal }} kr
+                </h2>
+            </div>
+        </div>
+    </div>
+</div> 

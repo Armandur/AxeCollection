@@ -4,20 +4,7 @@ from django.db.models import Sum
 
 def manufacturer_list(request):
     manufacturers = Manufacturer.objects.all().order_by('name')
-    for manufacturer in manufacturers:
-        axes = Axe.objects.filter(manufacturer=manufacturer)
-        manufacturer.axe_count = axes.count()
-        manufacturer.image_count = ManufacturerImage.objects.filter(manufacturer=manufacturer).count()
-        manufacturer.link_count = ManufacturerLink.objects.filter(manufacturer=manufacturer).count()
-        # Beräkna transaktionsstatistik
-        transactions = Transaction.objects.filter(axe__manufacturer=manufacturer)
-        buy_transactions = transactions.filter(type='KÖP')
-        sale_transactions = transactions.filter(type='SÄLJ')
-        manufacturer.buy_count = buy_transactions.count()
-        manufacturer.sale_count = sale_transactions.count()
-        manufacturer.total_buy_value = buy_transactions.aggregate(total=Sum('price'))['total'] or 0
-        manufacturer.total_sale_value = sale_transactions.aggregate(total=Sum('price'))['total'] or 0
-        manufacturer.net_value = manufacturer.total_sale_value - manufacturer.total_buy_value
+    # Ta bort all tilldelning av statistikfält, använd properties direkt i template/context
     total_manufacturers = manufacturers.count()
     total_axes = Axe.objects.count()
     total_transactions = Transaction.objects.count()

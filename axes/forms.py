@@ -287,6 +287,38 @@ class AxeForm(forms.ModelForm):
         label='Plattform',
         help_text='Börja skriva för att söka efter befintlig plattform eller skapa ny'
     )
+    
+    platform_name = forms.CharField(
+        required=False,
+        max_length=100,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Ange plattformsnamn'
+        }),
+        label='Namn (ny plattform)',
+        help_text='Namn på plattformen (t.ex. Tradera, eBay)'
+    )
+    
+    platform_url = forms.URLField(
+        required=False,
+        widget=forms.URLInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'https://www.tradera.com'
+        }),
+        label='URL (ny plattform)',
+        help_text='URL till plattformen'
+    )
+    
+    platform_comment = forms.CharField(
+        required=False,
+        widget=forms.Textarea(attrs={
+            'class': 'form-control',
+            'rows': 2,
+            'placeholder': 'Lägg till kommentar om plattformen...'
+        }),
+        label='Kommentar (ny plattform)',
+        help_text='Kommentar om plattformen'
+    )
 
     class Meta:
         model = Axe

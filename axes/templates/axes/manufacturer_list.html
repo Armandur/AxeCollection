@@ -36,36 +36,16 @@
 <!-- Statistik-kort -->
 <div class="row mb-4">
     <div class="col-md-3">
-        <div class="card stats-card bg-body-secondary">
-            <div class="card-body text-center">
-                <h6 class="card-title text-muted">Antal tillverkare</h6>
-                <h4>{{ total_manufacturers }}</h4>
-            </div>
-        </div>
+        {% include "axes/_stat_card.html" with title="Antal tillverkare" value=total_manufacturers %}
     </div>
     <div class="col-md-3">
-        <div class="card stats-card bg-body-secondary">
-            <div class="card-body text-center">
-                <h6 class="card-title text-muted">Totala yxor</h6>
-                <h4>{{ total_axes }}</h4>
-            </div>
-        </div>
+        {% include "axes/_stat_card.html" with title="Totala yxor" value=total_axes %}
     </div>
     <div class="col-md-3">
-        <div class="card stats-card bg-body-secondary">
-            <div class="card-body text-center">
-                <h6 class="card-title text-muted">Totala transaktioner</h6>
-                <h4>{{ total_transactions }}</h4>
-            </div>
-        </div>
+        {% include "axes/_stat_card.html" with title="Totala transaktioner" value=total_transactions %}
     </div>
     <div class="col-md-3">
-        <div class="card stats-card bg-body-secondary">
-            <div class="card-body text-center">
-                <h6 class="card-title text-muted">Genomsnitt yxor/tillverkare</h6>
-                <h4>{% if total_manufacturers > 0 %}{{ average_axes_per_manufacturer|floatformat:1 }}{% else %}0{% endif %}</h4>
-            </div>
-        </div>
+        {% include "axes/_stat_card.html" with title="Genomsnitt yxor/tillverkare" value=average_axes_per_manufacturer|floatformat:1 %}
     </div>
 </div>
 
@@ -89,25 +69,17 @@
                 <td>{{ manufacturer.name }}</td>
                 <td>{{ manufacturer.comment|default:"" }}</td>
                 <td data-order="{{ manufacturer.axe_count }}">{{ manufacturer.axe_count }}</td>
-                <td data-order="{{ manufacturer.total_transactions }}">
+                <td>
                     <span class="text-danger">{{ manufacturer.buy_count }}</span> / <span class="text-success">{{ manufacturer.sale_count }}</span>
                 </td>
-                <td data-order="{{ manufacturer.net_value }}">
+                <td>
                     <span class="text-danger">{{ manufacturer.total_buy_value|format_decimal }} kr</span>
-                    {% if manufacturer.total_buy_shipping > 0 %}
-                        <span class="text-muted">({{ manufacturer.total_buy_shipping|format_decimal }} kr)</span>
-                    {% endif %}
                     <br>
                     <span class="text-success">{{ manufacturer.total_sale_value|format_decimal }} kr</span>
-                    {% if manufacturer.total_sale_shipping > 0 %}
-                        <span class="text-muted">({{ manufacturer.total_sale_shipping|format_decimal }} kr)</span>
-                    {% endif %}
                     <br>
-                    {% if manufacturer.net_value != 0 %}
-                        <span class="{% if manufacturer.net_value >= 0 %}profit-positive{% else %}profit-negative{% endif %} fw-bold">
-                            {{ manufacturer.net_value|format_decimal }} kr
-                        </span>
-                    {% endif %}
+                    <span class="{% if manufacturer.net_value >= 0 %}profit-positive{% else %}profit-negative{% endif %} fw-bold">
+                        {{ manufacturer.net_value|format_decimal }} kr
+                    </span>
                 </td>
             </tr>
             {% endfor %}

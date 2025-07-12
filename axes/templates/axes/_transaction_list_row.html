@@ -1,0 +1,61 @@
+{% load axe_filters %}
+<tr>
+    <td>{{ transaction.transaction_date|date:"Y-m-d" }}</td>
+    <td>
+        <span class="badge {{ transaction.type|transaction_badge }}">
+            <i class="bi {{ transaction.type|transaction_icon }} me-1"></i>
+            {{ transaction.type }}
+        </span>
+    </td>
+    <td>
+        {% with images=transaction.axe.images.all %}
+        <a href="{% url 'axe_detail' transaction.axe.pk %}" class="text-decoration-none axe-image-popover-link" 
+           {% if images|length > 0 %}
+           tabindex="0" data-bs-toggle="popover" data-bs-html="true" data-bs-trigger="hover focus" data-bs-content='
+            <div id="carousel-{{ transaction.axe.id }}-{{ forloop.counter }}" class="carousel slide" data-bs-ride="carousel" data-bs-interval="800" style="width:140px;">
+                <div class="carousel-inner">
+                    {% for img in images %}
+                    <div class="carousel-item {% if forloop.first %}active{% endif %}">
+                        <img src="{{ img.webp_url|default:img.image.url }}" class="d-block w-100 img-thumbnail" style="max-width:130px;max-height:130px;" loading="lazy">
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>'
+           {% endif %}
+        >
+            {{ transaction.axe.manufacturer.name }} - {{ transaction.axe.model }}
+            {% if images|length > 0 %}
+                <i class="bi bi-camera-fill ms-1"></i>
+            {% endif %}
+        </a>
+        {% endwith %}
+    </td>
+    <td data-order="{{ transaction.price }}">{{ transaction.price|format_decimal }} kr</td>
+    <td data-order="{{ transaction.shipping_cost }}">{{ transaction.shipping_cost|format_decimal }} kr</td>
+    <td>
+        {% if transaction.contact %}
+            <a href="{% url 'contact_detail' transaction.contact.pk %}" class="text-decoration-none">
+                {{ transaction.contact.name }}
+                {% if transaction.contact.alias %}
+                    <small class="text-muted">({{ transaction.contact.alias }})</small>
+                {% endif %}
+            </a>
+        {% else %}
+            <span class="text-muted">-</span>
+        {% endif %}
+    </td>
+    <td>
+        {% if transaction.platform %}
+            {{ transaction.platform.name }}
+        {% else %}
+            <span class="text-muted">-</span>
+        {% endif %}
+    </td>
+    <td>
+        {% if transaction.comment %}
+            <small>{{ transaction.comment|truncatechars:50 }}</small>
+        {% else %}
+            <span class="text-muted">-</span>
+        {% endif %}
+    </td>
+</tr> 
