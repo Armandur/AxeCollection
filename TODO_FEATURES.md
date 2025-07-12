@@ -24,6 +24,9 @@ En checklista för vidareutveckling av AxeCollection. Bocka av med [x] när klar
 15. [ ] Förbättrad responsivitet – Testa och förbättra för surfplattor och olika mobilstorlekar.
 16. [ ] Touchvänliga knappar även på desktop – T.ex. piltangenter för bildbyte.
 17. [x] Mörkt läge (dark mode) för hela tjänsten – Respekterar operativsystemets tema automatiskt och har en sol/måne-knapp för manuell växling.
+18. [x] Notifikationssystem – Snygga notifikationer för användarfeedback vid alla operationer.
+19. [x] Laddningsindikatorer – Spinner och inaktiverade knappar under pågående operationer.
+20. [x] AJAX-animationer – Smooth övergångar och animationer för bättre användarupplevelse.
 
 ## Sök och filtrering
 
@@ -57,6 +60,13 @@ En checklista för vidareutveckling av AxeCollection. Bocka av med [x] när klar
     - [x] Måttmallar för olika yxtyper (standard, fällkniv, köksyxa)
     - [x] AJAX-hantering för måttinmatning och borttagning
     - [x] Länkar till mottagningsarbetsflödet från yxlistan och yxdetail
+28. [x] Förbättrad mått-UX i redigeringsvyn:
+    - [x] Batch-läggning av mått med tydlig info och notifikation
+    - [x] Inline-redigering av mått (värde och enhet) via AJAX
+    - [x] Borttagning av mått med snygg animation (utan sidladdning)
+    - [x] Visuell feedback vid alla måttoperationer (notifikationer, laddningsindikatorer)
+    - [x] Förbättrad felhantering och återställning av UI
+    - [x] Fördröjd sidladdning för att visa notifikationer
 28. [x] Snabbval av tillverkare – Dropdown för att välja tillverkare.
 29. [x] Kontakthantering – Skapa nya kontakter direkt från yxformuläret med smart matchning.
 30. [x] Transaktionshantering – Koppla yxor till köp/försäljning med pris, frakt och datum.
@@ -94,4 +104,6 @@ En checklista för vidareutveckling av AxeCollection. Bocka av med [x] när klar
 ## Framtida förbättringar
 
 49. [ ] Förbättrad felhantering och validering i formulär.
-50. [ ] Snabbare AJAX-sökningar med caching. 
+50. [ ] Snabbare AJAX-sökningar med caching.
+
+ 

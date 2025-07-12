@@ -3,7 +3,13 @@
 
 {% block title %}{{ manufacturer.name }} - {{ block.super }}{% endblock %}
 
+{% block extra_head %}
+<style>
+</style>
+{% endblock %}
+
 {% block content %}
+
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h1>{{ manufacturer.name }}</h1>
     <div>
@@ -363,6 +369,8 @@
 {% block scripts %}
 <script>
 $(document).ready(function() {
+    console.log('Document ready - manufacturer_detail.html');
+    
     // Om DataTable används på tabellen, initiera popovers i drawCallback. Annars, initiera popovers direkt och exponera en funktion för att kunna anropa vid behov.
     function initAxeImagePopovers() {
         var popoverTriggerList = [].slice.call(document.querySelectorAll('.axe-image-popover-link'));
@@ -374,7 +382,7 @@ $(document).ready(function() {
         });
     }
     initAxeImagePopovers();
-
+    
     // Starta carousel när popover visas
     $(document).on('shown.bs.popover', '.axe-image-popover-link', function () {
         var popover = $(this);

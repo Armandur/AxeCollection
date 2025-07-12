@@ -119,6 +119,8 @@
 {% block scripts %}
 <script>
 $(document).ready(function() {
+    console.log('Document ready - manufacturer_list.html');
+    
     $('#manufacturersTable').DataTable({
         language: {
             "emptyTable": "Ingen data tillgänglig i tabellen",
@@ -159,6 +161,9 @@ $(document).ready(function() {
             }
         },
         order: [[3, 'desc']], // Sortera efter antal yxor som standard
+        initComplete: function() {
+            console.log('DataTables initierad');
+        }
     });
 
     // Klickbara rader

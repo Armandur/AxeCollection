@@ -135,6 +135,15 @@
 - **Event-hantering:** Vi använder event delegation där det är lämpligt och hanterar cleanup ordentligt.
 - **Felhantering:** Vi visar tydlig feedback i UI:n när AJAX-anrop misslyckas, inte bara i konsolen.
 
+### Mått-UX och användarfeedback (2025-07-12)
+- **Notifikationer före sidladdning:** Användare behöver se bekräftelse innan sidan laddas om. Vi använder `setTimeout` för att fördröja sidladdning så att notifikationer hinner visas.
+- **Animationer för feedback:** Smooth övergångar (fade out, slide) ger professionell känsla och tydlig visuell feedback.
+- **Laddningsindikatorer:** Spinner och inaktiverade knappar under pågående operationer förhindrar dubbel-submit och ger tydlig feedback.
+- **Inline-redigering:** Minskar behovet av sidladdningar och förbättrar flödet. Använd AJAX för små ändringar, sidladdning för stora uppdateringar.
+- **Batch-operationer:** Effektivt för att hantera flera objekt samtidigt med tydlig feedback om antal tillagda objekt.
+- **DOM-manipulation:** Ta bort element från DOM med animation istället för `location.reload()` för smidigare användarupplevelse.
+- **Felhantering:** Återställ UI-tillstånd vid fel för bättre användarupplevelse (knappar, formulär, etc.).
+
 ### Transaktionsflöde och datamodell
 - **Automatisk typbestämning:** Transaktionstyper bestäms automatiskt baserat på pris (negativ = köp, positiv = sälj).
 - **Värdehantering:** Vi sparar alltid positiva värden i databasen men visar negativa för köp i UI:n.
