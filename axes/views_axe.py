@@ -379,6 +379,19 @@ def axe_gallery(request, pk=None):
 
 def receiving_workflow(request, pk):
     axe = get_object_or_404(Axe, pk=pk)
+    # Ladda måttmallar
+    measurement_templates = {}
+    templates = MeasurementTemplate.objects.filter(is_active=True).prefetch_related('items__measurement_type')
+    for template in templates:
+        measurement_templates[template.name] = [
+            {
+                'name': item.measurement_type.name,
+                'unit': item.measurement_type.unit
+            }
+            for item in template.items.all()
+        ]
+    measurement_form = MeasurementForm()
+    measurements = axe.measurements.all().order_by('name')
     if request.method == 'POST':
         if 'status' in request.POST:
             new_status = request.POST['status']
@@ -387,8 +400,19 @@ def receiving_workflow(request, pk):
                 axe.save()
                 return redirect('axe_list')
             else:
-                return render(request, 'axes/receiving_workflow.html', {'axe': axe, 'error': 'Invalid status.'})
-    return render(request, 'axes/receiving_workflow.html', {'axe': axe})
+                return render(request, 'axes/receiving_workflow.html', {
+                    'axe': axe,
+                    'error': 'Invalid status.',
+                    'measurement_templates': measurement_templates,
+                    'measurement_form': measurement_form,
+                    'measurements': measurements,
+                })
+    return render(request, 'axes/receiving_workflow.html', {
+        'axe': axe,
+        'measurement_templates': measurement_templates,
+        'measurement_form': measurement_form,
+        'measurements': measurements,
+    })
 
 @require_POST
 def add_measurement(request, pk):
