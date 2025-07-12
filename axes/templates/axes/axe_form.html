@@ -19,6 +19,12 @@
                     </h3>
                 </div>
                 <div class="card-body">
+                    <!-- Notifikationssektion -->
+                    <div id="notification" class="alert alert-success" style="display: none;">
+                        <i class="fas fa-check-circle me-2"></i>
+                        <span id="notification-message"></span>
+                    </div>
+                    
                     <form id="axeForm" method="post" enctype="multipart/form-data" autocomplete="off">
                         {% csrf_token %}
                         
@@ -358,6 +364,136 @@
                         <!-- Flytta hiddenInputs hit, precis före knapparna -->
                         <div id="hiddenInputs"></div>
 
+                        <!-- Måttsektion (endast i redigeringsläge) -->
+                        {% if is_edit %}
+                        <div class="card mb-4">
+                            <div class="card-header">
+                                <h6 class="mb-0">
+                                    <i class="fas fa-ruler me-2"></i>Mått ({{ measurements.count }})
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                <!-- Måttmallar -->
+                                {% if measurement_templates %}
+                                <div class="mb-3">
+                                    <p class="text-muted small mb-2">Välj en mall för att snabbt lägga till vanliga mått:</p>
+                                    <div class="d-flex flex-wrap">
+                                        {% for template_name, template_measurements in measurement_templates.items %}
+                                        <button class="btn btn-outline-primary btn-sm me-2 mb-2" 
+                                                onclick="loadTemplate('{{ template_name }}')"
+                                                title="{{ template_name }}: {{ template_measurements|length }} mått">
+                                            <i class="fas fa-list me-1"></i>{{ template_name }}
+                                        </button>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                                {% endif %}
+
+                                <!-- Manuellt tillägg av mått -->
+                                <div class="measurement-form mb-3">
+                                    <h6 class="mb-3">Lägg till nytt mått</h6>
+                                    <form id="measurementForm" method="post" action="{% url 'add_measurement' axe.pk %}">
+                                        {% csrf_token %}
+                                        <div class="row">
+                                            <div class="col-md-4">
+                                                {{ measurement_form.name.label_tag }}
+                                                {{ measurement_form.name }}
+                                                <div class="custom-field" id="custom-name-field">
+                                                    {{ measurement_form.custom_name.label_tag }}
+                                                    {{ measurement_form.custom_name }}
+                                                </div>
+                                            </div>
+                                            <div class="col-md-3">
+                                                {{ measurement_form.value.label_tag }}
+                                                {{ measurement_form.value }}
+                                            </div>
+                                            <div class="col-md-3">
+                                                {{ measurement_form.unit.label_tag }}
+                                                {{ measurement_form.unit }}
+                                            </div>
+                                            <div class="col-md-2 d-flex align-items-end">
+                                                <button type="submit" class="btn btn-primary w-100">
+                                                    <i class="fas fa-plus me-1"></i>
+                                                    <span class="d-none d-md-inline">Lägg till</span>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </form>
+                                </div>
+
+                                <!-- Batch-måttformulär (dolt från början) -->
+                                <div class="measurement-form mt-3" id="batchMeasurementFormContainer" style="display:none;">
+                                    <div class="alert alert-info mb-3">
+                                        <i class="fas fa-info-circle me-2"></i>
+                                        <strong>Batch-läggning av mått:</strong> Fyll i värdena nedan och klicka "Lägg till alla" för att lägga till alla mått samtidigt. Måtten sparas direkt och visas i tabellen nedan.
+                                    </div>
+                                    <h6 class="mb-3">Lägg till flera mått från mall</h6>
+                                    <form id="batchMeasurementForm" method="post" action="{% url 'add_measurements_from_template' axe.pk %}">
+                                        {% csrf_token %}
+                                        <div id="batchMeasurementRows"></div>
+                                        <div class="text-end mt-2">
+                                            <button type="submit" class="btn btn-success">
+                                                <i class="fas fa-plus me-1"></i>Lägg till alla mått
+                                            </button>
+                                            <button type="button" class="btn btn-link text-danger" onclick="hideBatchForm()">Avbryt</button>
+                                        </div>
+                                    </form>
+                                </div>
+
+                                <!-- Befintliga mått med inline-redigering -->
+                                {% if measurements %}
+                                <div class="table-responsive">
+                                    <table class="table table-hover">
+                                        <thead>
+                                            <tr>
+                                                <th>Måtttyp</th>
+                                                <th>Värde</th>
+                                                <th>Enhet</th>
+                                                <th>Åtgärder</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="measurementsTableBody">
+                                            {% for measurement in measurements %}
+                                            <tr data-measurement-id="{{ measurement.id }}">
+                                                <td>
+                                                    <strong>{{ measurement.name }}</strong>
+                                                </td>
+                                                <td>
+                                                    <input type="number" 
+                                                           class="form-control form-control-sm measurement-value" 
+                                                           value="{{ measurement.value }}" 
+                                                           step="any" 
+                                                           style="width: 80px;"
+                                                           onchange="updateMeasurement({{ measurement.id }}, this.value, this.parentElement.nextElementSibling.querySelector('.measurement-unit').value)">
+                                                </td>
+                                                <td>
+                                                    <input type="text" 
+                                                           class="form-control form-control-sm measurement-unit" 
+                                                           value="{{ measurement.unit }}" 
+                                                           style="width: 60px;"
+                                                           onchange="updateMeasurement({{ measurement.id }}, this.parentElement.previousElementSibling.querySelector('.measurement-value').value, this.value)">
+                                                </td>
+                                                <td>
+                                                    <button class="btn btn-sm btn-outline-danger" 
+                                                            onclick="deleteMeasurement({{ measurement.id }})">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                                {% else %}
+                                <p class="text-muted text-center py-3">
+                                    <i class="fas fa-ruler fa-2x mb-2"></i><br>
+                                    Inga mått registrerade än. Lägg till ditt första mått ovan.
+                                </p>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endif %}
+
                         <div class="d-flex justify-content-between">
                             <a href="{% if is_edit %}{% url 'axe_detail' axe.pk %}{% else %}{% url 'axe_list' %}{% endif %}" class="btn btn-secondary">
                                 <i class="fas fa-arrow-left me-2"></i>Tillbaka
@@ -423,6 +559,26 @@
 
 .preview-item .remove-btn:hover {
     background: #c82333;
+}
+
+/* Måttsektion CSS */
+.measurement-form {
+    background-color: #f8f9fa;
+    border-radius: 0.5rem;
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+}
+
+.custom-field {
+    display: none;
+}
+
+.custom-field.show {
+    display: block;
+}
+
+.template-btn {
+    margin: 0.25rem;
 }
 
 /* Mobiloptimeringar */
@@ -1164,5 +1320,308 @@ document.addEventListener('DOMContentLoaded', function() {
         updateTransactionTypeBadge();
     }
 });
+
+// Notifikationsfunktion
+function showNotification(message, type = 'success') {
+    const notification = document.getElementById('notification');
+    const messageSpan = document.getElementById('notification-message');
+    
+    // Ta bort tidigare klasser
+    notification.className = 'alert';
+    
+    // Lägg till rätt klass och ikon
+    if (type === 'success') {
+        notification.classList.add('alert-success');
+        messageSpan.innerHTML = `<i class="fas fa-check-circle me-2"></i>${message}`;
+    } else if (type === 'error') {
+        notification.classList.add('alert-danger');
+        messageSpan.innerHTML = `<i class="fas fa-exclamation-circle me-2"></i>${message}`;
+    } else if (type === 'warning') {
+        notification.classList.add('alert-warning');
+        messageSpan.innerHTML = `<i class="fas fa-exclamation-triangle me-2"></i>${message}`;
+    }
+    
+    // Visa notifikationen
+    notification.style.display = 'block';
+    
+    // Scrolla till notifikationen
+    notification.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    
+    // Dölj efter 3 sekunder
+    setTimeout(() => {
+        notification.style.display = 'none';
+    }, 3000);
+}
+
+// Hantera formulärsubmit
+document.getElementById('axeForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const form = this;
+    const formData = new FormData(form);
+    const submitButton = form.querySelector('button[type="submit"]');
+    const originalText = submitButton.innerHTML;
+    
+    // Visa laddningsindikator
+    submitButton.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Sparar...';
+    submitButton.disabled = true;
+    
+    fetch(form.action, {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => {
+        if (response.redirected) {
+            // Om vi får en redirect, följ den
+            window.location.href = response.url;
+            return;
+        }
+        return response.text();
+    })
+    .then(data => {
+        if (data) {
+            // Om vi fick data tillbaka, visa notifikation
+            showNotification('Yxan har uppdaterats framgångsrikt!', 'success');
+            
+            // Återställ knappen
+            submitButton.innerHTML = originalText;
+            submitButton.disabled = false;
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showNotification('Ett fel uppstod vid uppdatering av yxan.', 'error');
+        
+        // Återställ knappen
+        submitButton.innerHTML = originalText;
+        submitButton.disabled = false;
+    });
+});
+
+{% if is_edit %}
+// Måttfunktionalitet (endast i redigeringsläge)
+const measurementTemplates = {{ measurement_templates|safe }};
+
+function loadTemplate(templateName) {
+    const template = measurementTemplates[templateName];
+    if (!template) {
+        alert(`Mall "${templateName}" hittades inte.`);
+        return;
+    }
+    // Visa batchformuläret
+    const container = document.getElementById('batchMeasurementFormContainer');
+    const rows = document.getElementById('batchMeasurementRows');
+    rows.innerHTML = '';
+    template.forEach((m, idx) => {
+        rows.innerHTML += `
+            <div class="row mb-2 align-items-end">
+                <div class="col-md-4">
+                    <label class="form-label">Måttyp</label>
+                    <input type="text" class="form-control" name="measurements[${idx}][name]" value="${m.name}" readonly>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Värde</label>
+                    <input type="number" step="any" class="form-control" name="measurements[${idx}][value]" required>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Enhet</label>
+                    <input type="text" class="form-control" name="measurements[${idx}][unit]" value="${m.unit}" required>
+                </div>
+            </div>
+        `;
+    });
+    container.style.display = '';
+    // Scrolla till formuläret
+    container.scrollIntoView({behavior: 'smooth'});
+}
+
+function hideBatchForm() {
+    document.getElementById('batchMeasurementFormContainer').style.display = 'none';
+}
+
+function updateMeasurement(measurementId, value, unit) {
+    const formData = new FormData();
+    formData.append('value', value);
+    formData.append('unit', unit);
+    
+    fetch(`/yxor/{{ axe.pk }}/matt/${measurementId}/update/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+        },
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Visa bekräftelse
+            const row = document.querySelector(`[data-measurement-id="${measurementId}"]`);
+            if (row) {
+                row.style.backgroundColor = '#d4edda';
+                setTimeout(() => {
+                    row.style.backgroundColor = '';
+                }, 1000);
+            }
+            showNotification('Måttet har uppdaterats!', 'success');
+        } else {
+            showNotification('Fel vid uppdatering av mått: ' + (data.error || 'Okänt fel'), 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showNotification('Fel vid uppdatering av mått', 'error');
+    });
+}
+
+function deleteMeasurement(measurementId) {
+    if (!confirm('Är du säker på att du vill ta bort detta mått?')) return;
+    
+    // Hitta raden som ska tas bort
+    const row = document.querySelector(`[data-measurement-id="${measurementId}"]`);
+    if (!row) {
+        showNotification('Kunde inte hitta måttet att ta bort', 'error');
+        return;
+    }
+    
+    fetch(`/yxor/{{ axe.pk }}/matt/${measurementId}/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Ta bort raden från DOM med en snygg animation
+            row.style.transition = 'all 0.3s ease';
+            row.style.opacity = '0';
+            row.style.transform = 'translateX(-100%)';
+            
+            setTimeout(() => {
+                row.remove();
+                showNotification('Måttet har tagits bort!', 'success');
+            }, 300);
+        } else {
+            showNotification('Fel vid borttagning av mått: ' + (data.error || 'Okänt fel'), 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showNotification('Fel vid borttagning av mått', 'error');
+    });
+}
+
+// Hantera batchformulär submit
+if (document.getElementById('batchMeasurementForm')) {
+    document.getElementById('batchMeasurementForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const form = this;
+        const formData = new FormData(form);
+        
+        // Visa laddningsindikator på knappen
+        const submitBtn = form.querySelector('button[type="submit"]');
+        const originalText = submitBtn.innerHTML;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Lägger till mått...';
+        submitBtn.disabled = true;
+        
+        fetch(form.action, {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Räkna hur många mått som lades till
+                const formRows = form.querySelectorAll('input[name*="[value]"]');
+                const addedCount = formRows.length;
+                showNotification(`${addedCount} mått har lagts till framgångsrikt!`, 'success');
+                // Ladda om sidan efter 2 sekunder så att notifikationen hinner visas
+                setTimeout(() => {
+                    location.reload();
+                }, 2000);
+            } else {
+                showNotification('Fel vid tillägg av mått: ' + (data.error || 'Okänt fel'), 'error');
+                // Återställ knappen vid fel
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showNotification('Fel vid tillägg av mått', 'error');
+            // Återställ knappen vid fel
+            submitBtn.innerHTML = originalText;
+            submitBtn.disabled = false;
+        });
+    });
+}
+
+// Hantera måttformulär
+if (document.getElementById('measurementForm')) {
+    document.getElementById('measurementForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const form = this;
+        const formData = new FormData(form);
+        
+        // Visa laddningsindikator på knappen
+        const submitBtn = form.querySelector('button[type="submit"]');
+        const originalText = submitBtn.innerHTML;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Lägger till mått...';
+        submitBtn.disabled = true;
+        
+        fetch(form.action, {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showNotification('Mått har lagts till framgångsrikt!', 'success');
+                // Ladda om sidan efter 2 sekunder så att notifikationen hinner visas
+                setTimeout(() => {
+                    location.reload();
+                }, 2000);
+            } else {
+                showNotification('Fel vid tillägg av mått: ' + (data.error || 'Okänt fel'), 'error');
+                // Återställ knappen vid fel
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showNotification('Fel vid tillägg av mått', 'error');
+            // Återställ knappen vid fel
+            submitBtn.innerHTML = originalText;
+            submitBtn.disabled = false;
+        });
+    });
+}
+
+// Hantera anpassade fält
+const nameSelect = document.getElementById('measurement-name');
+const unitInput = document.getElementById('measurement-unit');
+const customNameField = document.getElementById('custom-name-field');
+
+if (nameSelect) {
+    nameSelect.addEventListener('change', function() {
+        if (this.value === 'Övrigt') {
+            customNameField.classList.add('show');
+        } else {
+            customNameField.classList.remove('show');
+            
+            // Automatiskt fylla i enheten om det är en fördefinierad måtttyp
+            const selectedOption = this.options[this.selectedIndex];
+            if (selectedOption && selectedOption.textContent.includes('(')) {
+                const unitMatch = selectedOption.textContent.match(/\(([^)]+)\)/);
+                if (unitMatch) {
+                    unitInput.value = unitMatch[1];
+                }
+            }
+        }
+    });
+}
+{% endif %}
 </script>
 {% endblock %} 

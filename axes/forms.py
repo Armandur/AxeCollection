@@ -1,5 +1,5 @@
 from django import forms
-from .models import Transaction, Contact, Platform, Measurement
+from .models import Transaction, Contact, Platform, Measurement, MeasurementType, MeasurementTemplate
 
 class TransactionForm(forms.ModelForm):
     transaction_date = forms.DateField(
@@ -50,41 +50,23 @@ class TransactionForm(forms.ModelForm):
 class MeasurementForm(forms.ModelForm):
     """Formulär för att lägga till mått på en yxa"""
     
-    # Fördefinierade måtttyper för yxor
-    MEASUREMENT_TYPES = [
-        ('', 'Välj måtttyp...'),
-        ('Bladlängd', 'Bladlängd'),
-        ('Bladbredd', 'Bladbredd'),
-        ('Skaftlängd', 'Skaftlängd'),
-        ('Skaftbredd', 'Skaftbredd'),
-        ('Total längd', 'Total längd'),
-        ('Vikt', 'Vikt'),
-        ('Bladvikt', 'Bladvikt'),
-        ('Skaftvikt', 'Skaftvikt'),
-        ('Handtag', 'Handtag'),
-        ('Övrigt', 'Övrigt'),
-    ]
-    
-    # Fördefinierade enheter
-    UNITS = [
-        ('', 'Välj enhet...'),
-        ('mm', 'mm'),
-        ('cm', 'cm'),
-        ('gram', 'gram'),
-        ('kg', 'kg'),
-        ('st', 'st'),
-        ('Övrigt', 'Övrigt'),
-    ]
-    
-    name = forms.ChoiceField(
-        choices=MEASUREMENT_TYPES,
-        widget=forms.Select(attrs={
-            'class': 'form-control',
-            'id': 'measurement-name'
-        }),
-        label='Måtttyp',
-        help_text='Välj typ av mått'
-    )
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        
+        # Hämta aktiva måtttyper från databasen
+        measurement_types = MeasurementType.objects.filter(is_active=True)
+        choices = [('', 'Välj måtttyp...')] + [(mt.name, mt.name) for mt in measurement_types]
+        choices.append(('Övrigt', 'Övrigt'))
+        
+        self.fields['name'] = forms.ChoiceField(
+            choices=choices,
+            widget=forms.Select(attrs={
+                'class': 'form-control',
+                'id': 'measurement-name'
+            }),
+            label='Måtttyp',
+            help_text='Välj typ av mått'
+        )
     
     custom_name = forms.CharField(
         max_length=100,
@@ -112,27 +94,15 @@ class MeasurementForm(forms.ModelForm):
         help_text='Mätvärde'
     )
     
-    unit = forms.ChoiceField(
-        choices=UNITS,
-        widget=forms.Select(attrs={
+    unit = forms.CharField(
+        max_length=50,
+        widget=forms.TextInput(attrs={
             'class': 'form-control',
-            'id': 'measurement-unit'
+            'id': 'measurement-unit',
+            'placeholder': 't.ex. mm, gram, cm'
         }),
         label='Enhet',
         help_text='Måttenhet'
-    )
-    
-    custom_unit = forms.CharField(
-        max_length=50,
-        required=False,
-        widget=forms.TextInput(attrs={
-            'class': 'form-control',
-            'placeholder': 'Ange egen enhet...',
-            'id': 'custom-measurement-unit',
-            'style': 'display: none;'
-        }),
-        label='Egen enhet',
-        help_text='Ange egen enhet om "Övrigt" är valt'
     )
 
     class Meta:
@@ -143,19 +113,11 @@ class MeasurementForm(forms.ModelForm):
         cleaned_data = super().clean()
         name = cleaned_data.get('name')
         custom_name = cleaned_data.get('custom_name')
-        unit = cleaned_data.get('unit')
-        custom_unit = cleaned_data.get('custom_unit')
         
         # Hantera anpassade namn
         if name == 'Övrigt' and not custom_name:
             raise forms.ValidationError('Ange ett namn för det anpassade måttet.')
         elif name == 'Övrigt':
             cleaned_data['name'] = custom_name
-        
-        # Hantera anpassade enheter
-        if unit == 'Övrigt' and not custom_unit:
-            raise forms.ValidationError('Ange en enhet för det anpassade måttet.')
-        elif unit == 'Övrigt':
-            cleaned_data['unit'] = custom_unit
         
         return cleaned_data 

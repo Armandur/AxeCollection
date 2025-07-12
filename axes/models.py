@@ -171,6 +171,53 @@ class ManufacturerLink(models.Model):
     def __str__(self):
         return f"{self.manufacturer.name} - {self.title}"
 
+class MeasurementType(models.Model):
+    """Dynamisk måtttyp som kan konfigureras av administratörer"""
+    name = models.CharField(max_length=100, unique=True, help_text="Namn på måtttypen, t.ex. 'Bladlängd'")
+    unit = models.CharField(max_length=50, help_text="Standardenhet för måtttypen, t.ex. 'mm'")
+    description = models.TextField(blank=True, null=True, help_text="Beskrivning av måtttypen")
+    is_active = models.BooleanField(default=True, help_text="Om måtttypen ska vara tillgänglig")
+    sort_order = models.IntegerField(default=0, help_text="Sorteringsordning i listor")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['sort_order', 'name']
+
+    def __str__(self):
+        return f"{self.name} ({self.unit})"
+
+
+class MeasurementTemplate(models.Model):
+    """Mall för att snabbt lägga till flera mått på en gång"""
+    name = models.CharField(max_length=100, unique=True, help_text="Namn på mallen, t.ex. 'Standard yxa'")
+    description = models.TextField(blank=True, null=True, help_text="Beskrivning av mallen")
+    is_active = models.BooleanField(default=True, help_text="Om mallen ska vara tillgänglig")
+    sort_order = models.IntegerField(default=0, help_text="Sorteringsordning i listor")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['sort_order', 'name']
+
+    def __str__(self):
+        return self.name
+
+
+class MeasurementTemplateItem(models.Model):
+    """Individuellt mått i en måttmall"""
+    template = models.ForeignKey(MeasurementTemplate, on_delete=models.CASCADE, related_name='items')
+    measurement_type = models.ForeignKey(MeasurementType, on_delete=models.CASCADE)
+    sort_order = models.IntegerField(default=0, help_text="Sorteringsordning inom mallen")
+    
+    class Meta:
+        ordering = ['sort_order']
+        unique_together = ['template', 'measurement_type']
+
+    def __str__(self):
+        return f"{self.template.name} - {self.measurement_type.name}"
+
+
 class Measurement(models.Model):
     axe = models.ForeignKey(Axe, related_name='measurements', on_delete=models.CASCADE)
     name = models.CharField(max_length=100) # t.ex. "Vikt"

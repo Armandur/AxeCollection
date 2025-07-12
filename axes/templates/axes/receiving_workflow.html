@@ -110,18 +110,24 @@
                                 <h6 class="mb-0">Måttmallar</h6>
                             </div>
                             <div class="card-body">
-                                <p class="text-muted small mb-2">Välj en mall för att snabbt lägga till vanliga mått:</p>
-                                <div class="d-flex flex-wrap">
-                                    <button class="btn btn-outline-primary btn-sm template-btn" onclick="loadTemplate('default')">
-                                        <i class="fas fa-list me-1"></i>Standard
-                                    </button>
-                                    <button class="btn btn-outline-primary btn-sm template-btn" onclick="loadTemplate('fällkniv')">
-                                        <i class="fas fa-knife me-1"></i>Fällkniv
-                                    </button>
-                                    <button class="btn btn-outline-primary btn-sm template-btn" onclick="loadTemplate('köksyxa')">
-                                        <i class="fas fa-utensils me-1"></i>Köksyxa
-                                    </button>
-                                </div>
+                                {% if measurement_templates %}
+                                    <p class="text-muted small mb-2">Välj en mall för att snabbt lägga till vanliga mått:</p>
+                                    <div class="d-flex flex-wrap">
+                                        {% for template_name, measurements in measurement_templates.items %}
+                                        <button class="btn btn-outline-primary btn-sm template-btn" 
+                                                onclick="loadTemplate('{{ template_name }}')"
+                                                title="{{ template_name }}: {{ measurements|length }} mått">
+                                            <i class="fas fa-list me-1"></i>{{ template_name }}
+                                        </button>
+                                        {% endfor %}
+                                    </div>
+                                {% else %}
+                                    <p class="text-muted small mb-2">
+                                        <i class="fas fa-info-circle me-1"></i>
+                                        Inga måttmallar konfigurerade än. 
+                                        <a href="/admin/axes/measurementtemplate/" target="_blank">Skapa mallar i admin</a>
+                                    </p>
+                                {% endif %}
                             </div>
                         </div>
 
@@ -146,10 +152,6 @@
                                     <div class="col-md-3">
                                         {{ measurement_form.unit.label_tag }}
                                         {{ measurement_form.unit }}
-                                        <div class="custom-field" id="custom-unit-field">
-                                            {{ measurement_form.custom_unit.label_tag }}
-                                            {{ measurement_form.custom_unit }}
-                                        </div>
                                     </div>
                                     <div class="col-md-2 d-flex align-items-end">
                                         <button type="submit" class="btn btn-primary w-100">
@@ -157,6 +159,21 @@
                                             <span class="d-none d-md-inline">Lägg till</span>
                                         </button>
                                     </div>
+                                </div>
+                            </form>
+                        </div>
+
+                        <!-- Batch-måttformulär (dolt från början) -->
+                        <div class="measurement-form mt-3" id="batchMeasurementFormContainer" style="display:none;">
+                            <h6 class="mb-3">Lägg till flera mått från mall</h6>
+                            <form id="batchMeasurementForm" method="post" action="{% url 'add_measurements_from_template' axe.pk %}">
+                                {% csrf_token %}
+                                <div id="batchMeasurementRows"></div>
+                                <div class="text-end mt-2">
+                                    <button type="submit" class="btn btn-success">
+                                        <i class="fas fa-plus me-1"></i>Lägg till alla
+                                    </button>
+                                    <button type="button" class="btn btn-link text-danger" onclick="hideBatchForm()">Avbryt</button>
                                 </div>
                             </form>
                         </div>
@@ -302,27 +319,62 @@ const measurementTemplates = {{ measurement_templates|safe }};
 
 function loadTemplate(templateName) {
     const template = measurementTemplates[templateName];
-    if (!template) return;
-    
-    // Rensa formuläret
-    document.getElementById('measurementForm').reset();
-    
-    // Fyll i första måttet från mallen
-    if (template.length > 0) {
-        const firstMeasurement = template[0];
-        document.getElementById('measurement-name').value = firstMeasurement.name;
-        document.getElementById('measurement-unit').value = firstMeasurement.unit;
+    if (!template) {
+        alert(`Mall "${templateName}" hittades inte.`);
+        return;
     }
-    
-    // Visa meddelande
-    const alert = document.createElement('div');
-    alert.className = 'alert alert-info alert-dismissible fade show';
-    alert.innerHTML = `
-        <i class="fas fa-info-circle me-2"></i>
-        Mall "${templateName}" laddad. ${template.length} mått tillgängliga.
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    `;
-    document.querySelector('.workflow-step.active').insertBefore(alert, document.querySelector('.workflow-step.active h3').nextSibling);
+    // Visa batchformuläret
+    const container = document.getElementById('batchMeasurementFormContainer');
+    const rows = document.getElementById('batchMeasurementRows');
+    rows.innerHTML = '';
+    template.forEach((m, idx) => {
+        rows.innerHTML += `
+            <div class="row mb-2 align-items-end">
+                <div class="col-md-4">
+                    <label class="form-label">Måttyp</label>
+                    <input type="text" class="form-control" name="measurements[${idx}][name]" value="${m.name}" readonly>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Värde</label>
+                    <input type="number" step="any" class="form-control" name="measurements[${idx}][value]" required>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Enhet</label>
+                    <input type="text" class="form-control" name="measurements[${idx}][unit]" value="${m.unit}" required>
+                </div>
+            </div>
+        `;
+    });
+    container.style.display = '';
+    // Scrolla till formuläret
+    container.scrollIntoView({behavior: 'smooth'});
+}
+function hideBatchForm() {
+    document.getElementById('batchMeasurementFormContainer').style.display = 'none';
+}
+// Hantera batchformulär submit
+if (document.getElementById('batchMeasurementForm')) {
+    document.getElementById('batchMeasurementForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const form = this;
+        const formData = new FormData(form);
+        fetch(form.action, {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Fel vid tillägg av mått: ' + (data.error || 'Okänt fel'));
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Fel vid tillägg av mått');
+        });
+    });
 }
 
 function deleteMeasurement(measurementId) {
@@ -376,23 +428,23 @@ function markAsReceived() {
 // Hantera anpassade fält
 document.addEventListener('DOMContentLoaded', function() {
     const nameSelect = document.getElementById('measurement-name');
-    const unitSelect = document.getElementById('measurement-unit');
+    const unitInput = document.getElementById('measurement-unit');
     const customNameField = document.getElementById('custom-name-field');
-    const customUnitField = document.getElementById('custom-unit-field');
     
     nameSelect.addEventListener('change', function() {
         if (this.value === 'Övrigt') {
             customNameField.classList.add('show');
         } else {
             customNameField.classList.remove('show');
-        }
-    });
-    
-    unitSelect.addEventListener('change', function() {
-        if (this.value === 'Övrigt') {
-            customUnitField.classList.add('show');
-        } else {
-            customUnitField.classList.remove('show');
+            
+            // Automatiskt fylla i enheten om det är en fördefinierad måtttyp
+            const selectedOption = this.options[this.selectedIndex];
+            if (selectedOption && selectedOption.textContent.includes('(')) {
+                const unitMatch = selectedOption.textContent.match(/\(([^)]+)\)/);
+                if (unitMatch) {
+                    unitInput.value = unitMatch[1];
+                }
+            }
         }
     });
     
