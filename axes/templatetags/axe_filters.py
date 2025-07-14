@@ -2,6 +2,7 @@ from django import template
 from decimal import Decimal, ROUND_HALF_UP, InvalidOperation
 from django.utils.safestring import mark_safe
 import re
+import os
 
 register = template.Library()
 
@@ -211,3 +212,8 @@ def strip_markdown_and_truncate(value, max_length=100):
         return truncated + "..."
     
     return text
+
+@register.filter
+def basename(value):
+    """Returnerar filnamnet utan sökväg."""
+    return os.path.basename(value)
