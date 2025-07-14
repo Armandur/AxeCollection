@@ -61,7 +61,13 @@ def manufacturer_detail(request, pk):
             else:
                 axe.status = 'OKÄND'
                 axe.status_class = 'bg-light'
-    manufacturer_images = images
+    # Gruppera bilder efter typ
+    images_by_type = {}
+    for image in images:
+        if image.image_type not in images_by_type:
+            images_by_type[image.image_type] = []
+        images_by_type[image.image_type].append(image)
+    
     # Gruppera länkar efter typ
     links_by_type = {}
     for link in links:
@@ -80,7 +86,7 @@ def manufacturer_detail(request, pk):
         'axes': axes,
         'images': images,
         'links': links,
-        'manufacturer_images': manufacturer_images,
+        'images_by_type': images_by_type,
         'links_by_type': links_by_type,
         'transactions': transactions,
         'unique_contacts': unique_contacts,

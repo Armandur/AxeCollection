@@ -184,10 +184,22 @@ class AxeImage(models.Model):
         super().delete(*args, **kwargs)
 
 class ManufacturerImage(models.Model):
+    IMAGE_TYPES = [
+        ('STAMP', 'Stämpel'),
+        ('OTHER', 'Övrig bild'),
+    ]
+    
     manufacturer = models.ForeignKey(Manufacturer, related_name='images', on_delete=models.CASCADE) # Raderas bilden om tillverkaren raderas
     image = models.ImageField(upload_to='manufacturer_images/') # Django hanterar filuppladdning
-    caption = models.CharField(max_length=255, blank=True, null=True) # Bildtext för stämplar
+    image_type = models.CharField(max_length=20, choices=IMAGE_TYPES, default='STAMP', help_text="Typ av bild")
+    caption = models.CharField(max_length=255, blank=True, null=True) # Bildtext
     description = models.TextField(blank=True, null=True) # Mer detaljerad beskrivning
+    order = models.PositiveIntegerField(default=0, help_text="Sorteringsordning inom samma typ")
+    
+    class Meta:
+        ordering = ['image_type', 'order']
+        verbose_name = "Tillverkarbild"
+        verbose_name_plural = "Tillverkarbilder"
 
     @property
     def webp_url(self):
@@ -211,10 +223,6 @@ class ManufacturerImage(models.Model):
 
     def __str__(self):
         return f"{self.manufacturer.name} - {self.caption or 'Bild'}"
-
-    class Meta:
-        verbose_name = "Tillverkarbild"
-        verbose_name_plural = "Tillverkarbilder"
 
 class ManufacturerLink(models.Model):
     LINK_TYPES = [

@@ -17,7 +17,7 @@
             <i class="bi bi-pencil"></i> Redigera tillverkare
         </a>
         <a href="{% url 'admin:axes_manufacturerimage_add' %}?manufacturer={{ manufacturer.id }}" class="btn btn-outline-primary btn-sm">
-            <i class="bi bi-image"></i> Lägg till stämpel
+            <i class="bi bi-image"></i> Lägg till bild
         </a>
         <a href="{% url 'admin:axes_manufacturerlink_add' %}?manufacturer={{ manufacturer.id }}" class="btn btn-outline-info btn-sm">
             <i class="bi bi-link-45deg"></i> Lägg till länk
@@ -61,37 +61,48 @@
     </div>
 </div>
 
-<!-- Tillverkarens bilder/stämplar -->
-{% if manufacturer_images %}
+<!-- Tillverkarens bilder -->
+{% if images_by_type %}
 <div class="row mb-4">
     <div class="col-12">
         <div class="card">
             <div class="card-header">
-                <h5 class="card-title mb-0">Stämplar från {{ manufacturer.name }}</h5>
+                <h5 class="card-title mb-0">Bilder för {{ manufacturer.name }}</h5>
             </div>
             <div class="card-body">
-                <div class="row">
-                    {% for image in manufacturer_images %}
-                    <div class="col-md-4 mb-3">
-                        <div class="card h-100">
-                            <picture>
-                                {% if image.webp_url %}
-                                    <source srcset="{{ image.webp_url }}" type="image/webp">
-                                {% endif %}
-                                <img src="{{ image.image.url }}" class="card-img-top" alt="{{ image.caption|default:'Stämpel' }}" style="max-height: 200px; object-fit: contain;" loading="lazy">
-                            </picture>
-                            <div class="card-body">
-                                {% if image.caption %}
-                                    <h6 class="card-title">{{ image.caption }}</h6>
-                                {% endif %}
-                                {% if image.description %}
-                                    <p class="card-text small text-muted">{{ image.description }}</p>
-                                {% endif %}
+                {% for image_type, images in images_by_type.items %}
+                <div class="mb-4">
+                    <h6 class="text-muted mb-3">
+                        {% if image_type == 'STAMP' %}
+                            <i class="bi bi-stamp"></i> Stämplar
+                        {% else %}
+                            <i class="bi bi-images"></i> Övriga bilder
+                        {% endif %}
+                    </h6>
+                    <div class="row">
+                        {% for image in images %}
+                        <div class="col-md-4 mb-3">
+                            <div class="card h-100">
+                                <picture>
+                                    {% if image.webp_url %}
+                                        <source srcset="{{ image.webp_url }}" type="image/webp">
+                                    {% endif %}
+                                    <img src="{{ image.image.url }}" class="card-img-top" alt="{{ image.caption|default:'Bild' }}" style="max-height: 200px; object-fit: contain;" loading="lazy">
+                                </picture>
+                                <div class="card-body">
+                                    {% if image.caption %}
+                                        <h6 class="card-title">{{ image.caption }}</h6>
+                                    {% endif %}
+                                    {% if image.description %}
+                                        <p class="card-text small text-muted">{{ image.description }}</p>
+                                    {% endif %}
+                                </div>
                             </div>
                         </div>
+                        {% endfor %}
                     </div>
-                    {% endfor %}
                 </div>
+                {% endfor %}
             </div>
         </div>
     </div>
