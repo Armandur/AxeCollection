@@ -4,43 +4,143 @@
 {% block title %}{{ manufacturer.name }} - {{ block.super }}{% endblock %}
 
 {% block extra_head %}
+<link rel="stylesheet" href="https://unpkg.com/easymde/dist/easymde.min.css">
+<script src="https://unpkg.com/easymde/dist/easymde.min.js"></script>
 <style>
+.comment-edit-container {
+    display: none;
+}
+.comment-display {
+    /* Inga hover-effekter för informationskortet */
+}
+
+/* Drag & drop för bildordning - endast aktiv i reorder-läge */
+.reorder-mode .manufacturer-image-card {
+    cursor: grab;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.reorder-mode .manufacturer-image-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.reorder-mode .manufacturer-image-card.dragging {
+    cursor: grabbing;
+    opacity: 0.5;
+    transform: rotate(5deg);
+    z-index: 1000;
+}
+
+.reorder-mode .manufacturer-image-card.drag-over {
+    border: 2px dashed #007bff;
+    transform: scale(1.05);
+}
+
+.reorder-mode .manufacturer-image-card:active {
+    cursor: grabbing;
+}
+
+/* Normal hover-effekt för bilder (när inte i reorder-läge) */
+.manufacturer-image-card:hover {
+    cursor: pointer;
+}
+
+.manufacturer-image-card:hover .card {
+    background-color: #f8f9fa;
+    border-color: #dee2e6;
+}
+
+/* Semi-bold styling för bildtext */
+.manufacturer-image-card .card-title {
+    font-weight: 600;
+    color: #495057;
+}
+
+/* Navigationsknappar styling */
+#prevImageBtn:hover,
+#nextImageBtn:hover {
+    color: #212529 !important;
+    background-color: rgba(255,255,255,0.95) !important;
+    border-color: #212529 !important;
+}
+
+/* Drag & drop för länkordning - endast aktiv i reorder-läge */
+.link-reorder-mode .manufacturer-link-card {
+    cursor: grab;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.link-reorder-mode .manufacturer-link-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.link-reorder-mode .manufacturer-link-card.dragging {
+    cursor: grabbing;
+    opacity: 0.5;
+    transform: rotate(5deg);
+    z-index: 1000;
+}
+
+.link-reorder-mode .manufacturer-link-card.drag-over {
+    border: 2px dashed #007bff;
+    transform: scale(1.05);
+}
+
+.link-reorder-mode .manufacturer-link-card:active {
+    cursor: grabbing;
+}
+
+/* Normal hover-effekt för länkar (när inte i reorder-läge) */
+.manufacturer-link-card:hover {
+    cursor: pointer;
+}
+
+.manufacturer-link-card:hover .card {
+    background-color: #f8f9fa;
+    border-color: #dee2e6;
+}
+
+/* Inaktiva länkar styling */
+.inactive-link {
+    opacity: 0.6;
+    background-color: #f8f9fa;
+}
+
+.inactive-link .card-title {
+    color: #6c757d !important;
+}
+
+.inactive-link:hover {
+    opacity: 0.8;
+}
 </style>
 {% endblock %}
 
 {% block content %}
 
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <h1>{{ manufacturer.name }}</h1>
-    <div>
-        <a href="{% url 'admin:axes_manufacturer_change' manufacturer.id %}" class="btn btn-outline-secondary btn-sm">
-            <i class="bi bi-pencil"></i> Redigera tillverkare
-        </a>
-        <a href="{% url 'admin:axes_manufacturerimage_add' %}?manufacturer={{ manufacturer.id }}" class="btn btn-outline-primary btn-sm">
-            <i class="bi bi-image"></i> Lägg till stämpel
-        </a>
-        <a href="{% url 'admin:axes_manufacturerlink_add' %}?manufacturer={{ manufacturer.id }}" class="btn btn-outline-info btn-sm">
-            <i class="bi bi-link-45deg"></i> Lägg till länk
-        </a>
-    </div>
+    <h1 id="manufacturer-name-heading">
+        <span id="manufacturer-name-text" style="display:inline;">{{ manufacturer.name }}</span>
+        <input id="manufacturer-name-input" type="text" value="{{ manufacturer.name }}" class="form-control" style="width:auto; display:none; max-width:300px;" maxlength="200">
+        <span class="badge bg-secondary">{{ manufacturer.id }}</span>
+        <button id="edit-name-btn" class="btn btn-outline-secondary btn-sm ms-2" onclick="toggleNameEdit()" title="Redigera namn">
+            <i class="bi bi-pencil"></i>
+        </button>
+        <button id="save-name-btn" class="btn btn-success btn-sm ms-2" style="display:none;" onclick="saveName()" title="Spara namn">
+            <i class="bi bi-check"></i>
+        </button>
+        <button id="cancel-name-btn" class="btn btn-secondary btn-sm ms-2" style="display:none;" onclick="cancelNameEdit()" title="Avbryt">
+            <i class="bi bi-x"></i>
+        </button>
+    </h1>
+
 </div>
 
-<!-- Tillverkarinfo -->
+<!-- Statistik -->
 <div class="row mb-4">
-    <div class="col-md-6">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="card-title mb-0">Information</h5>
-            </div>
-            <div class="card-body">
-                <p><strong>ID:</strong> {{ manufacturer.id }}</p>
-                {% if manufacturer.comment %}
-                    <p><strong>Kommentar:</strong> {{ manufacturer.comment }}</p>
-                {% endif %}
-            </div>
-        </div>
-    </div>
-    <div class="col-md-6">
+    <div class="col-12">
         <div class="card">
             <div class="card-header">
                 <h5 class="card-title mb-0">Statistik</h5>
@@ -61,98 +161,203 @@
     </div>
 </div>
 
-<!-- Tillverkarens bilder/stämplar -->
-{% if manufacturer_images %}
+<!-- Information -->
 <div class="row mb-4">
     <div class="col-12">
         <div class="card">
-            <div class="card-header">
-                <h5 class="card-title mb-0">Stämplar från {{ manufacturer.name }}</h5>
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">Information</h5>
+                <button class="btn btn-outline-primary btn-sm" onclick="toggleCommentEdit()">
+                    <i class="bi bi-pencil"></i> Redigera
+                </button>
             </div>
             <div class="card-body">
-                <div class="row">
-                    {% for image in manufacturer_images %}
-                    <div class="col-md-4 mb-3">
-                        <div class="card h-100">
-                            <picture>
-                                {% if image.webp_url %}
-                                    <source srcset="{{ image.webp_url }}" type="image/webp">
-                                {% endif %}
-                                <img src="{{ image.image.url }}" class="card-img-top" alt="{{ image.caption|default:'Stämpel' }}" style="max-height: 200px; object-fit: contain;" loading="lazy">
-                            </picture>
-                            <div class="card-body">
-                                {% if image.caption %}
-                                    <h6 class="card-title">{{ image.caption }}</h6>
-                                {% endif %}
-                                {% if image.description %}
-                                    <p class="card-text small text-muted">{{ image.description }}</p>
-                                {% endif %}
+                <!-- Visning av information -->
+                <div id="comment-display" class="comment-display">
+                    {% if manufacturer.information %}
+                        {{ manufacturer.information|markdown }}
+                    {% else %}
+                        <em class="text-muted">Ingen information tillagd ännu. Klicka på "Redigera" för att lägga till information.</em>
+                    {% endif %}
+                </div>
+                
+                <!-- Redigeringsformulär -->
+                <div id="comment-edit-container" class="comment-edit-container">
+                    <textarea id="comment-editor">{{ manufacturer.information|default:'' }}</textarea>
+                    <div class="mt-3">
+                        <button class="btn btn-success btn-sm" onclick="saveComment()">
+                            <i class="bi bi-check"></i> Spara
+                        </button>
+                        <button class="btn btn-secondary btn-sm ms-2" onclick="cancelCommentEdit()">
+                            <i class="bi bi-x"></i> Avbryt
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Tillverkarens bilder -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">Bilder för {{ manufacturer.name }}</h5>
+                <div>
+                    <button type="button" class="btn btn-outline-primary btn-sm me-2" onclick="openUploadModal()">
+                        <i class="bi bi-image"></i> Lägg till bild
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary btn-sm me-2" onclick="toggleReorderMode()" id="reorderBtn">
+                        <i class="bi bi-arrow-down-up"></i> Ändra ordning
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                {% if images_by_type %}
+                    {% for image_type, images in images_by_type.items %}
+                    <div class="mb-4">
+                        <h6 class="text-muted mb-3">
+                            {% if image_type == 'STAMP' %}
+                                <i class="bi bi-stamp"></i> Stämplar
+                            {% else %}
+                                <i class="bi bi-images"></i> Övriga bilder
+                            {% endif %}
+                        </h6>
+                        <div class="row">
+                            {% for image in images %}
+                            <div class="col-md-4 mb-3 manufacturer-image-card" data-image-id="{{ image.id }}" data-order="{{ image.order }}">
+                                <div class="card h-100" onclick="openImageLightbox({{ image.id }})" style="cursor: pointer;">
+                                    <div class="position-relative">
+                                        <picture>
+                                            {% if image.webp_url %}
+                                                <source srcset="{{ image.webp_url }}" type="image/webp">
+                                            {% endif %}
+                                            <img src="{{ image.image.url }}" 
+                                                 class="card-img-top manufacturer-image" 
+                                                 alt="{{ image.caption|default:'Bild' }}" 
+                                                 style="max-height: 200px; object-fit: contain;" 
+                                                 loading="lazy"
+                                                 data-image-id="{{ image.id }}"
+                                                 data-image-url="{{ image.image.url }}"
+                                                 data-webp-url="{{ image.webp_url|default:'' }}"
+                                                 data-caption="{{ image.caption|default:'' }}"
+                                                 data-description="{{ image.description|default:'' }}"
+                                                 data-image-type="{{ image.image_type }}">
+                                        </picture>
+                                        <div class="position-absolute top-0 end-0 p-2">
+                                            <button class="btn btn-sm btn-outline-secondary" 
+                                                    onclick="event.stopPropagation(); editImage({{ image.id }})"
+                                                    title="Redigera bild">
+                                                <i class="bi bi-pencil"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="card-body">
+                                        {% if image.caption %}
+                                            <h6 class="card-title">{{ image.caption }}</h6>
+                                        {% endif %}
+                                        {% if image.description %}
+                                            <p class="card-text small text-muted">{{ image.description|markdown }}</p>
+                                        {% endif %}
+                                    </div>
+                                </div>
                             </div>
+                            {% endfor %}
                         </div>
                     </div>
                     {% endfor %}
-                </div>
+                {% else %}
+                    <p class="text-muted">Inga bilder tillagda ännu. Klicka på "Lägg till bild" för att börja.</p>
+                {% endif %}
             </div>
         </div>
     </div>
 </div>
-{% endif %}
 
 <!-- Tillverkarens länkar -->
-{% if links_by_type %}
 <div class="row mb-4">
     <div class="col-12">
         <div class="card">
-            <div class="card-header">
+            <div class="card-header d-flex justify-content-between align-items-center">
                 <h5 class="card-title mb-0">Länkar och resurser för {{ manufacturer.name }}</h5>
+                <div>
+                    <button type="button" class="btn btn-outline-secondary btn-sm me-2" onclick="toggleLinkReorderMode()" id="linkReorderBtn">
+                        <i class="bi bi-arrow-down-up"></i> Ändra ordning
+                    </button>
+                    <a href="{% url 'admin:axes_manufacturerlink_add' %}?manufacturer={{ manufacturer.id }}" class="btn btn-outline-info btn-sm">
+                        <i class="bi bi-link-45deg"></i> Lägg till länk
+                    </a>
+                </div>
             </div>
             <div class="card-body">
-                {% for link_type, links in links_by_type.items %}
-                <div class="mb-4">
-                    <h6 class="text-muted mb-3">
-                        {% if link_type == 'WEBSITE' %}
-                            <i class="bi bi-globe"></i> Hemsidor
-                        {% elif link_type == 'CATALOG' %}
-                            <i class="bi bi-file-earmark-text"></i> Kataloger
-                        {% elif link_type == 'VIDEO' %}
-                            <i class="bi bi-camera-video"></i> Videor och filmer
-                        {% elif link_type == 'ARTICLE' %}
-                            <i class="bi bi-journal-text"></i> Artiklar
-                        {% elif link_type == 'DOCUMENT' %}
-                            <i class="bi bi-file-earmark-pdf"></i> Dokument
-                        {% else %}
-                            <i class="bi bi-link-45deg"></i> Övriga länkar
-                        {% endif %}
-                    </h6>
-                    <div class="row">
-                        {% for link in links %}
-                        <div class="col-md-6 mb-3">
-                            <div class="card h-100 border-0 shadow-sm">
-                                <div class="card-body">
-                                    <h6 class="card-title">
-                                        <a href="{{ link.url }}" target="_blank" class="text-decoration-none">
-                                            {{ link.title }}
-                                            <i class="bi bi-box-arrow-up-right text-muted"></i>
-                                        </a>
-                                    </h6>
-                                    {% if link.description %}
-                                        <p class="card-text text-muted small">{{ link.description }}</p>
-                                    {% endif %}
-                                    <small class="text-muted">
-                                        <i class="bi bi-calendar3"></i> {{ link.created_at|date:"Y-m-d" }}
-                                    </small>
+                {% if links_by_type %}
+                    {% for link_type, links in links_by_type.items %}
+                    <div class="mb-4">
+                        <h6 class="text-muted mb-3">
+                            {% if link_type == 'WEBSITE' %}
+                                <i class="bi bi-globe"></i> Hemsidor
+                            {% elif link_type == 'CATALOG' %}
+                                <i class="bi bi-file-earmark-text"></i> Kataloger
+                            {% elif link_type == 'VIDEO' %}
+                                <i class="bi bi-camera-video"></i> Videor och filmer
+                            {% elif link_type == 'ARTICLE' %}
+                                <i class="bi bi-journal-text"></i> Artiklar
+                            {% elif link_type == 'DOCUMENT' %}
+                                <i class="bi bi-file-earmark-pdf"></i> Dokument
+                            {% else %}
+                                <i class="bi bi-link-45deg"></i> Övriga länkar
+                            {% endif %}
+                        </h6>
+                        <div class="row">
+                            {% for link in links %}
+                            <div class="col-md-6 mb-3 manufacturer-link-card" data-link-id="{{ link.id }}" data-order="{{ link.order }}">
+                                <div class="card h-100 border-0 shadow-sm {% if not link.is_active %}inactive-link{% endif %}" 
+                                     {% if link.is_active %}onclick="window.open('{{ link.url }}', '_blank')" style="cursor: pointer;"{% endif %}>
+                                    <div class="card-body position-relative">
+                                        <div class="position-absolute top-0 end-0 p-2">
+                                            <button class="btn btn-sm btn-outline-secondary" 
+                                                    onclick="event.stopPropagation(); editLink({{ link.id }})"
+                                                    title="Redigera länk">
+                                                <i class="bi bi-pencil"></i>
+                                            </button>
+                                        </div>
+                                        <h6 class="card-title">
+                                            {% if link.is_active %}
+                                                <span class="text-decoration-none">
+                                                    {{ link.title }}
+                                                    <i class="bi bi-box-arrow-up-right text-muted"></i>
+                                                </span>
+                                            {% else %}
+                                                <span class="text-muted">{{ link.title }}</span>
+                                                <small class="d-block text-muted mt-1">
+                                                    <i class="bi bi-link-45deg"></i> {{ link.url }}
+                                                </small>
+                                            {% endif %}
+                                        </h6>
+                                        {% if link.description %}
+                                            <p class="card-text text-muted small">{{ link.description }}</p>
+                                        {% endif %}
+                                        <small class="text-muted">
+                                            <i class="bi bi-calendar3"></i> {{ link.created_at|date:"Y-m-d" }}
+                                            {% if not link.is_active %}
+                                                <span class="badge bg-secondary ms-2">Inaktiv</span>
+                                            {% endif %}
+                                        </small>
+                                    </div>
                                 </div>
                             </div>
+                            {% endfor %}
                         </div>
-                        {% endfor %}
                     </div>
-                </div>
-                {% endfor %}
+                    {% endfor %}
+                {% else %}
+                    <p class="text-muted">Inga länkar tillagda ännu. Klicka på "Lägg till länk" för att börja.</p>
+                {% endif %}
             </div>
         </div>
     </div>
 </div>
-{% endif %}
 
 <!-- Ekonomisk statistik -->
 <div class="row mb-4">
@@ -368,6 +573,8 @@
 
 {% block scripts %}
 <script>
+let easyMDE = null;
+
 $(document).ready(function() {
     console.log('Document ready - manufacturer_detail.html');
     
@@ -396,5 +603,1114 @@ $(document).ready(function() {
         }
     });
 });
+
+// WYSIWYG Markdown Editor funktioner
+function toggleCommentEdit() {
+    const display = document.getElementById('comment-display');
+    const editContainer = document.getElementById('comment-edit-container');
+    
+    if (editContainer.style.display === 'none' || editContainer.style.display === '') {
+        // Visa redigeringsläge
+        display.style.display = 'none';
+        editContainer.style.display = 'block';
+        
+        // Initiera EasyMDE om det inte redan är gjort
+        if (!easyMDE) {
+            easyMDE = new EasyMDE({
+                element: document.getElementById('comment-editor'),
+                spellChecker: false,
+                placeholder: 'Skriv information om tillverkaren här...',
+                toolbar: [
+                    'bold', 'italic', 'heading', '|',
+                    'quote', 'unordered-list', 'ordered-list', '|',
+                    'link', 'image', '|',
+                    'preview', 'side-by-side', 'fullscreen', '|',
+                    'guide'
+                ],
+                status: ['lines', 'words', 'cursor'],
+                minHeight: '200px'
+            });
+        }
+        
+        // Fokusera på redigeraren
+        setTimeout(() => {
+            easyMDE.codemirror.focus();
+        }, 100);
+    }
+}
+
+function cancelCommentEdit() {
+    const display = document.getElementById('comment-display');
+    const editContainer = document.getElementById('comment-edit-container');
+    
+    display.style.display = 'block';
+    editContainer.style.display = 'none';
+    
+    // Återställ innehållet till ursprungligt
+    if (easyMDE) {
+        easyMDE.value('{{ manufacturer.information|default:""|escapejs }}');
+    }
+}
+
+function saveComment() {
+    const comment = easyMDE ? easyMDE.value() : document.getElementById('comment-editor').value;
+    
+    // Visa laddningsindikator
+    const saveBtn = document.querySelector('button[onclick="saveComment()"]');
+    const originalText = saveBtn.innerHTML;
+    saveBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Sparar...';
+    saveBtn.disabled = true;
+    
+    fetch('{% url "edit_manufacturer_information" manufacturer.id %}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            information: comment
+        })
+    })
+    .then(response => response.json())
+            .then(data => {
+            if (data.success) {
+                // Uppdatera visningen
+                const display = document.getElementById('comment-display');
+                if (data.information) {
+                    // Använd samma markdown-konvertering som på servern
+                    const htmlContent = convertMarkdownToHtml(data.information);
+                    display.innerHTML = htmlContent;
+                } else {
+                    display.innerHTML = '<em class="text-muted">Ingen information tillagd ännu. Klicka på "Redigera" för att lägga till information.</em>';
+                }
+                
+                // Dölj redigeringsläge
+                cancelCommentEdit();
+                
+                // Visa framgångsmeddelande
+                showNotification('Information sparad!', 'success');
+            } else {
+                showNotification('Fel: ' + data.error, 'error');
+            }
+        })
+    .catch(error => {
+        console.error('Error:', error);
+        showNotification('Ett fel uppstod vid sparande', 'error');
+    })
+    .finally(() => {
+        // Återställ knappen
+        saveBtn.innerHTML = originalText;
+        saveBtn.disabled = false;
+    });
+}
+
+function convertMarkdownToHtml(markdown) {
+    // Enkel markdown till HTML konvertering
+    let html = markdown
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    
+    // Rubriker
+    html = html.replace(/^### (.*$)/gim, '<h3>$1</h3>');
+    html = html.replace(/^## (.*$)/gim, '<h2>$1</h2>');
+    html = html.replace(/^# (.*$)/gim, '<h1>$1</h1>');
+    
+    // Fet och kursiv text
+    html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+    html = html.replace(/\*(.*?)\*/g, '<em>$1</em>');
+    
+    // Länkar
+    html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank">$1</a>');
+    
+    // Listor
+    html = html.replace(/^\* (.*$)/gim, '<li>$1</li>');
+    html = html.replace(/^- (.*$)/gim, '<li>$1</li>');
+    html = html.replace(/^(\d+)\. (.*$)/gim, '<li>$2</li>');
+    
+    // Radbrytningar
+    html = html.replace(/\n\n/g, '</p><p>');
+    html = html.replace(/\n/g, '<br>');
+    
+    // Wrappa i p-taggar
+    html = '<p>' + html + '</p>';
+    
+    // Fixa listor
+    html = html.replace(/<p><li>/g, '<ul><li>');
+    html = html.replace(/<\/li><\/p>/g, '</li></ul>');
+    
+    return html;
+}
+
+function showNotification(message, type) {
+    // Skapa notifikation
+    const notification = document.createElement('div');
+    notification.className = `alert alert-${type === 'success' ? 'success' : 'danger'} alert-dismissible fade show position-fixed`;
+    notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+    notification.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    // Ta bort automatiskt efter 5 sekunder
+    setTimeout(() => {
+        if (notification.parentNode) {
+            notification.remove();
+        }
+    }, 5000);
+}
+
+// Inline-redigering av tillverkarnamn
+function toggleNameEdit() {
+    document.getElementById('manufacturer-name-text').style.display = 'none';
+    document.getElementById('manufacturer-name-input').style.display = 'inline-block';
+    document.getElementById('edit-name-btn').style.display = 'none';
+    document.getElementById('save-name-btn').style.display = 'inline-block';
+    document.getElementById('cancel-name-btn').style.display = 'inline-block';
+    document.getElementById('manufacturer-name-input').focus();
+}
+function cancelNameEdit() {
+    document.getElementById('manufacturer-name-input').value = '{{ manufacturer.name|escapejs }}';
+    document.getElementById('manufacturer-name-text').style.display = 'inline';
+    document.getElementById('manufacturer-name-input').style.display = 'none';
+    document.getElementById('edit-name-btn').style.display = 'inline-block';
+    document.getElementById('save-name-btn').style.display = 'none';
+    document.getElementById('cancel-name-btn').style.display = 'none';
+}
+function saveName() {
+    const newName = document.getElementById('manufacturer-name-input').value.trim();
+    if (!newName) {
+        showNotification('Namnet får inte vara tomt.', 'error');
+        return;
+    }
+    const saveBtn = document.getElementById('save-name-btn');
+    const originalText = saveBtn.innerHTML;
+    saveBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Sparar...';
+    saveBtn.disabled = true;
+    fetch('{% url "edit_manufacturer_information" manufacturer.id %}'.replace('redigera-information', 'redigera-namn'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: newName })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            document.getElementById('manufacturer-name-text').textContent = data.name;
+            cancelNameEdit();
+            showNotification('Namn uppdaterat!', 'success');
+        } else {
+            showNotification('Fel: ' + data.error, 'error');
+        }
+    })
+    .catch(() => showNotification('Ett fel uppstod vid sparande', 'error'))
+    .finally(() => {
+        saveBtn.innerHTML = originalText;
+        saveBtn.disabled = false;
+    });
+}
+
+// EasyMDE-instanser för bildbeskrivningar
+let editImageEasyMDE = null;
+let uploadImageEasyMDE = null;
+
+// Drag & drop för bildordning
+let isReorderMode = false;
+let draggedElement = null;
+
+// Drag & drop funktioner
+function toggleReorderMode() {
+    isReorderMode = !isReorderMode;
+    const reorderBtn = document.getElementById('reorderBtn');
+    const imageCards = document.querySelectorAll('.manufacturer-image-card');
+    
+    if (isReorderMode) {
+        reorderBtn.innerHTML = '<i class="bi bi-check"></i> Spara ordning';
+        reorderBtn.className = 'btn btn-success btn-sm';
+        document.querySelector('.card-body').classList.add('reorder-mode');
+        
+        // Aktivera drag & drop
+        imageCards.forEach(card => {
+            card.draggable = true;
+            card.addEventListener('dragstart', handleDragStart);
+            card.addEventListener('dragend', handleDragEnd);
+            card.addEventListener('dragover', handleDragOver);
+            card.addEventListener('drop', handleDrop);
+            card.addEventListener('dragenter', handleDragEnter);
+            card.addEventListener('dragleave', handleDragLeave);
+        });
+    } else {
+        reorderBtn.innerHTML = '<i class="bi bi-arrow-down-up"></i> Ändra ordning';
+        reorderBtn.className = 'btn btn-outline-secondary btn-sm';
+        document.querySelector('.card-body').classList.remove('reorder-mode');
+        
+        // Inaktivera drag & drop
+        imageCards.forEach(card => {
+            card.draggable = false;
+            card.removeEventListener('dragstart', handleDragStart);
+            card.removeEventListener('dragend', handleDragEnd);
+            card.removeEventListener('dragover', handleDragOver);
+            card.removeEventListener('drop', handleDrop);
+            card.removeEventListener('dragenter', handleDragEnter);
+            card.removeEventListener('dragleave', handleDragLeave);
+        });
+        
+        // Spara den nya ordningen
+        saveImageOrder();
+    }
+}
+
+function handleDragStart(e) {
+    if (!isReorderMode) return;
+    draggedElement = this;
+    this.classList.add('dragging');
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/html', this.outerHTML);
+}
+
+function handleDragEnd(e) {
+    if (!isReorderMode) return;
+    this.classList.remove('dragging');
+    draggedElement = null;
+}
+
+function handleDragOver(e) {
+    if (!isReorderMode) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+}
+
+function handleDragEnter(e) {
+    if (!isReorderMode) return;
+    e.preventDefault();
+    this.classList.add('drag-over');
+}
+
+function handleDragLeave(e) {
+    if (!isReorderMode) return;
+    this.classList.remove('drag-over');
+}
+
+function handleDrop(e) {
+    if (!isReorderMode || !draggedElement) return;
+    e.preventDefault();
+    this.classList.remove('drag-over');
+    
+    if (draggedElement !== this) {
+        const allCards = Array.from(document.querySelectorAll('.manufacturer-image-card'));
+        const draggedIndex = allCards.indexOf(draggedElement);
+        const droppedIndex = allCards.indexOf(this);
+        
+        if (draggedIndex < droppedIndex) {
+            this.parentNode.insertBefore(draggedElement, this.nextSibling);
+        } else {
+            this.parentNode.insertBefore(draggedElement, this);
+        }
+    }
+}
+
+function saveImageOrder() {
+    const imageCards = document.querySelectorAll('.manufacturer-image-card');
+    const orderData = Array.from(imageCards).map((card, index) => ({
+        image_id: parseInt(card.dataset.imageId),
+        order: index + 1
+    }));
+    
+    console.log('Sparar bildordning:', orderData);
+    
+    fetch('/tillverkare/bild/ordning/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        },
+        body: JSON.stringify({
+            manufacturer_id: {{ manufacturer.id }},
+            order_data: orderData
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log('Svar från server:', data);
+        if (data.success) {
+            showNotification('Bildordning sparad!', 'success');
+            // Ladda om sidan för att visa den nya ordningen
+            setTimeout(() => {
+                location.reload();
+            }, 1000);
+        } else {
+            showNotification('Fel: ' + data.error, 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showNotification('Ett fel uppstod vid sparande av ordning', 'error');
+    });
+}
+
+// Lightbox och bildhantering
+let currentImageIndex = 0;
+let currentImageGroup = [];
+let currentImageType = '';
+
+function openImageLightbox(imageId) {
+    const imageElement = document.querySelector(`img[data-image-id="${imageId}"]`);
+    if (!imageElement) return;
+    
+    // Hitta bildens grupp (image_type) och position i gruppen
+    currentImageType = imageElement.dataset.imageType;
+    const imagesInGroup = document.querySelectorAll(`img[data-image-type="${currentImageType}"]`);
+    currentImageGroup = Array.from(imagesInGroup);
+    currentImageIndex = currentImageGroup.findIndex(img => img.dataset.imageId === imageId.toString());
+    
+    if (currentImageIndex === -1) return;
+    
+    const modal = document.getElementById('imageLightboxModal');
+    const modalImage = document.getElementById('lightboxImage');
+    const modalCaption = document.getElementById('lightboxCaption');
+    const modalDescription = document.getElementById('lightboxDescription');
+    
+    // Visa bilden
+    showImageInLightbox(imageElement);
+    
+    // Visa modal
+    const bsModal = new bootstrap.Modal(modal);
+    bsModal.show();
+}
+
+function showImageInLightbox(imageElement) {
+    const modalImage = document.getElementById('lightboxImage');
+    const modalCaption = document.getElementById('lightboxCaption');
+    const modalDescription = document.getElementById('lightboxDescription');
+    const imageCounter = document.getElementById('imageCounter');
+    const prevBtn = document.getElementById('prevImageBtn');
+    const nextBtn = document.getElementById('nextImageBtn');
+    
+    // Sätt bilddata
+    modalImage.src = imageElement.dataset.webpUrl || imageElement.dataset.imageUrl;
+    modalCaption.textContent = imageElement.dataset.caption || '';
+    
+    // Rendera markdown för beskrivningen
+    if (imageElement.dataset.description) {
+        const htmlContent = convertMarkdownToHtml(imageElement.dataset.description);
+        modalDescription.innerHTML = htmlContent;
+    } else {
+        modalDescription.textContent = '';
+    }
+    
+    // Uppdatera räknare
+    imageCounter.textContent = `${currentImageIndex + 1} av ${currentImageGroup.length}`;
+    
+    // Visa/dölj navigationsknappar
+    prevBtn.style.display = currentImageIndex > 0 ? 'block' : 'none';
+    nextBtn.style.display = currentImageIndex < currentImageGroup.length - 1 ? 'block' : 'none';
+}
+
+function showPreviousImage() {
+    if (currentImageIndex > 0) {
+        currentImageIndex--;
+        const imageElement = currentImageGroup[currentImageIndex];
+        showImageInLightbox(imageElement);
+    }
+}
+
+function showNextImage() {
+    if (currentImageIndex < currentImageGroup.length - 1) {
+        currentImageIndex++;
+        const imageElement = currentImageGroup[currentImageIndex];
+        showImageInLightbox(imageElement);
+    }
+}
+
+function editImage(imageId) {
+    // Hämta bilddata från DOM - leta efter img-elementet med rätt data-image-id
+    const imageElement = document.querySelector(`img[data-image-id="${imageId}"]`);
+    if (!imageElement) return;
+    
+    // Fyll i formuläret
+    document.getElementById('editImageId').value = imageId;
+    document.getElementById('editImageCaption').value = imageElement.dataset.caption || '';
+    document.getElementById('editImageType').value = imageElement.dataset.imageType || 'STAMP';
+    
+    // Visa redigeringsmodal
+    const modal = new bootstrap.Modal(document.getElementById('editImageModal'));
+    modal.show();
+    
+    // Initiera EasyMDE för beskrivningen
+    setTimeout(() => {
+        if (!editImageEasyMDE) {
+            editImageEasyMDE = new EasyMDE({
+                element: document.getElementById('editImageDescription'),
+                spellChecker: false,
+                placeholder: 'Skriv beskrivning av bilden här...',
+                toolbar: [
+                    'bold', 'italic', 'heading', '|',
+                    'quote', 'unordered-list', 'ordered-list', '|',
+                    'link', 'image', '|',
+                    'preview', 'side-by-side', 'fullscreen', '|',
+                    'guide'
+                ],
+                status: ['lines', 'words', 'cursor'],
+                minHeight: '150px'
+            });
+        }
+        
+        // Sätt innehållet EFTER att EasyMDE är initierad
+        setTimeout(() => {
+            editImageEasyMDE.value(imageElement.dataset.description || '');
+            editImageEasyMDE.codemirror.focus();
+        }, 50);
+    }, 100);
+}
+
+function saveImageEdit() {
+    const imageId = document.getElementById('editImageId').value;
+    const caption = document.getElementById('editImageCaption').value;
+    const description = editImageEasyMDE ? editImageEasyMDE.value() : document.getElementById('editImageDescription').value;
+    const imageType = document.getElementById('editImageType').value;
+    
+    const saveBtn = document.querySelector('#editImageModal .btn-primary');
+    const originalText = saveBtn.innerHTML;
+    saveBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Sparar...';
+    saveBtn.disabled = true;
+    
+    fetch(`/tillverkare/bild/${imageId}/redigera/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        },
+        body: JSON.stringify({
+            caption: caption,
+            description: description,
+            image_type: imageType
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Ladda om sidan för att visa uppdaterad bild med korrekt markdown-rendering
+            location.reload();
+        } else {
+            showNotification('Fel: ' + data.error, 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showNotification('Ett fel uppstod vid sparande', 'error');
+    })
+    .finally(() => {
+        saveBtn.innerHTML = originalText;
+        saveBtn.disabled = false;
+    });
+}
+
+function deleteImage(imageId) {
+    if (!confirm('Är du säker på att du vill ta bort denna bild?')) {
+        return;
+    }
+    
+    const deleteBtn = document.querySelector('#editImageModal .btn-danger');
+    const originalText = deleteBtn.innerHTML;
+    deleteBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Tar bort...';
+    deleteBtn.disabled = true;
+    
+    fetch(`/tillverkare/bild/${imageId}/ta-bort/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Ta bort bildkortet från DOM
+            const imageElement = document.querySelector(`[data-image-id="${imageId}"]`);
+            if (imageElement) {
+                const card = imageElement.closest('.col-md-4');
+                card.remove();
+                
+                // Kontrollera om det finns fler bilder
+                const remainingImages = document.querySelectorAll('.manufacturer-image');
+                if (remainingImages.length === 0) {
+                    // Ladda om sidan för att visa "Inga bilder"-meddelandet
+                    location.reload();
+                }
+            }
+            
+            // Stäng modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('editImageModal'));
+            modal.hide();
+            
+            showNotification('Bild borttagen!', 'success');
+        } else {
+            showNotification('Fel: ' + data.error, 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showNotification('Ett fel uppstod vid borttagning', 'error');
+    })
+    .finally(() => {
+        deleteBtn.innerHTML = originalText;
+        deleteBtn.disabled = false;
+    });
+}
+
+function openUploadModal() {
+    // Rensa formuläret
+    document.getElementById('newImageFile').value = '';
+    document.getElementById('newImageCaption').value = '';
+    document.getElementById('newImageType').value = 'STAMP';
+    
+    // Visa modal
+    const modal = new bootstrap.Modal(document.getElementById('uploadImageModal'));
+    modal.show();
+    
+    // Initiera EasyMDE för beskrivningen
+    setTimeout(() => {
+        if (!uploadImageEasyMDE) {
+            uploadImageEasyMDE = new EasyMDE({
+                element: document.getElementById('newImageDescription'),
+                spellChecker: false,
+                placeholder: 'Skriv beskrivning av bilden här...',
+                toolbar: [
+                    'bold', 'italic', 'heading', '|',
+                    'quote', 'unordered-list', 'ordered-list', '|',
+                    'link', 'image', '|',
+                    'preview', 'side-by-side', 'fullscreen', '|',
+                    'guide'
+                ],
+                status: ['lines', 'words', 'cursor'],
+                minHeight: '150px'
+            });
+        }
+        
+        // Rensa innehållet
+        uploadImageEasyMDE.value('');
+        uploadImageEasyMDE.codemirror.focus();
+    }, 100);
+}
+
+function uploadNewImage() {
+    const fileInput = document.getElementById('newImageFile');
+    const captionInput = document.getElementById('newImageCaption');
+    const description = uploadImageEasyMDE ? uploadImageEasyMDE.value() : document.getElementById('newImageDescription').value;
+    const imageTypeInput = document.getElementById('newImageType');
+    
+    const file = fileInput.files[0];
+    if (!file) {
+        showNotification('Välj en bild att ladda upp', 'error');
+        return;
+    }
+    
+    const formData = new FormData();
+    formData.append('image', file);
+    formData.append('caption', captionInput.value);
+    formData.append('description', description);
+    formData.append('image_type', imageTypeInput.value);
+    formData.append('manufacturer_id', '{{ manufacturer.id }}');
+    
+    const uploadBtn = document.querySelector('#uploadImageModal .btn-primary');
+    const originalText = uploadBtn.innerHTML;
+    uploadBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Laddar upp...';
+    uploadBtn.disabled = true;
+    
+    fetch('/tillverkare/bild/lagg-till/', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        },
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Ladda om sidan för att visa den nya bilden
+            location.reload();
+        } else {
+            showNotification('Fel: ' + data.error, 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showNotification('Ett fel uppstod vid uppladdning', 'error');
+    })
+    .finally(() => {
+        uploadBtn.innerHTML = originalText;
+        uploadBtn.disabled = false;
+    });
+}
+
+// Länkhantering
+let isLinkReorderMode = false;
+let draggedLinkElement = null;
+
+function toggleLinkReorderMode() {
+    const reorderBtn = document.getElementById('linkReorderBtn');
+    const linkCards = document.querySelectorAll('.manufacturer-link-card');
+    
+    isLinkReorderMode = !isLinkReorderMode;
+    
+    if (isLinkReorderMode) {
+        reorderBtn.innerHTML = '<i class="bi bi-check"></i> Spara ordning';
+        reorderBtn.className = 'btn btn-success btn-sm';
+        document.querySelector('.card-body').classList.add('link-reorder-mode');
+        
+        // Aktivera drag & drop
+        linkCards.forEach(card => {
+            card.draggable = true;
+            card.addEventListener('dragstart', handleLinkDragStart);
+            card.addEventListener('dragend', handleLinkDragEnd);
+            card.addEventListener('dragover', handleLinkDragOver);
+            card.addEventListener('drop', handleLinkDrop);
+            card.addEventListener('dragenter', handleLinkDragEnter);
+            card.addEventListener('dragleave', handleLinkDragLeave);
+        });
+    } else {
+        reorderBtn.innerHTML = '<i class="bi bi-arrow-down-up"></i> Ändra ordning';
+        reorderBtn.className = 'btn btn-outline-secondary btn-sm';
+        document.querySelector('.card-body').classList.remove('link-reorder-mode');
+        
+        // Inaktivera drag & drop
+        linkCards.forEach(card => {
+            card.draggable = false;
+            card.removeEventListener('dragstart', handleLinkDragStart);
+            card.removeEventListener('dragend', handleLinkDragEnd);
+            card.removeEventListener('dragover', handleLinkDragOver);
+            card.removeEventListener('drop', handleLinkDrop);
+            card.removeEventListener('dragenter', handleLinkDragEnter);
+            card.removeEventListener('dragleave', handleLinkDragLeave);
+        });
+        
+        // Spara den nya ordningen
+        saveLinkOrder();
+    }
+}
+
+function handleLinkDragStart(e) {
+    if (!isLinkReorderMode) return;
+    draggedLinkElement = this;
+    this.classList.add('dragging');
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/html', this.outerHTML);
+}
+
+function handleLinkDragEnd(e) {
+    if (!isLinkReorderMode) return;
+    this.classList.remove('dragging');
+    draggedLinkElement = null;
+}
+
+function handleLinkDragOver(e) {
+    if (!isLinkReorderMode) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+}
+
+function handleLinkDragEnter(e) {
+    if (!isLinkReorderMode) return;
+    e.preventDefault();
+    this.classList.add('drag-over');
+}
+
+function handleLinkDragLeave(e) {
+    if (!isLinkReorderMode) return;
+    this.classList.remove('drag-over');
+}
+
+function handleLinkDrop(e) {
+    if (!isLinkReorderMode || !draggedLinkElement) return;
+    e.preventDefault();
+    this.classList.remove('drag-over');
+    
+    if (draggedLinkElement !== this) {
+        const allCards = Array.from(document.querySelectorAll('.manufacturer-link-card'));
+        const draggedIndex = allCards.indexOf(draggedLinkElement);
+        const droppedIndex = allCards.indexOf(this);
+        
+        if (draggedIndex < droppedIndex) {
+            this.parentNode.insertBefore(draggedLinkElement, this.nextSibling);
+        } else {
+            this.parentNode.insertBefore(draggedLinkElement, this);
+        }
+    }
+}
+
+function saveLinkOrder() {
+    const linkCards = document.querySelectorAll('.manufacturer-link-card');
+    const orderData = Array.from(linkCards).map((card, index) => ({
+        link_id: parseInt(card.dataset.linkId),
+        order: index + 1
+    }));
+    
+    console.log('Sparar länkordning:', orderData);
+    
+    fetch('/tillverkare/lank/ordning/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        },
+        body: JSON.stringify({
+            manufacturer_id: {{ manufacturer.id }},
+            order_data: orderData
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log('Svar från server:', data);
+        if (data.success) {
+            showNotification('Länkordning sparad!', 'success');
+            // Ladda om sidan för att visa den nya ordningen
+            setTimeout(() => {
+                location.reload();
+            }, 1000);
+        } else {
+            showNotification('Fel: ' + data.error, 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showNotification('Ett fel uppstod vid sparande av ordning', 'error');
+    });
+}
+
+function editLink(linkId) {
+    // Hämta länkdata från DOM
+    const linkCard = document.querySelector(`[data-link-id="${linkId}"]`);
+    if (!linkCard) return;
+    
+    // Fyll i formuläret med befintlig data
+    document.getElementById('editLinkId').value = linkId;
+    
+    // Hämta titel och URL - hantera både aktiva och inaktiva länkar
+    let title = '';
+    let url = '';
+    
+    const titleLink = linkCard.querySelector('.card-title a');
+    if (titleLink) {
+        // Aktiv länk
+        title = titleLink.textContent.trim();
+        url = titleLink.href;
+    } else {
+        // Inaktiv länk
+        const titleSpan = linkCard.querySelector('.card-title span');
+        const urlElement = linkCard.querySelector('.card-title small');
+        if (titleSpan) {
+            title = titleSpan.textContent.trim();
+        }
+        if (urlElement) {
+            url = urlElement.textContent.replace('🔗', '').trim();
+        }
+    }
+    
+    document.getElementById('editLinkTitle').value = title;
+    document.getElementById('editLinkUrl').value = url;
+    
+    // Hitta länktypen baserat på ikonen eller andra indikatorer
+    // För nu sätter vi default till 'OTHER'
+    document.getElementById('editLinkType').value = 'OTHER';
+    
+    const descriptionElement = linkCard.querySelector('.card-text');
+    document.getElementById('editLinkDescription').value = descriptionElement ? descriptionElement.textContent.trim() : '';
+    
+    // Sätt aktiv status baserat på om kortet har inactive-link klassen
+    const isActive = !linkCard.querySelector('.card').classList.contains('inactive-link');
+    document.getElementById('editLinkIsActive').checked = isActive;
+    
+    // Visa redigeringsmodal
+    const modal = new bootstrap.Modal(document.getElementById('editLinkModal'));
+    modal.show();
+}
+
+function saveLinkEdit() {
+    const linkId = document.getElementById('editLinkId').value;
+    const title = document.getElementById('editLinkTitle').value;
+    const url = document.getElementById('editLinkUrl').value;
+    const linkType = document.getElementById('editLinkType').value;
+    const description = document.getElementById('editLinkDescription').value;
+    const isActive = document.getElementById('editLinkIsActive').checked;
+    
+    const saveBtn = document.querySelector('#editLinkModal .btn-primary');
+    const originalText = saveBtn.innerHTML;
+    saveBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Sparar...';
+    saveBtn.disabled = true;
+    
+    fetch(`/tillverkare/lank/${linkId}/redigera/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        },
+        body: JSON.stringify({
+            title: title,
+            url: url,
+            link_type: linkType,
+            description: description,
+            is_active: isActive
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Ladda om sidan för att visa uppdaterad länk
+            location.reload();
+        } else {
+            showNotification('Fel: ' + data.error, 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showNotification('Ett fel uppstod vid sparande', 'error');
+    })
+    .finally(() => {
+        saveBtn.innerHTML = originalText;
+        saveBtn.disabled = false;
+    });
+}
+
+function deleteLink(linkId) {
+    if (!confirm('Är du säker på att du vill ta bort denna länk?')) {
+        return;
+    }
+    
+    const deleteBtn = document.querySelector('#editLinkModal .btn-danger');
+    const originalText = deleteBtn.innerHTML;
+    deleteBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Tar bort...';
+    deleteBtn.disabled = true;
+    
+    fetch(`/tillverkare/lank/${linkId}/ta-bort/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Ta bort länkkortet från DOM
+            const linkElement = document.querySelector(`[data-link-id="${linkId}"]`);
+            if (linkElement) {
+                const card = linkElement.closest('.col-md-6');
+                card.remove();
+                
+                // Kontrollera om det finns fler länkar
+                const remainingLinks = document.querySelectorAll('.manufacturer-link-card');
+                if (remainingLinks.length === 0) {
+                    // Ladda om sidan för att visa "Inga länkar"-meddelandet
+                    location.reload();
+                }
+            }
+            
+            // Stäng modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('editLinkModal'));
+            modal.hide();
+            
+            showNotification('Länk borttagen!', 'success');
+        } else {
+            showNotification('Fel: ' + data.error, 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showNotification('Ett fel uppstod vid borttagning', 'error');
+    })
+    .finally(() => {
+        deleteBtn.innerHTML = originalText;
+        deleteBtn.disabled = false;
+    });
+}
 </script>
+
+<!-- Lightbox Modal -->
+<div class="modal fade" id="imageLightboxModal" tabindex="-1" aria-labelledby="imageLightboxModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="imageLightboxModalLabel">Bildvisning</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center position-relative">
+                <!-- Navigationsknappar -->
+                <button type="button" class="btn btn-outline-dark position-absolute top-50 start-0 translate-middle-y ms-3" 
+                        id="prevImageBtn" onclick="showPreviousImage()" style="z-index: 1050; display: none; background-color: rgba(255,255,255,0.9); color: #212529;">
+                    <i class="bi bi-chevron-left"></i>
+                </button>
+                <button type="button" class="btn btn-outline-dark position-absolute top-50 end-0 translate-middle-y me-3" 
+                        id="nextImageBtn" onclick="showNextImage()" style="z-index: 1050; display: none; background-color: rgba(255,255,255,0.9); color: #212529;">
+                    <i class="bi bi-chevron-right"></i>
+                </button>
+                
+                <img id="lightboxImage" src="" class="img-fluid" style="max-height: 70vh;" alt="Bild">
+                <div class="mt-3 text-start">
+                    <h6 id="lightboxCaption" class="mb-2"></h6>
+                    <p id="lightboxDescription" class="text-muted"></p>
+                    <small class="text-muted" id="imageCounter"></small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Redigera bild Modal -->
+<div class="modal fade" id="editImageModal" tabindex="-1" aria-labelledby="editImageModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editImageModalLabel">Redigera bild</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="editImageId">
+                <div class="mb-3">
+                    <label for="editImageCaption" class="form-label">Bildtext</label>
+                    <input type="text" class="form-control" id="editImageCaption" maxlength="255">
+                </div>
+                <div class="mb-3">
+                    <label for="editImageDescription" class="form-label">Beskrivning</label>
+                    <textarea id="editImageDescription"></textarea>
+                </div>
+                <div class="mb-3">
+                    <label for="editImageType" class="form-label">Bildtyp</label>
+                    <select class="form-select" id="editImageType">
+                        <option value="STAMP">Stämpel</option>
+                        <option value="OTHER">Övrig bild</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-danger" onclick="deleteImage(document.getElementById('editImageId').value)">
+                    <i class="bi bi-trash"></i> Ta bort bild
+                </button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Avbryt</button>
+                <button type="button" class="btn btn-primary" onclick="saveImageEdit()">
+                    <i class="bi bi-check"></i> Spara
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Ladda upp ny bild Modal -->
+<div class="modal fade" id="uploadImageModal" tabindex="-1" aria-labelledby="uploadImageModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="uploadImageModalLabel">Ladda upp ny bild</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label for="newImageFile" class="form-label">Välj bild</label>
+                    <input type="file" class="form-control" id="newImageFile" accept="image/*" required>
+                </div>
+                <div class="mb-3">
+                    <label for="newImageCaption" class="form-label">Bildtext</label>
+                    <input type="text" class="form-control" id="newImageCaption" maxlength="255">
+                </div>
+                <div class="mb-3">
+                    <label for="newImageDescription" class="form-label">Beskrivning</label>
+                    <textarea id="newImageDescription"></textarea>
+                </div>
+                <div class="mb-3">
+                    <label for="newImageType" class="form-label">Bildtyp</label>
+                    <select class="form-select" id="newImageType">
+                        <option value="STAMP">Stämpel</option>
+                        <option value="OTHER">Övrig bild</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Avbryt</button>
+                <button type="button" class="btn btn-primary" onclick="uploadNewImage()">
+                    <i class="bi bi-upload"></i> Ladda upp
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Redigera länk Modal -->
+<div class="modal fade" id="editLinkModal" tabindex="-1" aria-labelledby="editLinkModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editLinkModalLabel">Redigera länk</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="editLinkId">
+                <div class="mb-3">
+                    <label for="editLinkTitle" class="form-label">Titel</label>
+                    <input type="text" class="form-control" id="editLinkTitle" maxlength="255" required>
+                </div>
+                <div class="mb-3">
+                    <label for="editLinkUrl" class="form-label">URL</label>
+                    <input type="url" class="form-control" id="editLinkUrl" required>
+                </div>
+                <div class="mb-3">
+                    <label for="editLinkType" class="form-label">Länktyp</label>
+                    <select class="form-select" id="editLinkType" required>
+                        <option value="WEBSITE">Hemsida</option>
+                        <option value="CATALOG">Katalog</option>
+                        <option value="VIDEO">Video/Film</option>
+                        <option value="ARTICLE">Artikel</option>
+                        <option value="DOCUMENT">Dokument</option>
+                        <option value="OTHER">Övrigt</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label for="editLinkDescription" class="form-label">Beskrivning</label>
+                    <textarea class="form-control" id="editLinkDescription" rows="3"></textarea>
+                </div>
+                <div class="mb-3">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="editLinkIsActive" checked>
+                        <label class="form-check-label" for="editLinkIsActive">
+                            Länken är aktiv
+                        </label>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-danger" onclick="deleteLink(document.getElementById('editLinkId').value)">
+                    <i class="bi bi-trash"></i> Ta bort länk
+                </button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Avbryt</button>
+                <button type="button" class="btn btn-primary" onclick="saveLinkEdit()">
+                    <i class="bi bi-check"></i> Spara
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- CSRF Token för AJAX-anrop -->
+{% csrf_token %}
+
+<script>
+// Rensa EasyMDE-instanser när modaler stängs
+document.addEventListener('DOMContentLoaded', function() {
+    const editImageModal = document.getElementById('editImageModal');
+    const uploadImageModal = document.getElementById('uploadImageModal');
+    
+    editImageModal.addEventListener('hidden.bs.modal', function() {
+        if (editImageEasyMDE) {
+            editImageEasyMDE.toTextArea();
+            editImageEasyMDE = null;
+        }
+    });
+    
+    uploadImageModal.addEventListener('hidden.bs.modal', function() {
+        if (uploadImageEasyMDE) {
+            uploadImageEasyMDE.toTextArea();
+            uploadImageEasyMDE = null;
+        }
+    });
+});
+</script>
+
 {% endblock %} 

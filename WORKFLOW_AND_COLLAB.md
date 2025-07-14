@@ -48,7 +48,25 @@
 - **Smart defaults:** Sätt smarta standardvärden (t.ex. dagens datum för transaktioner).
 - **Validation feedback:** Ge tydlig feedback när validering misslyckas.
 
-## Senaste genomförda förbättringar (2025-01-01)
+## Senaste genomförda förbättringar (2025-07-14)
+
+### Tillverkarbilder och länkar - Avancerad hantering (2025-07-14)
+- **Inline-redigering och drag & drop:** Implementerat fullständig inline-redigering och drag & drop-sortering för både tillverkarbilder och -länkar med AJAX-baserad backendhantering.
+- **Lightbox med navigering:** Förbättrad lightbox med navigationsknappar för att bläddra mellan bilder i samma grupp, med förbättrad kontrast och hover-färger.
+- **Markdown-stöd:** Implementerat EasyMDE för markdown-redigering av bildbeskrivningar med rendering i lightbox.
+- **Klickbara kort:** Hela kortet är nu klickbart för både bilder (öppnar lightbox) och aktiva länkar (öppnar i ny flik), med redigeringsknappar som inte triggar klicket.
+- **Visuell hantering för inaktiva länkar:** Gråtonad styling, URL visas som text (inte klickbar), och "Inaktiv"-badge för tydlig statusindikation.
+- **Hover-effekter:** Subtila hover-effekter på bild- och länkkort för bättre användarupplevelse utan störande animationer.
+- **Template filter:** Skapat `strip_markdown_and_truncate` filter för att visa information i tillverkarlistan med markdown borttagen och text begränsad till 150 tecken.
+
+### Tillverkarbilder och länkar - Grundläggande funktionalitet (2025-07-14)
+- **Inline-redigering av tillverkarnamn:** AJAX-baserad redigering av tillverkarnamn utan sidladdning.
+- **Markdown-redigerare för information:** EasyMDE-integration för att redigera tillverkarens information med markdown-stöd.
+- **Bildhantering:** Drag & drop-sortering, inline-redigering av bildtext och beskrivningar, och kategorisering av bilder (Stämpel/Övrig bild).
+- **Länkhantering:** Inline-redigering, borttagning och drag & drop-sortering för tillverkarlänkar med olika typer (Hemsida, Katalog, Video, etc.).
+- **Backend-integration:** Komplett AJAX-hantering med vyer för redigering, borttagning och omordning av både bilder och länkar.
+
+## Tidigare genomförda förbättringar (2025-01-01)
 
 ### Admin-raderingsvy för yxor
 - **Problem:** Standard Django admin visade nästlade listor som Python-strängar och saknade kontroll över bildradering.
@@ -218,8 +236,32 @@
 - Modernisering av AJAX-sökning och sektioner för kontakt/plattform
 - Fix av next_id och TemplateSyntaxError
 
+### Tillverkarbildhantering och lightbox (juli 2025)
+- **Problem:** Redigeringsformulär och lightbox laddade inte in befintlig information
+- **Lösning:** Ändrade JavaScript-selectors från `[data-image-id]` till `img[data-image-id]` för att hitta rätt element
+- **Implementation:**
+  - Fixade `editImage()` och `openImageLightbox()` funktioner
+  - Lade till navigationsknappar för att bläddra mellan bilder i samma grupp
+  - Implementerade gruppbaserad navigering (endast inom samma bildtyp)
+  - Lade till bildräknare som visar position i gruppen
+  - Förbättrade kontrast på navigationsknappar med `btn-outline-dark` och vit bakgrund
+  - Vänsterställde text i lightbox för bättre läsbarhet av längre beskrivningar
+  - Semi-bold styling för bildtext med `font-weight: 600`
+- **Tekniska beslut:**
+  - Använder `data-image-type` för att gruppera bilder för navigering
+  - Navigationsknappar visas endast när det finns fler bilder i samma grupp
+  - CSS med `!important` för att överskriva Bootstrap's hover-styling
+  - Bildräknare visar "X av Y" för tydlig positionering
+
+### UX-beslut och lärdomar (juli 2025)
+- **Kontrast-problem:** `btn-outline-light` på vit bakgrund ger extremt dålig kontrast
+- **Lösning:** `btn-outline-dark` med `background-color: rgba(255,255,255,0.9)` för bra synlighet
+- **Text-justering:** Längre beskrivningar är mycket mer läsbara vänsterställda än centrerade
+- **Navigationslogik:** Gruppbaserad navigering (endast inom samma bildtyp) ger bättre användarupplevelse än global navigering
+- **Debugging:** Linter-fel kan vara falska positiva - alltid testa funktionalitet i webbläsaren
+
 ---
 
 **För AI-assistenter:** Läs igenom denna fil noggrant innan du börjar arbeta med projektet. Den innehåller viktig kontext om arbetsflöden, beslut och riktlinjer som hjälper dig att fortsätta arbetet effektivt.
 
-*Senast uppdaterad: 2025-07-12* 
+*Senast uppdaterad: 2025-07-14* 

@@ -40,7 +40,7 @@ class NextAxeID(models.Model):
 
 class Manufacturer(models.Model):
     name = models.CharField(max_length=200)
-    comment = models.TextField(blank=True, null=True)
+    information = models.TextField(blank=True, null=True, verbose_name="Information")
 
     def __str__(self):
         return self.name
@@ -184,10 +184,22 @@ class AxeImage(models.Model):
         super().delete(*args, **kwargs)
 
 class ManufacturerImage(models.Model):
+    IMAGE_TYPES = [
+        ('STAMP', 'Stämpel'),
+        ('OTHER', 'Övrig bild'),
+    ]
+    
     manufacturer = models.ForeignKey(Manufacturer, related_name='images', on_delete=models.CASCADE) # Raderas bilden om tillverkaren raderas
     image = models.ImageField(upload_to='manufacturer_images/') # Django hanterar filuppladdning
-    caption = models.CharField(max_length=255, blank=True, null=True) # Bildtext för stämplar
+    image_type = models.CharField(max_length=20, choices=IMAGE_TYPES, default='STAMP', help_text="Typ av bild")
+    caption = models.CharField(max_length=255, blank=True, null=True) # Bildtext
     description = models.TextField(blank=True, null=True) # Mer detaljerad beskrivning
+    order = models.PositiveIntegerField(default=0, help_text="Sorteringsordning inom samma typ")
+    
+    class Meta:
+        ordering = ['image_type', 'order']
+        verbose_name = "Tillverkarbild"
+        verbose_name_plural = "Tillverkarbilder"
 
     @property
     def webp_url(self):
@@ -212,10 +224,6 @@ class ManufacturerImage(models.Model):
     def __str__(self):
         return f"{self.manufacturer.name} - {self.caption or 'Bild'}"
 
-    class Meta:
-        verbose_name = "Tillverkarbild"
-        verbose_name_plural = "Tillverkarbilder"
-
 class ManufacturerLink(models.Model):
     LINK_TYPES = [
         ('WEBSITE', 'Hemsida'),
@@ -232,12 +240,13 @@ class ManufacturerLink(models.Model):
     link_type = models.CharField(max_length=20, choices=LINK_TYPES, default='OTHER')
     description = models.TextField(blank=True, null=True) # Beskrivning av innehållet
     is_active = models.BooleanField(default=True) # Om länken fortfarande fungerar
+    order = models.PositiveIntegerField(default=0, help_text="Sorteringsordning inom samma typ")
     
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
     class Meta:
-        ordering = ['link_type', 'title']
+        ordering = ['link_type', 'order']
     
     def __str__(self):
         return f"{self.manufacturer.name} - {self.title}"

@@ -1,6 +1,7 @@
 from django import template
 from decimal import Decimal, ROUND_HALF_UP, InvalidOperation
 from django.utils.safestring import mark_safe
+import re
 
 register = template.Library()
 
@@ -124,4 +125,89 @@ def breadcrumb_item(text, url=None, is_active=False):
     elif url:
         return mark_safe(f'<li class="breadcrumb-item"><a href="{url}">{text}</a></li>')
     else:
-        return mark_safe(f'<li class="breadcrumb-item">{text}</li>') 
+        return mark_safe(f'<li class="breadcrumb-item">{text}</li>')
+
+@register.filter(name='markdown')
+def markdown(value):
+    """
+    Konverterar markdown-text till HTML.
+    """
+    if not value:
+        return ""
+    
+    # Escape HTML först
+    html = value.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
+    
+    # Rubriker
+    html = re.sub(r'^### (.*$)', r'<h3>\1</h3>', html, flags=re.MULTILINE)
+    html = re.sub(r'^## (.*$)', r'<h2>\1</h2>', html, flags=re.MULTILINE)
+    html = re.sub(r'^# (.*$)', r'<h1>\1</h1>', html, flags=re.MULTILINE)
+    
+    # Fet och kursiv text
+    html = re.sub(r'\*\*(.*?)\*\*', r'<strong>\1</strong>', html)
+    html = re.sub(r'\*(.*?)\*', r'<em>\1</em>', html)
+    
+    # Länkar
+    html = re.sub(r'\[([^\]]+)\]\(([^)]+)\)', r'<a href="\2" target="_blank">\1</a>', html)
+    
+    # Listor
+    html = re.sub(r'^\* (.*$)', r'<li>\1</li>', html, flags=re.MULTILINE)
+    html = re.sub(r'^- (.*$)', r'<li>\1</li>', html, flags=re.MULTILINE)
+    html = re.sub(r'^(\d+)\. (.*$)', r'<li>\2</li>', html, flags=re.MULTILINE)
+    
+    # Radbrytningar
+    html = re.sub(r'\n\n', '</p><p>', html)
+    html = re.sub(r'\n', '<br>', html)
+    
+    # Wrappa i p-taggar
+    html = '<p>' + html + '</p>'
+    
+    # Fixa listor
+    html = re.sub(r'<p><li>', '<ul><li>', html)
+    html = re.sub(r'</li></p>', '</li></ul>', html)
+    
+    return mark_safe(html)
+
+@register.filter(name='strip_markdown_and_truncate')
+def strip_markdown_and_truncate(value, max_length=100):
+    """
+    Strippar markdown-formatering och begränsar texten till max_length tecken.
+    Lägger till "..." om texten är längre.
+    """
+    if not value:
+        return ""
+    
+    # Strippa markdown-formatering
+    # Ta bort rubriker
+    text = re.sub(r'^#{1,6}\s+', '', value, flags=re.MULTILINE)
+    
+    # Ta bort fet och kursiv text (behåll innehållet)
+    text = re.sub(r'\*\*(.*?)\*\*', r'\1', text)
+    text = re.sub(r'\*(.*?)\*', r'\1', text)
+    
+    # Ta bort länkar (behåll texten)
+    text = re.sub(r'\[([^\]]+)\]\([^)]+\)', r'\1', text)
+    
+    # Ta bort listmarkeringar
+    text = re.sub(r'^[\*\-]\s+', '', text, flags=re.MULTILINE)
+    text = re.sub(r'^\d+\.\s+', '', text, flags=re.MULTILINE)
+    
+    # Ta bort kodblock
+    text = re.sub(r'```.*?```', '', text, flags=re.DOTALL)
+    text = re.sub(r'`([^`]+)`', r'\1', text)
+    
+    # Rensa whitespace
+    text = re.sub(r'\n+', ' ', text)  # Ersätt radbrytningar med mellanslag
+    text = re.sub(r'\s+', ' ', text)  # Ersätt flera whitespace med ett mellanslag
+    text = text.strip()
+    
+    # Begränsa längden
+    if len(text) > max_length:
+        # Försök att klippa vid ett mellanslag
+        truncated = text[:max_length-3]
+        last_space = truncated.rfind(' ')
+        if last_space > max_length * 0.8:  # Om vi hittar ett mellanslag i slutet av texten
+            truncated = truncated[:last_space]
+        return truncated + "..."
+    
+    return text

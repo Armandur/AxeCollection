@@ -1,6 +1,10 @@
 from django.shortcuts import render, get_object_or_404
+from django.http import JsonResponse
+from django.views.decorators.http import require_http_methods
+from django.views.decorators.csrf import csrf_exempt
 from .models import Manufacturer, ManufacturerImage, ManufacturerLink, Axe, Transaction
 from django.db.models import Sum
+import json
 
 def manufacturer_list(request):
     manufacturers = Manufacturer.objects.all().order_by('name')
@@ -21,8 +25,8 @@ def manufacturer_list(request):
 def manufacturer_detail(request, pk):
     manufacturer = get_object_or_404(Manufacturer, pk=pk)
     axes = Axe.objects.filter(manufacturer=manufacturer).order_by('-id')
-    images = ManufacturerImage.objects.filter(manufacturer=manufacturer).order_by('id')
-    links = ManufacturerLink.objects.filter(manufacturer=manufacturer).order_by('link_type', 'title')
+    images = ManufacturerImage.objects.filter(manufacturer=manufacturer).order_by('image_type', 'order')
+    links = ManufacturerLink.objects.filter(manufacturer=manufacturer).order_by('link_type', 'order')
     # Statistik
     total_axes = axes.count()
     transactions = Transaction.objects.filter(axe__manufacturer=manufacturer)
@@ -61,7 +65,13 @@ def manufacturer_detail(request, pk):
             else:
                 axe.status = 'OKÄND'
                 axe.status_class = 'bg-light'
-    manufacturer_images = images
+    # Gruppera bilder efter typ
+    images_by_type = {}
+    for image in images:
+        if image.image_type not in images_by_type:
+            images_by_type[image.image_type] = []
+        images_by_type[image.image_type].append(image)
+    
     # Gruppera länkar efter typ
     links_by_type = {}
     for link in links:
@@ -80,7 +90,7 @@ def manufacturer_detail(request, pk):
         'axes': axes,
         'images': images,
         'links': links,
-        'manufacturer_images': manufacturer_images,
+        'images_by_type': images_by_type,
         'links_by_type': links_by_type,
         'transactions': transactions,
         'unique_contacts': unique_contacts,
@@ -93,4 +103,292 @@ def manufacturer_detail(request, pk):
         'buy_count': buy_count,
         'sale_count': sale_count,
     }
-    return render(request, 'axes/manufacturer_detail.html', context) 
+    return render(request, 'axes/manufacturer_detail.html', context)
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def edit_manufacturer_information(request, pk):
+    """AJAX-vy för att redigera tillverkarinformation"""
+    try:
+        manufacturer = get_object_or_404(Manufacturer, pk=pk)
+        data = json.loads(request.body)
+        new_information = data.get('information', '').strip()
+        
+        # Validering
+        if len(new_information) > 10000:  # Max 10KB
+            return JsonResponse({
+                'success': False,
+                'error': 'Informationen är för lång (max 10 000 tecken)'
+            }, status=400)
+        
+        manufacturer.information = new_information
+        manufacturer.save()
+        
+        return JsonResponse({
+            'success': True,
+            'message': 'Information uppdaterad',
+            'information': manufacturer.information
+        })
+        
+    except json.JSONDecodeError:
+        return JsonResponse({
+            'success': False,
+            'error': 'Ogiltig JSON-data'
+        }, status=400)
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': f'Ett fel uppstod: {str(e)}'
+        }, status=500) 
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def edit_manufacturer_name(request, pk):
+    """AJAX-vy för att redigera tillverkarnamn"""
+    try:
+        manufacturer = get_object_or_404(Manufacturer, pk=pk)
+        data = json.loads(request.body)
+        new_name = data.get('name', '').strip()
+        if not new_name:
+            return JsonResponse({'success': False, 'error': 'Namnet får inte vara tomt.'}, status=400)
+        if len(new_name) > 200:
+            return JsonResponse({'success': False, 'error': 'Namnet får vara max 200 tecken.'}, status=400)
+        manufacturer.name = new_name
+        manufacturer.save()
+        return JsonResponse({'success': True, 'name': manufacturer.name})
+    except json.JSONDecodeError:
+        return JsonResponse({'success': False, 'error': 'Ogiltig JSON-data'}, status=400)
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': f'Ett fel uppstod: {str(e)}'}, status=500) 
+
+@require_http_methods(["POST"])
+def edit_manufacturer_image(request, image_id):
+    """Redigera tillverkarbild via AJAX"""
+    try:
+        image = ManufacturerImage.objects.get(id=image_id)
+        data = json.loads(request.body)
+        
+        # Uppdatera fält
+        if 'caption' in data:
+            image.caption = data['caption']
+        if 'description' in data:
+            image.description = data['description']
+        if 'image_type' in data:
+            image.image_type = data['image_type']
+        
+        image.save()
+        
+        return JsonResponse({
+            'success': True,
+            'message': 'Bild uppdaterad'
+        })
+    except ManufacturerImage.DoesNotExist:
+        return JsonResponse({
+            'success': False,
+            'error': 'Bild hittades inte'
+        }, status=404)
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=500)
+
+@require_http_methods(["POST"])
+def delete_manufacturer_image(request, image_id):
+    """Ta bort tillverkarbild via AJAX"""
+    try:
+        image = ManufacturerImage.objects.get(id=image_id)
+        image.delete()
+        
+        return JsonResponse({
+            'success': True,
+            'message': 'Bild borttagen'
+        })
+    except ManufacturerImage.DoesNotExist:
+        return JsonResponse({
+            'success': False,
+            'error': 'Bild hittades inte'
+        }, status=404)
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=500)
+
+@require_http_methods(["POST"])
+def add_manufacturer_image(request):
+    """Lägg till ny tillverkarbild via AJAX"""
+    try:
+        manufacturer_id = request.POST.get('manufacturer_id')
+        image_file = request.FILES.get('image')
+        caption = request.POST.get('caption', '')
+        description = request.POST.get('description', '')
+        image_type = request.POST.get('image_type', 'STAMP')
+        
+        if not manufacturer_id or not image_file:
+            return JsonResponse({
+                'success': False,
+                'error': 'Tillverkare och bild krävs'
+            }, status=400)
+        
+        manufacturer = Manufacturer.objects.get(id=manufacturer_id)
+        
+        # Skapa ny bild
+        image = ManufacturerImage.objects.create(
+            manufacturer=manufacturer,
+            image=image_file,
+            caption=caption,
+            description=description,
+            image_type=image_type
+        )
+        
+        return JsonResponse({
+            'success': True,
+            'message': 'Bild uppladdad',
+            'image_id': image.id
+        })
+    except Manufacturer.DoesNotExist:
+        return JsonResponse({
+            'success': False,
+            'error': 'Tillverkare hittades inte'
+        }, status=404)
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=500) 
+
+@require_http_methods(["POST"])
+def reorder_manufacturer_images(request):
+    """Ändra ordning på tillverkarbilder via AJAX"""
+    try:
+        data = json.loads(request.body)
+        manufacturer_id = data.get('manufacturer_id')
+        order_data = data.get('order_data', [])
+        
+        if not manufacturer_id or not order_data:
+            return JsonResponse({
+                'success': False,
+                'error': 'Tillverkare och ordningsdata krävs'
+            }, status=400)
+        
+        # Uppdatera ordningen för varje bild
+        for item in order_data:
+            image_id = item.get('image_id')
+            new_order = item.get('order')
+            
+            if image_id and new_order is not None:
+                try:
+                    image = ManufacturerImage.objects.get(id=image_id, manufacturer_id=manufacturer_id)
+                    image.order = new_order
+                    image.save()
+                except ManufacturerImage.DoesNotExist:
+                    continue
+        
+        return JsonResponse({
+            'success': True,
+            'message': 'Bildordning uppdaterad'
+        })
+    except json.JSONDecodeError:
+        return JsonResponse({
+            'success': False,
+            'error': 'Ogiltig JSON-data'
+        }, status=400)
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=500) 
+
+@require_http_methods(["POST"])
+def edit_manufacturer_link(request, link_id):
+    """Redigera tillverkarlänk via AJAX"""
+    try:
+        link = ManufacturerLink.objects.get(id=link_id)
+        data = json.loads(request.body)
+        
+        # Uppdatera fält
+        if 'title' in data:
+            link.title = data['title']
+        if 'url' in data:
+            link.url = data['url']
+        if 'link_type' in data:
+            link.link_type = data['link_type']
+        if 'description' in data:
+            link.description = data['description']
+        if 'is_active' in data:
+            link.is_active = data['is_active']
+        
+        link.save()
+        
+        return JsonResponse({
+            'success': True,
+            'message': 'Länk uppdaterad'
+        })
+    except ManufacturerLink.DoesNotExist:
+        return JsonResponse({
+            'success': False,
+            'error': 'Länk hittades inte'
+        }, status=404)
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=500)
+
+@require_http_methods(["POST"])
+def delete_manufacturer_link(request, link_id):
+    """Ta bort tillverkarlänk via AJAX"""
+    try:
+        link = ManufacturerLink.objects.get(id=link_id)
+        link.delete()
+        
+        return JsonResponse({
+            'success': True,
+            'message': 'Länk borttagen'
+        })
+    except ManufacturerLink.DoesNotExist:
+        return JsonResponse({
+            'success': False,
+            'error': 'Länk hittades inte'
+        }, status=404)
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=500)
+
+@require_http_methods(["POST"])
+def reorder_manufacturer_links(request):
+    """Spara ny ordning för tillverkarlänkar"""
+    try:
+        data = json.loads(request.body)
+        manufacturer_id = data.get('manufacturer_id')
+        order_data = data.get('order_data', [])
+        
+        # Uppdatera ordningen för varje länk
+        for item in order_data:
+            link_id = item.get('link_id')
+            new_order = item.get('order')
+            
+            try:
+                link = ManufacturerLink.objects.get(id=link_id, manufacturer_id=manufacturer_id)
+                link.order = new_order
+                link.save()
+            except ManufacturerLink.DoesNotExist:
+                continue
+        
+        return JsonResponse({
+            'success': True,
+            'message': 'Länkordning uppdaterad'
+        })
+    except json.JSONDecodeError:
+        return JsonResponse({
+            'success': False,
+            'error': 'Ogiltig JSON-data'
+        }, status=400)
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=500) 

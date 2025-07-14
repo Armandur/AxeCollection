@@ -8,7 +8,8 @@ import os
 class ManufacturerImageInline(admin.TabularInline):
     model = ManufacturerImage
     extra = 1
-    fields = ('image', 'caption', 'description')
+    fields = ('image', 'image_type', 'caption', 'description', 'order')
+    ordering = ('image_type', 'order')
 
 class ManufacturerLinkInline(admin.TabularInline):
     model = ManufacturerLink
@@ -16,10 +17,26 @@ class ManufacturerLinkInline(admin.TabularInline):
     fields = ('title', 'url', 'link_type', 'description', 'is_active')
 
 class ManufacturerImageAdmin(admin.ModelAdmin):
-    list_display = ('manufacturer', 'caption', 'description')
-    list_filter = ('manufacturer',)
+    list_display = ('manufacturer', 'image_type', 'caption', 'order', 'image_preview')
+    list_filter = ('manufacturer', 'image_type')
     search_fields = ('manufacturer__name', 'caption', 'description')
     readonly_fields = ('image_preview',)
+    ordering = ('manufacturer', 'image_type', 'order')
+    list_editable = ('image_type', 'order')
+    
+    fieldsets = (
+        ('Bildinformation', {
+            'fields': ('manufacturer', 'image', 'image_type')
+        }),
+        ('Beskrivning', {
+            'fields': ('caption', 'description', 'order'),
+            'description': 'Använd caption för kort beskrivning och description för mer detaljerad information.'
+        }),
+        ('Förhandsvisning', {
+            'fields': ('image_preview',),
+            'classes': ('collapse',)
+        }),
+    )
     
     def image_preview(self, obj):
         if obj.image:
@@ -36,8 +53,8 @@ class ManufacturerLinkAdmin(admin.ModelAdmin):
     list_editable = ('is_active',)
 
 class ManufacturerAdmin(admin.ModelAdmin):
-    list_display = ('name', 'comment')
-    search_fields = ('name', 'comment')
+    list_display = ('name', 'information')
+    search_fields = ('name', 'information')
     inlines = [ManufacturerImageInline, ManufacturerLinkInline]
 
 class AxeDeleteForm(forms.Form):
