@@ -30,12 +30,6 @@
         <a href="{% url 'admin:axes_manufacturer_change' manufacturer.id %}" class="btn btn-outline-secondary btn-sm">
             <i class="bi bi-pencil"></i> Redigera tillverkare
         </a>
-        <a href="{% url 'admin:axes_manufacturerimage_add' %}?manufacturer={{ manufacturer.id }}" class="btn btn-outline-primary btn-sm">
-            <i class="bi bi-image"></i> Lägg till bild
-        </a>
-        <a href="{% url 'admin:axes_manufacturerlink_add' %}?manufacturer={{ manufacturer.id }}" class="btn btn-outline-info btn-sm">
-            <i class="bi bi-link-45deg"></i> Lägg till länk
-        </a>
     </div>
 </div>
 
@@ -100,108 +94,118 @@
 </div>
 
 <!-- Tillverkarens bilder -->
-{% if images_by_type %}
 <div class="row mb-4">
     <div class="col-12">
         <div class="card">
-            <div class="card-header">
+            <div class="card-header d-flex justify-content-between align-items-center">
                 <h5 class="card-title mb-0">Bilder för {{ manufacturer.name }}</h5>
+                <a href="{% url 'admin:axes_manufacturerimage_add' %}?manufacturer={{ manufacturer.id }}" class="btn btn-outline-primary btn-sm">
+                    <i class="bi bi-image"></i> Lägg till bild
+                </a>
             </div>
             <div class="card-body">
-                {% for image_type, images in images_by_type.items %}
-                <div class="mb-4">
-                    <h6 class="text-muted mb-3">
-                        {% if image_type == 'STAMP' %}
-                            <i class="bi bi-stamp"></i> Stämplar
-                        {% else %}
-                            <i class="bi bi-images"></i> Övriga bilder
-                        {% endif %}
-                    </h6>
-                    <div class="row">
-                        {% for image in images %}
-                        <div class="col-md-4 mb-3">
-                            <div class="card h-100">
-                                <picture>
-                                    {% if image.webp_url %}
-                                        <source srcset="{{ image.webp_url }}" type="image/webp">
-                                    {% endif %}
-                                    <img src="{{ image.image.url }}" class="card-img-top" alt="{{ image.caption|default:'Bild' }}" style="max-height: 200px; object-fit: contain;" loading="lazy">
-                                </picture>
-                                <div class="card-body">
-                                    {% if image.caption %}
-                                        <h6 class="card-title">{{ image.caption }}</h6>
-                                    {% endif %}
-                                    {% if image.description %}
-                                        <p class="card-text small text-muted">{{ image.description }}</p>
-                                    {% endif %}
+                {% if images_by_type %}
+                    {% for image_type, images in images_by_type.items %}
+                    <div class="mb-4">
+                        <h6 class="text-muted mb-3">
+                            {% if image_type == 'STAMP' %}
+                                <i class="bi bi-stamp"></i> Stämplar
+                            {% else %}
+                                <i class="bi bi-images"></i> Övriga bilder
+                            {% endif %}
+                        </h6>
+                        <div class="row">
+                            {% for image in images %}
+                            <div class="col-md-4 mb-3">
+                                <div class="card h-100">
+                                    <picture>
+                                        {% if image.webp_url %}
+                                            <source srcset="{{ image.webp_url }}" type="image/webp">
+                                        {% endif %}
+                                        <img src="{{ image.image.url }}" class="card-img-top" alt="{{ image.caption|default:'Bild' }}" style="max-height: 200px; object-fit: contain;" loading="lazy">
+                                    </picture>
+                                    <div class="card-body">
+                                        {% if image.caption %}
+                                            <h6 class="card-title">{{ image.caption }}</h6>
+                                        {% endif %}
+                                        {% if image.description %}
+                                            <p class="card-text small text-muted">{{ image.description }}</p>
+                                        {% endif %}
+                                    </div>
                                 </div>
                             </div>
+                            {% endfor %}
                         </div>
-                        {% endfor %}
                     </div>
-                </div>
-                {% endfor %}
+                    {% endfor %}
+                {% else %}
+                    <p class="text-muted">Inga bilder tillagda ännu. Klicka på "Lägg till bild" för att börja.</p>
+                {% endif %}
             </div>
         </div>
     </div>
 </div>
-{% endif %}
 
 <!-- Tillverkarens länkar -->
-{% if links_by_type %}
 <div class="row mb-4">
     <div class="col-12">
         <div class="card">
-            <div class="card-header">
+            <div class="card-header d-flex justify-content-between align-items-center">
                 <h5 class="card-title mb-0">Länkar och resurser för {{ manufacturer.name }}</h5>
+                <a href="{% url 'admin:axes_manufacturerlink_add' %}?manufacturer={{ manufacturer.id }}" class="btn btn-outline-info btn-sm">
+                    <i class="bi bi-link-45deg"></i> Lägg till länk
+                </a>
             </div>
             <div class="card-body">
-                {% for link_type, links in links_by_type.items %}
-                <div class="mb-4">
-                    <h6 class="text-muted mb-3">
-                        {% if link_type == 'WEBSITE' %}
-                            <i class="bi bi-globe"></i> Hemsidor
-                        {% elif link_type == 'CATALOG' %}
-                            <i class="bi bi-file-earmark-text"></i> Kataloger
-                        {% elif link_type == 'VIDEO' %}
-                            <i class="bi bi-camera-video"></i> Videor och filmer
-                        {% elif link_type == 'ARTICLE' %}
-                            <i class="bi bi-journal-text"></i> Artiklar
-                        {% elif link_type == 'DOCUMENT' %}
-                            <i class="bi bi-file-earmark-pdf"></i> Dokument
-                        {% else %}
-                            <i class="bi bi-link-45deg"></i> Övriga länkar
-                        {% endif %}
-                    </h6>
-                    <div class="row">
-                        {% for link in links %}
-                        <div class="col-md-6 mb-3">
-                            <div class="card h-100 border-0 shadow-sm">
-                                <div class="card-body">
-                                    <h6 class="card-title">
-                                        <a href="{{ link.url }}" target="_blank" class="text-decoration-none">
-                                            {{ link.title }}
-                                            <i class="bi bi-box-arrow-up-right text-muted"></i>
-                                        </a>
-                                    </h6>
-                                    {% if link.description %}
-                                        <p class="card-text text-muted small">{{ link.description }}</p>
-                                    {% endif %}
-                                    <small class="text-muted">
-                                        <i class="bi bi-calendar3"></i> {{ link.created_at|date:"Y-m-d" }}
-                                    </small>
+                {% if links_by_type %}
+                    {% for link_type, links in links_by_type.items %}
+                    <div class="mb-4">
+                        <h6 class="text-muted mb-3">
+                            {% if link_type == 'WEBSITE' %}
+                                <i class="bi bi-globe"></i> Hemsidor
+                            {% elif link_type == 'CATALOG' %}
+                                <i class="bi bi-file-earmark-text"></i> Kataloger
+                            {% elif link_type == 'VIDEO' %}
+                                <i class="bi bi-camera-video"></i> Videor och filmer
+                            {% elif link_type == 'ARTICLE' %}
+                                <i class="bi bi-journal-text"></i> Artiklar
+                            {% elif link_type == 'DOCUMENT' %}
+                                <i class="bi bi-file-earmark-pdf"></i> Dokument
+                            {% else %}
+                                <i class="bi bi-link-45deg"></i> Övriga länkar
+                            {% endif %}
+                        </h6>
+                        <div class="row">
+                            {% for link in links %}
+                            <div class="col-md-6 mb-3">
+                                <div class="card h-100 border-0 shadow-sm">
+                                    <div class="card-body">
+                                        <h6 class="card-title">
+                                            <a href="{{ link.url }}" target="_blank" class="text-decoration-none">
+                                                {{ link.title }}
+                                                <i class="bi bi-box-arrow-up-right text-muted"></i>
+                                            </a>
+                                        </h6>
+                                        {% if link.description %}
+                                            <p class="card-text text-muted small">{{ link.description }}</p>
+                                        {% endif %}
+                                        <small class="text-muted">
+                                            <i class="bi bi-calendar3"></i> {{ link.created_at|date:"Y-m-d" }}
+                                        </small>
+                                    </div>
                                 </div>
                             </div>
+                            {% endfor %}
                         </div>
-                        {% endfor %}
                     </div>
-                </div>
-                {% endfor %}
+                    {% endfor %}
+                {% else %}
+                    <p class="text-muted">Inga länkar tillagda ännu. Klicka på "Lägg till länk" för att börja.</p>
+                {% endif %}
             </div>
         </div>
     </div>
 </div>
-{% endif %}
 
 <!-- Ekonomisk statistik -->
 <div class="row mb-4">
