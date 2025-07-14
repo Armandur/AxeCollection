@@ -94,6 +94,17 @@ Visa: [Alla] [Köpta] [Mottagna] [Tillverkare ▼]
 - ✅ Mobilvänlig bilduppladdning med kamerastöd
 - ✅ Förhandsvisning och borttagning av bilder
 - ✅ Automatisk filnamnshantering och .webp-generering
+- ✅ Gruppbaserad navigering i lightbox (endast inom samma bildtyp)
+- ✅ Vänsterställd text i lightbox för bättre läsbarhet av längre beskrivningar
+- ✅ Semi-bold styling för bildtext för bättre framträdande
+- ✅ Navigationsknappar med bra kontrast (`btn-outline-dark` med vit bakgrund)
+
+## UX-principer för lightbox och bildhantering
+- **Navigationslogik:** Bläddra endast inom samma bildtyp (Stämplar eller Övriga bilder) för bättre användarupplevelse
+- **Kontrast:** Använd mörka knappar med vit bakgrund för bra synlighet på alla bakgrunder
+- **Text-justering:** Längre beskrivningar är vänsterställda för bättre läsbarhet
+- **Visuell feedback:** Bildräknare visar position i gruppen ("X av Y")
+- **Responsiv design:** Navigationsknappar anpassas för olika skärmstorlekar
 
 ## Nästa steg
 Implementera status-fält och filter i yxlistan som första prioritet. 

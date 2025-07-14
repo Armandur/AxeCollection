@@ -19,12 +19,12 @@ En checklista för vidareutveckling av AxeCollection. Bocka av med [x] när klar
     - [x] 12.1 Kategorisering av bilder (Stämpel/Övrig bild)
     - [x] 12.2 Order-fält för sortering
     - [x] 12.3 Förbättrad admin med fieldsets
-    - [ ] 12.4 Drag & drop för bildordning (som för yxbilder)
+    - [x] 12.4 Drag & drop för bildordning (som för yxbilder)
 13. [x] Drag & drop för bildordning i redigeringsläge.
 14. [x] Hantera många stämpelbilder på tillverkarsidan (t.ex. paginering, grid, lightbox eller liknande UX-lösning).
     - [x] 14.1 Kategoriserad visning (Stämplar vs Övriga bilder)
     - [x] 14.2 Grid-layout med kort
-    - [ ] 14.3 Lightbox för bildförhandsvisning
+    - [x] 14.3 Lightbox för bildförhandsvisning med navigationsknappar
 
 ## Användarupplevelse
 
@@ -107,6 +107,13 @@ En checklista för vidareutveckling av AxeCollection. Bocka av med [x] när klar
     - [x] 38.9 Validering och felhantering för alla formulär
     - [x] 38.10 Notifikationer för framgångsrika redigeringar
     - [x] 38.11 Döpa om fält från "comment" till "information"
+    - [x] 38.12 Inline-redigering av tillverkarnamn med AJAX
+    - [x] 38.13 Markdown-stöd för bildbeskrivningar med EasyMDE
+    - [x] 38.14 Lightbox med redigeringsmöjligheter för tillverkarbilder
+    - [x] 38.15 Drag & drop-funktionalitet för bildordning
+    - [x] 38.16 Navigationsknappar i lightbox för att bläddra mellan bilder i samma grupp
+    - [x] 38.17 Semi-bold styling för bildtext för bättre läsbarhet
+    - [x] 38.18 Vänsterställd text i lightbox för bättre läsbarhet av längre beskrivningar
 
 ## Säkerhet och användare
 
@@ -149,5 +156,11 @@ En checklista för vidareutveckling av AxeCollection. Bocka av med [x] när klar
 
 49. [ ] Förbättrad felhantering och validering i formulär.
 50. [ ] Snabbare AJAX-sökningar med caching.
+51. [ ] Tangentbordsnavigering i lightbox (piltangenter för att bläddra mellan bilder).
+52. [ ] Touch-gester för mobil navigering i lightbox (swipe för att bläddra).
+53. [ ] Zoom-funktionalitet i lightbox för att se bilder i full storlek.
+54. [ ] Automatisk bildrotation baserat på EXIF-data.
+55. [ ] Bulk-redigering av bilder (redigera flera bilder samtidigt).
+56. [ ] Bildkommentarer med @-mentions för att länka till tillverkare eller yxor.
 
  

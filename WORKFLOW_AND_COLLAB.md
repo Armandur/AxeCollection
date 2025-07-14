@@ -218,8 +218,32 @@
 - Modernisering av AJAX-sökning och sektioner för kontakt/plattform
 - Fix av next_id och TemplateSyntaxError
 
+### Tillverkarbildhantering och lightbox (juli 2025)
+- **Problem:** Redigeringsformulär och lightbox laddade inte in befintlig information
+- **Lösning:** Ändrade JavaScript-selectors från `[data-image-id]` till `img[data-image-id]` för att hitta rätt element
+- **Implementation:**
+  - Fixade `editImage()` och `openImageLightbox()` funktioner
+  - Lade till navigationsknappar för att bläddra mellan bilder i samma grupp
+  - Implementerade gruppbaserad navigering (endast inom samma bildtyp)
+  - Lade till bildräknare som visar position i gruppen
+  - Förbättrade kontrast på navigationsknappar med `btn-outline-dark` och vit bakgrund
+  - Vänsterställde text i lightbox för bättre läsbarhet av längre beskrivningar
+  - Semi-bold styling för bildtext med `font-weight: 600`
+- **Tekniska beslut:**
+  - Använder `data-image-type` för att gruppera bilder för navigering
+  - Navigationsknappar visas endast när det finns fler bilder i samma grupp
+  - CSS med `!important` för att överskriva Bootstrap's hover-styling
+  - Bildräknare visar "X av Y" för tydlig positionering
+
+### UX-beslut och lärdomar (juli 2025)
+- **Kontrast-problem:** `btn-outline-light` på vit bakgrund ger extremt dålig kontrast
+- **Lösning:** `btn-outline-dark` med `background-color: rgba(255,255,255,0.9)` för bra synlighet
+- **Text-justering:** Längre beskrivningar är mycket mer läsbara vänsterställda än centrerade
+- **Navigationslogik:** Gruppbaserad navigering (endast inom samma bildtyp) ger bättre användarupplevelse än global navigering
+- **Debugging:** Linter-fel kan vara falska positiva - alltid testa funktionalitet i webbläsaren
+
 ---
 
 **För AI-assistenter:** Läs igenom denna fil noggrant innan du börjar arbeta med projektet. Den innehåller viktig kontext om arbetsflöden, beslut och riktlinjer som hjälper dig att fortsätta arbetet effektivt.
 
-*Senast uppdaterad: 2025-07-12* 
+*Senast uppdaterad: 2025-07-14* 
