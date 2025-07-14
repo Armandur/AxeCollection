@@ -40,7 +40,7 @@ class NextAxeID(models.Model):
 
 class Manufacturer(models.Model):
     name = models.CharField(max_length=200)
-    comment = models.TextField(blank=True, null=True)
+    information = models.TextField(blank=True, null=True, verbose_name="Information")
 
     def __str__(self):
         return self.name

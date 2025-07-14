@@ -107,27 +107,27 @@ def manufacturer_detail(request, pk):
 
 @csrf_exempt
 @require_http_methods(["POST"])
-def edit_manufacturer_comment(request, pk):
-    """AJAX-vy för att redigera tillverkarkommentar"""
+def edit_manufacturer_information(request, pk):
+    """AJAX-vy för att redigera tillverkarinformation"""
     try:
         manufacturer = get_object_or_404(Manufacturer, pk=pk)
         data = json.loads(request.body)
-        new_comment = data.get('comment', '').strip()
+        new_information = data.get('information', '').strip()
         
         # Validering
-        if len(new_comment) > 10000:  # Max 10KB
+        if len(new_information) > 10000:  # Max 10KB
             return JsonResponse({
                 'success': False,
-                'error': 'Kommentaren är för lång (max 10 000 tecken)'
+                'error': 'Informationen är för lång (max 10 000 tecken)'
             }, status=400)
         
-        manufacturer.comment = new_comment
+        manufacturer.information = new_information
         manufacturer.save()
         
         return JsonResponse({
             'success': True,
-            'message': 'Kommentar uppdaterad',
-            'comment': manufacturer.comment
+            'message': 'Information uppdaterad',
+            'information': manufacturer.information
         })
         
     except json.JSONDecodeError:

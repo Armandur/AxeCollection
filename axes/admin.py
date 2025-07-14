@@ -53,8 +53,8 @@ class ManufacturerLinkAdmin(admin.ModelAdmin):
     list_editable = ('is_active',)
 
 class ManufacturerAdmin(admin.ModelAdmin):
-    list_display = ('name', 'comment')
-    search_fields = ('name', 'comment')
+    list_display = ('name', 'information')
+    search_fields = ('name', 'information')
     inlines = [ManufacturerImageInline, ManufacturerLinkInline]
 
 class AxeDeleteForm(forms.Form):

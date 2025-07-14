@@ -96,16 +96,17 @@ En checklista för vidareutveckling av AxeCollection. Bocka av med [x] när klar
 36. [ ] Export/import av data (CSV, Excel) direkt från admin.
 37. [ ] Automatiska backuper av databasen.
 38. [ ] Eget administratörsgränssnitt för tillverkare
-    - [ ] 38.1 Redigera tillverkare-knapp kvar på nuvarande plats (endast namnändring)
-    - [ ] 38.2 Ny redigera-knapp i Informations-gruppen för att redigera kommentarstext
+    - [x] 38.1 Redigera tillverkare-knapp kvar på nuvarande plats (endast namnändring)
+    - [x] 38.2 Ny redigera-knapp i Informations-gruppen för att redigera information
     - [ ] 38.3 Flytta "Lägg till bild"-knapp till Bildgalleri-gruppen
     - [ ] 38.4 Flytta "Lägg till länk"-knapp till Länkar-gruppen
     - [ ] 38.5 Implementera formulär för redigering av tillverkarnamn
-    - [ ] 38.6 Implementera formulär för redigering av kommentarstext
-    - [ ] 38.7 WYSIWYG markdown-redigerare för kommentarsfält (EasyMDE)
-    - [ ] 38.8 AJAX-hantering för snabb redigering utan sidladdning
-    - [ ] 38.9 Validering och felhantering för alla formulär
-    - [ ] 38.10 Notifikationer för framgångsrika redigeringar
+    - [x] 38.6 Implementera formulär för redigering av information
+    - [x] 38.7 WYSIWYG markdown-redigerare för informationsfält (EasyMDE)
+    - [x] 38.8 AJAX-hantering för snabb redigering utan sidladdning
+    - [x] 38.9 Validering och felhantering för alla formulär
+    - [x] 38.10 Notifikationer för framgångsrika redigeringar
+    - [x] 38.11 Döpa om fält från "comment" till "information"
 
 ## Säkerhet och användare
 

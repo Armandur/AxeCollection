@@ -73,18 +73,18 @@
                 </button>
             </div>
             <div class="card-body">
-                <!-- Visning av kommentar -->
+                <!-- Visning av information -->
                 <div id="comment-display" class="comment-display">
-                    {% if manufacturer.comment %}
-                        {{ manufacturer.comment|markdown }}
+                    {% if manufacturer.information %}
+                        {{ manufacturer.information|markdown }}
                     {% else %}
-                        <em class="text-muted">Ingen kommentar tillagd ännu. Klicka på "Redigera" för att lägga till information.</em>
+                        <em class="text-muted">Ingen information tillagd ännu. Klicka på "Redigera" för att lägga till information.</em>
                     {% endif %}
                 </div>
                 
                 <!-- Redigeringsformulär -->
                 <div id="comment-edit-container" class="comment-edit-container">
-                    <textarea id="comment-editor">{{ manufacturer.comment|default:'' }}</textarea>
+                    <textarea id="comment-editor">{{ manufacturer.information|default:'' }}</textarea>
                     <div class="mt-3">
                         <button class="btn btn-success btn-sm" onclick="saveComment()">
                             <i class="bi bi-check"></i> Spara
@@ -492,7 +492,7 @@ function cancelCommentEdit() {
     
     // Återställ innehållet till ursprungligt
     if (easyMDE) {
-        easyMDE.value('{{ manufacturer.comment|default:""|escapejs }}');
+        easyMDE.value('{{ manufacturer.information|default:""|escapejs }}');
     }
 }
 
@@ -505,13 +505,13 @@ function saveComment() {
     saveBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Sparar...';
     saveBtn.disabled = true;
     
-    fetch('{% url "edit_manufacturer_comment" manufacturer.id %}', {
+    fetch('{% url "edit_manufacturer_information" manufacturer.id %}', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-            comment: comment
+            information: comment
         })
     })
     .then(response => response.json())
@@ -519,19 +519,19 @@ function saveComment() {
             if (data.success) {
                 // Uppdatera visningen
                 const display = document.getElementById('comment-display');
-                if (data.comment) {
+                if (data.information) {
                     // Använd samma markdown-konvertering som på servern
-                    const htmlContent = convertMarkdownToHtml(data.comment);
+                    const htmlContent = convertMarkdownToHtml(data.information);
                     display.innerHTML = htmlContent;
                 } else {
-                    display.innerHTML = '<em class="text-muted">Ingen kommentar tillagd ännu. Klicka på "Redigera" för att lägga till information.</em>';
+                    display.innerHTML = '<em class="text-muted">Ingen information tillagd ännu. Klicka på "Redigera" för att lägga till information.</em>';
                 }
                 
                 // Dölj redigeringsläge
                 cancelCommentEdit();
                 
                 // Visa framgångsmeddelande
-                showNotification('Kommentar sparad!', 'success');
+                showNotification('Information sparad!', 'success');
             } else {
                 showNotification('Fel: ' + data.error, 'error');
             }
