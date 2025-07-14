@@ -1,6 +1,10 @@
 from django.shortcuts import render, get_object_or_404
+from django.http import JsonResponse
+from django.views.decorators.http import require_http_methods
+from django.views.decorators.csrf import csrf_exempt
 from .models import Manufacturer, ManufacturerImage, ManufacturerLink, Axe, Transaction
 from django.db.models import Sum
+import json
 
 def manufacturer_list(request):
     manufacturers = Manufacturer.objects.all().order_by('name')
@@ -99,4 +103,40 @@ def manufacturer_detail(request, pk):
         'buy_count': buy_count,
         'sale_count': sale_count,
     }
-    return render(request, 'axes/manufacturer_detail.html', context) 
+    return render(request, 'axes/manufacturer_detail.html', context)
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def edit_manufacturer_comment(request, pk):
+    """AJAX-vy för att redigera tillverkarkommentar"""
+    try:
+        manufacturer = get_object_or_404(Manufacturer, pk=pk)
+        data = json.loads(request.body)
+        new_comment = data.get('comment', '').strip()
+        
+        # Validering
+        if len(new_comment) > 10000:  # Max 10KB
+            return JsonResponse({
+                'success': False,
+                'error': 'Kommentaren är för lång (max 10 000 tecken)'
+            }, status=400)
+        
+        manufacturer.comment = new_comment
+        manufacturer.save()
+        
+        return JsonResponse({
+            'success': True,
+            'message': 'Kommentar uppdaterad',
+            'comment': manufacturer.comment
+        })
+        
+    except json.JSONDecodeError:
+        return JsonResponse({
+            'success': False,
+            'error': 'Ogiltig JSON-data'
+        }, status=400)
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': f'Ett fel uppstod: {str(e)}'
+        }, status=500) 

@@ -5,15 +5,21 @@ Denna funktionalitet låter dig lägga till bilder av tillverkarnas stämplar oc
 
 ## Funktioner
 
-### 1. Tillverkarbilder (Stämplar)
+### 1. Tillverkarbilder (Kategoriserade)
 - **Via admin-gränssnittet**: Gå till Admin → Tillverkarbilder → Lägg till tillverkarbild
-- **Via tillverkardetaljsidan**: Klicka på "Lägg till stämpel"-knappen
+- **Via tillverkardetaljsidan**: Klicka på "Lägg till bild"-knappen
 - **Inline-redigering**: Redigera tillverkare och lägg till bilder direkt
+
+#### Bildkategorier
+- **Stämpel**: Tillverkarens stämplar och märken
+- **Övrig bild**: Smeder, fabriker, historiska bilder, produktbilder, etc.
 
 #### Bildinformation
 - **Bildfil**: Ladda upp bilden (stöds format: JPG, PNG, GIF, etc.)
+- **Bildtyp**: Välj mellan "Stämpel" eller "Övrig bild"
 - **Bildtext (Caption)**: Kort beskrivning som visas under bilden
-- **Beskrivning**: Mer detaljerad information om stämpeln
+- **Beskrivning**: Mer detaljerad information om bilden
+- **Ordning**: Sorteringsordning inom samma bildtyp
 
 ### 2. Tillverkarlänkar (Resurser)
 - **Via admin-gränssnittet**: Gå till Admin → Tillverkarlänkar → Lägg till tillverkarlänk
@@ -57,13 +63,15 @@ Denna funktionalitet låter dig lägga till bilder av tillverkarnas stämplar oc
    - Typ: "Katalog"
    - Beskrivning: "Officiell produktkatalog från Hults Bruk för 2024"
 
-### Lägga till en stämpel
+### Lägga till en bild
 1. Gå till tillverkardetaljsidan
-2. Klicka på "Lägg till stämpel"
+2. Klicka på "Lägg till bild"
 3. Fyll i:
    - Bildfil: Ladda upp bilden
-   - Bildtext: "Hults Bruk stämpel med kronan"
-   - Beskrivning: "Klassisk stämpel från 1950-talet"
+   - Bildtyp: Välj "Stämpel" eller "Övrig bild"
+   - Bildtext: "Hults Bruk stämpel med kronan" eller "Smeden vid Hults Bruk 1950"
+   - Beskrivning: "Klassisk stämpel från 1950-talet" eller "Historisk bild av smeden"
+   - Ordning: Sätt sorteringsordning (valfritt)
 
 ## Teknisk information
 - **Modeller**: `ManufacturerImage`, `ManufacturerLink`
@@ -73,10 +81,16 @@ Denna funktionalitet låter dig lägga till bilder av tillverkarnas stämplar oc
 - **Prestanda**: Bilder och länkar laddas endast vid behov
 ```python
 class ManufacturerImage(models.Model):
+    IMAGE_TYPES = [
+        ('STAMP', 'Stämpel'),
+        ('OTHER', 'Övrig bild'),
+    ]
     manufacturer = models.ForeignKey(Manufacturer, related_name='images')
     image = models.ImageField(upload_to='manufacturer_images/')
+    image_type = models.CharField(max_length=20, choices=IMAGE_TYPES, default='STAMP')
     caption = models.CharField(max_length=255, blank=True, null=True)
     description = models.TextField(blank=True, null=True)
+    order = models.PositiveIntegerField(default=0)
 ```
 
 ### Filer
@@ -92,13 +106,14 @@ class ManufacturerImage(models.Model):
 
 ## Användning
 
-### 1. Lägg till en ny stämpel
+### 1. Lägg till en ny bild
 1. Gå till tillverkardetaljsidan
-2. Klicka på "Lägg till stämpel"
+2. Klicka på "Lägg till bild"
 3. Välj tillverkare (förfylls automatiskt)
 4. Ladda upp bildfil
-5. Fyll i bildtext och beskrivning
-6. Spara
+5. Välj bildtyp (Stämpel eller Övrig bild)
+6. Fyll i bildtext, beskrivning och ordning
+7. Spara
 
 ### 2. Redigera befintliga bilder
 1. Gå till Admin → Tillverkarbilder
@@ -112,7 +127,9 @@ class ManufacturerImage(models.Model):
 3. Klicka på "Ta bort"
 
 ## Tips
-- Använd beskrivande bildtexter för att identifiera olika stämplar
+- Använd beskrivande bildtexter för att identifiera olika bilder
+- Välj rätt bildtyp för enklare organisering
 - Lägg till detaljerad beskrivning för historisk kontext
 - Använd konsekvent namngivning för bilder
-- Kontrollera att bilderna är av god kvalitet innan uppladdning 
+- Kontrollera att bilderna är av god kvalitet innan uppladdning
+- Använd ordning-fältet för att styra sorteringen inom samma bildtyp 

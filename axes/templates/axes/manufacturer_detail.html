@@ -4,7 +4,21 @@
 {% block title %}{{ manufacturer.name }} - {{ block.super }}{% endblock %}
 
 {% block extra_head %}
+<link rel="stylesheet" href="https://unpkg.com/easymde/dist/easymde.min.css">
+<script src="https://unpkg.com/easymde/dist/easymde.min.js"></script>
 <style>
+.comment-edit-container {
+    display: none;
+}
+.comment-display {
+    cursor: pointer;
+}
+.comment-display:hover {
+    background-color: rgba(0,0,0,0.05);
+    border-radius: 4px;
+    padding: 8px;
+    margin: -8px;
+}
 </style>
 {% endblock %}
 
@@ -49,20 +63,41 @@
 </div>
 
 <!-- Information -->
-{% if manufacturer.comment %}
 <div class="row mb-4">
     <div class="col-12">
         <div class="card">
-            <div class="card-header">
+            <div class="card-header d-flex justify-content-between align-items-center">
                 <h5 class="card-title mb-0">Information</h5>
+                <button class="btn btn-outline-primary btn-sm" onclick="toggleCommentEdit()">
+                    <i class="bi bi-pencil"></i> Redigera
+                </button>
             </div>
             <div class="card-body">
-                {{ manufacturer.comment|linebreaks }}
+                <!-- Visning av kommentar -->
+                <div id="comment-display" class="comment-display">
+                    {% if manufacturer.comment %}
+                        {{ manufacturer.comment|markdown }}
+                    {% else %}
+                        <em class="text-muted">Ingen kommentar tillagd ännu. Klicka på "Redigera" för att lägga till information.</em>
+                    {% endif %}
+                </div>
+                
+                <!-- Redigeringsformulär -->
+                <div id="comment-edit-container" class="comment-edit-container">
+                    <textarea id="comment-editor">{{ manufacturer.comment|default:'' }}</textarea>
+                    <div class="mt-3">
+                        <button class="btn btn-success btn-sm" onclick="saveComment()">
+                            <i class="bi bi-check"></i> Spara
+                        </button>
+                        <button class="btn btn-secondary btn-sm ms-2" onclick="cancelCommentEdit()">
+                            <i class="bi bi-x"></i> Avbryt
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 </div>
-{% endif %}
 
 <!-- Tillverkarens bilder -->
 {% if images_by_type %}
@@ -382,6 +417,8 @@
 
 {% block scripts %}
 <script>
+let easyMDE = null;
+
 $(document).ready(function() {
     console.log('Document ready - manufacturer_detail.html');
     
@@ -410,5 +447,164 @@ $(document).ready(function() {
         }
     });
 });
+
+// WYSIWYG Markdown Editor funktioner
+function toggleCommentEdit() {
+    const display = document.getElementById('comment-display');
+    const editContainer = document.getElementById('comment-edit-container');
+    
+    if (editContainer.style.display === 'none' || editContainer.style.display === '') {
+        // Visa redigeringsläge
+        display.style.display = 'none';
+        editContainer.style.display = 'block';
+        
+        // Initiera EasyMDE om det inte redan är gjort
+        if (!easyMDE) {
+            easyMDE = new EasyMDE({
+                element: document.getElementById('comment-editor'),
+                spellChecker: false,
+                placeholder: 'Skriv information om tillverkaren här...',
+                toolbar: [
+                    'bold', 'italic', 'heading', '|',
+                    'quote', 'unordered-list', 'ordered-list', '|',
+                    'link', 'image', '|',
+                    'preview', 'side-by-side', 'fullscreen', '|',
+                    'guide'
+                ],
+                status: ['lines', 'words', 'cursor'],
+                minHeight: '200px'
+            });
+        }
+        
+        // Fokusera på redigeraren
+        setTimeout(() => {
+            easyMDE.codemirror.focus();
+        }, 100);
+    }
+}
+
+function cancelCommentEdit() {
+    const display = document.getElementById('comment-display');
+    const editContainer = document.getElementById('comment-edit-container');
+    
+    display.style.display = 'block';
+    editContainer.style.display = 'none';
+    
+    // Återställ innehållet till ursprungligt
+    if (easyMDE) {
+        easyMDE.value('{{ manufacturer.comment|default:""|escapejs }}');
+    }
+}
+
+function saveComment() {
+    const comment = easyMDE ? easyMDE.value() : document.getElementById('comment-editor').value;
+    
+    // Visa laddningsindikator
+    const saveBtn = document.querySelector('button[onclick="saveComment()"]');
+    const originalText = saveBtn.innerHTML;
+    saveBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Sparar...';
+    saveBtn.disabled = true;
+    
+    fetch('{% url "edit_manufacturer_comment" manufacturer.id %}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            comment: comment
+        })
+    })
+    .then(response => response.json())
+            .then(data => {
+            if (data.success) {
+                // Uppdatera visningen
+                const display = document.getElementById('comment-display');
+                if (data.comment) {
+                    // Använd samma markdown-konvertering som på servern
+                    const htmlContent = convertMarkdownToHtml(data.comment);
+                    display.innerHTML = htmlContent;
+                } else {
+                    display.innerHTML = '<em class="text-muted">Ingen kommentar tillagd ännu. Klicka på "Redigera" för att lägga till information.</em>';
+                }
+                
+                // Dölj redigeringsläge
+                cancelCommentEdit();
+                
+                // Visa framgångsmeddelande
+                showNotification('Kommentar sparad!', 'success');
+            } else {
+                showNotification('Fel: ' + data.error, 'error');
+            }
+        })
+    .catch(error => {
+        console.error('Error:', error);
+        showNotification('Ett fel uppstod vid sparande', 'error');
+    })
+    .finally(() => {
+        // Återställ knappen
+        saveBtn.innerHTML = originalText;
+        saveBtn.disabled = false;
+    });
+}
+
+function convertMarkdownToHtml(markdown) {
+    // Enkel markdown till HTML konvertering
+    let html = markdown
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    
+    // Rubriker
+    html = html.replace(/^### (.*$)/gim, '<h3>$1</h3>');
+    html = html.replace(/^## (.*$)/gim, '<h2>$1</h2>');
+    html = html.replace(/^# (.*$)/gim, '<h1>$1</h1>');
+    
+    // Fet och kursiv text
+    html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+    html = html.replace(/\*(.*?)\*/g, '<em>$1</em>');
+    
+    // Länkar
+    html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank">$1</a>');
+    
+    // Listor
+    html = html.replace(/^\* (.*$)/gim, '<li>$1</li>');
+    html = html.replace(/^- (.*$)/gim, '<li>$1</li>');
+    html = html.replace(/^(\d+)\. (.*$)/gim, '<li>$2</li>');
+    
+    // Radbrytningar
+    html = html.replace(/\n\n/g, '</p><p>');
+    html = html.replace(/\n/g, '<br>');
+    
+    // Wrappa i p-taggar
+    html = '<p>' + html + '</p>';
+    
+    // Fixa listor
+    html = html.replace(/<p><li>/g, '<ul><li>');
+    html = html.replace(/<\/li><\/p>/g, '</li></ul>');
+    
+    return html;
+}
+
+function showNotification(message, type) {
+    // Skapa notifikation
+    const notification = document.createElement('div');
+    notification.className = `alert alert-${type === 'success' ? 'success' : 'danger'} alert-dismissible fade show position-fixed`;
+    notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+    notification.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    // Ta bort automatiskt efter 5 sekunder
+    setTimeout(() => {
+        if (notification.parentNode) {
+            notification.remove();
+        }
+    }, 5000);
+}
 </script>
 {% endblock %} 

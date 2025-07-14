@@ -15,9 +15,16 @@ En checklista för vidareutveckling av AxeCollection. Bocka av med [x] när klar
 9. [x] Responsiv layout för bildhantering – Fungerar bra på alla enheter.
 10. [x] Bugfix: Duplicering och förhandsvisning av bilder – Korrekt hantering av flera bilder.
 11. [x] Bugfix: Felhantering vid bildborttagning – Robust hantering av borttagning.
-12. [ ] Motsvarande bildhantering för tillverkare – Implementera samma avancerade bildhantering (drag & drop, ordning, .webp-stöd) för tillverkarbilder som redan finns för yxbilder.
+12. [x] Motsvarande bildhantering för tillverkare – Implementera samma avancerade bildhantering (drag & drop, ordning, .webp-stöd) för tillverkarbilder som redan finns för yxbilder.
+    - [x] 12.1 Kategorisering av bilder (Stämpel/Övrig bild)
+    - [x] 12.2 Order-fält för sortering
+    - [x] 12.3 Förbättrad admin med fieldsets
+    - [ ] 12.4 Drag & drop för bildordning (som för yxbilder)
 13. [x] Drag & drop för bildordning i redigeringsläge.
-14. [ ] Hantera många stämpelbilder på tillverkarsidan (t.ex. paginering, grid, lightbox eller liknande UX-lösning).
+14. [x] Hantera många stämpelbilder på tillverkarsidan (t.ex. paginering, grid, lightbox eller liknande UX-lösning).
+    - [x] 14.1 Kategoriserad visning (Stämplar vs Övriga bilder)
+    - [x] 14.2 Grid-layout med kort
+    - [ ] 14.3 Lightbox för bildförhandsvisning
 
 ## Användarupplevelse
 
@@ -88,6 +95,17 @@ En checklista för vidareutveckling av AxeCollection. Bocka av med [x] när klar
 35. [ ] Batchuppladdning av bilder och yxor.
 36. [ ] Export/import av data (CSV, Excel) direkt från admin.
 37. [ ] Automatiska backuper av databasen.
+38. [ ] Eget administratörsgränssnitt för tillverkare
+    - [ ] 38.1 Redigera tillverkare-knapp kvar på nuvarande plats (endast namnändring)
+    - [ ] 38.2 Ny redigera-knapp i Informations-gruppen för att redigera kommentarstext
+    - [ ] 38.3 Flytta "Lägg till bild"-knapp till Bildgalleri-gruppen
+    - [ ] 38.4 Flytta "Lägg till länk"-knapp till Länkar-gruppen
+    - [ ] 38.5 Implementera formulär för redigering av tillverkarnamn
+    - [ ] 38.6 Implementera formulär för redigering av kommentarstext
+    - [ ] 38.7 WYSIWYG markdown-redigerare för kommentarsfält (EasyMDE)
+    - [ ] 38.8 AJAX-hantering för snabb redigering utan sidladdning
+    - [ ] 38.9 Validering och felhantering för alla formulär
+    - [ ] 38.10 Notifikationer för framgångsrika redigeringar
 
 ## Säkerhet och användare
 
@@ -122,8 +140,9 @@ En checklista för vidareutveckling av AxeCollection. Bocka av med [x] när klar
 
 45. [x] Bättre visuell presentation av galleriet, t.ex. lightbox för bilder.
 46. [x] Förbättrad UI med badges och ikoner – Tydligare visning av transaktionstyper med ikoner.
-47. [ ] Visa statistik (t.ex. antal yxor, mest populära tillverkare, dyraste köp).
-48. [ ] QR-kod för att snabbt visa en yxa på mobilen.
+47. [x] Förbättrad tillverkarsida – ID som badge, kommentar som egen sektion, hela bredden för korten.
+48. [ ] Visa statistik (t.ex. antal yxor, mest populära tillverkare, dyraste köp).
+49. [ ] QR-kod för att snabbt visa en yxa på mobilen.
 
 ## Framtida förbättringar
 

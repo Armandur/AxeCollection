@@ -1,6 +1,7 @@
 from django import template
 from decimal import Decimal, ROUND_HALF_UP, InvalidOperation
 from django.utils.safestring import mark_safe
+import re
 
 register = template.Library()
 
@@ -124,4 +125,45 @@ def breadcrumb_item(text, url=None, is_active=False):
     elif url:
         return mark_safe(f'<li class="breadcrumb-item"><a href="{url}">{text}</a></li>')
     else:
-        return mark_safe(f'<li class="breadcrumb-item">{text}</li>') 
+        return mark_safe(f'<li class="breadcrumb-item">{text}</li>')
+
+@register.filter(name='markdown')
+def markdown(value):
+    """
+    Konverterar markdown-text till HTML.
+    """
+    if not value:
+        return ""
+    
+    # Escape HTML först
+    html = value.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
+    
+    # Rubriker
+    html = re.sub(r'^### (.*$)', r'<h3>\1</h3>', html, flags=re.MULTILINE)
+    html = re.sub(r'^## (.*$)', r'<h2>\1</h2>', html, flags=re.MULTILINE)
+    html = re.sub(r'^# (.*$)', r'<h1>\1</h1>', html, flags=re.MULTILINE)
+    
+    # Fet och kursiv text
+    html = re.sub(r'\*\*(.*?)\*\*', r'<strong>\1</strong>', html)
+    html = re.sub(r'\*(.*?)\*', r'<em>\1</em>', html)
+    
+    # Länkar
+    html = re.sub(r'\[([^\]]+)\]\(([^)]+)\)', r'<a href="\2" target="_blank">\1</a>', html)
+    
+    # Listor
+    html = re.sub(r'^\* (.*$)', r'<li>\1</li>', html, flags=re.MULTILINE)
+    html = re.sub(r'^- (.*$)', r'<li>\1</li>', html, flags=re.MULTILINE)
+    html = re.sub(r'^(\d+)\. (.*$)', r'<li>\2</li>', html, flags=re.MULTILINE)
+    
+    # Radbrytningar
+    html = re.sub(r'\n\n', '</p><p>', html)
+    html = re.sub(r'\n', '<br>', html)
+    
+    # Wrappa i p-taggar
+    html = '<p>' + html + '</p>'
+    
+    # Fixa listor
+    html = re.sub(r'<p><li>', '<ul><li>', html)
+    html = re.sub(r'</li></p>', '</li></ul>', html)
+    
+    return mark_safe(html) 
