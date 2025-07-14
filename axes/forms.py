@@ -62,6 +62,7 @@ class MeasurementForm(forms.ModelForm):
         
         self.fields['name'] = forms.ChoiceField(
             choices=choices,
+            required=False,  # Gör fältet valfritt
             widget=forms.Select(attrs={
                 'class': 'form-control',
                 'id': 'measurement-name'
@@ -86,6 +87,7 @@ class MeasurementForm(forms.ModelForm):
     value = forms.DecimalField(
         max_digits=10,
         decimal_places=2,
+        required=False,  # Gör fältet valfritt
         widget=forms.NumberInput(attrs={
             'class': 'form-control',
             'placeholder': '0.00',
@@ -98,6 +100,7 @@ class MeasurementForm(forms.ModelForm):
     
     unit = forms.CharField(
         max_length=50,
+        required=False,  # Gör fältet valfritt
         widget=forms.TextInput(attrs={
             'class': 'form-control',
             'id': 'measurement-unit',
@@ -115,6 +118,21 @@ class MeasurementForm(forms.ModelForm):
         cleaned_data = super().clean()
         name = cleaned_data.get('name')
         custom_name = cleaned_data.get('custom_name')
+        value = cleaned_data.get('value')
+        unit = cleaned_data.get('unit')
+        
+        # Om alla fält är tomma, låt formuläret passera (valfritt)
+        if not name and not value and not unit:
+            return cleaned_data
+        
+        # Om något fält är ifyllt, kräv att alla fält är ifyllda
+        if name or value or unit:
+            if not name:
+                raise forms.ValidationError('Måtttyp måste väljas.')
+            if not value:
+                raise forms.ValidationError('Värde måste anges.')
+            if not unit:
+                raise forms.ValidationError('Enhet måste anges.')
         
         # Hantera anpassade namn
         if name == 'Övrigt' and not custom_name:

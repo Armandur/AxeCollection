@@ -173,8 +173,16 @@ class AxeImage(models.Model):
                 pass  # Kan logga fel om så önskas
 
     def delete(self, *args, **kwargs):
-        # Ta bort .webp-filen om den finns
+        # Ta bort både originalfilen och .webp-filen
         if self.image and self.image.name:
+            # Ta bort originalfilen
+            if os.path.exists(self.image.path):
+                try:
+                    os.remove(self.image.path)
+                except Exception as e:
+                    pass  # Kan logga fel om så önskas
+            
+            # Ta bort .webp-filen om den finns
             webp_path = os.path.splitext(self.image.path)[0] + '.webp'
             if os.path.exists(webp_path):
                 try:
