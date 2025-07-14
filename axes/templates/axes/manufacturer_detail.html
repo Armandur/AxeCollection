@@ -56,6 +56,14 @@
     font-weight: 600;
     color: #495057;
 }
+
+/* Navigationsknappar styling */
+#prevImageBtn:hover,
+#nextImageBtn:hover {
+    color: #212529 !important;
+    background-color: rgba(255,255,255,0.95) !important;
+    border-color: #212529 !important;
+}
 </style>
 {% endblock %}
 
@@ -870,14 +878,42 @@ function saveImageOrder() {
 }
 
 // Lightbox och bildhantering
+let currentImageIndex = 0;
+let currentImageGroup = [];
+let currentImageType = '';
+
 function openImageLightbox(imageId) {
-    const imageElement = document.querySelector(`[data-image-id="${imageId}"]`);
+    const imageElement = document.querySelector(`img[data-image-id="${imageId}"]`);
     if (!imageElement) return;
+    
+    // Hitta bildens grupp (image_type) och position i gruppen
+    currentImageType = imageElement.dataset.imageType;
+    const imagesInGroup = document.querySelectorAll(`img[data-image-type="${currentImageType}"]`);
+    currentImageGroup = Array.from(imagesInGroup);
+    currentImageIndex = currentImageGroup.findIndex(img => img.dataset.imageId === imageId.toString());
+    
+    if (currentImageIndex === -1) return;
     
     const modal = document.getElementById('imageLightboxModal');
     const modalImage = document.getElementById('lightboxImage');
     const modalCaption = document.getElementById('lightboxCaption');
     const modalDescription = document.getElementById('lightboxDescription');
+    
+    // Visa bilden
+    showImageInLightbox(imageElement);
+    
+    // Visa modal
+    const bsModal = new bootstrap.Modal(modal);
+    bsModal.show();
+}
+
+function showImageInLightbox(imageElement) {
+    const modalImage = document.getElementById('lightboxImage');
+    const modalCaption = document.getElementById('lightboxCaption');
+    const modalDescription = document.getElementById('lightboxDescription');
+    const imageCounter = document.getElementById('imageCounter');
+    const prevBtn = document.getElementById('prevImageBtn');
+    const nextBtn = document.getElementById('nextImageBtn');
     
     // Sätt bilddata
     modalImage.src = imageElement.dataset.webpUrl || imageElement.dataset.imageUrl;
@@ -891,9 +927,28 @@ function openImageLightbox(imageId) {
         modalDescription.textContent = '';
     }
     
-    // Visa modal
-    const bsModal = new bootstrap.Modal(modal);
-    bsModal.show();
+    // Uppdatera räknare
+    imageCounter.textContent = `${currentImageIndex + 1} av ${currentImageGroup.length}`;
+    
+    // Visa/dölj navigationsknappar
+    prevBtn.style.display = currentImageIndex > 0 ? 'block' : 'none';
+    nextBtn.style.display = currentImageIndex < currentImageGroup.length - 1 ? 'block' : 'none';
+}
+
+function showPreviousImage() {
+    if (currentImageIndex > 0) {
+        currentImageIndex--;
+        const imageElement = currentImageGroup[currentImageIndex];
+        showImageInLightbox(imageElement);
+    }
+}
+
+function showNextImage() {
+    if (currentImageIndex < currentImageGroup.length - 1) {
+        currentImageIndex++;
+        const imageElement = currentImageGroup[currentImageIndex];
+        showImageInLightbox(imageElement);
+    }
 }
 
 function editImage(imageId) {
@@ -1125,11 +1180,22 @@ function uploadNewImage() {
                 <h5 class="modal-title" id="imageLightboxModalLabel">Bildvisning</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="modal-body text-center">
+            <div class="modal-body text-center position-relative">
+                <!-- Navigationsknappar -->
+                <button type="button" class="btn btn-outline-dark position-absolute top-50 start-0 translate-middle-y ms-3" 
+                        id="prevImageBtn" onclick="showPreviousImage()" style="z-index: 1050; display: none; background-color: rgba(255,255,255,0.9); color: #212529;">
+                    <i class="bi bi-chevron-left"></i>
+                </button>
+                <button type="button" class="btn btn-outline-dark position-absolute top-50 end-0 translate-middle-y me-3" 
+                        id="nextImageBtn" onclick="showNextImage()" style="z-index: 1050; display: none; background-color: rgba(255,255,255,0.9); color: #212529;">
+                    <i class="bi bi-chevron-right"></i>
+                </button>
+                
                 <img id="lightboxImage" src="" class="img-fluid" style="max-height: 70vh;" alt="Bild">
-                <div class="mt-3">
+                <div class="mt-3 text-start">
                     <h6 id="lightboxCaption" class="mb-2"></h6>
                     <p id="lightboxDescription" class="text-muted"></p>
+                    <small class="text-muted" id="imageCounter"></small>
                 </div>
             </div>
         </div>
