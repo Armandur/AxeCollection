@@ -67,7 +67,7 @@
             <tr data-href="{% url 'manufacturer_detail' manufacturer.id %}">
                 <td>{{ manufacturer.id }}</td>
                 <td>{{ manufacturer.name }}</td>
-                <td>{{ manufacturer.comment|default:"" }}</td>
+                <td>{{ manufacturer.information|strip_markdown_and_truncate:150 }}</td>
                 <td data-order="{{ manufacturer.axe_count }}">{{ manufacturer.axe_count }}</td>
                 <td>
                     <span class="text-danger">{{ manufacturer.buy_count }}</span> / <span class="text-success">{{ manufacturer.sale_count }}</span>

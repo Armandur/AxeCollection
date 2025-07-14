@@ -166,4 +166,48 @@ def markdown(value):
     html = re.sub(r'<p><li>', '<ul><li>', html)
     html = re.sub(r'</li></p>', '</li></ul>', html)
     
-    return mark_safe(html) 
+    return mark_safe(html)
+
+@register.filter(name='strip_markdown_and_truncate')
+def strip_markdown_and_truncate(value, max_length=100):
+    """
+    Strippar markdown-formatering och begränsar texten till max_length tecken.
+    Lägger till "..." om texten är längre.
+    """
+    if not value:
+        return ""
+    
+    # Strippa markdown-formatering
+    # Ta bort rubriker
+    text = re.sub(r'^#{1,6}\s+', '', value, flags=re.MULTILINE)
+    
+    # Ta bort fet och kursiv text (behåll innehållet)
+    text = re.sub(r'\*\*(.*?)\*\*', r'\1', text)
+    text = re.sub(r'\*(.*?)\*', r'\1', text)
+    
+    # Ta bort länkar (behåll texten)
+    text = re.sub(r'\[([^\]]+)\]\([^)]+\)', r'\1', text)
+    
+    # Ta bort listmarkeringar
+    text = re.sub(r'^[\*\-]\s+', '', text, flags=re.MULTILINE)
+    text = re.sub(r'^\d+\.\s+', '', text, flags=re.MULTILINE)
+    
+    # Ta bort kodblock
+    text = re.sub(r'```.*?```', '', text, flags=re.DOTALL)
+    text = re.sub(r'`([^`]+)`', r'\1', text)
+    
+    # Rensa whitespace
+    text = re.sub(r'\n+', ' ', text)  # Ersätt radbrytningar med mellanslag
+    text = re.sub(r'\s+', ' ', text)  # Ersätt flera whitespace med ett mellanslag
+    text = text.strip()
+    
+    # Begränsa längden
+    if len(text) > max_length:
+        # Försök att klippa vid ett mellanslag
+        truncated = text[:max_length-3]
+        last_space = truncated.rfind(' ')
+        if last_space > max_length * 0.8:  # Om vi hittar ett mellanslag i slutet av texten
+            truncated = truncated[:last_space]
+        return truncated + "..."
+    
+    return text

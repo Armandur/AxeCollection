@@ -240,12 +240,13 @@ class ManufacturerLink(models.Model):
     link_type = models.CharField(max_length=20, choices=LINK_TYPES, default='OTHER')
     description = models.TextField(blank=True, null=True) # Beskrivning av innehållet
     is_active = models.BooleanField(default=True) # Om länken fortfarande fungerar
+    order = models.PositiveIntegerField(default=0, help_text="Sorteringsordning inom samma typ")
     
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
     class Meta:
-        ordering = ['link_type', 'title']
+        ordering = ['link_type', 'order']
     
     def __str__(self):
         return f"{self.manufacturer.name} - {self.title}"

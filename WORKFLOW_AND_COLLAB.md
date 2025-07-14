@@ -48,7 +48,25 @@
 - **Smart defaults:** Sätt smarta standardvärden (t.ex. dagens datum för transaktioner).
 - **Validation feedback:** Ge tydlig feedback när validering misslyckas.
 
-## Senaste genomförda förbättringar (2025-01-01)
+## Senaste genomförda förbättringar (2025-07-14)
+
+### Tillverkarbilder och länkar - Avancerad hantering (2025-07-14)
+- **Inline-redigering och drag & drop:** Implementerat fullständig inline-redigering och drag & drop-sortering för både tillverkarbilder och -länkar med AJAX-baserad backendhantering.
+- **Lightbox med navigering:** Förbättrad lightbox med navigationsknappar för att bläddra mellan bilder i samma grupp, med förbättrad kontrast och hover-färger.
+- **Markdown-stöd:** Implementerat EasyMDE för markdown-redigering av bildbeskrivningar med rendering i lightbox.
+- **Klickbara kort:** Hela kortet är nu klickbart för både bilder (öppnar lightbox) och aktiva länkar (öppnar i ny flik), med redigeringsknappar som inte triggar klicket.
+- **Visuell hantering för inaktiva länkar:** Gråtonad styling, URL visas som text (inte klickbar), och "Inaktiv"-badge för tydlig statusindikation.
+- **Hover-effekter:** Subtila hover-effekter på bild- och länkkort för bättre användarupplevelse utan störande animationer.
+- **Template filter:** Skapat `strip_markdown_and_truncate` filter för att visa information i tillverkarlistan med markdown borttagen och text begränsad till 150 tecken.
+
+### Tillverkarbilder och länkar - Grundläggande funktionalitet (2025-07-14)
+- **Inline-redigering av tillverkarnamn:** AJAX-baserad redigering av tillverkarnamn utan sidladdning.
+- **Markdown-redigerare för information:** EasyMDE-integration för att redigera tillverkarens information med markdown-stöd.
+- **Bildhantering:** Drag & drop-sortering, inline-redigering av bildtext och beskrivningar, och kategorisering av bilder (Stämpel/Övrig bild).
+- **Länkhantering:** Inline-redigering, borttagning och drag & drop-sortering för tillverkarlänkar med olika typer (Hemsida, Katalog, Video, etc.).
+- **Backend-integration:** Komplett AJAX-hantering med vyer för redigering, borttagning och omordning av både bilder och länkar.
+
+## Tidigare genomförda förbättringar (2025-01-01)
 
 ### Admin-raderingsvy för yxor
 - **Problem:** Standard Django admin visade nästlade listor som Python-strängar och saknade kontroll över bildradering.

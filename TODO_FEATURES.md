@@ -114,6 +114,11 @@ En checklista för vidareutveckling av AxeCollection. Bocka av med [x] när klar
     - [x] 38.16 Navigationsknappar i lightbox för att bläddra mellan bilder i samma grupp
     - [x] 38.17 Semi-bold styling för bildtext för bättre läsbarhet
     - [x] 38.18 Vänsterställd text i lightbox för bättre läsbarhet av längre beskrivningar
+    - [x] 38.19 Inline-redigering, borttagning och drag & drop-sortering för tillverkarlänkar
+    - [x] 38.20 Klickbara kort för bilder (öppnar lightbox) och aktiva länkar (öppnar i ny flik)
+    - [x] 38.21 Visuell hantering för inaktiva länkar (gråtonad styling, URL som text, "Inaktiv"-badge)
+    - [x] 38.22 Hover-effekter på bild- och länkkort för bättre användarupplevelse
+    - [x] 38.23 Template filter för att visa information i tillverkarlistan (strippa markdown, begränsa längd)
 
 ## Säkerhet och användare
 

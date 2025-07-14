@@ -11,44 +11,44 @@
     display: none;
 }
 .comment-display {
-    cursor: pointer;
-}
-.comment-display:hover {
-    background-color: rgba(0,0,0,0.05);
-    border-radius: 4px;
-    padding: 8px;
-    margin: -8px;
+    /* Inga hover-effekter för informationskortet */
 }
 
-/* Drag & drop för bildordning */
-.manufacturer-image-card {
+/* Drag & drop för bildordning - endast aktiv i reorder-läge */
+.reorder-mode .manufacturer-image-card {
     cursor: grab;
     transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-.manufacturer-image-card:hover {
+.reorder-mode .manufacturer-image-card:hover {
     transform: translateY(-2px);
     box-shadow: 0 4px 8px rgba(0,0,0,0.1);
 }
 
-.manufacturer-image-card.dragging {
+.reorder-mode .manufacturer-image-card.dragging {
     cursor: grabbing;
     opacity: 0.5;
     transform: rotate(5deg);
     z-index: 1000;
 }
 
-.manufacturer-image-card.drag-over {
+.reorder-mode .manufacturer-image-card.drag-over {
     border: 2px dashed #007bff;
     transform: scale(1.05);
 }
 
-.reorder-mode .manufacturer-image-card {
-    cursor: grab;
-}
-
 .reorder-mode .manufacturer-image-card:active {
     cursor: grabbing;
+}
+
+/* Normal hover-effekt för bilder (när inte i reorder-läge) */
+.manufacturer-image-card:hover {
+    cursor: pointer;
+}
+
+.manufacturer-image-card:hover .card {
+    background-color: #f8f9fa;
+    border-color: #dee2e6;
 }
 
 /* Semi-bold styling för bildtext */
@@ -63,6 +63,57 @@
     color: #212529 !important;
     background-color: rgba(255,255,255,0.95) !important;
     border-color: #212529 !important;
+}
+
+/* Drag & drop för länkordning - endast aktiv i reorder-läge */
+.link-reorder-mode .manufacturer-link-card {
+    cursor: grab;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.link-reorder-mode .manufacturer-link-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.link-reorder-mode .manufacturer-link-card.dragging {
+    cursor: grabbing;
+    opacity: 0.5;
+    transform: rotate(5deg);
+    z-index: 1000;
+}
+
+.link-reorder-mode .manufacturer-link-card.drag-over {
+    border: 2px dashed #007bff;
+    transform: scale(1.05);
+}
+
+.link-reorder-mode .manufacturer-link-card:active {
+    cursor: grabbing;
+}
+
+/* Normal hover-effekt för länkar (när inte i reorder-läge) */
+.manufacturer-link-card:hover {
+    cursor: pointer;
+}
+
+.manufacturer-link-card:hover .card {
+    background-color: #f8f9fa;
+    border-color: #dee2e6;
+}
+
+/* Inaktiva länkar styling */
+.inactive-link {
+    opacity: 0.6;
+    background-color: #f8f9fa;
+}
+
+.inactive-link .card-title {
+    color: #6c757d !important;
+}
+
+.inactive-link:hover {
+    opacity: 0.8;
 }
 </style>
 {% endblock %}
@@ -157,7 +208,7 @@
                     <button type="button" class="btn btn-outline-primary btn-sm me-2" onclick="openUploadModal()">
                         <i class="bi bi-image"></i> Lägg till bild
                     </button>
-                    <button type="button" class="btn btn-outline-secondary btn-sm" onclick="toggleReorderMode()" id="reorderBtn">
+                    <button type="button" class="btn btn-outline-secondary btn-sm me-2" onclick="toggleReorderMode()" id="reorderBtn">
                         <i class="bi bi-arrow-down-up"></i> Ändra ordning
                     </button>
                 </div>
@@ -176,7 +227,7 @@
                         <div class="row">
                             {% for image in images %}
                             <div class="col-md-4 mb-3 manufacturer-image-card" data-image-id="{{ image.id }}" data-order="{{ image.order }}">
-                                <div class="card h-100">
+                                <div class="card h-100" onclick="openImageLightbox({{ image.id }})" style="cursor: pointer;">
                                     <div class="position-relative">
                                         <picture>
                                             {% if image.webp_url %}
@@ -185,15 +236,14 @@
                                             <img src="{{ image.image.url }}" 
                                                  class="card-img-top manufacturer-image" 
                                                  alt="{{ image.caption|default:'Bild' }}" 
-                                                 style="max-height: 200px; object-fit: contain; cursor: pointer;" 
+                                                 style="max-height: 200px; object-fit: contain;" 
                                                  loading="lazy"
                                                  data-image-id="{{ image.id }}"
                                                  data-image-url="{{ image.image.url }}"
                                                  data-webp-url="{{ image.webp_url|default:'' }}"
                                                  data-caption="{{ image.caption|default:'' }}"
                                                  data-description="{{ image.description|default:'' }}"
-                                                 data-image-type="{{ image.image_type }}"
-                                                 onclick="openImageLightbox({{ image.id }})">
+                                                 data-image-type="{{ image.image_type }}">
                                         </picture>
                                         <div class="position-absolute top-0 end-0 p-2">
                                             <button class="btn btn-sm btn-outline-secondary" 
@@ -231,9 +281,14 @@
         <div class="card">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <h5 class="card-title mb-0">Länkar och resurser för {{ manufacturer.name }}</h5>
-                <a href="{% url 'admin:axes_manufacturerlink_add' %}?manufacturer={{ manufacturer.id }}" class="btn btn-outline-info btn-sm">
-                    <i class="bi bi-link-45deg"></i> Lägg till länk
-                </a>
+                <div>
+                    <button type="button" class="btn btn-outline-secondary btn-sm me-2" onclick="toggleLinkReorderMode()" id="linkReorderBtn">
+                        <i class="bi bi-arrow-down-up"></i> Ändra ordning
+                    </button>
+                    <a href="{% url 'admin:axes_manufacturerlink_add' %}?manufacturer={{ manufacturer.id }}" class="btn btn-outline-info btn-sm">
+                        <i class="bi bi-link-45deg"></i> Lägg till länk
+                    </a>
+                </div>
             </div>
             <div class="card-body">
                 {% if links_by_type %}
@@ -256,20 +311,38 @@
                         </h6>
                         <div class="row">
                             {% for link in links %}
-                            <div class="col-md-6 mb-3">
-                                <div class="card h-100 border-0 shadow-sm">
-                                    <div class="card-body">
+                            <div class="col-md-6 mb-3 manufacturer-link-card" data-link-id="{{ link.id }}" data-order="{{ link.order }}">
+                                <div class="card h-100 border-0 shadow-sm {% if not link.is_active %}inactive-link{% endif %}" 
+                                     {% if link.is_active %}onclick="window.open('{{ link.url }}', '_blank')" style="cursor: pointer;"{% endif %}>
+                                    <div class="card-body position-relative">
+                                        <div class="position-absolute top-0 end-0 p-2">
+                                            <button class="btn btn-sm btn-outline-secondary" 
+                                                    onclick="event.stopPropagation(); editLink({{ link.id }})"
+                                                    title="Redigera länk">
+                                                <i class="bi bi-pencil"></i>
+                                            </button>
+                                        </div>
                                         <h6 class="card-title">
-                                            <a href="{{ link.url }}" target="_blank" class="text-decoration-none">
-                                                {{ link.title }}
-                                                <i class="bi bi-box-arrow-up-right text-muted"></i>
-                                            </a>
+                                            {% if link.is_active %}
+                                                <span class="text-decoration-none">
+                                                    {{ link.title }}
+                                                    <i class="bi bi-box-arrow-up-right text-muted"></i>
+                                                </span>
+                                            {% else %}
+                                                <span class="text-muted">{{ link.title }}</span>
+                                                <small class="d-block text-muted mt-1">
+                                                    <i class="bi bi-link-45deg"></i> {{ link.url }}
+                                                </small>
+                                            {% endif %}
                                         </h6>
                                         {% if link.description %}
                                             <p class="card-text text-muted small">{{ link.description }}</p>
                                         {% endif %}
                                         <small class="text-muted">
                                             <i class="bi bi-calendar3"></i> {{ link.created_at|date:"Y-m-d" }}
+                                            {% if not link.is_active %}
+                                                <span class="badge bg-secondary ms-2">Inaktiv</span>
+                                            {% endif %}
                                         </small>
                                     </div>
                                 </div>
@@ -1170,6 +1243,286 @@ function uploadNewImage() {
         uploadBtn.disabled = false;
     });
 }
+
+// Länkhantering
+let isLinkReorderMode = false;
+let draggedLinkElement = null;
+
+function toggleLinkReorderMode() {
+    const reorderBtn = document.getElementById('linkReorderBtn');
+    const linkCards = document.querySelectorAll('.manufacturer-link-card');
+    
+    isLinkReorderMode = !isLinkReorderMode;
+    
+    if (isLinkReorderMode) {
+        reorderBtn.innerHTML = '<i class="bi bi-check"></i> Spara ordning';
+        reorderBtn.className = 'btn btn-success btn-sm';
+        document.querySelector('.card-body').classList.add('link-reorder-mode');
+        
+        // Aktivera drag & drop
+        linkCards.forEach(card => {
+            card.draggable = true;
+            card.addEventListener('dragstart', handleLinkDragStart);
+            card.addEventListener('dragend', handleLinkDragEnd);
+            card.addEventListener('dragover', handleLinkDragOver);
+            card.addEventListener('drop', handleLinkDrop);
+            card.addEventListener('dragenter', handleLinkDragEnter);
+            card.addEventListener('dragleave', handleLinkDragLeave);
+        });
+    } else {
+        reorderBtn.innerHTML = '<i class="bi bi-arrow-down-up"></i> Ändra ordning';
+        reorderBtn.className = 'btn btn-outline-secondary btn-sm';
+        document.querySelector('.card-body').classList.remove('link-reorder-mode');
+        
+        // Inaktivera drag & drop
+        linkCards.forEach(card => {
+            card.draggable = false;
+            card.removeEventListener('dragstart', handleLinkDragStart);
+            card.removeEventListener('dragend', handleLinkDragEnd);
+            card.removeEventListener('dragover', handleLinkDragOver);
+            card.removeEventListener('drop', handleLinkDrop);
+            card.removeEventListener('dragenter', handleLinkDragEnter);
+            card.removeEventListener('dragleave', handleLinkDragLeave);
+        });
+        
+        // Spara den nya ordningen
+        saveLinkOrder();
+    }
+}
+
+function handleLinkDragStart(e) {
+    if (!isLinkReorderMode) return;
+    draggedLinkElement = this;
+    this.classList.add('dragging');
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/html', this.outerHTML);
+}
+
+function handleLinkDragEnd(e) {
+    if (!isLinkReorderMode) return;
+    this.classList.remove('dragging');
+    draggedLinkElement = null;
+}
+
+function handleLinkDragOver(e) {
+    if (!isLinkReorderMode) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+}
+
+function handleLinkDragEnter(e) {
+    if (!isLinkReorderMode) return;
+    e.preventDefault();
+    this.classList.add('drag-over');
+}
+
+function handleLinkDragLeave(e) {
+    if (!isLinkReorderMode) return;
+    this.classList.remove('drag-over');
+}
+
+function handleLinkDrop(e) {
+    if (!isLinkReorderMode || !draggedLinkElement) return;
+    e.preventDefault();
+    this.classList.remove('drag-over');
+    
+    if (draggedLinkElement !== this) {
+        const allCards = Array.from(document.querySelectorAll('.manufacturer-link-card'));
+        const draggedIndex = allCards.indexOf(draggedLinkElement);
+        const droppedIndex = allCards.indexOf(this);
+        
+        if (draggedIndex < droppedIndex) {
+            this.parentNode.insertBefore(draggedLinkElement, this.nextSibling);
+        } else {
+            this.parentNode.insertBefore(draggedLinkElement, this);
+        }
+    }
+}
+
+function saveLinkOrder() {
+    const linkCards = document.querySelectorAll('.manufacturer-link-card');
+    const orderData = Array.from(linkCards).map((card, index) => ({
+        link_id: parseInt(card.dataset.linkId),
+        order: index + 1
+    }));
+    
+    console.log('Sparar länkordning:', orderData);
+    
+    fetch('/tillverkare/lank/ordning/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        },
+        body: JSON.stringify({
+            manufacturer_id: {{ manufacturer.id }},
+            order_data: orderData
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log('Svar från server:', data);
+        if (data.success) {
+            showNotification('Länkordning sparad!', 'success');
+            // Ladda om sidan för att visa den nya ordningen
+            setTimeout(() => {
+                location.reload();
+            }, 1000);
+        } else {
+            showNotification('Fel: ' + data.error, 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showNotification('Ett fel uppstod vid sparande av ordning', 'error');
+    });
+}
+
+function editLink(linkId) {
+    // Hämta länkdata från DOM
+    const linkCard = document.querySelector(`[data-link-id="${linkId}"]`);
+    if (!linkCard) return;
+    
+    // Fyll i formuläret med befintlig data
+    document.getElementById('editLinkId').value = linkId;
+    
+    // Hämta titel och URL - hantera både aktiva och inaktiva länkar
+    let title = '';
+    let url = '';
+    
+    const titleLink = linkCard.querySelector('.card-title a');
+    if (titleLink) {
+        // Aktiv länk
+        title = titleLink.textContent.trim();
+        url = titleLink.href;
+    } else {
+        // Inaktiv länk
+        const titleSpan = linkCard.querySelector('.card-title span');
+        const urlElement = linkCard.querySelector('.card-title small');
+        if (titleSpan) {
+            title = titleSpan.textContent.trim();
+        }
+        if (urlElement) {
+            url = urlElement.textContent.replace('🔗', '').trim();
+        }
+    }
+    
+    document.getElementById('editLinkTitle').value = title;
+    document.getElementById('editLinkUrl').value = url;
+    
+    // Hitta länktypen baserat på ikonen eller andra indikatorer
+    // För nu sätter vi default till 'OTHER'
+    document.getElementById('editLinkType').value = 'OTHER';
+    
+    const descriptionElement = linkCard.querySelector('.card-text');
+    document.getElementById('editLinkDescription').value = descriptionElement ? descriptionElement.textContent.trim() : '';
+    
+    // Sätt aktiv status baserat på om kortet har inactive-link klassen
+    const isActive = !linkCard.querySelector('.card').classList.contains('inactive-link');
+    document.getElementById('editLinkIsActive').checked = isActive;
+    
+    // Visa redigeringsmodal
+    const modal = new bootstrap.Modal(document.getElementById('editLinkModal'));
+    modal.show();
+}
+
+function saveLinkEdit() {
+    const linkId = document.getElementById('editLinkId').value;
+    const title = document.getElementById('editLinkTitle').value;
+    const url = document.getElementById('editLinkUrl').value;
+    const linkType = document.getElementById('editLinkType').value;
+    const description = document.getElementById('editLinkDescription').value;
+    const isActive = document.getElementById('editLinkIsActive').checked;
+    
+    const saveBtn = document.querySelector('#editLinkModal .btn-primary');
+    const originalText = saveBtn.innerHTML;
+    saveBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Sparar...';
+    saveBtn.disabled = true;
+    
+    fetch(`/tillverkare/lank/${linkId}/redigera/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        },
+        body: JSON.stringify({
+            title: title,
+            url: url,
+            link_type: linkType,
+            description: description,
+            is_active: isActive
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Ladda om sidan för att visa uppdaterad länk
+            location.reload();
+        } else {
+            showNotification('Fel: ' + data.error, 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showNotification('Ett fel uppstod vid sparande', 'error');
+    })
+    .finally(() => {
+        saveBtn.innerHTML = originalText;
+        saveBtn.disabled = false;
+    });
+}
+
+function deleteLink(linkId) {
+    if (!confirm('Är du säker på att du vill ta bort denna länk?')) {
+        return;
+    }
+    
+    const deleteBtn = document.querySelector('#editLinkModal .btn-danger');
+    const originalText = deleteBtn.innerHTML;
+    deleteBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Tar bort...';
+    deleteBtn.disabled = true;
+    
+    fetch(`/tillverkare/lank/${linkId}/ta-bort/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Ta bort länkkortet från DOM
+            const linkElement = document.querySelector(`[data-link-id="${linkId}"]`);
+            if (linkElement) {
+                const card = linkElement.closest('.col-md-6');
+                card.remove();
+                
+                // Kontrollera om det finns fler länkar
+                const remainingLinks = document.querySelectorAll('.manufacturer-link-card');
+                if (remainingLinks.length === 0) {
+                    // Ladda om sidan för att visa "Inga länkar"-meddelandet
+                    location.reload();
+                }
+            }
+            
+            // Stäng modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('editLinkModal'));
+            modal.hide();
+            
+            showNotification('Länk borttagen!', 'success');
+        } else {
+            showNotification('Fel: ' + data.error, 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showNotification('Ett fel uppstod vid borttagning', 'error');
+    })
+    .finally(() => {
+        deleteBtn.innerHTML = originalText;
+        deleteBtn.disabled = false;
+    });
+}
 </script>
 
 <!-- Lightbox Modal -->
@@ -1274,6 +1627,61 @@ function uploadNewImage() {
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Avbryt</button>
                 <button type="button" class="btn btn-primary" onclick="uploadNewImage()">
                     <i class="bi bi-upload"></i> Ladda upp
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Redigera länk Modal -->
+<div class="modal fade" id="editLinkModal" tabindex="-1" aria-labelledby="editLinkModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editLinkModalLabel">Redigera länk</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="editLinkId">
+                <div class="mb-3">
+                    <label for="editLinkTitle" class="form-label">Titel</label>
+                    <input type="text" class="form-control" id="editLinkTitle" maxlength="255" required>
+                </div>
+                <div class="mb-3">
+                    <label for="editLinkUrl" class="form-label">URL</label>
+                    <input type="url" class="form-control" id="editLinkUrl" required>
+                </div>
+                <div class="mb-3">
+                    <label for="editLinkType" class="form-label">Länktyp</label>
+                    <select class="form-select" id="editLinkType" required>
+                        <option value="WEBSITE">Hemsida</option>
+                        <option value="CATALOG">Katalog</option>
+                        <option value="VIDEO">Video/Film</option>
+                        <option value="ARTICLE">Artikel</option>
+                        <option value="DOCUMENT">Dokument</option>
+                        <option value="OTHER">Övrigt</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label for="editLinkDescription" class="form-label">Beskrivning</label>
+                    <textarea class="form-control" id="editLinkDescription" rows="3"></textarea>
+                </div>
+                <div class="mb-3">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="editLinkIsActive" checked>
+                        <label class="form-check-label" for="editLinkIsActive">
+                            Länken är aktiv
+                        </label>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-danger" onclick="deleteLink(document.getElementById('editLinkId').value)">
+                    <i class="bi bi-trash"></i> Ta bort länk
+                </button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Avbryt</button>
+                <button type="button" class="btn btn-primary" onclick="saveLinkEdit()">
+                    <i class="bi bi-check"></i> Spara
                 </button>
             </div>
         </div>

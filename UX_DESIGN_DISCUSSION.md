@@ -98,6 +98,11 @@ Visa: [Alla] [Köpta] [Mottagna] [Tillverkare ▼]
 - ✅ Vänsterställd text i lightbox för bättre läsbarhet av längre beskrivningar
 - ✅ Semi-bold styling för bildtext för bättre framträdande
 - ✅ Navigationsknappar med bra kontrast (`btn-outline-dark` med vit bakgrund)
+- ✅ Inline-redigering och drag & drop för tillverkarbilder och -länkar
+- ✅ Klickbara kort för bilder (lightbox) och aktiva länkar (ny flik)
+- ✅ Visuell hantering för inaktiva länkar (gråtonad, URL som text, "Inaktiv"-badge)
+- ✅ Hover-effekter på bild- och länkkort för bättre användarupplevelse
+- ✅ Template filter för att visa information i tillverkarlistan (strippa markdown, begränsa längd)
 
 ## UX-principer för lightbox och bildhantering
 - **Navigationslogik:** Bläddra endast inom samma bildtyp (Stämplar eller Övriga bilder) för bättre användarupplevelse

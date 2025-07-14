@@ -26,7 +26,7 @@ def manufacturer_detail(request, pk):
     manufacturer = get_object_or_404(Manufacturer, pk=pk)
     axes = Axe.objects.filter(manufacturer=manufacturer).order_by('-id')
     images = ManufacturerImage.objects.filter(manufacturer=manufacturer).order_by('image_type', 'order')
-    links = ManufacturerLink.objects.filter(manufacturer=manufacturer).order_by('link_type', 'title')
+    links = ManufacturerLink.objects.filter(manufacturer=manufacturer).order_by('link_type', 'order')
     # Statistik
     total_axes = axes.count()
     transactions = Transaction.objects.filter(axe__manufacturer=manufacturer)
@@ -288,6 +288,99 @@ def reorder_manufacturer_images(request):
         return JsonResponse({
             'success': True,
             'message': 'Bildordning uppdaterad'
+        })
+    except json.JSONDecodeError:
+        return JsonResponse({
+            'success': False,
+            'error': 'Ogiltig JSON-data'
+        }, status=400)
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=500) 
+
+@require_http_methods(["POST"])
+def edit_manufacturer_link(request, link_id):
+    """Redigera tillverkarlänk via AJAX"""
+    try:
+        link = ManufacturerLink.objects.get(id=link_id)
+        data = json.loads(request.body)
+        
+        # Uppdatera fält
+        if 'title' in data:
+            link.title = data['title']
+        if 'url' in data:
+            link.url = data['url']
+        if 'link_type' in data:
+            link.link_type = data['link_type']
+        if 'description' in data:
+            link.description = data['description']
+        if 'is_active' in data:
+            link.is_active = data['is_active']
+        
+        link.save()
+        
+        return JsonResponse({
+            'success': True,
+            'message': 'Länk uppdaterad'
+        })
+    except ManufacturerLink.DoesNotExist:
+        return JsonResponse({
+            'success': False,
+            'error': 'Länk hittades inte'
+        }, status=404)
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=500)
+
+@require_http_methods(["POST"])
+def delete_manufacturer_link(request, link_id):
+    """Ta bort tillverkarlänk via AJAX"""
+    try:
+        link = ManufacturerLink.objects.get(id=link_id)
+        link.delete()
+        
+        return JsonResponse({
+            'success': True,
+            'message': 'Länk borttagen'
+        })
+    except ManufacturerLink.DoesNotExist:
+        return JsonResponse({
+            'success': False,
+            'error': 'Länk hittades inte'
+        }, status=404)
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=500)
+
+@require_http_methods(["POST"])
+def reorder_manufacturer_links(request):
+    """Spara ny ordning för tillverkarlänkar"""
+    try:
+        data = json.loads(request.body)
+        manufacturer_id = data.get('manufacturer_id')
+        order_data = data.get('order_data', [])
+        
+        # Uppdatera ordningen för varje länk
+        for item in order_data:
+            link_id = item.get('link_id')
+            new_order = item.get('order')
+            
+            try:
+                link = ManufacturerLink.objects.get(id=link_id, manufacturer_id=manufacturer_id)
+                link.order = new_order
+                link.save()
+            except ManufacturerLink.DoesNotExist:
+                continue
+        
+        return JsonResponse({
+            'success': True,
+            'message': 'Länkordning uppdaterad'
         })
     except json.JSONDecodeError:
         return JsonResponse({
