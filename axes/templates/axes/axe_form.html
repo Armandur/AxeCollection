@@ -272,6 +272,7 @@
                                                 <button type="button" class="btn btn-danger btn-sm position-absolute" style="top: 5px; right: 5px; width: 30px; height: 30px; border-radius: 50%;" onclick="removeExistingImage({{ image.id }})">
                                                     <i class="fas fa-times"></i>
                                                 </button>
+
                                                 <div class="card-body p-2">
                                                     <small class="text-muted">{{ image.description|default:"Bild" }}</small>
                                                 </div>
@@ -402,7 +403,7 @@
                                                            onchange="updateMeasurement({{ measurement.id }}, this.parentElement.previousElementSibling.querySelector('.measurement-value').value, this.value)">
                                                 </td>
                                                 <td>
-                                                    <button class="btn btn-sm btn-outline-danger" 
+                                                    <button type="button" class="btn btn-sm btn-outline-danger" 
                                                             onclick="deleteMeasurement({{ measurement.id }})">
                                                         <i class="fas fa-trash"></i>
                                                     </button>
@@ -426,7 +427,7 @@
                             <a href="{% if is_edit %}{% url 'axe_detail' axe.pk %}{% else %}{% url 'axe_list' %}{% endif %}" class="btn btn-secondary">
                                 <i class="fas fa-arrow-left me-2"></i>Tillbaka
                             </a>
-                            <button type="submit" class="btn btn-primary">
+                            <button type="submit" class="btn btn-primary" id="submitButton">
                                 <i class="fas fa-save me-2"></i>{% if is_edit %}Uppdatera yxa{% else %}Spara yxa{% endif %}
                             </button>
                         </div>
@@ -592,10 +593,64 @@
     transform: translateY(-2px);
     box-shadow: 0 4px 8px rgba(0,0,0,0.1);
 }
+
+/* Drag & drop för befintliga bilder */
+.existing-image-item {
+    cursor: grab;
+    transition: transform 0.2s ease;
+}
+
+.existing-image-item:active {
+    cursor: grabbing;
+}
+
+.existing-image-item.dragging {
+    opacity: 0.5;
+    transform: rotate(5deg);
+}
+
+.existing-image-item.drag-over {
+    border: 2px dashed #007bff;
+    transform: scale(1.05);
+}
+
+.existing-image-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
 </style>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // === GLOBALA FUNKTIONER ===
+    
+    // === TA BORT BILD (flera bilder) ===
+    window.removeExistingImage = function(imageId) {
+        if (confirm('Är du säker på att du vill ta bort denna bild?')) {
+    
+            // Lägg till en dold input för att markera bilden som borttagen
+            const hiddenInputs = document.getElementById('hiddenInputs');
+            if (hiddenInputs) {
+                // Kontrollera om denna bild redan är markerad för borttagning
+                const existingInputs = hiddenInputs.querySelectorAll(`input[name="remove_images"][value="${imageId}"]`);
+                if (existingInputs.length === 0) {
+                    const hiddenInput = document.createElement('input');
+                    hiddenInput.type = 'hidden';
+                    hiddenInput.name = 'remove_images';
+                    hiddenInput.value = imageId;
+                    hiddenInputs.appendChild(hiddenInput);
+                }
+            }
+            // Ta bort bilden från DOM
+            const imageElement = document.querySelector(`[data-image-id="${imageId}"]`);
+            if (imageElement) {
+                imageElement.remove();
+                // Visa notifikation
+                showNotification('Bild markerad för borttagning', 'success');
+            }
+        }
+    };
+
     const uploadArea = document.getElementById('uploadArea');
     const fileInput = document.querySelector('input[type="file"]');
     const cameraInput = document.getElementById('cameraInput');
@@ -682,6 +737,71 @@ document.addEventListener('DOMContentLoaded', function() {
             handleFiles(files);
         });
     }
+
+    // Bilduppladdningsfunktioner
+    function handleFiles(files) {
+        files.forEach(file => {
+            if (file.type.startsWith('image/')) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    addImagePreview(file, e.target.result);
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+    }
+
+    function handleImageUrl(url) {
+        if (isImageUrl(url)) {
+            addImagePreview(null, url, url);
+        }
+    }
+
+    function isImageUrl(text) {
+        const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp'];
+        const url = text.toLowerCase();
+        return imageExtensions.some(ext => url.includes(ext)) || 
+               url.includes('tradera.com') || 
+               url.includes('ebay.com') ||
+               url.includes('blocket.se') ||
+               url.includes('facebook.com') ||
+               url.includes('instagram.com');
+    }
+
+    function addImagePreview(file, dataUrl, url = null) {
+        const previewDiv = document.createElement('div');
+        previewDiv.className = 'col-6 col-md-3 mb-3 preview-item';
+        previewDiv.innerHTML = `
+            <div class="card position-relative">
+                <img src="${dataUrl}" class="card-img-top" alt="Förhandsvisning" style="height: 150px; object-fit: cover;">
+                <button type="button" class="btn btn-danger btn-sm position-absolute" style="top: 5px; right: 5px; width: 30px; height: 30px; border-radius: 50%;" onclick="removePreview(this)">
+                    <i class="fas fa-times"></i>
+                </button>
+                <div class="card-body p-2">
+                    <small class="text-muted">${file ? file.name : 'URL-bild'}</small>
+                </div>
+            </div>
+        `;
+        
+        // Spara referens till fil eller URL
+        const itemId = Date.now() + Math.random();
+        selectedItems.set(itemId, { file, url, element: previewDiv });
+        previewDiv.dataset.itemId = itemId;
+        
+        previewContainer.appendChild(previewDiv);
+        imagePreview.style.display = 'block';
+    }
+
+    window.removePreview = function(button) {
+        const previewItem = button.closest('.preview-item');
+        const itemId = previewItem.dataset.itemId;
+        selectedItems.delete(itemId);
+        previewItem.remove();
+        
+        if (previewContainer.children.length === 0) {
+            imagePreview.style.display = 'none';
+        }
+    };
 
     // Kontaktsökning
     const contactSearchInput = document.getElementById('{{ form.contact_search.id_for_label }}');
@@ -889,6 +1009,289 @@ document.addEventListener('DOMContentLoaded', function() {
                 platformSearchResults.style.display = 'none';
             }
         });
+    }
+
+    // === DRAG & DROP FÖR BEFINTLIGA BILDER ===
+    const existingImagesContainer = document.getElementById('existingImagesContainer');
+    let draggedExisting = null;
+
+    if (existingImagesContainer) {
+        existingImagesContainer.querySelectorAll('.existing-image-item').forEach(item => {
+            item.addEventListener('dragstart', function(e) {
+                draggedExisting = this;
+                this.classList.add('dragging');
+                e.dataTransfer.effectAllowed = 'move';
+            });
+            item.addEventListener('dragend', function() {
+                this.classList.remove('dragging');
+                draggedExisting = null;
+            });
+            item.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                this.classList.add('drag-over');
+            });
+            item.addEventListener('dragleave', function() {
+                this.classList.remove('drag-over');
+            });
+            item.addEventListener('drop', function(e) {
+                e.preventDefault();
+                this.classList.remove('drag-over');
+                if (draggedExisting && draggedExisting !== this) {
+                    // Flytta elementet i DOM
+                    if (Array.from(existingImagesContainer.children).indexOf(draggedExisting) < Array.from(existingImagesContainer.children).indexOf(this)) {
+                        this.after(draggedExisting);
+                    } else {
+                        this.before(draggedExisting);
+                    }
+                }
+            });
+        });
+    }
+
+
+
+    // URL-hantering
+    if (addUrlBtn && imageUrlInput) {
+        addUrlBtn.addEventListener('click', () => {
+            const url = imageUrlInput.value.trim();
+            if (url) {
+                handleImageUrl(url);
+                imageUrlInput.value = '';
+            }
+        });
+
+        imageUrlInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                addUrlBtn.click();
+            }
+        });
+    }
+
+    // Klistra in hantering
+    document.addEventListener('paste', (e) => {
+        const items = e.clipboardData.items;
+        for (let item of items) {
+            if (item.type.startsWith('image/')) {
+                const file = item.getAsFile();
+                handleFiles([file]);
+            }
+        }
+    });
+
+    // Transaktionstyp-beräkning
+    const transactionPriceInput = document.getElementById('{{ form.transaction_price.id_for_label }}');
+    const transactionTypeBadge = document.getElementById('transaction-type-badge');
+    
+    if (transactionPriceInput && transactionTypeBadge) {
+        transactionPriceInput.addEventListener('input', function() {
+            const value = parseFloat(this.value) || 0;
+            if (value < 0) {
+                transactionTypeBadge.textContent = 'KÖP';
+                transactionTypeBadge.className = 'input-group-text ms-2 bg-danger text-white';
+            } else if (value > 0) {
+                transactionTypeBadge.textContent = 'SÄLJ';
+                transactionTypeBadge.className = 'input-group-text ms-2 bg-success text-white';
+            } else {
+                transactionTypeBadge.textContent = '';
+                transactionTypeBadge.className = 'input-group-text ms-2';
+            }
+        });
+    }
+
+    // Formulärhantering - Lägg till bilder i formuläret innan submit
+    const submitButton = document.getElementById('submitButton');
+    
+    if (axeForm) {
+        axeForm.addEventListener('submit', function(e) {
+            
+            // Skapa en DataTransfer för att lägga till filer i file input
+            const dataTransfer = new DataTransfer();
+            
+            // Lägg till alla förhandsvisade bilder
+            selectedItems.forEach((item, itemId) => {
+                if (item.file) {
+                    dataTransfer.items.add(item.file);
+                }
+            });
+            
+            // Lägg till filerna i det ursprungliga file input
+            if (fileInput) {
+                fileInput.files = dataTransfer.files;
+            }
+            
+            // Lägg till URL:er som dolda inputs
+            const hiddenInputs = document.getElementById('hiddenInputs');
+            if (hiddenInputs) {
+                // Ta bara bort URL-inputs, behåll bildborttagnings-inputs och bildordnings-inputs
+                const removeImageInputs = hiddenInputs.querySelectorAll('input[name="remove_images"]');
+                const imageOrderInputs = hiddenInputs.querySelectorAll('input[name="image_order"]');
+                hiddenInputs.innerHTML = '';
+                // Återställ bildborttagnings-inputs
+                removeImageInputs.forEach(input => {
+                    hiddenInputs.appendChild(input);
+                });
+                
+                // Hantera bildordning för befintliga bilder
+                if (existingImagesContainer) {
+                    Array.from(existingImagesContainer.children).forEach((item, idx) => {
+                        const imageId = item.getAttribute('data-image-id');
+                        if (imageId) {
+                            const input = document.createElement('input');
+                            input.type = 'hidden';
+                            input.name = 'image_order';
+                            input.value = imageId + ':' + (idx + 1);
+                            hiddenInputs.appendChild(input);
+                        }
+                    });
+                }
+                
+                selectedItems.forEach((item, itemId) => {
+                    if (item.url) {
+                        const hiddenInput = document.createElement('input');
+                        hiddenInput.type = 'hidden';
+                        hiddenInput.name = 'image_urls';
+                        hiddenInput.value = item.url;
+                        hiddenInputs.appendChild(hiddenInput);
+                    }
+                });
+            }
+        });
+    }
+    
+    // Lägg till click-lyssnare på submit-knappen
+    if (submitButton) {
+        submitButton.addEventListener('click', function(e) {
+            
+            // Överför bilder till file input INNAN formuläret skickas
+            if (selectedItems.size > 0 && fileInput) {
+                const dataTransfer = new DataTransfer();
+                selectedItems.forEach((item, itemId) => {
+                    if (item.file) {
+                        dataTransfer.items.add(item.file);
+                    }
+                });
+                fileInput.files = dataTransfer.files;
+            }
+            
+            // Lägg till URL:er som dolda inputs
+            const hiddenInputs = document.getElementById('hiddenInputs');
+            if (hiddenInputs) {
+                // Ta bara bort URL-inputs, behåll bildborttagnings-inputs och bildordnings-inputs
+                const removeImageInputs = hiddenInputs.querySelectorAll('input[name="remove_images"]');
+                const imageOrderInputs = hiddenInputs.querySelectorAll('input[name="image_order"]');
+                hiddenInputs.innerHTML = '';
+                // Återställ bildborttagnings-inputs
+                removeImageInputs.forEach(input => {
+                    hiddenInputs.appendChild(input);
+                });
+                
+                // Hantera bildordning för befintliga bilder
+                if (existingImagesContainer) {
+                    Array.from(existingImagesContainer.children).forEach((item, idx) => {
+                        const imageId = item.getAttribute('data-image-id');
+                        if (imageId) {
+                            const input = document.createElement('input');
+                            input.type = 'hidden';
+                            input.name = 'image_order';
+                            input.value = imageId + ':' + (idx + 1);
+                            hiddenInputs.appendChild(input);
+                        }
+                    });
+                }
+                
+                selectedItems.forEach((item, itemId) => {
+                    if (item.url) {
+                        const hiddenInput = document.createElement('input');
+                        hiddenInput.type = 'hidden';
+                        hiddenInput.name = 'image_urls';
+                        hiddenInput.value = item.url;
+                        hiddenInputs.appendChild(hiddenInput);
+                    }
+                });
+            }
+            
+            // Manuellt trigga formuläret
+            axeForm.submit();
+        });
+    }
+
+    // === MÅTT-HANTERING ===
+    window.deleteMeasurement = function(measurementId) {
+        if (confirm('Är du säker på att du vill ta bort detta mått?')) {
+            fetch(`/yxor/{{ axe.pk }}/matt/${measurementId}/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                },
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.message) {
+                    // Ta bort raden från tabellen
+                    const row = document.querySelector(`tr[data-measurement-id="${measurementId}"]`);
+                    if (row) {
+                        row.remove();
+                    }
+                    // Visa notifikation
+                    showNotification('Mått borttaget', 'success');
+                } else {
+                    showNotification('Fel vid borttagning av mått', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Fel:', error);
+                showNotification('Fel vid borttagning av mått', 'error');
+            });
+        }
+        // Förhindra att knappen triggar formuläret
+        return false;
+    };
+
+    window.updateMeasurement = function(measurementId, value, unit) {
+        const formData = new FormData();
+        formData.append('value', value);
+        formData.append('unit', unit);
+        
+        fetch(`/yxor/{{ axe.pk }}/matt/${measurementId}/update/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+            },
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.message) {
+                showNotification('Mått uppdaterat', 'success');
+            } else {
+                showNotification('Fel vid uppdatering av mått', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Fel:', error);
+            showNotification('Fel vid uppdatering av mått', 'error');
+        });
+    };
+
+    // === NOTIFIKATIONER ===
+    function showNotification(message, type) {
+        const notification = document.getElementById('notification');
+        const notificationMessage = document.getElementById('notification-message');
+        
+        if (notification && notificationMessage) {
+            notificationMessage.textContent = message;
+            notification.className = `alert alert-${type === 'success' ? 'success' : 'danger'}`;
+            notification.style.display = 'block';
+            
+            setTimeout(() => {
+                notification.style.display = 'none';
+            }, 3000);
+        }
     }
 }); 
 </script>
