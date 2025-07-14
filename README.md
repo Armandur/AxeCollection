@@ -1,44 +1,55 @@
 # AxeCollection
 
-AxeCollection är ett modernt Django-baserat system för att katalogisera, visa och hantera en yxsamling – komplett med bildgalleri, transaktionshistorik och tillverkardetaljer.
+Ett Django-baserat system för att hantera och katalogisera yxsamlingar med avancerad bildhantering, måttregistrering och transaktionshantering.
 
 ## Funktioner
-- **Responsivt bildgalleri** med stöd för swipe och carousel
-- **Lightbox** (PhotoSwipe) för att visa bilder i stort format
-- **Mörkt läge** (dark mode) – följer systeminställning eller kan växlas manuellt
-- **Transaktionshistorik** för varje yxa
-- **Tillverkarsidor** med möjlighet till stämpelbilder
-- **Sök och filtrering** (planerat)
-- **Nätverksåtkomst** – kör servern på 0.0.0.0 för att nås från andra enheter i nätverket
 
-## Snabbstart
-1. Klona repot:
-   ```bash
-   git clone https://github.com/Armandur/AxeCollection.git
-   cd AxeCollection
-   ```
-2. Installera beroenden:
-   ```bash
-   pip install -r requirements.txt
-   ```
-3. Starta utvecklingsservern (tillgänglig på hela nätverket):
-   ```bash
-   python manage.py runserver
-   ```
-   Gå till `http://<din-ip-adress>:8000/` i webbläsaren.
+### Yxhantering
+- Skapa, redigera och ta bort yxor
+- Avancerad bildhantering med drag & drop, URL-uppladdning och .webp-optimering
+- Transaktionshantering för köp och försäljning
+- Kontakt- och plattformshantering med AJAX-sökning
 
-## Utvecklingstips
-- Alla nya features bör utvecklas i en egen branch och PR:as mot main.
-- Se TODO_FEATURES.md för planerade och pågående förbättringar.
-- För att lägga till nya bilder, använd admin eller importera via CSV.
-- Lightbox-funktionen finns i både galleri- och detaljvy.
+### Måtthantering
+- **Batch-mått från mallar**: Snabbt lägga till flera mått samtidigt med fördefinierade mallar
+- **Enskilda mått**: Lägga till och redigera mått ett i taget
+- **Dynamisk UI**: Automatisk uppdatering av räknare och tomt tillstånd
+- **Mottagningsarbetsflöde**: Dedikerad process för att registrera mått vid mottagning
+- **Inline-redigering**: Redigera måttvärden direkt i gränssnittet
+- **Snygga notifikationer**: Visuell feedback för alla måttoperationer
 
-## TODO & Vidareutveckling
-Se [TODO_FEATURES.md](TODO_FEATURES.md) för aktuell lista över förbättringar och idéer.
+### Bildhantering
+- Drag & drop för bilduppladdning
+- URL-uppladdning med förhandsvisning
+- Automatisk .webp-konvertering för bättre prestanda
+- Lightbox för bildförhandsvisning
+- Drag & drop för bildordning
 
-## Skärmdumpar
-*Lägg gärna till bilder här!*
+### Tillverkare
+- Avancerad tillverkarsida med bildgalleri och länkar
+- Inline-redigering av information
+- Markdown-stöd för beskrivningar
+- Kategoriserad bildhantering (stämplar vs övriga bilder)
 
----
+## Teknisk stack
 
-Utvecklad av och för yxentusiaster. Bidrag och feedback välkomnas! 
+- **Backend**: Django 4.x
+- **Frontend**: Bootstrap 5, JavaScript (ES6+)
+- **Bildhantering**: Pillow, django-imagekit
+- **Databas**: SQLite (utveckling), PostgreSQL (produktion)
+
+## Installation
+
+1. Klona repot
+2. Skapa virtuell miljö: `python -m venv venv`
+3. Aktivera miljö: `source venv/bin/activate` (Linux/Mac) eller `venv\Scripts\activate` (Windows)
+4. Installera beroenden: `pip install -r requirements.txt`
+5. Kör migreringar: `python manage.py migrate`
+6. Skapa superuser: `python manage.py createsuperuser`
+7. Starta servern: `python manage.py runserver`
+
+## Utveckling
+
+- Kör tester: `python manage.py test`
+- Samla statiska filer: `python manage.py collectstatic`
+- Skapa migreringar: `python manage.py makemigrations` 

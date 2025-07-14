@@ -207,7 +207,7 @@ cython_debug/
 *.sqlite3
 media/
 staticfiles/
-static/
+# static/
 
 # --- Virtual environments ---
 .venv/

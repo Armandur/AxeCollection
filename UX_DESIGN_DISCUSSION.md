@@ -29,12 +29,14 @@
 
 ### Bildhantering och mobilupplevelse ✅
 - **Mobilvänlig bilduppladdning**: Stöd för att ta bilder direkt med mobilkamera, välja från galleri eller klistra in URL
+- **URL-uppladdning av bilder**: Ladda ner bilder från URL:er med förhandsvisning och drag & drop
 - **Förhandsvisning av bilder**: Se bilder innan de sparas med möjlighet att ta bort dem
 - **Automatisk filnamnshantering**: Bilder får konsekventa namn (`[id]a.jpg`, `[id]b.webp` osv) och ordning
 - **Automatisk .webp-generering**: Skapar optimerade .webp-versioner automatiskt
 - **Visuell feedback vid borttagning**: Tydlig overlay med "KOMMER ATT TAS BORT" och padding
 - **Responsiv layout**: Fungerar bra på alla enheter med touch-vänliga knappar
 - **Robust felhantering**: Korrekt hantering av flera bilder och borttagning
+- **Optimerad omdöpningslogik**: Kör endast när nödvändigt för bättre prestanda
 
 ### Smart funktioner
 - **Auto-save** - spara automatiskt under processen

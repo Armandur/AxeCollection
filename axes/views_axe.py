@@ -614,7 +614,15 @@ def add_measurement(request, pk):
             measurement = measurement_form.save(commit=False)
             measurement.axe = axe
             measurement.save()
-            return redirect('axe_detail', pk=axe.pk)
+            return JsonResponse({
+                'success': True,
+                'message': 'Mått lades till framgångsrikt.'
+            })
+        else:
+            return JsonResponse({
+                'success': False,
+                'error': 'Ogiltig måttdata.'
+            }, status=400)
     else:
         measurement_form = MeasurementForm()
     return render(request, 'axes/add_measurement.html', {'axe': axe, 'measurement_form': measurement_form})
@@ -622,20 +630,46 @@ def add_measurement(request, pk):
 @require_POST
 def add_measurements_from_template(request, pk):
     axe = get_object_or_404(Axe, pk=pk)
-    template_id = request.POST.get('measurement_template_id')
-    if not template_id:
-        return JsonResponse({'error': 'No template selected.'}, status=400)
     
-    try:
-        template = MeasurementTemplate.objects.get(id=template_id)
-    except MeasurementTemplate.DoesNotExist:
-        return JsonResponse({'error': 'Template not found.'}, status=404)
+    # Hämta measurements från POST-data
+    measurements_data = []
+    i = 0
+    while f'measurements[{i}][name]' in request.POST:
+        name = request.POST.get(f'measurements[{i}][name]')
+        value = request.POST.get(f'measurements[{i}][value]')
+        unit = request.POST.get(f'measurements[{i}][unit]')
+        
+        if name and value and unit:
+            try:
+                value = float(value)
+                measurements_data.append({
+                    'name': name,
+                    'value': value,
+                    'unit': unit
+                })
+            except ValueError:
+                return JsonResponse({'error': f'Ogiltigt värde för {name}: {value}'}, status=400)
+        i += 1
     
-    for measurement_data in template.measurements:
-        measurement = Measurement(axe=axe, **measurement_data)
+    if not measurements_data:
+        return JsonResponse({'error': 'Inga giltiga mått att lägga till.'}, status=400)
+    
+    # Skapa mått
+    created_count = 0
+    for measurement_data in measurements_data:
+        measurement = Measurement(
+            axe=axe,
+            name=measurement_data['name'],
+            value=measurement_data['value'],
+            unit=measurement_data['unit']
+        )
         measurement.save()
+        created_count += 1
     
-    return JsonResponse({'message': f'{len(template.measurements)} measurements added from template.'})
+    return JsonResponse({
+        'success': True,
+        'message': f'{created_count} mått lades till framgångsrikt.'
+    })
 
 @require_POST
 def delete_measurement(request, pk, measurement_id):
@@ -644,11 +678,20 @@ def delete_measurement(request, pk, measurement_id):
         measurement = Measurement.objects.get(id=measurement_id)
         if measurement.axe == axe:
             measurement.delete()
-            return JsonResponse({'message': 'Measurement deleted successfully.'})
+            return JsonResponse({
+                'success': True,
+                'message': 'Mått borttaget framgångsrikt.'
+            })
         else:
-            return JsonResponse({'error': 'Invalid measurement ID.'}, status=400)
+            return JsonResponse({
+                'success': False,
+                'error': 'Ogiltigt mått-ID.'
+            }, status=400)
     except Measurement.DoesNotExist:
-        return JsonResponse({'error': 'Measurement not found.'}, status=404)
+        return JsonResponse({
+            'success': False,
+            'error': 'Mått hittades inte.'
+        }, status=404)
 
 @require_POST
 def update_measurement(request, pk, measurement_id):
@@ -661,10 +704,22 @@ def update_measurement(request, pk, measurement_id):
                 measurement = measurement_form.save(commit=False)
                 measurement.axe = axe
                 measurement.save()
-                return JsonResponse({'message': 'Measurement updated successfully.'})
+                return JsonResponse({
+                    'success': True,
+                    'message': 'Mått uppdaterat framgångsrikt.'
+                })
             else:
-                return JsonResponse({'error': 'Invalid measurement data.'}, status=400)
+                return JsonResponse({
+                    'success': False,
+                    'error': 'Ogiltig måttdata.'
+                }, status=400)
         else:
-            return JsonResponse({'error': 'Invalid measurement ID.'}, status=400)
+            return JsonResponse({
+                'success': False,
+                'error': 'Ogiltigt mått-ID.'
+            }, status=400)
     except Measurement.DoesNotExist:
-        return JsonResponse({'error': 'Measurement not found.'}, status=404)
+        return JsonResponse({
+            'success': False,
+            'error': 'Mått hittades inte.'
+        }, status=404)

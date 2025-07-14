@@ -50,6 +50,14 @@
 
 ## Senaste genomförda förbättringar (2025-07-14)
 
+### URL-uppladdning och bildhantering (2025-07-14)
+- **URL-uppladdning av bilder**: Implementerat fullständigt stöd för att ladda ner bilder från URL:er med förhandsvisning, drag & drop och automatisk lagring.
+- **Förhandsvisning av URL:er**: URL:er visas som riktiga bilder i förhandsvisningen med fallback för CORS-problem.
+- **Drag & drop för URL:er**: URL:er kan flyttas och ordnas precis som vanliga bilder.
+- **Laddningsindikator**: Visar spinner under nedladdning av URL:er för bättre användarupplevelse.
+- **Optimerad omdöpningslogik**: Omdöpning körs endast när nödvändigt (inte vid borttagning av sista bilden).
+- **Backend-integration**: Komplett hantering av URL-nedladdning med felhantering och timeout.
+
 ### Tillverkarbilder och länkar - Avancerad hantering (2025-07-14)
 - **Inline-redigering och drag & drop:** Implementerat fullständig inline-redigering och drag & drop-sortering för både tillverkarbilder och -länkar med AJAX-baserad backendhantering.
 - **Lightbox med navigering:** Förbättrad lightbox med navigationsknappar för att bläddra mellan bilder i samma grupp, med förbättrad kontrast och hover-färger.

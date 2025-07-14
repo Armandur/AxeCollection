@@ -1,9 +1,15 @@
 {% extends 'axes/base.html' %}
+{% load static %}
 {% load axe_filters %}
 
 {% block title %}{% if is_edit %}Redigera yxa{% else %}Skapa ny yxa{% endif %}{% endblock %}
 
-{% block content %}
+{% block extra_head %}
+<script>
+window.axeId = {{ axe.pk }};
+window.measurementTemplates = {{ measurement_templates|safe }};
+</script>
+<script src="{% static 'js/measurement_templates.js' %}"></script>
 <style>
 /* Tvinga dropdown direkt under inputfältet */
 .position-relative .dropdown-menu {
@@ -13,6 +19,9 @@
     margin-top: 0 !important;
 }
 </style>
+{% endblock %}
+
+{% block content %}
 <div class="container mt-4">
     <div class="row">
         <div class="col-md-8 mx-auto">
@@ -299,10 +308,10 @@
 
                         <!-- Måttsektion (endast i redigeringsläge) -->
                         {% if is_edit %}
-                        <div class="card mb-4">
+                        <div class="card">
                             <div class="card-header">
                                 <h6 class="mb-0">
-                                    <i class="fas fa-ruler me-2"></i>Mått ({{ measurements.count }})
+                                    <i class="fas fa-ruler me-2"></i>Mått (<span class="measurement-count">{{ measurements.count }}</span>)
                                 </h6>
                             </div>
                             <div class="card-body">
@@ -312,8 +321,8 @@
                                     <p class="text-muted small mb-2">Välj en mall för att snabbt lägga till vanliga mått:</p>
                                     <div class="d-flex flex-wrap">
                                         {% for template_name, template_measurements in measurement_templates.items %}
-                                        <button class="btn btn-outline-primary btn-sm me-2 mb-2" 
-                                                onclick="loadTemplate('{{ template_name }}')"
+                                        <button type="button" class="btn btn-outline-primary btn-sm me-2 mb-2 template-btn" 
+                                                data-template="{{ template_name }}"
                                                 title="{{ template_name }}: {{ template_measurements|length }} mått">
                                             <i class="fas fa-list me-1"></i>{{ template_name }}
                                         </button>
@@ -366,16 +375,15 @@
                                         <div id="batchMeasurementRows"></div>
                                         <div class="text-end mt-2">
                                             <button type="submit" class="btn btn-success">
-                                                <i class="fas fa-plus me-1"></i>Lägg till alla mått
+                                                <i class="fas fa-plus me-1"></i>Lägg till mått
                                             </button>
-                                            <button type="button" class="btn btn-link text-danger" onclick="hideBatchForm()">Avbryt</button>
+                                            <button type="button" class="btn btn-link text-danger" data-action="hideBatchForm">Avbryt</button>
                                         </div>
                                     </form>
                                 </div>
 
                                 <!-- Befintliga mått med inline-redigering -->
-                                {% if measurements %}
-                                <div class="table-responsive">
+                                <div class="table-responsive measurement-list" {% if not measurements %}style="display:none;"{% endif %}>
                                     <table class="table table-hover">
                                         <thead>
                                             <tr>
@@ -417,12 +425,11 @@
                                         </tbody>
                                     </table>
                                 </div>
-                                {% else %}
-                                <p class="text-muted text-center py-3">
+                                
+                                <div class="measurement-empty-state text-center py-3" {% if measurements %}style="display:none;"{% endif %}>
                                     <i class="fas fa-ruler fa-2x mb-2"></i><br>
-                                    Inga mått registrerade än. Lägg till ditt första mått ovan.
-                                </p>
-                                {% endif %}
+                                    <p class="text-muted">Inga mått registrerade än. Lägg till ditt första mått ovan.</p>
+                                </div>
                             </div>
                         </div>
                         {% endif %}
@@ -1332,83 +1339,10 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // === MÅTT-HANTERING ===
-    window.deleteMeasurement = function(measurementId) {
-        if (confirm('Är du säker på att du vill ta bort detta mått?')) {
-            fetch(`/yxor/{{ axe.pk }}/matt/${measurementId}/`, {
-                method: 'POST',
-                headers: {
-                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
-                },
-            })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
-                return response.json();
-            })
-            .then(data => {
-                if (data.message) {
-                    // Ta bort raden från tabellen
-                    const row = document.querySelector(`tr[data-measurement-id="${measurementId}"]`);
-                    if (row) {
-                        row.remove();
-                    }
-                    // Visa notifikation
-                    showNotification('Mått borttaget', 'success');
-                } else {
-                    showNotification('Fel vid borttagning av mått', 'error');
-                }
-            })
-            .catch(error => {
-                console.error('Fel:', error);
-                showNotification('Fel vid borttagning av mått', 'error');
-            });
-        }
-        // Förhindra att knappen triggar formuläret
-        return false;
-    };
-
-    window.updateMeasurement = function(measurementId, value, unit) {
-        const formData = new FormData();
-        formData.append('value', value);
-        formData.append('unit', unit);
-        
-        fetch(`/yxor/{{ axe.pk }}/matt/${measurementId}/update/`, {
-            method: 'POST',
-            headers: {
-                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
-            },
-            body: formData
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.message) {
-                showNotification('Mått uppdaterat', 'success');
-            } else {
-                showNotification('Fel vid uppdatering av mått', 'error');
-            }
-        })
-        .catch(error => {
-            console.error('Fel:', error);
-            showNotification('Fel vid uppdatering av mått', 'error');
-        });
-    };
-
-    // === NOTIFIKATIONER ===
-    function showNotification(message, type) {
-        const notification = document.getElementById('notification');
-        const notificationMessage = document.getElementById('notification-message');
-        
-        if (notification && notificationMessage) {
-            notificationMessage.textContent = message;
-            notification.className = `alert alert-${type === 'success' ? 'success' : 'danger'}`;
-            notification.style.display = 'block';
-            
-            setTimeout(() => {
-                notification.style.display = 'none';
-            }, 3000);
-        }
-    }
+    
+    // Sätt axeId och måttmallar för automatisk initiering
+    // window.axeId = {{ axe.pk }}; // Moved to extra_head
+    // const measurementTemplates = {{ measurement_templates|safe }}; // Moved to extra_head
 }); 
 </script>
 {% endblock %}
