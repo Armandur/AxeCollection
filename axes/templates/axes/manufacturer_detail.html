@@ -11,7 +11,7 @@
 {% block content %}
 
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <h1>{{ manufacturer.name }}</h1>
+    <h1>{{ manufacturer.name }} <span class="badge bg-secondary">{{ manufacturer.id }}</span></h1>
     <div>
         <a href="{% url 'admin:axes_manufacturer_change' manufacturer.id %}" class="btn btn-outline-secondary btn-sm">
             <i class="bi bi-pencil"></i> Redigera tillverkare
@@ -25,22 +25,9 @@
     </div>
 </div>
 
-<!-- Tillverkarinfo -->
+<!-- Statistik -->
 <div class="row mb-4">
-    <div class="col-md-6">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="card-title mb-0">Information</h5>
-            </div>
-            <div class="card-body">
-                <p><strong>ID:</strong> {{ manufacturer.id }}</p>
-                {% if manufacturer.comment %}
-                    <p><strong>Kommentar:</strong> {{ manufacturer.comment }}</p>
-                {% endif %}
-            </div>
-        </div>
-    </div>
-    <div class="col-md-6">
+    <div class="col-12">
         <div class="card">
             <div class="card-header">
                 <h5 class="card-title mb-0">Statistik</h5>
@@ -60,6 +47,22 @@
         </div>
     </div>
 </div>
+
+<!-- Information -->
+{% if manufacturer.comment %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Information</h5>
+            </div>
+            <div class="card-body">
+                {{ manufacturer.comment|linebreaks }}
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
 
 <!-- Tillverkarens bilder -->
 {% if images_by_type %}
