@@ -38,6 +38,15 @@
 - **Robust felhantering**: Korrekt hantering av flera bilder och borttagning
 - **Optimerad omdöpningslogik**: Kör endast när nödvändigt för bättre prestanda
 
+### Plattformsfunktionalitet och filtrering ✅
+- **Plattformsfilter i yxlistan**: Möjlighet att filtrera yxor på specifika plattformar (Tradera, Instagram, etc.)
+- **Dynamisk färgsättning**: Varje plattform får en unik färg baserat på ID för ökad överskådlighet
+- **Konsekvent styling**: Alla plattformsnamn visas med fetstil för tydlighet och läsbarhet
+- **Färgkonfliktlösning**: Undviker grön/röd färger som används för status/ekonomi
+- **Visuell feedback**: Plattformar visas som badges med distinkta färger i tabellen
+- **Django ORM-optimering**: Fixat relationer med `related_name='transactions'` för bättre prestanda
+- **CSV-export förbättringar**: Säker hantering av radbrytningar i textfält för korrekt export
+
 ### Smart funktioner
 - **Auto-save** - spara automatiskt under processen
 - **Bildförhandsvisning** - se bilderna direkt när du laddar upp

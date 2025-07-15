@@ -365,12 +365,35 @@ class Platform(models.Model):
     def __str__(self):
         return self.name
 
+    @property
+    def color_class(self):
+        """Generera en unik pastellfärg baserat på plattformens ID"""
+        # Lista med färger som inte krockar med status/ekonomi (undvik grön/röd)
+        platform_colors = [
+            'bg-primary',           # Blå
+            'bg-info',              # Ljusblå
+            'bg-warning',           # Gul/Orange
+            'bg-secondary',         # Grå
+            'bg-dark',              # Mörkgrå
+            'bg-light',             # Ljusgrå
+            'bg-primary-subtle',    # Ljusare blå
+            'bg-info-subtle',       # Ljusare ljusblå
+            'bg-warning-subtle',    # Ljusare gul
+            'bg-secondary-subtle',  # Ljusare grå
+            'bg-dark-subtle',       # Ljusare mörkgrå
+            'bg-light-subtle',      # Ännu ljusare grå
+        ]
+        
+        # Använd modulo för att få en färg baserat på ID
+        color_index = self.id % len(platform_colors)
+        return platform_colors[color_index]
+
 class Transaction(models.Model):
     TRANSACTION_TYPES = [
         ('KÖP', 'Köp'),
         ('SÄLJ', 'Sälj'),
     ]
-    axe = models.ForeignKey(Axe, on_delete=models.CASCADE)
+    axe = models.ForeignKey(Axe, on_delete=models.CASCADE, related_name='transactions')
     contact = models.ForeignKey(Contact, on_delete=models.SET_NULL, blank=True, null=True)
     platform = models.ForeignKey(Platform, on_delete=models.SET_NULL, blank=True, null=True)
     transaction_date = models.DateField()

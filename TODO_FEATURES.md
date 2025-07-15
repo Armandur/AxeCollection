@@ -56,6 +56,14 @@ En checklista för vidareutveckling av AxeCollection. Bocka av med [x] när klar
     - [x] 24.7 Förbättrat felhantering och användarupplevelse
 25. [x] Sökfunktion för yxor och tillverkare – Snabbt hitta yxor, tillverkare eller transaktioner.
 26. [x] Filtrering på t.ex. tillverkare, typ, årtal, mm.
+27. [x] Plattformsfilter och visning i yxlistan
+    - [x] 27.1 Möjliggör filtrering av yxor på plattform i yxlistan
+    - [x] 27.2 Visar alla plattformar för varje yxa direkt i tabellen
+    - [x] 27.3 Varje plattform får en unik färg för ökad överskådlighet
+    - [x] 27.4 Alla plattformsnamn visas med konsekvent fetstil för tydlighet
+    - [x] 27.5 Förbättrar användarupplevelsen vid sortering och översikt av yxor
+    - [x] 27.6 Fixat Django ORM-relationer med related_name='transactions'
+    - [x] 27.7 Förbättrad CSV-export med hantering av radbrytningar
 
 ## Yxhantering och inmatning
 

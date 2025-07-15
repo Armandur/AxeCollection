@@ -18,7 +18,7 @@
         margin-bottom: 1rem;
     }
 
-    #axesTable td:nth-child(4) { /* Kommentar-kolumnen */
+    #axesTable td:nth-child(6) { /* Kommentar-kolumnen */
         white-space: normal;
     }
 
@@ -35,6 +35,32 @@
     .price-buy { color: #dc3545; font-weight: bold; }
     .price-sell { color: #198754; font-weight: bold; }
     .shipping-cost { font-size: 0.8em; color: #6c757d; }
+
+    /* Plattform badges med förbättrad styling */
+    .badge.bg-light {
+        color: #212529 !important;
+        border: 1px solid #dee2e6;
+    }
+    
+    /* Plattform badges med fet stil - använd högst specificitet */
+    table#axesTable tbody tr td .badge.bg-primary,
+    table#axesTable tbody tr td .badge.bg-info,
+    table#axesTable tbody tr td .badge.bg-warning,
+    table#axesTable tbody tr td .badge.bg-secondary,
+    table#axesTable tbody tr td .badge.bg-dark {
+        font-weight: 500 !important;
+    }
+    
+    /* Subtila färger behöver mörk text för läsbarhet */
+    table#axesTable tbody tr td .badge.bg-primary-subtle,
+    table#axesTable tbody tr td .badge.bg-info-subtle,
+    table#axesTable tbody tr td .badge.bg-warning-subtle,
+    table#axesTable tbody tr td .badge.bg-secondary-subtle,
+    table#axesTable tbody tr td .badge.bg-dark-subtle,
+    table#axesTable tbody tr td .badge.bg-light-subtle {
+        color: #212529 !important;
+        font-weight: 500 !important;
+    }
 
     /* Mobilanpassningar för DataTables */
     @media (max-width: 767px) {
@@ -92,6 +118,9 @@
             padding: 0.3rem 0.6rem;
         }
     }
+    #axesTable .badge strong {
+        font-weight: 700 !important;
+    }
 </style>
 {% endblock %}
 
@@ -113,7 +142,7 @@
         </h5>
         <form method="get" class="row g-3">
             {% csrf_token %}
-            <div class="col-md-3">
+            <div class="col-md-2">
                 <label for="status" class="form-label">Status</label>
                 <select name="status" id="status" class="form-select">
                     <option value="">Alla yxor</option>
@@ -132,23 +161,41 @@
                     {% endfor %}
                 </select>
             </div>
-            <div class="col-md-3 d-flex align-items-end">
+            <div class="col-md-3">
+                <label for="platform" class="form-label">Plattform</label>
+                <select name="platform" id="platform" class="form-select">
+                    <option value="">Alla plattformar</option>
+                    {% for platform in platforms %}
+                        <option value="{{ platform.id }}" {% if platform_filter == platform.id|stringformat:"s" %}selected{% endif %}>
+                            {{ platform.name }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-4 d-flex align-items-end">
                 <button type="submit" class="btn btn-primary me-2">
                     <i class="fas fa-search"></i> Filtrera
                 </button>
-                <a href="{% url 'axe_list' %}" class="btn btn-outline-secondary">
+                <a href="{% url 'axe_list' %}" class="btn btn-outline-secondary me-2">
                     <i class="fas fa-times"></i> Rensa
                 </a>
             </div>
         </form>
         
         <!-- Filter-statistik -->
-        {% if status_filter or manufacturer_filter %}
+        {% if status_filter or manufacturer_filter or platform_filter %}
             <div class="mt-3">
                 <small class="text-muted">
                     Visar {{ filtered_count }} yxor
                     {% if bought_count > 0 or received_count > 0 %}
                         ({{ bought_count }} köpta, {{ received_count }} mottagna)
+                    {% endif %}
+                    {% if platform_filter %}
+                        {% for platform in platforms %}
+                            {% if platform.id|stringformat:"s" == platform_filter %}
+                                från {{ platform.name }}
+                            {% endif %}
+                        {% endfor %}
                     {% endif %}
                 </small>
             </div>
@@ -168,6 +215,7 @@
                 <th>Tillverkare</th>
                 <th>Modell</th>
                 <th>Status</th>
+                <th>Plattform</th>
                 <th>Kommentar</th>
                 <th>Ekonomi</th>
                 <th>Bilder</th>
@@ -209,9 +257,16 @@
                         {% endif %}
                     </div>
                 </td>
+                <td>
+                    {% for trans in axe.transactions.all %}
+                        {% if trans.platform %}
+                            <span class="badge {{ trans.platform.color_class }}"><strong>{{ trans.platform.name }}</strong></span>
+                        {% endif %}
+                    {% endfor %}
+                </td>
                 <td>{{ axe.comment|default:"" }}</td>
                 <td data-order="{{ axe.net_value|default:0 }}">
-                    {% for trans in axe.transaction_set.all %}
+                    {% for trans in axe.transactions.all %}
                         <span class="badge {% if trans.type == 'KÖP' %}bg-danger{% else %}bg-success{% endif %}">
                             <i class="bi {% if trans.type == 'KÖP' %}bi-arrow-down-circle{% else %}bi-arrow-up-circle{% endif %} me-1"></i>
                             {{ trans.type }}
@@ -298,16 +353,16 @@ $(document).ready(function() {
         },
         columnDefs: [
             {
-                targets: [4], // Kommentar-kolumnen (nu på position 4)
+                targets: [5], // Kommentar-kolumnen (nu på position 5)
                 responsivePriority: 2
             },
             {
-                targets: [0, 6], // ID och Bilder (nu på position 6)
+                targets: [0, 7], // ID och Bilder (nu på position 7)
                 responsivePriority: 1,
                 className: 'all' // Visa alltid
             },
             {
-                targets: [1, 2, 3, 5], // Tillverkare, Modell, Status, Ekonomi
+                targets: [1, 2, 3, 4, 6], // Tillverkare, Modell, Status, Plattform, Ekonomi
                 responsivePriority: 2,
                 className: 'all' // Visa alltid
             }

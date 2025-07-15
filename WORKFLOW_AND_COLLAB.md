@@ -38,17 +38,56 @@
 - **Template-struktur:** Organisera templates med includes för statistik-kort, filter-sektioner och andra återkommande element.
 - **Filter-laddning:** Ladda custom filters i includes med `{% load axe_filters %}` för att säkerställa att de fungerar.
 
+### CSS och styling
+- **CSS-specificitet:** Använd `!important` och specifika selektorer (t.ex. `table#axesTable tbody tr td .badge`) för att överskriva Bootstrap's standardstyling
+- **Inline-styling:** Använd `<strong>` taggar för att tvinga fetstil oavsett CSS-konflikter med ramverk
+- **Färgkonflikter:** Undvik färger som redan används för semantiska betydelser (grön för status, röd för ekonomi)
+- **Responsiv design:** Testa styling på både desktop och mobil för att säkerställa konsekvent utseende
+- **Bootstrap-override:** Förstå Bootstrap's CSS-hierarki för att effektivt överskriva standardstyling
+
+### Django ORM och modeller
+- **Related names:** Använd explicit `related_name` för att undvika konflikter med automatiska reverse-relationer
+- **Property methods:** Använd `@property` för att skapa beräknade fält som kan användas i templates
+- **Migration safety:** Exportera data innan större modelländringar för säkerhet
+- **ORM-optimering:** Använd `select_related` och `prefetch_related` för att minska antalet databasqueries
+- **Model validation:** Validera data på modellnivå för bättre dataintegritet
+
 ### AJAX och JavaScript
 - **Debouncing:** Använd timeout för AJAX-sökningar för att undvika för många requests.
 - **Error handling:** Hantera AJAX-fel gracefully med fallback-beteenden.
 - **Dropdown management:** Visa/dölj dropdowns baserat på sökresultat och användarinteraktion.
+
+### PowerShell och terminal-kommandon
+- **Kommandokedning:** Använd `;` istället för `&&` för att kedja kommandon i PowerShell
+- **Webbrequests:** Använd `Invoke-WebRequest` med `-UseBasicParsing` för att testa webbsidor
+- **Statuskod-kontroll:** Använd `Select-Object -ExpandProperty StatusCode` för att kontrollera HTTP-status
+- **Background-jobb:** Använd `-is_background` för långvariga processer som Django-servern
+
+### Dataexport och import
+- **CSV-säkerhet:** Hantera radbrytningar och specialtecken i textfält för korrekt export
+- **Clean text:** Använd funktioner som ersätter `\n` och `\r` med mellanslag för säker CSV-export
+- **Backup:** Exportera data innan större databasändringar för säkerhet
+- **Encoding:** Använd UTF-8 för korrekt hantering av svenska tecken
 
 ### Formulärdesign
 - **Conditional fields:** Visa olika fält beroende på om objekt skapas eller redigeras.
 - **Smart defaults:** Sätt smarta standardvärden (t.ex. dagens datum för transaktioner).
 - **Validation feedback:** Ge tydlig feedback när validering misslyckas.
 
-## Senaste genomförda förbättringar (2025-07-14)
+## Senaste genomförda förbättringar (2025-07-15)
+
+### Plattformsfilter och dynamisk färgsättning (2025-07-15)
+- **Plattformsfilter i yxlistan**: Implementerat fullständigt stöd för filtrering av yxor på plattform med dropdown och URL-parametrar
+- **Dynamisk färgsättning**: Varje plattform får en unik färg baserat på ID för ökad överskådlighet och distinktion
+- **Färgkonfliktlösning**: Undviker grön/röd färger som redan används för status/ekonomi-kolumnerna
+- **Konsekvent styling**: Alla plattformsnamn visas med fetstil för tydlighet och läsbarhet
+- **Django ORM-optimering**: Fixat relationer mellan Axe och Transaction med `related_name='transactions'` för bättre prestanda
+- **CSV-export förbättringar**: Säker hantering av radbrytningar i textfält med `clean_text()` funktion för korrekt export
+- **Tekniska lärdomar**:
+  - CSS-specificitet: Använd `!important` och specifika selektorer för att överskriva Bootstrap
+  - Inline-styling: Använd `<strong>` taggar för att tvinga fetstil oavsett CSS-konflikter
+  - Django ORM: `related_name` eliminerar konflikter med automatiska reverse-relationer
+  - PowerShell-kompatibilitet: Använd `;` istället för `&&` för att kedja kommandon
 
 ### URL-uppladdning och bildhantering (2025-07-14)
 - **URL-uppladdning av bilder**: Implementerat fullständigt stöd för att ladda ner bilder från URL:er med förhandsvisning, drag & drop och automatisk lagring.

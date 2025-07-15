@@ -9,6 +9,13 @@ EXPORT_DIR = os.path.join(settings.BASE_DIR, 'exported_csv')
 class Command(BaseCommand):
     help = 'Exportera data till CSV-filer för enklare samarbete och backup.'
 
+    def clean_text(self, text):
+        """Rensa text från radbrytningar och extra whitespace för säker CSV-export"""
+        if text is None:
+            return ''
+        # Ersätt radbrytningar med mellanslag och rensa extra whitespace
+        return ' '.join(str(text).replace('\n', ' ').replace('\r', ' ').split())
+
     def handle(self, *args, **options):
         if not os.path.exists(EXPORT_DIR):
             os.makedirs(EXPORT_DIR)
@@ -28,7 +35,7 @@ class Command(BaseCommand):
             writer = csv.writer(f)
             writer.writerow(['id', 'name', 'comment'])
             for m in Manufacturer.objects.all():
-                writer.writerow([m.id, m.name, m.comment or ''])
+                writer.writerow([m.id, m.name, self.clean_text(m.information)])
 
     def export_contacts(self):
         with open(os.path.join(EXPORT_DIR, 'Kontakt.csv'), 'w', newline='', encoding='utf-8') as f:
@@ -38,7 +45,7 @@ class Command(BaseCommand):
                 writer.writerow([
                     c.id, c.name, c.email or '', c.phone or '', c.alias or '',
                     c.street or '', c.postal_code or '', c.city or '', c.country or '',
-                    c.comment or '', int(c.is_naj_member)
+                    self.clean_text(c.comment), int(c.is_naj_member)
                 ])
 
     def export_platforms(self):
@@ -55,7 +62,7 @@ class Command(BaseCommand):
             for a in Axe.objects.select_related('manufacturer').all():
                 writer.writerow([
                     a.id, a.manufacturer.id if a.manufacturer else '', a.manufacturer.name if a.manufacturer else '',
-                    a.model, a.comment or ''
+                    a.model, self.clean_text(a.comment)
                 ])
 
     def export_transactions(self):
@@ -68,7 +75,7 @@ class Command(BaseCommand):
                     t.axe.id if t.axe else '', t.axe.model if t.axe else '',
                     t.contact.id if t.contact else '', t.contact.name if t.contact else '',
                     t.platform.id if t.platform else '', t.platform.name if t.platform else '',
-                    t.transaction_date, t.type, t.price, t.shipping_cost, t.comment or ''
+                    t.transaction_date, t.type, t.price, t.shipping_cost, self.clean_text(t.comment)
                 ])
 
     def export_measurements(self):
@@ -88,7 +95,7 @@ class Command(BaseCommand):
             for img in AxeImage.objects.select_related('axe').all():
                 writer.writerow([
                     img.id, img.axe.id if img.axe else '', img.axe.model if img.axe else '',
-                    os.path.basename(img.image.name) if img.image else '', img.description or ''
+                    os.path.basename(img.image.name) if img.image else '', self.clean_text(img.description)
                 ])
 
     def export_manufacturerlinks(self):
@@ -98,7 +105,7 @@ class Command(BaseCommand):
             for link in ManufacturerLink.objects.select_related('manufacturer').all():
                 writer.writerow([
                     link.id, link.manufacturer.id if link.manufacturer else '', link.manufacturer.name if link.manufacturer else '',
-                    link.title, link.url, link.link_type, link.description or '', int(link.is_active), link.created_at, link.updated_at
+                    link.title, link.url, link.link_type, self.clean_text(link.description), int(link.is_active), link.created_at, link.updated_at
                 ])
 
     def export_manufacturerimages(self):
@@ -109,5 +116,5 @@ class Command(BaseCommand):
             for img in ManufacturerImage.objects.select_related('manufacturer').all():
                 writer.writerow([
                     img.id, img.manufacturer.id if img.manufacturer else '', img.manufacturer.name if img.manufacturer else '',
-                    os.path.basename(img.image.name) if img.image else '', img.caption or '', img.description or ''
+                    os.path.basename(img.image.name) if img.image else '', self.clean_text(img.caption), self.clean_text(img.description)
                 ]) 

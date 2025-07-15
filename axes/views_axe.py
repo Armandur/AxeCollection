@@ -21,9 +21,10 @@ def axe_list(request):
     # Hämta filter från URL-parametrar
     status_filter = request.GET.get('status', '')
     manufacturer_filter = request.GET.get('manufacturer', '')
+    platform_filter = request.GET.get('platform', '')
     
     # Starta med alla yxor
-    axes = Axe.objects.all().select_related('manufacturer').prefetch_related('measurements', 'images', 'transaction_set')
+    axes = Axe.objects.all().select_related('manufacturer').prefetch_related('measurements', 'images', 'transactions')
     
     # Applicera filter
     if status_filter:
@@ -32,11 +33,17 @@ def axe_list(request):
     if manufacturer_filter:
         axes = axes.filter(manufacturer_id=manufacturer_filter)
     
+    if platform_filter:
+        axes = axes.filter(transactions__platform_id=platform_filter).distinct()
+    
     # Sortera efter ID (senaste först)
     axes = axes.order_by('-id')
     
     # Hämta alla tillverkare för filter-dropdown
     manufacturers = Manufacturer.objects.all().order_by('name')
+    
+    # Hämta alla plattformar för filter-dropdown
+    platforms = Platform.objects.all().order_by('name')
     
     # Statistik för hela samlingen
     transactions = Transaction.objects.all()
@@ -60,8 +67,10 @@ def axe_list(request):
     return render(request, 'axes/axe_list.html', {
         'axes': axes,
         'manufacturers': manufacturers,
+        'platforms': platforms,
         'status_filter': status_filter,
         'manufacturer_filter': manufacturer_filter,
+        'platform_filter': platform_filter,
         'filtered_count': filtered_count,
         'bought_count': bought_count,
         'received_count': received_count,
