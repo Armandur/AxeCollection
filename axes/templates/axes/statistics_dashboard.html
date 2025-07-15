@@ -4,6 +4,7 @@
 {% block title %}Statistik - {{ block.super }}{% endblock %}
 
 {% block extra_head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
     .stats-card {
         transition: transform 0.2s;
@@ -94,6 +95,22 @@
                 <small class="text-muted">
                     {{ buy_transactions }} köp, {{ sale_transactions }} försäljningar
                 </small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Linjegraf - Antal yxor över tid -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-chart-line"></i> Utveckling av samlingen över tid
+                </h5>
+            </div>
+            <div class="card-body">
+                <canvas id="axesOverTimeChart" width="400" height="200"></canvas>
             </div>
         </div>
     </div>
@@ -360,4 +377,86 @@
         </div>
     </div>
 </div>
+
+<script>
+// Linjegraf för antal yxor över tid
+document.addEventListener('DOMContentLoaded', function() {
+    const ctx = document.getElementById('axesOverTimeChart').getContext('2d');
+    
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: {{ chart_labels|safe }},
+            datasets: [{
+                label: 'Yxor köpta (total)',
+                data: {{ bought_data|safe }},
+                borderColor: 'rgb(255, 99, 132)',
+                backgroundColor: 'rgba(255, 99, 132, 0.1)',
+                borderWidth: 3,
+                fill: false,
+                tension: 0.4,
+                pointBackgroundColor: 'rgb(255, 99, 132)',
+                pointBorderColor: '#fff',
+                pointBorderWidth: 2,
+                pointRadius: 5,
+                pointHoverRadius: 7
+            }, {
+                label: 'Yxor i samlingen',
+                data: {{ collection_data|safe }},
+                borderColor: 'rgb(75, 192, 192)',
+                backgroundColor: 'rgba(75, 192, 192, 0.1)',
+                borderWidth: 3,
+                fill: true,
+                tension: 0.4,
+                pointBackgroundColor: 'rgb(75, 192, 192)',
+                pointBorderColor: '#fff',
+                pointBorderWidth: 2,
+                pointRadius: 5,
+                pointHoverRadius: 7
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: true,
+                    position: 'top'
+                },
+                tooltip: {
+                    mode: 'index',
+                    intersect: false,
+                    callbacks: {
+                        label: function(context) {
+                            if (context.dataset.label === 'Yxor köpta (total)') {
+                                return 'Köpta: ' + context.parsed.y;
+                            } else {
+                                return 'I samlingen: ' + context.parsed.y;
+                            }
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        stepSize: 1
+                    }
+                },
+                x: {
+                    grid: {
+                        display: false
+                    }
+                }
+            },
+            interaction: {
+                mode: 'nearest',
+                axis: 'x',
+                intersect: false
+            }
+        }
+    });
+});
+</script>
 {% endblock %} 

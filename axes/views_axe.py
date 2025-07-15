@@ -2,6 +2,8 @@ from django.shortcuts import render, get_object_or_404, redirect
 from .models import Axe, AxeImage, Measurement, NextAxeID, MeasurementTemplate, Transaction, Contact, Platform, Manufacturer
 from .forms import AxeForm, MeasurementForm, TransactionForm
 from django.db.models import Sum, Q, Max, Count
+from django.db.models.functions import TruncMonth, TruncYear
+from datetime import datetime, timedelta
 from django.http import JsonResponse, Http404
 from django.views.decorators.http import require_POST
 from django.utils import timezone
@@ -798,6 +800,61 @@ def statistics_dashboard(request):
     naj_members = Contact.objects.filter(is_naj_member=True).count()
     naj_percentage = (naj_members / total_contacts * 100) if total_contacts > 0 else 0
     
+    # Data för kombinerad tidslinje - inköp vs samling över tid
+    # Hämta alla transaktioner sorterade efter datum
+    all_transactions = Transaction.objects.select_related('axe').order_by('transaction_date')
+    
+    # Skapa data för Chart.js
+    chart_labels = []
+    bought_data = []
+    collection_data = []
+    
+    # Gruppera transaktioner per månad
+    current_month = None
+    monthly_buys = 0
+    monthly_sales = 0
+    cumulative_buys = 0
+    cumulative_sales = 0
+    
+    for transaction in all_transactions:
+        # Gruppera per månad
+        transaction_month = transaction.transaction_date.replace(day=1)
+        
+        if current_month is None:
+            current_month = transaction_month
+        elif transaction_month != current_month:
+            # Spara data för föregående månad
+            month_str = current_month.strftime('%b %Y')
+            chart_labels.append(month_str)
+            bought_data.append(cumulative_buys)
+            collection_data.append(cumulative_buys - cumulative_sales)
+            
+            # Nollställ månadsräknare
+            monthly_buys = 0
+            monthly_sales = 0
+            current_month = transaction_month
+        
+        # Räkna transaktioner
+        if transaction.type == 'KÖP':
+            monthly_buys += 1
+            cumulative_buys += 1
+        elif transaction.type == 'SÄLJ':
+            monthly_sales += 1
+            cumulative_sales += 1
+    
+    # Lägg till sista månaden om det finns data
+    if current_month is not None:
+        month_str = current_month.strftime('%b %Y')
+        chart_labels.append(month_str)
+        bought_data.append(cumulative_buys)
+        collection_data.append(cumulative_buys - cumulative_sales)
+    
+    # Om vi inte har någon data, skapa en tom graf
+    if not chart_labels:
+        chart_labels = ['Ingen data']
+        bought_data = [0]
+        collection_data = [0]
+    
     context = {
         # Grundläggande statistik
         'total_axes': total_axes,
@@ -836,6 +893,11 @@ def statistics_dashboard(request):
         'sold_axes_percentage': sold_axes_percentage,
         'naj_members': naj_members,
         'naj_percentage': naj_percentage,
+        
+        # Chart data
+        'chart_labels': chart_labels,
+        'bought_data': bought_data,
+        'collection_data': collection_data,
     }
     
     return render(request, 'axes/statistics_dashboard.html', context)
