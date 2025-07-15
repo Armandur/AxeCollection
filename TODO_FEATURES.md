@@ -186,7 +186,11 @@ En checklista för vidareutveckling av AxeCollection. Bocka av med [x] när klar
     - [x] 56.6.2 Grupperad per månad baserat på transaktionsdatum
     - [x] 56.6.3 Visar tydligt skillnaden mellan köpta och kvarvarande yxor
     - [x] 56.6.4 Chart.js-implementation med två färgkodade linjer
-56.7 [ ] Visa totala inköpskostnader och försäljningsintäkter över tid (diagram)
+56.7 [x] Visa totala inköpskostnader och försäljningsintäkter över tid (diagram)
+    - [x] 56.7.1 Stapeldiagram med transaktionsvärden per månad
+    - [x] 56.7.2 Röda staplar för köpvärde, gröna för försäljningsvärde
+    - [x] 56.7.3 Visar aktivitet över tid istället för kumulativa värden
+    - [x] 56.7.4 Svensk formatering av belopp i tooltips och axlar
 56.8 [ ] Visa dyraste och billigaste köp/sälj i topplistan, med länk till respektive yxa
 56.9 [ ] Visa mest aktiva månader (när köps/säljs flest yxor)
 56.10 [ ] Visa senaste aktivitet (senaste köp, sälj, tillagd yxa)
