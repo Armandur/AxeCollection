@@ -181,6 +181,15 @@ En checklista för vidareutveckling av AxeCollection. Bocka av med [x] när klar
     - [x] 56.3 Ekonomisk översikt med totala köp- och försäljningsvärden
     - [x] 56.4 Realtidsstatistik som uppdateras baserat på aktiva filter
     - [x] 56.5 Fixat Django ORM-problem med annotate och properties
+56.6 [x] Visa antal yxor i samlingen över tid (linje- eller stapeldiagram)
+    - [x] 56.6.1 Kombinerad tidslinje med "Yxor köpta (total)" och "Yxor i samlingen"
+    - [x] 56.6.2 Grupperad per månad baserat på transaktionsdatum
+    - [x] 56.6.3 Visar tydligt skillnaden mellan köpta och kvarvarande yxor
+    - [x] 56.6.4 Chart.js-implementation med två färgkodade linjer
+56.7 [ ] Visa totala inköpskostnader och försäljningsintäkter över tid (diagram)
+56.8 [ ] Visa dyraste och billigaste köp/sälj i topplistan, med länk till respektive yxa
+56.9 [ ] Visa mest aktiva månader (när köps/säljs flest yxor)
+56.10 [ ] Visa senaste aktivitet (senaste köp, sälj, tillagd yxa)
 57. [ ] QR-kod för att snabbt visa en yxa på mobilen.
 
 ## Framtida förbättringar
