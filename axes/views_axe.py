@@ -777,6 +777,16 @@ def statistics_dashboard(request):
         type='SÄLJ'
     ).select_related('axe__manufacturer').order_by('-price')[:5]
     
+    # Billigaste köp (top 5)
+    cheapest_buys = Transaction.objects.filter(
+        type='KÖP'
+    ).select_related('axe__manufacturer').order_by('price')[:5]
+    
+    # Billigaste försäljningar (top 5)
+    cheapest_sales = Transaction.objects.filter(
+        type='SÄLJ'
+    ).select_related('axe__manufacturer').order_by('price')[:5]
+    
     # Mest aktiva plattformar (top 5)
     top_platforms = Platform.objects.annotate(
         transaction_count=Count('transaction')
@@ -912,6 +922,8 @@ def statistics_dashboard(request):
         'top_manufacturers': top_manufacturers,
         'most_expensive_buys': most_expensive_buys,
         'most_expensive_sales': most_expensive_sales,
+        'cheapest_buys': cheapest_buys,
+        'cheapest_sales': cheapest_sales,
         'top_platforms': top_platforms,
         'top_contacts': top_contacts,
         
