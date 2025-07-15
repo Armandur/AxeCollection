@@ -855,6 +855,38 @@ def statistics_dashboard(request):
         bought_data = [0]
         collection_data = [0]
     
+    # Data för ekonomisk stapeldiagram - transaktionsvärden per månad
+    # Skapa en dictionary för att samla värden per månad
+    monthly_data = {}
+    
+    for transaction in all_transactions:
+        # Gruppera per månad
+        month_key = transaction.transaction_date.strftime('%b %Y')
+        
+        if month_key not in monthly_data:
+            monthly_data[month_key] = {'buy': 0, 'sale': 0}
+        
+        # Räkna ekonomiska värden per månad
+        if transaction.type == 'KÖP':
+            monthly_data[month_key]['buy'] += float(transaction.price)
+        elif transaction.type == 'SÄLJ':
+            monthly_data[month_key]['sale'] += float(transaction.price)
+    
+    # Skapa arrays för Chart.js
+    financial_labels = []
+    buy_values = []
+    sale_values = []
+    
+    # Använd samma månader som yxgrafen för konsistens
+    for month in chart_labels:
+        financial_labels.append(month)
+        if month in monthly_data:
+            buy_values.append(monthly_data[month]['buy'])
+            sale_values.append(monthly_data[month]['sale'])
+        else:
+            buy_values.append(0)
+            sale_values.append(0)
+    
     context = {
         # Grundläggande statistik
         'total_axes': total_axes,
@@ -898,6 +930,9 @@ def statistics_dashboard(request):
         'chart_labels': chart_labels,
         'bought_data': bought_data,
         'collection_data': collection_data,
+        'financial_labels': financial_labels,
+        'buy_values': buy_values,
+        'sale_values': sale_values,
     }
     
     return render(request, 'axes/statistics_dashboard.html', context)
