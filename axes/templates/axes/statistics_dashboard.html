@@ -1,0 +1,363 @@
+{% extends 'axes/base.html' %}
+{% load axe_filters %}
+
+{% block title %}Statistik - {{ block.super }}{% endblock %}
+
+{% block extra_head %}
+<style>
+    .stats-card {
+        transition: transform 0.2s;
+    }
+    .stats-card:hover {
+        transform: translateY(-5px);
+    }
+    
+    .profit-positive { color: #198754; }
+    .profit-negative { color: #dc3545; }
+    
+    .top-list-item {
+        border-left: 4px solid #007bff;
+        padding-left: 1rem;
+        margin-bottom: 0.5rem;
+    }
+    
+    .top-list-item:nth-child(1) { border-left-color: #ffc107; }
+    .top-list-item:nth-child(2) { border-left-color: #6c757d; }
+    .top-list-item:nth-child(3) { border-left-color: #fd7e14; }
+    
+    .percentage-circle {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        font-size: 0.9rem;
+        color: white;
+    }
+    
+    .bg-success-light { background-color: #d1e7dd; }
+    .bg-info-light { background-color: #cff4fc; }
+    .bg-warning-light { background-color: #fff3cd; }
+    .bg-danger-light { background-color: #f8d7da; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0">
+        <i class="fas fa-chart-bar"></i> Statistik
+    </h1>
+</div>
+
+<!-- Grundläggande statistik -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card stats-card bg-body-secondary">
+            <div class="card-body text-center">
+                <h6 class="card-title text-muted">Totala yxor</h6>
+                <h2>{{ total_axes }}</h2>
+                <small class="text-muted">
+                    {{ bought_axes }} köpta, {{ received_axes }} mottagna
+                </small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stats-card bg-body-secondary">
+            <div class="card-body text-center">
+                <h6 class="card-title text-muted">Tillverkare</h6>
+                <h2>{{ total_manufacturers }}</h2>
+                <small class="text-muted">
+                    {{ avg_transactions_per_axe|floatformat:1 }} trans./yxa
+                </small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stats-card bg-body-secondary">
+            <div class="card-body text-center">
+                <h6 class="card-title text-muted">Kontakter</h6>
+                <h2>{{ total_contacts }}</h2>
+                <small class="text-muted">
+                    {{ naj_members }} NAJ-medlemmar ({{ naj_percentage|floatformat:1 }}%)
+                </small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stats-card bg-body-secondary">
+            <div class="card-body text-center">
+                <h6 class="card-title text-muted">Transaktioner</h6>
+                <h2>{{ total_transactions }}</h2>
+                <small class="text-muted">
+                    {{ buy_transactions }} köp, {{ sale_transactions }} försäljningar
+                </small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Ekonomisk översikt -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-coins"></i> Ekonomisk översikt
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-md-2">
+                        <h6 class="text-muted">Total köpvärde</h6>
+                        <h4 class="text-danger">{{ total_buy_value|format_decimal }} kr</h4>
+                        <small class="text-muted">+ {{ total_buy_shipping|format_decimal }} kr frakt</small>
+                    </div>
+                    <div class="col-md-2">
+                        <h6 class="text-muted">Total försäljningsvärde</h6>
+                        <h4 class="text-success">{{ total_sale_value|format_decimal }} kr</h4>
+                        <small class="text-muted">+ {{ total_sale_shipping|format_decimal }} kr frakt</small>
+                    </div>
+                    <div class="col-md-2">
+                        <h6 class="text-muted">Netto vinst/förlust</h6>
+                        <h4 class="{% if total_profit >= 0 %}profit-positive{% else %}profit-negative{% endif %}">
+                            {{ total_profit|format_decimal }} kr
+                        </h4>
+                        <small class="text-muted">inkl. frakt: {{ total_profit_with_shipping|format_decimal }} kr</small>
+                    </div>
+                    <div class="col-md-2">
+                        <h6 class="text-muted">Genomsnitt per yxa</h6>
+                        <h4>{{ avg_price_per_axe|floatformat:0 }} kr</h4>
+                        <small class="text-muted">inköpspris</small>
+                    </div>
+                    <div class="col-md-2">
+                        <h6 class="text-muted">Genomsnitt vinst/yxa</h6>
+                        <h4 class="{% if avg_profit_per_axe >= 0 %}profit-positive{% else %}profit-negative{% endif %}">
+                            {{ avg_profit_per_axe|floatformat:0 }} kr
+                        </h4>
+                    </div>
+                    <div class="col-md-2">
+                        <h6 class="text-muted">Sålda yxor</h6>
+                        <h4>{{ sold_axes }}</h4>
+                        <small class="text-muted">{{ sold_axes_percentage|floatformat:1 }}% av samlingen</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Topplistor -->
+<div class="row mb-4">
+    <!-- Mest populära tillverkare -->
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-industry"></i> Mest populära tillverkare
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if top_manufacturers %}
+                    {% for manufacturer in top_manufacturers %}
+                        <div class="top-list-item">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <strong>{{ manufacturer.name }}</strong>
+                                    <br>
+                                    <small class="text-muted">{{ manufacturer.total_axes }} yxor</small>
+                                </div>
+                                <a href="{% url 'manufacturer_detail' manufacturer.id %}" class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <p class="text-muted">Inga tillverkare registrerade ännu.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Mest aktiva plattformar -->
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-globe"></i> Mest aktiva plattformar
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if top_platforms %}
+                    {% for platform in top_platforms %}
+                        <div class="top-list-item">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <strong>{{ platform.name }}</strong>
+                                    <br>
+                                    <small class="text-muted">{{ platform.transaction_count }} transaktioner</small>
+                                </div>
+                                <!-- Badge borttagen här -->
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <p class="text-muted">Inga plattformar registrerade ännu.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Dyraste transaktioner -->
+<div class="row mb-4">
+    <!-- Dyraste köp -->
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-arrow-down text-danger"></i> Dyraste köp
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if most_expensive_buys %}
+                    {% for transaction in most_expensive_buys %}
+                        <div class="top-list-item">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <strong>{{ transaction.axe.manufacturer.name }} - {{ transaction.axe.model }}</strong>
+                                    <br>
+                                    <small class="text-muted">{{ transaction.transaction_date|date:"Y-m-d" }}</small>
+                                </div>
+                                <div class="text-end">
+                                    <span class="text-danger fw-bold">{{ transaction.price|format_decimal }} kr</span>
+                                    <br>
+                                    <small class="text-muted">{{ transaction.platform.name|default:"Okänd plattform" }}</small>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <p class="text-muted">Inga köptransaktioner registrerade ännu.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Dyraste försäljningar -->
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-arrow-up text-success"></i> Dyraste försäljningar
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if most_expensive_sales %}
+                    {% for transaction in most_expensive_sales %}
+                        <div class="top-list-item">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <strong>{{ transaction.axe.manufacturer.name }} - {{ transaction.axe.model }}</strong>
+                                    <br>
+                                    <small class="text-muted">{{ transaction.transaction_date|date:"Y-m-d" }}</small>
+                                </div>
+                                <div class="text-end">
+                                    <span class="text-success fw-bold">{{ transaction.price|format_decimal }} kr</span>
+                                    <br>
+                                    <small class="text-muted">{{ transaction.platform.name|default:"Okänd plattform" }}</small>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <p class="text-muted">Inga försäljningstransaktioner registrerade ännu.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Mest aktiva kontakter -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-users"></i> Mest aktiva kontakter
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if top_contacts %}
+                    <div class="row">
+                        {% for contact in top_contacts %}
+                            <div class="col-md-4 mb-3">
+                                <div class="card bg-light">
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between align-items-start">
+                                            <div>
+                                                <h6 class="card-title mb-1">{{ contact.name }}</h6>
+                                                <p class="card-text text-muted mb-2">
+                                                    {{ contact.transaction_count }} transaktioner
+                                                </p>
+                                                {% if contact.is_naj_member %}
+                                                    <span class="badge bg-warning">NAJ-medlem</span>
+                                                {% endif %}
+                                            </div>
+                                            <a href="{% url 'contact_detail' contact.id %}" class="btn btn-sm btn-outline-primary">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="text-muted">Inga kontakter registrerade ännu.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Snabblänkar -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-link"></i> Snabblänkar
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3">
+                        <a href="{% url 'axe_list' %}" class="btn btn-outline-primary w-100 mb-2">
+                            <i class="fas fa-list"></i> Visa alla yxor
+                        </a>
+                    </div>
+                    <div class="col-md-3">
+                        <a href="{% url 'transaction_list' %}" class="btn btn-outline-success w-100 mb-2">
+                            <i class="fas fa-exchange-alt"></i> Transaktionshistorik
+                        </a>
+                    </div>
+                    <div class="col-md-3">
+                        <a href="{% url 'manufacturer_list' %}" class="btn btn-outline-info w-100 mb-2">
+                            <i class="fas fa-industry"></i> Tillverkare
+                        </a>
+                    </div>
+                    <div class="col-md-3">
+                        <a href="{% url 'contact_list' %}" class="btn btn-outline-warning w-100 mb-2">
+                            <i class="fas fa-address-book"></i> Kontakter
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

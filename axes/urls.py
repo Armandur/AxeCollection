@@ -36,4 +36,5 @@ urlpatterns = [
     path('api/transaction/<int:pk>/update/', views_transaction.api_transaction_update, name='api_transaction_update'),
     path('api/search/contacts/', views.search_contacts, name='search_contacts'),
     path('api/search/platforms/', views.search_platforms, name='search_platforms'),
+    path('statistik/', views_axe.statistics_dashboard, name='statistics_dashboard'),
 ] 

@@ -1,7 +1,7 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from .models import Axe, AxeImage, Measurement, NextAxeID, MeasurementTemplate, Transaction, Contact, Platform, Manufacturer
 from .forms import AxeForm, MeasurementForm, TransactionForm
-from django.db.models import Sum, Q, Max
+from django.db.models import Sum, Q, Max, Count
 from django.http import JsonResponse, Http404
 from django.views.decorators.http import require_POST
 from django.utils import timezone
@@ -734,3 +734,108 @@ def update_measurement(request, pk, measurement_id):
             'success': False,
             'error': 'Mått hittades inte.'
         }, status=404)
+
+def statistics_dashboard(request):
+    """Dedikerad statistik-sida för hela samlingen"""
+    
+    # Grundläggande statistik
+    total_axes = Axe.objects.count()
+    total_manufacturers = Manufacturer.objects.count()
+    total_contacts = Contact.objects.count()
+    total_transactions = Transaction.objects.count()
+    
+    # Status-statistik
+    bought_axes = Axe.objects.filter(status='KÖPT').count()
+    received_axes = Axe.objects.filter(status='MOTTAGEN').count()
+    
+    # Transaktionsstatistik
+    buy_transactions = Transaction.objects.filter(type='KÖP')
+    sale_transactions = Transaction.objects.filter(type='SÄLJ')
+    
+    total_buy_value = buy_transactions.aggregate(total=Sum('price'))['total'] or 0
+    total_sale_value = sale_transactions.aggregate(total=Sum('price'))['total'] or 0
+    total_buy_shipping = buy_transactions.aggregate(total=Sum('shipping_cost'))['total'] or 0
+    total_sale_shipping = sale_transactions.aggregate(total=Sum('shipping_cost'))['total'] or 0
+    
+    total_profit = total_sale_value - total_buy_value
+    total_profit_with_shipping = (total_sale_value + total_sale_shipping) - (total_buy_value + total_buy_shipping)
+    
+    # Mest populära tillverkare (top 5)
+    top_manufacturers = Manufacturer.objects.annotate(
+        total_axes=Count('axe')
+    ).order_by('-total_axes')[:5]
+    
+    # Dyraste köp (top 5)
+    most_expensive_buys = Transaction.objects.filter(
+        type='KÖP'
+    ).select_related('axe__manufacturer').order_by('-price')[:5]
+    
+    # Dyraste försäljningar (top 5)
+    most_expensive_sales = Transaction.objects.filter(
+        type='SÄLJ'
+    ).select_related('axe__manufacturer').order_by('-price')[:5]
+    
+    # Mest aktiva plattformar (top 5)
+    top_platforms = Platform.objects.annotate(
+        transaction_count=Count('transaction')
+    ).order_by('-transaction_count')[:5]
+    
+    # Mest aktiva kontakter (top 5)
+    top_contacts = Contact.objects.annotate(
+        transaction_count=Count('transaction')
+    ).order_by('-transaction_count')[:5]
+    
+    # Genomsnittsstatistik
+    avg_price_per_axe = total_buy_value / total_axes if total_axes > 0 else 0
+    avg_profit_per_axe = total_profit / total_axes if total_axes > 0 else 0
+    avg_transactions_per_axe = total_transactions / total_axes if total_axes > 0 else 0
+    
+    # Sålda yxor
+    sold_axes = Axe.objects.filter(transactions__type='SÄLJ').distinct().count()
+    sold_axes_percentage = (sold_axes / total_axes * 100) if total_axes > 0 else 0
+    
+    # NAJ-medlemmar
+    naj_members = Contact.objects.filter(is_naj_member=True).count()
+    naj_percentage = (naj_members / total_contacts * 100) if total_contacts > 0 else 0
+    
+    context = {
+        # Grundläggande statistik
+        'total_axes': total_axes,
+        'total_manufacturers': total_manufacturers,
+        'total_contacts': total_contacts,
+        'total_transactions': total_transactions,
+        
+        # Status-statistik
+        'bought_axes': bought_axes,
+        'received_axes': received_axes,
+        
+        # Transaktionsstatistik
+        'buy_transactions': buy_transactions.count(),
+        'sale_transactions': sale_transactions.count(),
+        'total_buy_value': total_buy_value,
+        'total_sale_value': total_sale_value,
+        'total_buy_shipping': total_buy_shipping,
+        'total_sale_shipping': total_sale_shipping,
+        'total_profit': total_profit,
+        'total_profit_with_shipping': total_profit_with_shipping,
+        
+        # Topplistor
+        'top_manufacturers': top_manufacturers,
+        'most_expensive_buys': most_expensive_buys,
+        'most_expensive_sales': most_expensive_sales,
+        'top_platforms': top_platforms,
+        'top_contacts': top_contacts,
+        
+        # Genomsnitt
+        'avg_price_per_axe': avg_price_per_axe,
+        'avg_profit_per_axe': avg_profit_per_axe,
+        'avg_transactions_per_axe': avg_transactions_per_axe,
+        
+        # Procentuell statistik
+        'sold_axes': sold_axes,
+        'sold_axes_percentage': sold_axes_percentage,
+        'naj_members': naj_members,
+        'naj_percentage': naj_percentage,
+    }
+    
+    return render(request, 'axes/statistics_dashboard.html', context)
