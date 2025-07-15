@@ -46,6 +46,7 @@
 - **Visuell feedback**: Plattformar visas som badges med distinkta färger i tabellen
 - **Django ORM-optimering**: Fixat relationer med `related_name='transactions'` för bättre prestanda
 - **CSV-export förbättringar**: Säker hantering av radbrytningar i textfält för korrekt export
+- **Statistikkort-fix**: Statistikkorten visar nu korrekt data för filtrerade yxor istället för hela samlingen
 
 ### Smart funktioner
 - **Auto-save** - spara automatiskt under processen

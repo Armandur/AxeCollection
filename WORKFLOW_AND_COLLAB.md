@@ -83,11 +83,13 @@
 - **Konsekvent styling**: Alla plattformsnamn visas med fetstil för tydlighet och läsbarhet
 - **Django ORM-optimering**: Fixat relationer mellan Axe och Transaction med `related_name='transactions'` för bättre prestanda
 - **CSV-export förbättringar**: Säker hantering av radbrytningar i textfält med `clean_text()` funktion för korrekt export
+- **Statistikkort-fix**: Statistikkorten visar nu korrekt data för filtrerade yxor istället för hela samlingen
 - **Tekniska lärdomar**:
   - CSS-specificitet: Använd `!important` och specifika selektorer för att överskriva Bootstrap
   - Inline-styling: Använd `<strong>` taggar för att tvinga fetstil oavsett CSS-konflikter
   - Django ORM: `related_name` eliminerar konflikter med automatiska reverse-relationer
   - PowerShell-kompatibilitet: Använd `;` istället för `&&` för att kedja kommandon
+  - Statistikkort-logik: Beräkna statistik baserat på filtrerade objekt, inte hela databasen
 
 ### URL-uppladdning och bildhantering (2025-07-14)
 - **URL-uppladdning av bilder**: Implementerat fullständigt stöd för att ladda ner bilder från URL:er med förhandsvisning, drag & drop och automatisk lagring.

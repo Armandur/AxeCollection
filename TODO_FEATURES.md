@@ -64,6 +64,7 @@ En checklista för vidareutveckling av AxeCollection. Bocka av med [x] när klar
     - [x] 27.5 Förbättrar användarupplevelsen vid sortering och översikt av yxor
     - [x] 27.6 Fixat Django ORM-relationer med related_name='transactions'
     - [x] 27.7 Förbättrad CSV-export med hantering av radbrytningar
+    - [x] 27.8 Fixat statistikkort som nu visar korrekt data för filtrerade yxor (tidigare visade alltid hela samlingen)
 
 ## Yxhantering och inmatning
 

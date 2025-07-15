@@ -8,20 +8,50 @@ from .models import Transaction, Contact, Platform
 
 def transaction_list(request):
     """Visa alla transaktioner i systemet"""
+    # Hämta filter från URL-parametrar
+    type_filter = request.GET.get('type', '')
+    platform_filter = request.GET.get('platform', '')
+    contact_filter = request.GET.get('contact', '')
+    
+    # Starta med alla transaktioner
     transactions = Transaction.objects.all().select_related('axe__manufacturer', 'contact', 'platform').order_by('-transaction_date')
-    # Beräkna totala statistik
-    total_buys = transactions.filter(type='KÖP').count()
-    total_sales = transactions.filter(type='SÄLJ').count()
-    total_buy_value = transactions.filter(type='KÖP').aggregate(total=Sum('price'))['total'] or 0
-    total_sale_value = transactions.filter(type='SÄLJ').aggregate(total=Sum('price'))['total'] or 0
+    
+    # Applicera filter
+    if type_filter:
+        transactions = transactions.filter(type=type_filter)
+    
+    if platform_filter:
+        transactions = transactions.filter(platform_id=platform_filter)
+    
+    if contact_filter == 'with_contact':
+        transactions = transactions.filter(contact__isnull=False)
+    elif contact_filter == 'without_contact':
+        transactions = transactions.filter(contact__isnull=True)
+    
+    # Beräkna totala statistik för filtrerade transaktioner
+    filtered_transactions = transactions
+    total_buys = filtered_transactions.filter(type='KÖP').count()
+    total_sales = filtered_transactions.filter(type='SÄLJ').count()
+    total_buy_value = filtered_transactions.filter(type='KÖP').aggregate(total=Sum('price'))['total'] or 0
+    total_sale_value = filtered_transactions.filter(type='SÄLJ').aggregate(total=Sum('price'))['total'] or 0
     total_profit = total_sale_value - total_buy_value
+    
+    # Hämta data för filter-dropdowns
+    from .models import Platform
+    platforms = Platform.objects.all().order_by('name')
+    
     context = {
         'transactions': transactions,
+        'platforms': platforms,
+        'type_filter': type_filter,
+        'platform_filter': platform_filter,
+        'contact_filter': contact_filter,
         'total_buys': total_buys,
         'total_sales': total_sales,
         'total_buy_value': total_buy_value,
         'total_sale_value': total_sale_value,
         'total_profit': total_profit,
+        'filtered_count': transactions.count(),
     }
     return render(request, 'axes/transaction_list.html', context)
 

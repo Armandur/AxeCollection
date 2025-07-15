@@ -45,19 +45,21 @@ def axe_list(request):
     # Hämta alla plattformar för filter-dropdown
     platforms = Platform.objects.all().order_by('name')
     
-    # Statistik för hela samlingen
-    transactions = Transaction.objects.all()
-    total_buys = transactions.filter(type='KÖP').count()
-    total_sales = transactions.filter(type='SÄLJ').count()
-    total_buy_value = transactions.filter(type='KÖP').aggregate(total=Sum('price'))['total'] or 0
-    total_sale_value = transactions.filter(type='SÄLJ').aggregate(total=Sum('price'))['total'] or 0
-    total_buy_shipping = transactions.filter(type='KÖP').aggregate(total=Sum('shipping_cost'))['total'] or 0
-    total_sale_shipping = transactions.filter(type='SÄLJ').aggregate(total=Sum('shipping_cost'))['total'] or 0
+    # Statistik för filtrerade yxor
+    filtered_axe_ids = list(axes.values_list('id', flat=True))
+    filtered_transactions = Transaction.objects.filter(axe_id__in=filtered_axe_ids)
+    
+    total_buys = filtered_transactions.filter(type='KÖP').count()
+    total_sales = filtered_transactions.filter(type='SÄLJ').count()
+    total_buy_value = filtered_transactions.filter(type='KÖP').aggregate(total=Sum('price'))['total'] or 0
+    total_sale_value = filtered_transactions.filter(type='SÄLJ').aggregate(total=Sum('price'))['total'] or 0
+    total_buy_shipping = filtered_transactions.filter(type='KÖP').aggregate(total=Sum('shipping_cost'))['total'] or 0
+    total_sale_shipping = filtered_transactions.filter(type='SÄLJ').aggregate(total=Sum('shipping_cost'))['total'] or 0
     total_profit = total_sale_value - total_buy_value
     total_profit_with_shipping = (total_sale_value + total_sale_shipping) - (total_buy_value + total_buy_shipping)
     
-    # Hitta sålda yxor (de som har minst en SÄLJ-transaktion)
-    sold_axe_ids = set(transactions.filter(type='SÄLJ').values_list('axe_id', flat=True))
+    # Hitta sålda yxor bland filtrerade yxor (de som har minst en SÄLJ-transaktion)
+    sold_axe_ids = set(filtered_transactions.filter(type='SÄLJ').values_list('axe_id', flat=True))
     
     # Statistik för filtrerade yxor
     filtered_count = axes.count()

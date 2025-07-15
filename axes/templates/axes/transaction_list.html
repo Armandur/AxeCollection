@@ -17,6 +17,79 @@
 {% block content %}
 <h1 class="mb-4">Transaktionshistorik</h1>
 
+<!-- Filter-sektion -->
+<div class="card mb-4">
+    <div class="card-body">
+        <h5 class="card-title mb-3">
+            <i class="fas fa-filter"></i> Filter
+        </h5>
+        <form method="get" class="row g-3">
+            {% csrf_token %}
+            <div class="col-md-2">
+                <label for="type" class="form-label">Typ</label>
+                <select name="type" id="type" class="form-select">
+                    <option value="">Alla transaktioner</option>
+                    <option value="KÖP" {% if type_filter == 'KÖP' %}selected{% endif %}>Köp</option>
+                    <option value="SÄLJ" {% if type_filter == 'SÄLJ' %}selected{% endif %}>Sälj</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label for="platform" class="form-label">Plattform</label>
+                <select name="platform" id="platform" class="form-select">
+                    <option value="">Alla plattformar</option>
+                    {% for platform in platforms %}
+                        <option value="{{ platform.id }}" {% if platform_filter == platform.id|stringformat:"s" %}selected{% endif %}>
+                            {{ platform.name }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label for="contact" class="form-label">Kontakt</label>
+                <select name="contact" id="contact" class="form-select">
+                    <option value="">Alla transaktioner</option>
+                    <option value="with_contact" {% if contact_filter == 'with_contact' %}selected{% endif %}>Med kontakt</option>
+                    <option value="without_contact" {% if contact_filter == 'without_contact' %}selected{% endif %}>Utan kontakt</option>
+                </select>
+            </div>
+            <div class="col-md-4 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary me-2">
+                    <i class="fas fa-search"></i> Filtrera
+                </button>
+                <a href="{% url 'transaction_list' %}" class="btn btn-outline-secondary me-2">
+                    <i class="fas fa-times"></i> Rensa
+                </a>
+            </div>
+        </form>
+        
+        <!-- Filter-statistik -->
+        {% if type_filter or platform_filter or contact_filter %}
+            <div class="mt-3">
+                <small class="text-muted">
+                    Visar {{ filtered_count }} transaktioner
+                    {% if type_filter == 'KÖP' %}
+                        (endast köp)
+                    {% elif type_filter == 'SÄLJ' %}
+                        (endast försäljning)
+                    {% endif %}
+                    {% if platform_filter %}
+                        {% for platform in platforms %}
+                            {% if platform.id|stringformat:"s" == platform_filter %}
+                                från {{ platform.name }}
+                            {% endif %}
+                        {% endfor %}
+                    {% endif %}
+                    {% if contact_filter == 'with_contact' %}
+                        med kontakt
+                    {% elif contact_filter == 'without_contact' %}
+                        utan kontakt
+                    {% endif %}
+                </small>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
 <!-- Statistik-kort -->
 {% include 'axes/_transaction_stats_cards.html' %}
 
