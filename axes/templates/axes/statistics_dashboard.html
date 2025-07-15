@@ -169,6 +169,22 @@
     </div>
 </div>
 
+<!-- Mest aktiva månader - staplat stapeldiagram -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-calendar-alt"></i> Mest aktiva månader (antal köp/sälj)
+                </h5>
+            </div>
+            <div class="card-body">
+                <canvas id="activeMonthsChart" width="400" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Ekonomisk översikt -->
 <div class="row mb-4">
     <div class="col-12">
@@ -528,6 +544,107 @@
     </div>
 </div>
 
+<!-- Senaste aktivitet -->
+<div class="row mb-4">
+    <div class="col-12">
+        <h4 class="mb-3">
+            <i class="fas fa-clock"></i> Senaste aktivitet
+        </h4>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <!-- Senaste köp -->
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-header bg-success text-white">
+                <h6 class="card-title mb-0">
+                    <i class="fas fa-shopping-cart"></i> Senaste köp
+                </h6>
+            </div>
+            <div class="card-body">
+                {% if latest_purchases %}
+                    <div class="list-group list-group-flush">
+                        {% for transaction in latest_purchases %}
+                            <div class="list-group-item d-flex justify-content-between align-items-center p-2">
+                                <div>
+                                    <small class="text-muted">{{ transaction.transaction_date|date:"Y-m-d" }}</small><br>
+                                    <a href="{% url 'axe_detail' transaction.axe.id %}" class="text-decoration-none">
+                                        {{ transaction.axe.model|default:"Okänd modell" }}
+                                    </a>
+                                </div>
+                                <span class="badge bg-success">{{ transaction.price }} kr</span>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="text-muted mb-0">Inga köp registrerade</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Senaste försäljningar -->
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-header bg-danger text-white">
+                <h6 class="card-title mb-0">
+                    <i class="fas fa-tags"></i> Senaste försäljningar
+                </h6>
+            </div>
+            <div class="card-body">
+                {% if latest_sales %}
+                    <div class="list-group list-group-flush">
+                        {% for transaction in latest_sales %}
+                            <div class="list-group-item d-flex justify-content-between align-items-center p-2">
+                                <div>
+                                    <small class="text-muted">{{ transaction.transaction_date|date:"Y-m-d" }}</small><br>
+                                    <a href="{% url 'axe_detail' transaction.axe.id %}" class="text-decoration-none">
+                                        {{ transaction.axe.model|default:"Okänd modell" }}
+                                    </a>
+                                </div>
+                                <span class="badge bg-danger">{{ transaction.price }} kr</span>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="text-muted mb-0">Inga försäljningar registrerade</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Senast tillagda yxor -->
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-header bg-primary text-white">
+                <h6 class="card-title mb-0">
+                    <i class="fas fa-plus-circle"></i> Senast tillagda yxor
+                </h6>
+            </div>
+            <div class="card-body">
+                {% if latest_axes %}
+                    <div class="list-group list-group-flush">
+                        {% for axe in latest_axes %}
+                            <div class="list-group-item d-flex justify-content-between align-items-center p-2">
+                                <div>
+                                    <small class="text-muted">ID: {{ axe.id }}</small><br>
+                                    <a href="{% url 'axe_detail' axe.id %}" class="text-decoration-none">
+                                        {{ axe.model|default:"Okänd modell" }}
+                                    </a>
+                                </div>
+                                <span class="badge bg-primary">{{ axe.manufacturer.name }}</span>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="text-muted mb-0">Inga yxor tillagda</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
 // Linjegraf för antal yxor över tid
 document.addEventListener('DOMContentLoaded', function() {
@@ -673,6 +790,59 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
     });
+});
+
+// Staplat stapeldiagram för mest aktiva månader
+const ctxActiveMonths = document.getElementById('activeMonthsChart').getContext('2d');
+new Chart(ctxActiveMonths, {
+    type: 'bar',
+    data: {
+        labels: {{ activity_labels|safe }},
+        datasets: [
+            {
+                label: 'Köp',
+                data: {{ activity_buys|safe }},
+                backgroundColor: 'rgba(255, 99, 132, 0.7)',
+                stack: 'trans',
+            },
+            {
+                label: 'Sälj',
+                data: {{ activity_sales|safe }},
+                backgroundColor: 'rgba(54, 162, 235, 0.7)',
+                stack: 'trans',
+            }
+        ]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                display: true,
+                position: 'top'
+            },
+            tooltip: {
+                mode: 'index',
+                intersect: false,
+                callbacks: {
+                    label: function(context) {
+                        return context.dataset.label + ': ' + context.parsed.y;
+                    }
+                }
+            }
+        },
+        scales: {
+            x: {
+                stacked: true,
+                grid: { display: false }
+            },
+            y: {
+                stacked: true,
+                beginAtZero: true,
+                ticks: { stepSize: 1 }
+            }
+        }
+    }
 });
 </script>
 {% endblock %} 

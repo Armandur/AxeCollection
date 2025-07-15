@@ -309,6 +309,23 @@
 - **Navigationslogik:** Gruppbaserad navigering (endast inom samma bildtyp) ger bättre användarupplevelse än global navigering
 - **Debugging:** Linter-fel kan vara falska positiva - alltid testa funktionalitet i webbläsaren
 
+### Statistik och visualisering (2025-07-15)
+- **Chart.js för staplade diagram**: Använd `stacked: true` för att visa köp och sälj i samma stapel med tydlig fördelning
+- **Färgkodning för statistik**: Konsekvent färgschema - röd för köp/utgifter, blå för sälj/intäkter, grön för köp-aktivitet
+- **Datumformatering**: Använd ISO-format (ÅÅÅÅ-MM-DD) genom hela applikationen för konsekvent formatering
+- **Django ORM-felhantering**: Validera att fältnamn finns i modellen innan användning i `order_by()` - använd `id` istället för `created_at` när timestamp-fält saknas
+- **Senaste aktivitet-sektion**: Visa de 5 senaste aktiviteterna per kategori för snabb översikt, med länkar till detaljsidor
+- **Responsiv design för diagram**: Chart.js hanterar responsivitet automatiskt, men testa på olika skärmstorlekar
+- **Tooltips och interaktivitet**: Lägg till tooltips med exakta värden för bättre användbarhet av diagram
+- **Git-arbetsflöde för små ändringar**: Använd `git commit --amend` för att lägga till små ändringar i föregående commit istället för att skapa nya commits
+
+### Felhantering och debugging (2025-07-15)
+- **Django server errors**: Kontrollera terminalen för detaljerade felmeddelanden vid 500-fel - Django ger ofta tydliga ledtrådar om vad som är fel
+- **FieldError-hantering**: När Django klagar på att fält inte finns, kontrollera modellens faktiska fält med `model._meta.get_fields()`
+- **Linter-fel**: Åtgärda syntaxfel och saknade imports innan testning för att undvika förvirring
+- **Git återställning**: Använd `git restore .` för att snabbt återställa oönskade ändringar när implementationer behöver pausas
+- **Iterativ utveckling**: Testa funktioner stegvis och få användarfeedback innan vidareutveckling
+
 ---
 
 **För AI-assistenter:** Läs igenom denna fil noggrant innan du börjar arbeta med projektet. Den innehåller viktig kontext om arbetsflöden, beslut och riktlinjer som hjälper dig att fortsätta arbetet effektivt.

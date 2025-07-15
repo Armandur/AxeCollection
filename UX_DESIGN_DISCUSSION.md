@@ -125,5 +125,29 @@ Visa: [Alla] [Köpta] [Mottagna] [Tillverkare ▼]
 - **Visuell feedback:** Bildräknare visar position i gruppen ("X av Y")
 - **Responsiv design:** Navigationsknappar anpassas för olika skärmstorlekar
 
+## Statistik och visualisering - Lärdomar
+
+### Diagram och grafer
+- **Staplade stapeldiagram** är effektiva för att visa fördelning mellan kategorier (köp vs sälj) samtidigt som total aktivitet
+- **Färgkodning** måste vara konsekvent: röd för köp/utgifter, blå för sälj/intäkter, grön för köp-aktivitet
+- **Tooltips** med exakta värden förbättrar användbarheten av diagram
+- **Responsiv design** är kritisk för diagram - Chart.js hanterar detta automatiskt
+
+### Senaste aktivitet-sektion
+- **Tre kort i rad** ger bra översikt utan att ta för mycket plats
+- **Begränsa till 5 objekt** per kategori för att undvika överväldigande information
+- **Länkar till detaljsidor** gör informationen användbar istället för bara informativ
+- **Färgkodade headers** hjälper användaren att snabbt identifiera kategorier
+
+### Datumformatering
+- **ISO-format (ÅÅÅÅ-MM-DD)** är internationellt standardiserat och undviker förvirring
+- **Konsekvent formatering** genom hela applikationen förbättrar användarupplevelsen
+- **Django template filters** gör det enkelt att ändra formatering centralt
+
+### Användarupplevelse
+- **Snabb överblick** är viktigt för statistik - användare vill se trender och mönster snabbt
+- **Interaktiva element** (länkar, tooltips) gör statistik användbar istället för bara informativ
+- **Visuell hierarki** med färger, ikoner och typografi hjälper användaren att navigera informationen
+
 ## Nästa steg
 Implementera status-fält och filter i yxlistan som första prioritet. 

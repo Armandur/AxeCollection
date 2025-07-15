@@ -38,6 +38,19 @@ Ett Django-baserat system för att hantera och katalogisera yxsamlingar med avan
 - Ekonomisk översikt med totala köp- och försäljningsvärden
 - Realtidsstatistik som uppdateras baserat på aktiva filter
 
+## Senaste uppdateringar
+
+### Statistik och visualisering
+- **Staplat stapeldiagram för mest aktiva månader** - Visar antal köp och sälj per månad med färgkodning (röd för köp, blå för sälj)
+- **Senaste aktivitet-sektion** - Tre kort som visar de 5 senaste köpen, försäljningarna och tillagda yxorna med datum och pris/tillverkare
+- **Förbättrat datumformat** - Alla datum visas nu i ISO-format (ÅÅÅÅ-MM-DD) för konsekvent formatering
+
+### Tidigare funktioner
+- **Ekonomisk stapeldiagram** - Visar transaktionsvärden per månad (köp och försäljning)
+- **Linjegraf för yxor över tid** - Visar "Yxor köpta" och "Yxor i samlingen" över tid
+- **Topplistor med länkar** - Länkar till yxorna från dyraste/billigaste köp/försäljningar
+- **Samlingsstatistik** - Totala värden, vinstmarginal och mest aktiva tillverkare/plattformar/kontakter
+
 ## Teknisk stack
 
 - **Backend**: Django 4.x

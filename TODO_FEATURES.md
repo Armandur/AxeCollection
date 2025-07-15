@@ -65,6 +65,12 @@ En checklista för vidareutveckling av AxeCollection. Bocka av med [x] när klar
     - [x] 27.6 Fixat Django ORM-relationer med related_name='transactions'
     - [x] 27.7 Förbättrad CSV-export med hantering av radbrytningar
     - [x] 27.8 Fixat statistikkort som nu visar korrekt data för filtrerade yxor (tidigare visade alltid hela samlingen)
+28. [ ] Måttkolumn och filtrering i yxlistan
+    - [ ] 28.1 Lägg till "Mått"-kolumn i yxlistan med linjal-ikon för yxor med registrerade mått
+    - [ ] 28.2 Tooltip/popup som visar måtten vid hovring över ikonen
+    - [ ] 28.3 Filter för att visa endast yxor med/utan mått
+    - [ ] 28.4 Responsiv design för måttkolumnen på olika skärmstorlekar
+    - [ ] 28.5 Tydlig visuell indikation på vilka yxor som har kompletta mått
 
 ## Yxhantering och inmatning
 
@@ -113,7 +119,7 @@ En checklista för vidareutveckling av AxeCollection. Bocka av med [x] när klar
 ## Admin och datahantering
 
 40. [x] Förbättrad admin-raderingsvy för yxor – Tydlig lista över vad som tas bort, bockruta för bildradering.
-41. [ ] Batchuppladdning av yxor – Möjlighet att ladda upp flera yxor samtidigt.
+41. [ ] Batchuppladdning av yxor – Möjlighet att ladda upp flera yxor samtidigt. **(Pausad – kräver vidare diskussion och behovsanalys innan implementation)**
 42. [x] Export/import av data (CSV, Excel) direkt från admin.
 43. [ ] Automatiska backuper av databasen.
 44. [x] Eget administratörsgränssnitt för tillverkare
@@ -196,8 +202,17 @@ En checklista för vidareutveckling av AxeCollection. Bocka av med [x] när klar
     - [x] 56.8.2 Förbättrad layout med radbrytning för långa yxnamn
     - [x] 56.8.3 Flexbox-layout för bättre "tabb-avstånd" och läsbarhet
     - [x] 56.8.4 Billigaste köp och försäljningar tillagda
-56.9 [ ] Visa mest aktiva månader (när köps/säljs flest yxor)
-56.10 [ ] Visa senaste aktivitet (senaste köp, sälj, tillagd yxa)
+56.9 [x] Visa mest aktiva månader (när köps/säljs flest yxor)
+    - [x] 56.9.1 Staplat stapeldiagram som visar antal köp/sälj per månad
+    - [x] 56.9.2 Färgkodning: röd för köp, blå för sälj
+    - [x] 56.9.3 Tooltip med exakt antal transaktioner per typ
+    - [x] 56.9.4 Placerat efter ekonomiska diagrammen på statistiksidan
+56.10 [x] Visa senaste aktivitet (senaste köp, sälj, tillagd yxa)
+    - [x] 56.10.1 Tre kort för senaste köp, försäljningar och tillagda yxor
+    - [x] 56.10.2 Visar de 5 senaste aktiviteterna per kategori
+    - [x] 56.10.3 Länkar till respektive yxas detaljsida
+    - [x] 56.10.4 Färgkodning: grön för köp, röd för sälj, blå för tillagda yxor
+    - [x] 56.10.5 Visar datum och pris/tillverkare för varje aktivitet
 57. [ ] QR-kod för att snabbt visa en yxa på mobilen.
 
 ## Framtida förbättringar
@@ -210,5 +225,30 @@ En checklista för vidareutveckling av AxeCollection. Bocka av med [x] när klar
 63. [ ] Automatisk bildrotation baserat på EXIF-data.
 64. [ ] Bulk-redigering av bilder (redigera flera bilder samtidigt).
 65. [ ] Bildkommentarer med @-mentions för att länka till tillverkare eller yxor.
+
+## Tekniska lärdomar från utveckling
+
+### Django ORM och databasfält
+- **created_at vs id för sortering**: När `created_at`-fält saknas i modellen, använd `id` för att sortera efter skapandedatum (högre ID = nyare objekt)
+- **FieldError-hantering**: Validera att fältnamn finns i modellen innan användning i `order_by()` eller andra ORM-operationer
+
+### Datumformatering
+- **Konsekvent ISO-format**: Använd `Y-m-d` (ÅÅÅÅ-MM-DD) för konsekvent datumformatering i hela applikationen
+- **Django template filters**: `{{ date|date:"Y-m-d" }}` för ISO-formatering
+
+### Statistik och visualisering
+- **Chart.js för staplade diagram**: Använd `stacked: true` för att visa köp och sälj i samma stapel
+- **Färgkodning**: Röd för köp, blå för sälj, grön för köp-aktivitet, röd för sälj-aktivitet, blå för tillagda objekt
+- **Responsiv design**: Använd Bootstrap-kort med `h-100` för jämn höjd på olika skärmstorlekar
+
+### Användarupplevelse
+- **Senaste aktivitet**: Visa de 5 senaste aktiviteterna per kategori för snabb överblick
+- **Länkar till detaljsidor**: Alla transaktionslistor och topplistor ska länka till respektive yxas detaljsida
+- **Tydlig kategorisering**: Använd färgkodade headers och badges för enkel identifiering
+
+### Felhantering
+- **Django server errors**: Kontrollera terminalen för detaljerade felmeddelanden vid 500-fel
+- **Linter-fel**: Åtgärda syntaxfel och saknade imports innan testning
+- **Git återställning**: Använd `git restore .` för att snabbt återställa oönskade ändringar
 
  

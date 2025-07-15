@@ -897,6 +897,34 @@ def statistics_dashboard(request):
             buy_values.append(0)
             sale_values.append(0)
     
+    # Data för mest aktiva månader (antal transaktioner per månad, köp/sälj)
+    monthly_activity = {}
+    for transaction in all_transactions:
+        month_key = transaction.transaction_date.strftime('%b %Y')
+        if month_key not in monthly_activity:
+            monthly_activity[month_key] = {'buy': 0, 'sale': 0}
+        if transaction.type == 'KÖP':
+            monthly_activity[month_key]['buy'] += 1
+        elif transaction.type == 'SÄLJ':
+            monthly_activity[month_key]['sale'] += 1
+    # Skapa arrays för Chart.js (använd samma ordning som övriga diagram)
+    activity_labels = []
+    activity_buys = []
+    activity_sales = []
+    for month in chart_labels:
+        activity_labels.append(month)
+        if month in monthly_activity:
+            activity_buys.append(monthly_activity[month]['buy'])
+            activity_sales.append(monthly_activity[month]['sale'])
+        else:
+            activity_buys.append(0)
+            activity_sales.append(0)
+    
+    # Data för senaste aktivitet
+    latest_purchases = Transaction.objects.filter(type='KÖP').order_by('-transaction_date')[:5]
+    latest_sales = Transaction.objects.filter(type='SÄLJ').order_by('-transaction_date')[:5]
+    latest_axes = Axe.objects.all().order_by('-id')[:5]
+    
     context = {
         # Grundläggande statistik
         'total_axes': total_axes,
@@ -945,6 +973,12 @@ def statistics_dashboard(request):
         'financial_labels': financial_labels,
         'buy_values': buy_values,
         'sale_values': sale_values,
+        'activity_labels': activity_labels,
+        'activity_buys': activity_buys,
+        'activity_sales': activity_sales,
+        'latest_purchases': latest_purchases,
+        'latest_sales': latest_sales,
+        'latest_axes': latest_axes,
     }
     
     return render(request, 'axes/statistics_dashboard.html', context)
