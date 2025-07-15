@@ -175,7 +175,12 @@ En checklista för vidareutveckling av AxeCollection. Bocka av med [x] när klar
 53. [x] Bättre visuell presentation av galleriet, t.ex. lightbox för bilder.
 54. [x] Förbättrad UI med badges och ikoner – Tydligare visning av transaktionstyper med ikoner.
 55. [x] Förbättrad tillverkarsida – ID som badge, kommentar som egen sektion, hela bredden för korten.
-56. [ ] Visa statistik (t.ex. antal yxor, mest populära tillverkare, dyraste köp).
+56. [x] Visa statistik (t.ex. antal yxor, mest populära tillverkare, dyraste köp).
+    - [x] 56.1 Dedikerad statistik-dashboard med samlingsöversikt
+    - [x] 56.2 Topplistor för mest aktiva tillverkare, plattformar och kontakter
+    - [x] 56.3 Ekonomisk översikt med totala köp- och försäljningsvärden
+    - [x] 56.4 Realtidsstatistik som uppdateras baserat på aktiva filter
+    - [x] 56.5 Fixat Django ORM-problem med annotate och properties
 57. [ ] QR-kod för att snabbt visa en yxa på mobilen.
 
 ## Framtida förbättringar

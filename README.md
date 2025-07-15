@@ -9,6 +9,7 @@ Ett Django-baserat system för att hantera och katalogisera yxsamlingar med avan
 - Avancerad bildhantering med drag & drop, URL-uppladdning och .webp-optimering
 - Transaktionshantering för köp och försäljning
 - Kontakt- och plattformshantering med AJAX-sökning
+- Filtrering och sökning med realtidsstatistik
 
 ### Måtthantering
 - **Batch-mått från mallar**: Snabbt lägga till flera mått samtidigt med fördefinierade mallar
@@ -30,6 +31,12 @@ Ett Django-baserat system för att hantera och katalogisera yxsamlingar med avan
 - Inline-redigering av information
 - Markdown-stöd för beskrivningar
 - Kategoriserad bildhantering (stämplar vs övriga bilder)
+
+### Statistik och analys
+- Dedikerad statistik-dashboard med samlingsöversikt
+- Topplistor för mest aktiva tillverkare, plattformar och kontakter
+- Ekonomisk översikt med totala köp- och försäljningsvärden
+- Realtidsstatistik som uppdateras baserat på aktiva filter
 
 ## Teknisk stack
 

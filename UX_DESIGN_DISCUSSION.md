@@ -54,6 +54,7 @@
 - **Smart sökning** - "Hultafors" ger förslag på "Hultafors AB"
 - **Kontaktförslag** - om försäljaren redan finns, föreslå den
 - **Prisberäkning** - visa total kostnad (pris + frakt)
+- **Realtidsstatistik** - statistik som uppdateras baserat på aktiva filter
 
 ### Mallar för vanliga tillverkare/mått
 - **Tillverkarmallar**: När du väljer "Hultafors" fylls automatiskt i:
@@ -115,6 +116,7 @@ Visa: [Alla] [Köpta] [Mottagna] [Tillverkare ▼]
 - ✅ Visuell hantering för inaktiva länkar (gråtonad, URL som text, "Inaktiv"-badge)
 - ✅ Hover-effekter på bild- och länkkort för bättre användarupplevelse
 - ✅ Template filter för att visa information i tillverkarlistan (strippa markdown, begränsa längd)
+- ✅ Dedikerad statistik-dashboard med topplistor och ekonomisk översikt
 
 ## UX-principer för lightbox och bildhantering
 - **Navigationslogik:** Bläddra endast inom samma bildtyp (Stämplar eller Övriga bilder) för bättre användarupplevelse
