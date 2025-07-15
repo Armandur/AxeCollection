@@ -191,7 +191,11 @@ En checklista för vidareutveckling av AxeCollection. Bocka av med [x] när klar
     - [x] 56.7.2 Röda staplar för köpvärde, gröna för försäljningsvärde
     - [x] 56.7.3 Visar aktivitet över tid istället för kumulativa värden
     - [x] 56.7.4 Svensk formatering av belopp i tooltips och axlar
-56.8 [ ] Visa dyraste och billigaste köp/sälj i topplistan, med länk till respektive yxa
+56.8 [x] Visa dyraste och billigaste köp/sälj i topplistan, med länk till respektive yxa
+    - [x] 56.8.1 Länkar till yxorna från alla transaktionslistor
+    - [x] 56.8.2 Förbättrad layout med radbrytning för långa yxnamn
+    - [x] 56.8.3 Flexbox-layout för bättre "tabb-avstånd" och läsbarhet
+    - [x] 56.8.4 Billigaste köp och försäljningar tillagda
 56.9 [ ] Visa mest aktiva månader (när köps/säljs flest yxor)
 56.10 [ ] Visa senaste aktivitet (senaste köp, sälj, tillagd yxa)
 57. [ ] QR-kod för att snabbt visa en yxa på mobilen.
