@@ -40,6 +40,12 @@ Ett Django-baserat system för att hantera och katalogisera yxsamlingar med avan
 
 ## Senaste uppdateringar
 
+### Flaggemoji för kontakter (2025-01-17)
+- **Landskod-stöd** - Kontakter kan nu ha en landskod (ISO 3166-1 alpha-2) som visas som flaggemoji
+- **Konsekvent visning** - Flaggemoji visas på alla ställen där kontakter visas: kontaktdetaljsidan, transaktionshistorik, tillverkardetaljsidan, statistik-sidan och kontaktlistan
+- **Sökbart landsfält** - ContactForm har nu ett sökbart select-fält med flagg-emoji och landsnamn
+- **Automatisk uppdatering** - Befintliga kontakter med land "Sverige" och "Finland" har uppdaterats automatiskt med rätt landskod
+
 ### Statistik och visualisering
 - **Staplat stapeldiagram för mest aktiva månader** - Visar antal köp och sälj per månad med färgkodning (röd för köp, blå för sälj)
 - **Senaste aktivitet-sektion** - Tre kort som visar de 5 senaste köpen, försäljningarna och tillagda yxorna med datum och pris/tillverkare

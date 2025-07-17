@@ -74,7 +74,46 @@
 - **Smart defaults:** Sätt smarta standardvärden (t.ex. dagens datum för transaktioner).
 - **Validation feedback:** Ge tydlig feedback när validering misslyckas.
 
-## Senaste genomförda förbättringar (2025-07-15)
+## Senaste genomförda förbättringar (2025-07-18)
+
+### JavaScript-fel och landsfält-problem (2025-07-18)
+- **SyntaxError-fix på yxformuläret**: Fixade `window.axeId = ;` genom att kontrollera om `axe.pk` finns innan värdet sätts
+- **Landsfält-simplifiering**: Ersatte komplex sökbar select med enkel dropdown för landsfält på kontaktformuläret
+- **Debug-kod rensning**: Tog bort alla `console.log()`-rader från båda formulären för renare kod
+- **Django-template-syntax**: Förbättrade felhantering för Django-template-kod i JavaScript genom att flytta logik utanför script-taggar
+- **Konsekvent landsfält**: Implementerade enkel dropdown med flagg-emoji och landsnamn som fungerar på alla enheter
+- **Redigeringsstöd**: Stöd för att visa befintligt valt land när kontaktformuläret laddas för redigering
+- **Kodrensning**: Tog bort onödiga CSS-regler och JavaScript-funktioner som inte längre behövdes
+- **Användarupplevelse**: Förbättrade användarupplevelsen med enkel och pålitlig dropdown-lista istället för komplex sökbar select
+- **Tekniska lärdomar**:
+  - Django-template-syntax: Undvik att blanda Django-template-kod direkt i JavaScript för att undvika linter-fel
+  - Felhantering: Kontrollera alltid om variabler finns innan de används (t.ex. `axe.pk` för nya yxor)
+  - KISS-princip: Enkel lösning (dropdown) är ofta bättre än komplex (sökbar select) för grundläggande funktionalitet
+  - Debug-kod: Ta bort all debug-kod innan kod går till produktion för bättre prestanda och renare kod
+  - Cross-browser kompatibilitet: Standard HTML `<select>` fungerar på alla enheter och webbläsare
+
+## Senaste genomförda förbättringar (2025-01-17)
+
+### Flaggemoji för kontakter (2025-01-17)
+- **Landskod-stöd**: Implementerat fullständigt stöd för landskoder (ISO 3166-1 alpha-2) i Contact-modellen med automatisk konvertering till flaggemoji
+- **Template filter**: Skapat `country_flag` filter som konverterar landskod till motsvarande flaggemoji (t.ex. "SE" → 🇸🇪)
+- **Konsekvent visning**: Flaggemoji visas nu på alla ställen där kontakter visas:
+  - Kontaktdetaljsidan (rubrik)
+  - Transaktionshistoriken på yxdetaljsidan
+  - Transaktioner på tillverkardetaljsidan
+  - Kontakter som handlat med tillverkaren
+  - Mest aktiva kontakter på statistik-sidan
+  - Kontaktlistan
+  - Transaktionslistan
+  - Yxformuläret
+- **Sökbart landsfält**: ContactForm har uppdaterats med ett sökbart select-fält som visar flagg-emoji och landsnamn
+- **Automatisk datamigrering**: Befintliga kontakter med land "Sverige" och "Finland" har uppdaterats automatiskt med rätt landskod
+- **Responsiv design**: Flaggemoji anpassas för olika skärmstorlekar med lämplig marginal (`me-1` eller `me-2`)
+- **Tekniska lärdomar**:
+  - Template filters: Använd `@register.filter` för att skapa återanvändbara filter
+  - Datamigrering: Använd Django management commands för säker uppdatering av befintlig data
+  - Konsekvent UX: Implementera funktionalitet på alla relevanta ställen för enhetlig användarupplevelse
+  - ISO-standarder: Använd ISO 3166-1 alpha-2 för landskoder för internationell kompatibilitet
 
 ### Plattformsfilter och dynamisk färgsättning (2025-07-15)
 - **Plattformsfilter i yxlistan**: Implementerat fullständigt stöd för filtrering av yxor på plattform med dropdown och URL-parametrar

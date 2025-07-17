@@ -3,56 +3,55 @@ from decimal import Decimal, ROUND_HALF_UP, InvalidOperation
 from django.utils.safestring import mark_safe
 import re
 import os
+from django.template.defaultfilters import floatformat
 
 register = template.Library()
 
-@register.filter(name='format_decimal')
+# Landskod till flagg-emoji mapping
+COUNTRY_FLAGS = {
+    'SE': '🇸🇪',
+    'FI': '🇫🇮',
+    'NO': '🇳🇴',
+    'DK': '🇩🇰',
+    'DE': '🇩🇪',
+    'GB': '🇬🇧',
+    'US': '🇺🇸',
+    'FR': '🇫🇷',
+    'IT': '🇮🇹',
+    'ES': '🇪🇸',
+    'PL': '🇵🇱',
+    'EE': '🇪🇪',
+    'LV': '🇱🇻',
+    'LT': '🇱🇹',
+    'RU': '🇷🇺',
+    'NL': '🇳🇱',
+    'BE': '🇧🇪',
+    'CH': '🇨🇭',
+    'AT': '🇦🇹',
+    'IE': '🇮🇪',
+    'IS': '🇮🇸',
+    'CZ': '🇨🇿',
+    'SK': '🇸🇰',
+    'HU': '🇭🇺',
+    'UA': '🇺🇦',
+    'RO': '🇷🇴',
+    'BG': '🇧🇬',
+    'HR': '🇭🇷',
+    'SI': '🇸🇮',
+    'PT': '🇵🇹',
+    'GR': '🇬🇷',
+    'TR': '🇹🇷',
+    'CA': '🇨🇦',
+    'AU': '🇦🇺',
+    'NZ': '🇳🇿',
+}
+
+@register.filter
 def format_decimal(value):
-    """
-    Formaterar ett Decimal-värde.
-    - Visar inga decimaler om det är ett heltal.
-    - Visar två decimaler om det finns decimaler.
-    - Använder Unicode non-breaking space som tusentalsavgränsare.
-    """
+    """Formatera decimaltal med svenska format (komma som decimalseparator)"""
     if value is None:
-        return ""
-    
-    # Säkerställ att värdet är ett Decimal
-    if not isinstance(value, Decimal):
-        try:
-            # Hantera olika typer av värden
-            if isinstance(value, (int, float)):
-                value = Decimal(str(value))
-            elif isinstance(value, str):
-                # Rensa strängen från onödiga tecken
-                cleaned = value.strip().replace(',', '.')
-                if cleaned:
-                    value = Decimal(cleaned)
-                else:
-                    return "0"
-            else:
-                return str(value)
-        except (ValueError, TypeError, InvalidOperation):
-            return str(value)
-
-    # Formatera med tusentalsavgränsare (Unicode non-breaking space)
-    def format_sv(num, decimals=0):
-        if decimals == 0:
-            return f"{int(num):,}".replace(",", "\u00A0")
-        else:
-            s = f"{num:,.2f}".replace(",", "\u00A0")
-            # Ta bort onödiga decimaler om .00
-            if s.endswith(".00"):
-                s = s[:-3]
-            return s
-
-    try:
-        if value == value.to_integral_value():
-            return format_sv(value, 0)
-        else:
-            return format_sv(value, 2)
-    except (ValueError, TypeError, InvalidOperation):
-        return str(value)
+        return "0,00"
+    return floatformat(value, 2).replace('.', ',')
 
 @register.filter(name='format_currency')
 def format_currency(value, currency="kr"):
@@ -217,3 +216,57 @@ def strip_markdown_and_truncate(value, max_length=100):
 def basename(value):
     """Returnerar filnamnet utan sökväg."""
     return os.path.basename(value)
+
+@register.filter
+def country_flag(country_code):
+    """Returnera flagg-emoji för landskod"""
+    if not country_code:
+        return ""
+    return COUNTRY_FLAGS.get(country_code.upper(), "")
+
+@register.filter
+def country_name(country_code):
+    """Returnera landsnamn för landskod"""
+    if not country_code:
+        return ""
+    
+    # Landskod till namn mapping
+    COUNTRY_NAMES = {
+        'SE': 'Sverige',
+        'FI': 'Finland',
+        'NO': 'Norge',
+        'DK': 'Danmark',
+        'DE': 'Tyskland',
+        'GB': 'Storbritannien',
+        'US': 'USA',
+        'FR': 'Frankrike',
+        'IT': 'Italien',
+        'ES': 'Spanien',
+        'PL': 'Polen',
+        'EE': 'Estland',
+        'LV': 'Lettland',
+        'LT': 'Litauen',
+        'RU': 'Ryssland',
+        'NL': 'Nederländerna',
+        'BE': 'Belgien',
+        'CH': 'Schweiz',
+        'AT': 'Österrike',
+        'IE': 'Irland',
+        'IS': 'Island',
+        'CZ': 'Tjeckien',
+        'SK': 'Slovakien',
+        'HU': 'Ungern',
+        'UA': 'Ukraina',
+        'RO': 'Rumänien',
+        'BG': 'Bulgarien',
+        'HR': 'Kroatien',
+        'SI': 'Slovenien',
+        'PT': 'Portugal',
+        'GR': 'Grekland',
+        'TR': 'Turkiet',
+        'CA': 'Kanada',
+        'AU': 'Australien',
+        'NZ': 'Nya Zeeland',
+    }
+    
+    return COUNTRY_NAMES.get(country_code.upper(), country_code)

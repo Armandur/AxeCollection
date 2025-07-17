@@ -334,6 +334,7 @@ class Contact(models.Model):
     postal_code = models.CharField(max_length=20, blank=True, null=True)
     city = models.CharField(max_length=100, blank=True, null=True)
     country = models.CharField(max_length=100, blank=True, null=True)
+    country_code = models.CharField(max_length=2, blank=True, null=True, help_text="ISO 3166-1 alpha-2 landskod, t.ex. 'SE' för Sverige")
     comment = models.TextField(blank=True, null=True)
     is_naj_member = models.BooleanField("Medlem i Nordic Axe Junkies", default=False)
 

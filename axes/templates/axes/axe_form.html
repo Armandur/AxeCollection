@@ -5,10 +5,17 @@
 {% block title %}{% if is_edit %}Redigera yxa{% else %}Skapa ny yxa{% endif %}{% endblock %}
 
 {% block extra_head %}
+{% if axe.pk %}
 <script>
 window.axeId = {{ axe.pk }};
 window.measurementTemplates = {{ measurement_templates|safe }};
 </script>
+{% else %}
+<script>
+window.axeId = null;
+window.measurementTemplates = {{ measurement_templates|safe }};
+</script>
+{% endif %}
 <script src="{% static 'js/measurement_templates.js' %}"></script>
 <style>
 /* Tvinga dropdown direkt under inputfältet */
@@ -144,7 +151,7 @@ window.measurementTemplates = {{ measurement_templates|safe }};
                                             {% include 'axes/_form_field.html' with field=form.contact_city %}
                                         </div>
                                     </div>
-                                    {% include 'axes/_form_field.html' with field=form.contact_country %}
+                                    {% include 'axes/_form_field.html' with field=form.contact_country_code %}
                                 </div>
                             </div>
                         </div>
@@ -697,24 +704,17 @@ document.addEventListener('DOMContentLoaded', function() {
     };
 
     window.toggleUrlInput = function() {
-        console.log('toggleUrlInput called');
-        console.log('urlInputSection:', urlInputSection);
-        console.log('urlInputSection.style.display:', urlInputSection.style.display);
-        
         if (!urlInputSection) {
-            console.error('urlInputSection not found!');
             return;
         }
         
         if (urlInputSection.style.display === 'none' || urlInputSection.style.display === '') {
-            console.log('Showing URL input section');
             urlInputSection.style.display = 'block';
             urlInputSection.classList.add('url-input-enter');
             if (imageUrlInput) {
                 imageUrlInput.focus();
             }
         } else {
-            console.log('Hiding URL input section');
             urlInputSection.classList.add('url-input-exit');
             setTimeout(() => {
                 urlInputSection.style.display = 'none';
@@ -756,15 +756,8 @@ document.addEventListener('DOMContentLoaded', function() {
             e.preventDefault();
             uploadArea.classList.remove('dragover');
             
-            console.log('Drop event triggered');
-            console.log('Files dropped:', e.dataTransfer.files);
-            console.log('Text dropped:', e.dataTransfer.getData('text'));
-            console.log('URL dropped:', e.dataTransfer.getData('url'));
-            console.log('HTML dropped:', e.dataTransfer.getData('text/html'));
-            
             // Hantera filer
             const files = Array.from(e.dataTransfer.files).filter(file => file.type.startsWith('image/'));
-            console.log('Image files found:', files);
             handleFiles(files);
             
             // Hantera URL:er - testa olika format
@@ -783,12 +776,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             }
             
-            console.log('Final URL text:', urlText);
             if (urlText && isImageUrl(urlText)) {
-                console.log('Valid image URL dropped, calling handleImageUrl');
                 handleImageUrl(urlText);
-            } else {
-                console.log('No valid image URL in dropped data');
             }
         });
     }
@@ -815,24 +804,16 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function handleImageUrl(url) {
-        console.log('handleImageUrl called with:', url);
         if (isImageUrl(url)) {
-            console.log('URL is valid image URL, calling addImagePreview');
             addImagePreview(null, url, url);
-        } else {
-            console.log('URL is NOT valid image URL');
         }
     }
 
     function isImageUrl(text) {
-        console.log('isImageUrl called with:', text);
-        
         // Kontrollera om det är en giltig URL
         try {
             const url = new URL(text);
-            console.log('Valid URL:', url.href);
         } catch (e) {
-            console.log('Invalid URL:', text);
             return false;
         }
         
@@ -845,10 +826,7 @@ document.addEventListener('DOMContentLoaded', function() {
                            url.includes('facebook.com') ||
                            url.includes('instagram.com');
         
-        console.log('URL analysis:', { url, hasImageExtension, isKnownSite });
-        const result = hasImageExtension || isKnownSite;
-        console.log('isImageUrl result:', result);
-        return result;
+        return hasImageExtension || isKnownSite;
     }
 
     function addImagePreview(file, dataUrl, url = null) {
@@ -1205,47 +1183,35 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // URL-hantering
     if (addUrlBtn && imageUrlInput) {
-        console.log('URL elements found:', { addUrlBtn, imageUrlInput });
-        
         addUrlBtn.addEventListener('click', () => {
-            console.log('Add URL button clicked');
             const url = imageUrlInput.value.trim();
-            console.log('URL value:', url);
             if (url) {
-                console.log('Calling handleImageUrl with:', url);
                 handleImageUrl(url);
                 imageUrlInput.value = '';
                 // Visa notifikation
                 showNotification('URL-bild tillagd', 'success');
             } else {
-                console.log('No URL provided');
                 showNotification('Ange en giltig URL', 'error');
             }
         });
 
         imageUrlInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') {
-                console.log('Enter pressed in URL input');
                 addUrlBtn.click();
             }
         });
         
         // Lägg till paste-hantering för URL-input
         imageUrlInput.addEventListener('paste', (e) => {
-            console.log('Paste event in URL input');
             setTimeout(() => {
                 const pastedText = imageUrlInput.value.trim();
-                console.log('Pasted text:', pastedText);
                 if (pastedText && isImageUrl(pastedText)) {
-                    console.log('Valid URL pasted, auto-adding');
                     handleImageUrl(pastedText);
                     imageUrlInput.value = '';
                     showNotification('URL-bild tillagd från klistrad text', 'success');
                 }
             }, 100);
         });
-    } else {
-        console.log('URL elements NOT found:', { addUrlBtn, imageUrlInput });
     }
 
     // Klistra in hantering
@@ -1357,6 +1323,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Sätt axeId och måttmallar för automatisk initiering
     // window.axeId = {{ axe.pk }}; // Moved to extra_head
     // const measurementTemplates = {{ measurement_templates|safe }}; // Moved to extra_head
-}); 
+
+});
 </script>
 {% endblock %}

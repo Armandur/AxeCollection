@@ -3,6 +3,46 @@ from .models import Transaction, Contact, Platform, Measurement, MeasurementType
 from django.utils import timezone
 from .models import Axe
 
+# Lista med länder (ISO 3166-1 alpha-2, namn, flagg-emoji)
+COUNTRIES = [
+    ("", "Välj land..."),
+    ("SE", "🇸🇪 Sverige"),
+    ("FI", "🇫🇮 Finland"),
+    ("NO", "🇳🇴 Norge"),
+    ("DK", "🇩🇰 Danmark"),
+    ("DE", "🇩🇪 Tyskland"),
+    ("GB", "🇬🇧 Storbritannien"),
+    ("US", "🇺🇸 USA"),
+    ("FR", "🇫🇷 Frankrike"),
+    ("IT", "🇮🇹 Italien"),
+    ("ES", "🇪🇸 Spanien"),
+    ("PL", "🇵🇱 Polen"),
+    ("EE", "🇪🇪 Estland"),
+    ("LV", "🇱🇻 Lettland"),
+    ("LT", "🇱🇹 Litauen"),
+    ("RU", "🇷🇺 Ryssland"),
+    ("NL", "🇳🇱 Nederländerna"),
+    ("BE", "🇧🇪 Belgien"),
+    ("CH", "🇨🇭 Schweiz"),
+    ("AT", "🇦🇹 Österrike"),
+    ("IE", "🇮🇪 Irland"),
+    ("IS", "🇮🇸 Island"),
+    ("CZ", "🇨🇿 Tjeckien"),
+    ("SK", "🇸🇰 Slovakien"),
+    ("HU", "🇭🇺 Ungern"),
+    ("UA", "🇺🇦 Ukraina"),
+    ("RO", "🇷🇴 Rumänien"),
+    ("BG", "🇧🇬 Bulgarien"),
+    ("HR", "🇭🇷 Kroatien"),
+    ("SI", "🇸🇮 Slovenien"),
+    ("PT", "🇵🇹 Portugal"),
+    ("GR", "🇬🇷 Grekland"),
+    ("TR", "🇹🇷 Turkiet"),
+    ("CA", "🇨🇦 Kanada"),
+    ("AU", "🇦🇺 Australien"),
+    ("NZ", "🇳🇿 Nya Zeeland"),
+]
+
 class TransactionForm(forms.ModelForm):
     transaction_date = forms.DateField(
         widget=forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
@@ -51,10 +91,17 @@ class TransactionForm(forms.ModelForm):
 
 class ContactForm(forms.ModelForm):
     """Formulär för att skapa och redigera kontakter"""
-    
+    country_code = forms.ChoiceField(
+        choices=COUNTRIES,
+        required=False,
+        widget=forms.Select(attrs={'class': 'form-control'}),
+        label='Land',
+        help_text='Välj land (med flagga)'
+    )
+
     class Meta:
         model = Contact
-        fields = ['name', 'email', 'phone', 'alias', 'street', 'postal_code', 'city', 'country', 'comment', 'is_naj_member']
+        fields = ['name', 'email', 'phone', 'alias', 'street', 'postal_code', 'city', 'country_code', 'comment', 'is_naj_member']
         labels = {
             'name': 'Namn',
             'email': 'E-post',
@@ -63,7 +110,7 @@ class ContactForm(forms.ModelForm):
             'street': 'Gata',
             'postal_code': 'Postnummer',
             'city': 'Ort',
-            'country': 'Land',
+            'country_code': 'Land',
             'comment': 'Kommentar',
             'is_naj_member': 'Medlem i Nordic Axe Junkies',
         }
@@ -96,10 +143,6 @@ class ContactForm(forms.ModelForm):
                 'class': 'form-control',
                 'placeholder': 'Stockholm'
             }),
-            'country': forms.TextInput(attrs={
-                'class': 'form-control',
-                'placeholder': 'Sverige'
-            }),
             'comment': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 3,
@@ -117,7 +160,7 @@ class ContactForm(forms.ModelForm):
             'street': 'Gatuadress',
             'postal_code': 'Postnummer',
             'city': 'Ort',
-            'country': 'Land',
+            'country_code': 'Land',
             'comment': 'Kommentar om kontakten',
             'is_naj_member': 'Är kontakten medlem i Nordic Axe Junkies?',
         }
@@ -145,8 +188,8 @@ class ContactForm(forms.ModelForm):
             'city': {
                 'max_length': 'Orten får inte vara längre än 100 tecken.',
             },
-            'country': {
-                'max_length': 'Landet får inte vara längre än 100 tecken.',
+            'country_code': {
+                'max_length': 'Landskoden får inte vara längre än 2 tecken.',
             },
         }
 
@@ -379,15 +422,12 @@ class AxeForm(forms.ModelForm):
         help_text='Ort för försäljaren'
     )
     
-    contact_country = forms.CharField(
+    contact_country_code = forms.ChoiceField(
+        choices=COUNTRIES,
         required=False,
-        max_length=100,
-        widget=forms.TextInput(attrs={
-            'class': 'form-control',
-            'placeholder': 'Sverige'
-        }),
+        widget=forms.Select(attrs={'class': 'form-control'}),
         label='Land (ny kontakt)',
-        help_text='Land för försäljaren'
+        help_text='Välj land (med flagga) för försäljaren'
     )
     
     # Transaktionsrelaterade fält

@@ -79,7 +79,22 @@
                                         {% include 'axes/_form_field.html' with field=form.city %}
                                     </div>
                                 </div>
-                                {% include 'axes/_form_field.html' with field=form.country %}
+                                
+                                <!-- Land med enkel dropdown -->
+                                <div class="mb-3">
+                                    <label for="country-select" class="form-label">{{ form.country_code.label }}</label>
+                                    <select class="form-control" id="country-select" name="country_code">
+                                        {% for choice in form.country_code.field.choices %}
+                                            <option value="{{ choice.0 }}" {% if form.instance.country_code == choice.0 %}selected{% endif %}>{{ choice.1 }}</option>
+                                        {% endfor %}
+                                    </select>
+                                    {% if form.country_code.help_text %}
+                                        <div class="form-text">{{ form.country_code.help_text }}</div>
+                                    {% endif %}
+                                    {% if form.country_code.errors %}
+                                        <div class="text-danger">{{ form.country_code.errors }}</div>
+                                    {% endif %}
+                                </div>
                             </div>
                         </div>
 
@@ -109,4 +124,23 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_head %}
+    {{ block.super }}
+{% endblock %}
+
+{% block extra_js %}
+    {{ block.super }}
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Auto-dölj notiser (utan jQuery)
+            setTimeout(function() {
+                const alerts = document.querySelectorAll('.alert-dismissible');
+                alerts.forEach(alert => {
+                    alert.style.display = 'none';
+                });
+            }, 4000);
+        });
+    </script>
 {% endblock %} 

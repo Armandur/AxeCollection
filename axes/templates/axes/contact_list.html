@@ -46,6 +46,7 @@
                 <th>Alias</th>
                 <th>E-post</th>
                 <th>Telefon</th>
+                <th>Land</th>
                 <th>NAJ</th>
                 <th>Köp / Sälj</th>
                 <th>Ekonomi</th>
@@ -77,6 +78,15 @@
                 <td>
                     {% if contact.phone %}
                         <a href="tel:{{ contact.phone }}">{{ contact.phone }}</a>
+                    {% else %}
+                        <span class="text-muted">-</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if contact.country_code %}
+                        {{ contact.country_code|country_flag }}
+                    {% elif contact.country %}
+                        {{ contact.country|truncatechars:10 }}
                     {% else %}
                         <span class="text-muted">-</span>
                     {% endif %}

@@ -46,7 +46,12 @@
 
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <h1>{{ contact.name }}</h1>
+    <h1>
+        {% if contact.country_code %}
+            <span class="me-2">{{ contact.country_code|country_flag }}</span>
+        {% endif %}
+        {{ contact.name }}
+    </h1>
     <div>
         <a href="{% url 'contact_edit' contact.pk %}" class="btn btn-primary">
             <i class="fas fa-edit"></i> Redigera
@@ -104,7 +109,9 @@
                         {% if contact.postal_code %}{{ contact.postal_code }}{% endif %}{% if contact.postal_code and contact.city %} {% endif %}{% if contact.city %}{{ contact.city }}{% endif %}
                     </div>
                 {% endif %}
-                {% if contact.country %}
+                {% if contact.country_code %}
+                    <div class="address-line">{{ contact.country_code|country_flag }} {{ contact.country_code|country_name }}</div>
+                {% elif contact.country %}
                     <div class="address-line">{{ contact.country }}</div>
                 {% endif %}
             </div>

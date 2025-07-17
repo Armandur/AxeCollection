@@ -35,6 +35,9 @@
     <td>
         {% if transaction.contact %}
             <a href="{% url 'contact_detail' transaction.contact.pk %}" class="text-decoration-none">
+                {% if transaction.contact.country_code %}
+                    {{ transaction.contact.country_code|country_flag }}
+                {% endif %}
                 {{ transaction.contact.name }}
                 {% if transaction.contact.alias %}
                     <small class="text-muted">({{ transaction.contact.alias }})</small>
