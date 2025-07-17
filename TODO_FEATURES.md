@@ -152,6 +152,23 @@ En checklista för vidareutveckling av AxeCollection. Bocka av med [x] när klar
 45. [ ] Inloggning/behörighet – Privata delar eller flera användare.
 46. [ ] Loggning av ändringar (audit trail).
 47. [ ] Inför inloggning/adminvy så att endast inloggade kan redigera, och visa en publik vy där känsliga uppgifter (t.ex. kontaktnamn, personuppgifter och ev. priser) maskeras eller döljs.
+48. [x] Vy för okopplade bilder – Rutnätsvy med funktioner för att ta bort och ladda ner bilder som flyttats från borttagna yxor.
+    - [x] 48.1 Rutnätsvy med bildkort som visar filnamn, storlek och timestamp
+    - [x] 48.2 Gruppering av bilder efter timestamp (när yxan togs bort)
+    - [x] 48.3 Soptunne-ikon för att ta bort enskilda bilder
+    - [x] 48.4 Ladda ner-ikon för att spara ner enskilda bilder
+    - [x] 48.5 Massåtgärder med checkboxar för att välja flera bilder
+    - [x] 48.6 "Ladda ner valda"-knapp som skapar ZIP-fil med valda bilder
+    - [x] 48.7 Statistik-kort som visar totalt antal bilder, storlek och antal grupper
+    - [x] 48.8 Responsiv design som fungerar på mobil och desktop
+    - [x] 48.9 AJAX-hantering för borttagning utan sidladdning
+    - [x] 48.10 Hover-effekter och animationer för bättre användarupplevelse
+    - [x] 48.11 .webp-optimering: visar .webp-versioner för snabbare laddning men laddar ner originalfiler
+    - [x] 48.12 Korrekt svenska grammatik med plural-former för "antal bilder" och "antal grupper"
+    - [ ] 48.13 Lägg till länk till vyn i admin-navigation (kommer att implementeras när inloggning/adminvy införs)
+    - [ ] 48.14 Implementera motsvarande hantering för borttagning av tillverkare och deras bilder (flytt till okopplade bilder)
+        - [ ] 48.14.1 Analysera vad som ska hända med yxor som tillhör tillverkaren (behåll som "okänd tillverkare" vs förhindra borttagning)
+        - [ ] 48.14.2 Utvärdera om funktionen ens behövs eller om tillverkare ska vara permanent
 
 ## Prestanda och kodkvalitet
 

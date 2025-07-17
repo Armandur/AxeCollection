@@ -13,9 +13,88 @@ from django.conf import settings
 import requests
 import uuid
 import os
+import shutil
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 from urllib.parse import urlparse
+from django.contrib import messages
+
+def move_images_to_unlinked_folder(axe_images, delete_images=False):
+    """
+    Flyttar bilder till en 'okopplade bilder'-mapp med timestamp och a-b-c-namngivning.
+    
+    Args:
+        axe_images: QuerySet av AxeImage-objekt
+        delete_images: Om True, ta bort bilderna istället för att flytta dem
+    
+    Returns:
+        dict: Information om vad som hände med bilderna
+    """
+    if not axe_images.exists():
+        return {'moved': 0, 'deleted': 0, 'errors': 0}
+    
+    if delete_images:
+        # Ta bort alla bilder
+        deleted_count = 0
+        for image in axe_images:
+            try:
+                image.delete()
+                deleted_count += 1
+            except Exception as e:
+                pass
+        return {'moved': 0, 'deleted': deleted_count, 'errors': 0}
+    
+    # Skapa timestamp för borttagning
+    timestamp = timezone.now().strftime('%Y%m%d_%H%M%S')
+    
+    # Skapa mapp för okopplade bilder
+    unlinked_folder = os.path.join(settings.MEDIA_ROOT, 'unlinked_images')
+    os.makedirs(unlinked_folder, exist_ok=True)
+    
+    moved_count = 0
+    error_count = 0
+    
+    # Sortera bilder efter order för att få rätt a-b-c-namngivning
+    sorted_images = axe_images.order_by('order')
+    
+    for index, axe_image in enumerate(sorted_images):
+        try:
+            if axe_image.image and axe_image.image.name:
+                # Bestäm filnamn (a, b, c, etc.)
+                letter = chr(97 + index)  # 97 = 'a' i ASCII
+                
+                # Hämta filändelse från originalfilen
+                original_ext = os.path.splitext(axe_image.image.name)[1]
+                new_filename = f"{timestamp}-{letter}{original_ext}"
+                new_path = os.path.join(unlinked_folder, new_filename)
+                
+                # Kopiera filen
+                if os.path.exists(axe_image.image.path):
+                    shutil.copy2(axe_image.image.path, new_path)
+                    
+                    # Kopiera även .webp-filen om den finns
+                    webp_path = os.path.splitext(axe_image.image.path)[0] + '.webp'
+                    if os.path.exists(webp_path):
+                        webp_new_path = os.path.join(unlinked_folder, f"{timestamp}-{letter}.webp")
+                        shutil.copy2(webp_path, webp_new_path)
+                    
+                    moved_count += 1
+                
+                # Ta bort originalbilden från databasen och filsystemet
+                axe_image.delete()
+                
+        except Exception as e:
+            error_count += 1
+            # Logga felet om så önskas
+            pass
+    
+    return {
+        'moved': moved_count, 
+        'deleted': 0, 
+        'errors': error_count,
+        'timestamp': timestamp,
+        'folder_path': unlinked_folder
+    }
 
 # --- Yx-relaterade vyer ---
 
@@ -282,6 +361,10 @@ def axe_create(request):
                                 'alias': form.cleaned_data.get('contact_alias', ''),
                                 'email': form.cleaned_data.get('contact_email', ''),
                                 'phone': form.cleaned_data.get('contact_phone', ''),
+                                'street': form.cleaned_data.get('contact_street', ''),
+                                'postal_code': form.cleaned_data.get('contact_postal_code', ''),
+                                'city': form.cleaned_data.get('contact_city', ''),
+                                'country': form.cleaned_data.get('contact_country', ''),
                                 'comment': form.cleaned_data.get('contact_comment', ''),
                                 'is_naj_member': form.cleaned_data.get('is_naj_member', False)
                             }
@@ -294,6 +377,10 @@ def axe_create(request):
                                 'alias': form.cleaned_data.get('contact_alias', ''),
                                 'email': form.cleaned_data.get('contact_email', ''),
                                 'phone': form.cleaned_data.get('contact_phone', ''),
+                                'street': form.cleaned_data.get('contact_street', ''),
+                                'postal_code': form.cleaned_data.get('contact_postal_code', ''),
+                                'city': form.cleaned_data.get('contact_city', ''),
+                                'country': form.cleaned_data.get('contact_country', ''),
                                 'comment': form.cleaned_data.get('contact_comment', ''),
                                 'is_naj_member': form.cleaned_data.get('is_naj_member', False)
                             }
@@ -610,14 +697,22 @@ def receiving_workflow(request, pk):
                 axe.status = new_status
                 axe.save()
                 return redirect('axe_list')
-            else:
-                return render(request, 'axes/receiving_workflow.html', {
-                    'axe': axe,
-                    'error': 'Invalid status.',
-                    'measurement_templates': measurement_templates,
-                    'measurement_form': measurement_form,
-                    'measurements': measurements,
-                })
+
+@require_http_methods(["POST"])
+def update_axe_status(request, pk):
+    """Uppdatera status för en yxa"""
+    try:
+        axe = get_object_or_404(Axe, pk=pk)
+        new_status = request.POST.get('status')
+        
+        if new_status in ['KÖPT', 'MOTTAGEN']:
+            axe.status = new_status
+            axe.save()
+            return JsonResponse({'success': True})
+        else:
+            return JsonResponse({'success': False, 'error': 'Ogiltig status'})
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
     return render(request, 'axes/receiving_workflow.html', {
         'axe': axe,
         'measurement_templates': measurement_templates,
@@ -989,3 +1084,259 @@ def statistics_dashboard(request):
     }
     
     return render(request, 'axes/statistics_dashboard.html', context)
+
+@require_http_methods(["GET"])
+def get_latest_axe_info(request):
+    """Hämta information om den senaste yxan för att visa i modalen"""
+    try:
+        latest_axe = Axe.objects.select_related('manufacturer').prefetch_related('images', 'transactions').order_by('-id').first()
+        
+        if not latest_axe:
+            return JsonResponse({
+                'success': False,
+                'message': 'Inga yxor att ta bort'
+            })
+        
+        # Hämta kontakt från senaste transaktionen
+        latest_transaction = latest_axe.transactions.order_by('-transaction_date').first()
+        contact_name = latest_transaction.contact.name if latest_transaction and latest_transaction.contact else None
+        
+        return JsonResponse({
+            'success': True,
+            'axe': {
+                'id': latest_axe.id,
+                'manufacturer': latest_axe.manufacturer.name,
+                'model': latest_axe.model,
+                'image_count': latest_axe.images.count(),
+                'transaction_count': latest_axe.transactions.count(),
+                'contact_name': contact_name
+            }
+        })
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'message': f'Fel vid hämtning av information: {str(e)}'
+        })
+
+@require_http_methods(["POST"])
+def delete_latest_axe(request):
+    """Ta bort en yxa med valfria kopplade data"""
+    try:
+        axe_id = request.POST.get('axe_id')
+        if axe_id:
+            # Ta bort specifik yxa
+            axe = get_object_or_404(Axe.objects.select_related('manufacturer').prefetch_related('images', 'transactions__contact'), pk=axe_id)
+        else:
+            # Fallback: ta bort den senaste yxan
+            axe = Axe.objects.select_related('manufacturer').prefetch_related('images', 'transactions__contact').order_by('-id').first()
+        
+        if not axe:
+            messages.error(request, 'Inga yxor att ta bort')
+            return redirect('axe_list')
+        
+        # Kontrollera att det är den senaste yxan
+        if not axe.is_latest:
+            messages.error(request, 'Endast den senaste yxan kan tas bort')
+            return redirect('axe_detail', pk=axe.id)
+        
+        delete_images = request.POST.get('delete_images') == 'on'
+        delete_transactions = request.POST.get('delete_transactions') == 'on'
+        delete_contact = request.POST.get('delete_contact') == 'on'
+        
+        axe_info = f"{axe.manufacturer.name} - {axe.model} (ID: {axe.id})"
+        
+        # Samla kontakter som kan tas bort
+        contacts_to_delete = set()
+        if delete_contact:
+            for transaction in axe.transactions.all():
+                if transaction.contact:
+                    # Kontrollera om kontakten är kopplad till andra yxor
+                    if transaction.contact.unique_axes_count == 1:
+                        contacts_to_delete.add(transaction.contact)
+                    else:
+                        messages.warning(request, f'Kontakt "{transaction.contact.name}" kunde inte tas bort eftersom den är kopplad till andra yxor.')
+        
+        # Hantera bilder - antingen ta bort eller flytta till okopplade bilder
+        image_count = axe.images.count()
+        if image_count > 0:
+            if delete_images:
+                # Ta bort bilderna
+                result = move_images_to_unlinked_folder(axe.images, delete_images=True)
+                if result['deleted'] > 0:
+                    messages.info(request, f'{result["deleted"]} bilder togs bort.')
+            else:
+                # Flytta bilderna till okopplade bilder
+                result = move_images_to_unlinked_folder(axe.images, delete_images=False)
+                if result['moved'] > 0:
+                    messages.info(request, f'{result["moved"]} bilder flyttades till okopplade bilder (timestamp: {result["timestamp"]}).')
+                if result['errors'] > 0:
+                    messages.warning(request, f'{result["errors"]} bilder kunde inte flyttas.')
+        
+        # Ta bort yxan (detta tar automatiskt bort mått och eventuellt kvarvarande bilder)
+        deleted_axe_id = axe.id
+        axe.delete()
+        
+        # Ta bort transaktioner om valt
+        if not delete_transactions:
+            # Återställ transaktionerna (de togs bort med yxan)
+            # Detta är komplex, så vi varnar användaren
+            messages.warning(request, f'Transaktioner togs bort med yxan. Detta kan inte ångras.')
+        
+        # Ta bort kontakter om valt
+        for contact in contacts_to_delete:
+            contact.delete()
+            messages.info(request, f'Kontakt "{contact.name}" togs bort eftersom den inte användes av andra yxor.')
+        
+        # Återställ nästa ID om det var den senaste yxan
+        NextAxeID.reset_if_last_axe_deleted(deleted_axe_id)
+        
+        messages.success(request, f'Yxa "{axe_info}" togs bort framgångsrikt.')
+        
+    except Exception as e:
+        messages.error(request, f'Fel vid borttagning av yxa: {str(e)}')
+    
+    return redirect('axe_list')
+
+def unlinked_images_view(request):
+    """Visa och hantera okopplade bilder"""
+    import glob
+    import os
+    from datetime import datetime
+    
+    unlinked_folder = os.path.join(settings.MEDIA_ROOT, 'unlinked_images')
+    
+    if not os.path.exists(unlinked_folder):
+        return render(request, 'axes/unlinked_images.html', {
+            'images': [],
+            'total_count': 0,
+            'total_size': 0
+        })
+    
+    # Hämta alla bildfiler i mappen (exkluderar .webp för webboptimering)
+    image_extensions = ['*.jpg', '*.jpeg', '*.png', '*.gif', '*.bmp']
+    all_files = []
+    
+    for ext in image_extensions:
+        all_files.extend(glob.glob(os.path.join(unlinked_folder, ext)))
+    
+    # Gruppera bilder efter timestamp (före första bindestrecket)
+    image_groups = {}
+    total_size = 0
+    
+    for file_path in all_files:
+        filename = os.path.basename(file_path)
+        file_size = os.path.getsize(file_path)
+        total_size += file_size
+        
+        # Extrahera timestamp från filnamnet (t.ex. "20250717_225600-a.jpg" -> "20250717_225600")
+        if '-' in filename:
+            timestamp_part = filename.split('-')[0]
+            try:
+                # Försök parsa timestamp
+                timestamp_obj = datetime.strptime(timestamp_part, '%Y%m%d_%H%M%S')
+                formatted_timestamp = timestamp_obj.strftime('%Y-%m-%d %H:%M:%S')
+            except ValueError:
+                formatted_timestamp = timestamp_part
+        else:
+            formatted_timestamp = "Okänd"
+        
+        if formatted_timestamp not in image_groups:
+            image_groups[formatted_timestamp] = []
+        
+        image_groups[formatted_timestamp].append({
+            'filename': filename,
+            'file_path': file_path,
+            'url': f'/media/unlinked_images/{filename}',
+            'size': file_size,
+            'size_formatted': f'{file_size / 1024:.1f} KB' if file_size < 1024*1024 else f'{file_size / (1024*1024):.1f} MB'
+        })
+    
+    # Sortera grupper efter timestamp (nyaste först)
+    sorted_groups = sorted(image_groups.items(), key=lambda x: x[0], reverse=True)
+    
+    context = {
+        'image_groups': sorted_groups,
+        'total_count': len(all_files),
+        'total_size': total_size,
+        'total_size_formatted': f'{total_size / 1024:.1f} KB' if total_size < 1024*1024 else f'{total_size / (1024*1024):.1f} MB'
+    }
+    
+    return render(request, 'axes/unlinked_images.html', context)
+
+@require_POST
+def delete_unlinked_image(request):
+    """Ta bort en okopplad bild (både original och .webp-version)"""
+    try:
+        filename = request.POST.get('filename')
+        if not filename:
+            return JsonResponse({'success': False, 'error': 'Inget filnamn angivet'})
+        
+        file_path = os.path.join(settings.MEDIA_ROOT, 'unlinked_images', filename)
+        
+        if os.path.exists(file_path):
+            # Ta bort originalfilen
+            os.remove(file_path)
+            
+            # Ta bort även .webp-versionen om den finns
+            name_without_ext = os.path.splitext(filename)[0]
+            webp_path = os.path.join(settings.MEDIA_ROOT, 'unlinked_images', f"{name_without_ext}.webp")
+            if os.path.exists(webp_path):
+                os.remove(webp_path)
+            
+            return JsonResponse({'success': True})
+        else:
+            return JsonResponse({'success': False, 'error': 'Filen hittades inte'})
+            
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
+
+@require_POST
+def download_unlinked_images(request):
+    """Ladda ner valda eller alla okopplade bilder som ZIP-fil"""
+    import zipfile
+    import tempfile
+    from django.http import HttpResponse
+    
+    try:
+        unlinked_folder = os.path.join(settings.MEDIA_ROOT, 'unlinked_images')
+        
+        if not os.path.exists(unlinked_folder):
+            return JsonResponse({'success': False, 'error': 'Inga okopplade bilder att ladda ner'})
+        
+        # Kontrollera om specifika filer är valda
+        selected_files = request.POST.getlist('selected_files')
+        
+        # Skapa temporär ZIP-fil
+        with tempfile.NamedTemporaryFile(delete=False, suffix='.zip') as tmp_file:
+            with zipfile.ZipFile(tmp_file.name, 'w') as zipf:
+                if selected_files:
+                    # Ladda ner endast valda filer
+                    for filename in selected_files:
+                        file_path = os.path.join(unlinked_folder, filename)
+                        if os.path.exists(file_path) and not filename.endswith('.webp'):
+                            zipf.write(file_path, filename)
+                else:
+                    # Ladda ner alla filer (fallback för GET-requests)
+                    for root, dirs, files in os.walk(unlinked_folder):
+                        for file in files:
+                            # Exkludera .webp-filer från ZIP-nedladdning
+                            if not file.endswith('.webp'):
+                                file_path = os.path.join(root, file)
+                                arcname = os.path.relpath(file_path, unlinked_folder)
+                                zipf.write(file_path, arcname)
+        
+        # Läs ZIP-filen och skicka som response
+        with open(tmp_file.name, 'rb') as f:
+            response = HttpResponse(f.read(), content_type='application/zip')
+            if selected_files:
+                response['Content-Disposition'] = 'attachment; filename="valda_bilder.zip"'
+            else:
+                response['Content-Disposition'] = 'attachment; filename="okopplade_bilder.zip"'
+        
+        # Ta bort temporär fil
+        os.unlink(tmp_file.name)
+        
+        return response
+        
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})

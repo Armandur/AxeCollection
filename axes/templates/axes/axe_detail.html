@@ -71,14 +71,25 @@
                         <span class="d-none d-md-inline">Mottagning</span>
                     </a>
                 {% endif %}
+                <a href="{% url 'axe_gallery_detail' axe.pk %}" class="btn btn-outline-secondary me-2">
+                    <i class="fas fa-images me-1"></i>
+                    <span class="d-none d-md-inline">Galleri</span>
+                </a>
                 <a href="{% url 'axe_edit' axe.pk %}" class="btn btn-outline-primary me-2">
                     <i class="fas fa-edit me-1"></i>
                     <span class="d-none d-md-inline">Redigera</span>
                 </a>
-                <a href="{% url 'axe_gallery_detail' axe.pk %}" class="btn btn-outline-secondary">
-                    <i class="fas fa-images me-1"></i>
-                    <span class="d-none d-md-inline">Galleri</span>
-                </a>
+                {% if axe.is_latest %}
+                    <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteAxeModal" title="Ta bort yxa">
+                        <i class="fas fa-trash me-1"></i>
+                        <span class="d-none d-md-inline">Ta bort</span>
+                    </button>
+                {% else %}
+                    <button type="button" class="btn btn-danger" disabled title="Endast den senaste yxan kan tas bort">
+                        <i class="fas fa-trash me-1"></i>
+                        <span class="d-none d-md-inline">Ta bort</span>
+                    </button>
+                {% endif %}
             </div>
         </div>
     </div>
@@ -670,4 +681,98 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 </script>
+
+<!-- Modal för att ta bort yxa -->
+{% if axe.is_latest %}
+<div class="modal fade" id="deleteAxeModal" tabindex="-1" aria-labelledby="deleteAxeModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteAxeModalLabel">Ta bort yxa</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Stäng"></button>
+            </div>
+            <div class="modal-body">
+                <p>Är du säker på att du vill ta bort yxan <strong>{{ axe.manufacturer.name }} - {{ axe.model }}</strong> (ID: {{ axe.id }})?</p>
+                <div class="alert alert-info">
+                    <strong>{{ axe.manufacturer.name }} - {{ axe.model }}</strong><br>
+                    <small class="text-muted">
+                        ID: {{ axe.id }} | 
+                        Bilder: {{ axe.images.count }} | 
+                        Transaktioner: {{ axe.transactions.count }} |
+                        {% if axe.transactions.first.contact %}
+                            Kontakt: {{ axe.transactions.first.contact.name }}
+                        {% else %}
+                            Kontakt: Ingen
+                        {% endif %}
+                    </small>
+                </div>
+                <form id="deleteAxeForm" method="post" action="{% url 'delete_latest_axe' %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="axe_id" value="{{ axe.id }}">
+                    {% if axe.images.count > 0 %}
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" id="deleteImages" name="delete_images">
+                            <label class="form-check-label" for="deleteImages">
+                                Ta bort kopplade bilder ({{ axe.images.count }})
+                            </label>
+                            <div class="form-text">
+                                <i class="fas fa-info-circle"></i> Om inte markerat flyttas bilderna till en mapp för "okopplade bilder" med timestamp och a-b-c-namngivning (t.ex. 20250717_225600-a.jpg)
+                            </div>
+                        </div>
+                    {% else %}
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" id="deleteImages" name="delete_images" disabled>
+                            <label class="form-check-label text-muted" for="deleteImages">
+                                Ta bort kopplade bilder (inga bilder)
+                            </label>
+                        </div>
+                    {% endif %}
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" id="deleteTransactions" name="delete_transactions" checked>
+                        <label class="form-check-label" for="deleteTransactions">
+                            Ta bort kopplade transaktioner ({{ axe.transactions.count }})
+                        </label>
+                    </div>
+                    {% if axe.transactions.first.contact %}
+                        {% with contact=axe.transactions.first.contact %}
+                            {% if contact.unique_axes_count == 1 %}
+                                <div class="form-check mb-3">
+                                    <input class="form-check-input" type="checkbox" id="deleteContact" name="delete_contact">
+                                    <label class="form-check-label" for="deleteContact">
+                                        Ta bort kontakt "{{ contact.name }}" (är kopplad endast till denna yxa)
+                                    </label>
+                                </div>
+                            {% else %}
+                                <div class="form-check mb-3">
+                                    <input class="form-check-input" type="checkbox" id="deleteContact" name="delete_contact" disabled>
+                                    <label class="form-check-label text-muted" for="deleteContact">
+                                        Ta bort kontakt "{{ contact.name }}" (är kopplad till {{ contact.unique_axes_count }} yxor)
+                                    </label>
+                                    <div class="form-text">
+                                        <i class="fas fa-info-circle"></i> Kontakter kan endast tas bort om de inte är kopplade till andra yxor
+                                    </div>
+                                </div>
+                            {% endif %}
+                        {% endwith %}
+                    {% else %}
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" id="deleteContact" name="delete_contact" disabled>
+                            <label class="form-check-label text-muted" for="deleteContact">
+                                Ta bort kontakt (ingen kontakt kopplad)
+                            </label>
+                        </div>
+                    {% endif %}
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Avbryt</button>
+                <button type="submit" form="deleteAxeForm" class="btn btn-danger">
+                    <i class="fas fa-trash"></i> Ta bort yxa
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
 {% endblock %} 

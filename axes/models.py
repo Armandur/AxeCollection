@@ -2,7 +2,7 @@ from django.db import models
 from PIL import Image
 import os
 from django.conf import settings
-from django.db.models import Sum
+from django.db.models import Sum, Max
 
 # Create your models here.
 
@@ -147,6 +147,11 @@ class Axe(models.Model):
     def measurement_count(self):
         """Returnerar antalet registrerade mått för yxan"""
         return self.measurements.count()
+
+    @property
+    def is_latest(self):
+        """Kontrollerar om denna yxa är den senaste (högsta ID)"""
+        return self.id == Axe.objects.aggregate(Max('id'))['id__max']
 
 class AxeImage(models.Model):
     axe = models.ForeignKey(Axe, related_name='images', on_delete=models.CASCADE) # Raderas bilden om yxan raderas
@@ -363,6 +368,17 @@ class Contact(models.Model):
     @property
     def net_value(self):
         return self.total_sale_value - self.total_buy_value
+
+    @property
+    def latest_transaction_date(self):
+        """Returnerar datum för senaste transaktionen"""
+        latest_transaction = self.transactions.order_by('-transaction_date').first()
+        return latest_transaction.transaction_date if latest_transaction else None
+
+    @property
+    def unique_axes_count(self):
+        """Returnerar antalet unika yxor som kontakten är kopplad till"""
+        return self.transactions.values('axe').distinct().count()
 
 class Platform(models.Model):
     name = models.CharField(max_length=100)

@@ -131,6 +131,20 @@ window.measurementTemplates = {{ measurement_templates|safe }};
                                     </div>
                                     {% include 'axes/_form_field.html' with field=form.contact_comment %}
                                     {% include 'axes/_form_checkbox.html' with field=form.is_naj_member %}
+                                    
+                                    <!-- Adressfält för ny kontakt -->
+                                    <hr class="my-3">
+                                    <h6 class="text-muted">Adress (valfritt)</h6>
+                                    {% include 'axes/_form_field.html' with field=form.contact_street %}
+                                    <div class="row">
+                                        <div class="col-md-4">
+                                            {% include 'axes/_form_field.html' with field=form.contact_postal_code %}
+                                        </div>
+                                        <div class="col-md-8">
+                                            {% include 'axes/_form_field.html' with field=form.contact_city %}
+                                        </div>
+                                    </div>
+                                    {% include 'axes/_form_field.html' with field=form.contact_country %}
                                 </div>
                             </div>
                         </div>

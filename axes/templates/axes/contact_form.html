@@ -1,0 +1,112 @@
+{% extends 'axes/base.html' %}
+{% load axe_filters %}
+
+{% block title %}{% if is_edit %}Redigera kontakt{% else %}Skapa ny kontakt{% endif %}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="mb-0">
+                        {% if is_edit %}
+                            <i class="fas fa-edit me-2"></i>Redigera kontakt
+                            <span class="badge bg-secondary ms-2">ID: {{ contact.id }}</span>
+                        {% else %}
+                            <i class="fas fa-user-plus me-2"></i>Skapa ny kontakt
+                        {% endif %}
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <!-- Notifikationssektion -->
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                                <i class="fas fa-{% if message.tags == 'success' %}check-circle{% elif message.tags == 'error' %}exclamation-circle{% else %}info-circle{% endif %} me-2"></i>
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                    
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <!-- Grundläggande information -->
+                        <div class="card mb-4">
+                            <div class="card-header">
+                                <h6 class="mb-0">
+                                    <i class="fas fa-user me-2"></i>Grundläggande information
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        {% include 'axes/_form_field.html' with field=form.name %}
+                                    </div>
+                                    <div class="col-md-6">
+                                        {% include 'axes/_form_field.html' with field=form.alias %}
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        {% include 'axes/_form_field.html' with field=form.email %}
+                                    </div>
+                                    <div class="col-md-6">
+                                        {% include 'axes/_form_field.html' with field=form.phone %}
+                                    </div>
+                                </div>
+                                {% include 'axes/_form_field.html' with field=form.comment %}
+                                {% include 'axes/_form_checkbox.html' with field=form.is_naj_member %}
+                            </div>
+                        </div>
+
+                        <!-- Adress -->
+                        <div class="card mb-4">
+                            <div class="card-header">
+                                <h6 class="mb-0">
+                                    <i class="fas fa-map-marker-alt me-2"></i>Adress
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                {% include 'axes/_form_field.html' with field=form.street %}
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        {% include 'axes/_form_field.html' with field=form.postal_code %}
+                                    </div>
+                                    <div class="col-md-8">
+                                        {% include 'axes/_form_field.html' with field=form.city %}
+                                    </div>
+                                </div>
+                                {% include 'axes/_form_field.html' with field=form.country %}
+                            </div>
+                        </div>
+
+                        <!-- Knappar -->
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                {% if is_edit %}
+                                    <a href="{% url 'contact_detail' contact.pk %}" class="btn btn-secondary">
+                                        <i class="fas fa-arrow-left me-2"></i>Tillbaka till kontakt
+                                    </a>
+                                {% else %}
+                                    <a href="{% url 'contact_list' %}" class="btn btn-secondary">
+                                        <i class="fas fa-arrow-left me-2"></i>Tillbaka till kontakter
+                                    </a>
+                                {% endif %}
+                            </div>
+                            <div>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save me-2"></i>
+                                    {% if is_edit %}Spara ändringar{% else %}Skapa kontakt{% endif %}
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

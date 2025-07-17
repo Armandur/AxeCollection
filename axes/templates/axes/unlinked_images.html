@@ -1,0 +1,504 @@
+{% extends 'axes/base.html' %}
+
+{% block title %}Okopplade bilder - {{ block.super }}{% endblock %}
+
+{% block extra_head %}
+<style>
+    .image-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 1rem;
+        margin-top: 1rem;
+    }
+    
+    .image-card {
+        border: 1px solid #dee2e6;
+        border-radius: 0.375rem;
+        overflow: hidden;
+        background: white;
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+    
+    .image-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+    
+    .image-container {
+        position: relative;
+        aspect-ratio: 1;
+        overflow: hidden;
+    }
+    
+    .image-container img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.3s;
+    }
+    
+    .image-card:hover .image-container img {
+        transform: scale(1.05);
+    }
+    
+    .image-actions {
+        position: absolute;
+        top: 0.5rem;
+        right: 0.5rem;
+        display: flex;
+        gap: 0.25rem;
+        opacity: 0;
+        transition: opacity 0.2s;
+    }
+    
+    .image-card:hover .image-actions {
+        opacity: 1;
+    }
+    
+    .action-btn {
+        width: 32px;
+        height: 32px;
+        border: none;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.2s;
+        font-size: 0.875rem;
+    }
+    
+    .delete-btn {
+        background: rgba(220, 53, 69, 0.9);
+        color: white;
+    }
+    
+    .delete-btn:hover {
+        background: #dc3545;
+        transform: scale(1.1);
+    }
+    
+    .download-btn {
+        background: rgba(13, 110, 253, 0.9);
+        color: white;
+    }
+    
+    .download-btn:hover {
+        background: #0d6efd;
+        transform: scale(1.1);
+    }
+    
+    .image-info {
+        padding: 0.75rem;
+    }
+    
+    .image-filename {
+        font-size: 0.875rem;
+        font-weight: 500;
+        margin-bottom: 0.25rem;
+        word-break: break-all;
+    }
+    
+    .image-meta {
+        font-size: 0.75rem;
+        color: #6c757d;
+    }
+    
+    .timestamp-group {
+        margin-bottom: 2rem;
+    }
+    
+    .timestamp-header {
+        background: #f8f9fa;
+        padding: 0.75rem 1rem;
+        border-radius: 0.375rem;
+        margin-bottom: 1rem;
+        border-left: 4px solid #0d6efd;
+    }
+    
+    .timestamp-title {
+        font-weight: 600;
+        margin-bottom: 0.25rem;
+    }
+    
+    .timestamp-count {
+        font-size: 0.875rem;
+        color: #6c757d;
+    }
+    
+    .bulk-actions {
+        background: #e9ecef;
+        padding: 1rem;
+        border-radius: 0.375rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .stats-cards {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .stat-card {
+        background: white;
+        border: 1px solid #dee2e6;
+        border-radius: 0.375rem;
+        padding: 1rem;
+        text-align: center;
+    }
+    
+    .stat-number {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: #0d6efd;
+    }
+    
+    .stat-label {
+        font-size: 0.875rem;
+        color: #6c757d;
+        margin-top: 0.25rem;
+    }
+    
+    @media (max-width: 768px) {
+        .image-grid {
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 0.75rem;
+        }
+        
+        .image-actions {
+            opacity: 1;
+        }
+        
+        .action-btn {
+            width: 28px;
+            height: 28px;
+            font-size: 0.75rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <h1 class="h3 mb-0">
+                    <i class="fas fa-images me-2"></i>
+                    Okopplade bilder
+                </h1>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistik -->
+    <div class="stats-cards">
+        <div class="stat-card">
+            <div class="stat-number">{{ total_count }}</div>
+            <div class="stat-label">Totalt antal bilder</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">{{ total_size_formatted }}</div>
+            <div class="stat-label">Total storlek</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">{{ image_groups|length }}</div>
+            <div class="stat-label">Antal grupper</div>
+        </div>
+    </div>
+
+    {% if total_count == 0 %}
+        <div class="text-center py-5">
+            <i class="fas fa-images fa-3x text-muted mb-3"></i>
+            <h4 class="text-muted">Inga okopplade bilder</h4>
+            <p class="text-muted">När du tar bort yxor utan att ta bort bilderna kommer de att visas här.</p>
+        </div>
+    {% else %}
+        <!-- Bulk-åtgärder -->
+        <div class="bulk-actions">
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <h6 class="mb-0">Massåtgärder</h6>
+                    <small class="text-muted">Välj bilder och utför åtgärder på flera samtidigt</small>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <button type="button" class="btn btn-outline-danger btn-sm me-2" id="deleteSelectedBtn" disabled>
+                        <i class="fas fa-trash me-1"></i>
+                        Ta bort valda
+                    </button>
+                    <button type="button" class="btn btn-outline-primary btn-sm me-2" id="downloadSelectedBtn" disabled>
+                        <i class="fas fa-download me-1"></i>
+                        Ladda ner valda
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary btn-sm" id="selectAllBtn">
+                        <i class="fas fa-check-square me-1"></i>
+                        Välj alla
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bildgrupper -->
+        {% for timestamp, images in image_groups %}
+            <div class="timestamp-group">
+                <div class="timestamp-header">
+                    <div class="timestamp-title">{{ timestamp }}</div>
+                    <div class="timestamp-count">{{ images|length }} bilder</div>
+                </div>
+                
+                <div class="image-grid">
+                    {% for image in images %}
+                        <div class="image-card">
+                            <div class="image-container">
+                                {% if image.filename|slice:"-4:" == ".jpg" or image.filename|slice:"-5:" == ".jpeg" or image.filename|slice:"-4:" == ".png" or image.filename|slice:"-4:" == ".gif" or image.filename|slice:"-4:" == ".bmp" %}
+                                    {% with webp_url=image.url|slice:":-4"|add:".webp" %}
+                                        <img src="{{ webp_url }}" alt="{{ image.filename }}" loading="lazy" onerror="this.src='{{ image.url }}'">
+                                    {% endwith %}
+                                {% else %}
+                                    <img src="{{ image.url }}" alt="{{ image.filename }}" loading="lazy">
+                                {% endif %}
+                                <div class="image-actions">
+                                    <button type="button" class="action-btn download-btn" 
+                                            onclick="downloadImage('{{ image.filename }}')" 
+                                            title="Ladda ner">
+                                        <i class="fas fa-download"></i>
+                                    </button>
+                                    <button type="button" class="action-btn delete-btn" 
+                                            onclick="deleteImage('{{ image.filename }}')" 
+                                            title="Ta bort">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                                <div class="form-check position-absolute" style="top: 0.5rem; left: 0.5rem;">
+                                    <input class="form-check-input image-checkbox" type="checkbox" 
+                                           value="{{ image.filename }}" id="check_{{ image.filename }}">
+                                </div>
+                            </div>
+                            <div class="image-info">
+                                <div class="image-filename">{{ image.filename }}</div>
+                                <div class="image-meta">{{ image.size_formatted }}</div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        {% endfor %}
+    {% endif %}
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const checkboxes = document.querySelectorAll('.image-checkbox');
+    const deleteSelectedBtn = document.getElementById('deleteSelectedBtn');
+    const downloadSelectedBtn = document.getElementById('downloadSelectedBtn');
+    const selectAllBtn = document.getElementById('selectAllBtn');
+    
+    // Hantera checkbox-val
+    checkboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', updateButtons);
+    });
+    
+    // Välj alla
+    selectAllBtn.addEventListener('click', function() {
+        const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+        checkboxes.forEach(checkbox => {
+            checkbox.checked = !allChecked;
+        });
+        updateButtons();
+        updateSelectAllButton();
+    });
+    
+    // Ta bort valda bilder
+    deleteSelectedBtn.addEventListener('click', function() {
+        const selectedFiles = Array.from(checkboxes)
+            .filter(cb => cb.checked)
+            .map(cb => cb.value);
+        
+        if (selectedFiles.length === 0) return;
+        
+        // Visa bekräftelsemodal
+        const confirmModal = new bootstrap.Modal(document.getElementById('confirmDeleteModal'));
+        const confirmBtn = document.getElementById('confirmDeleteBtn');
+        const modalText = document.getElementById('confirmDeleteText');
+        
+        modalText.textContent = `Är du säker på att du vill ta bort ${selectedFiles.length} ${selectedFiles.length === 1 ? 'bild' : 'bilder'}?`;
+        
+        confirmBtn.onclick = function() {
+            selectedFiles.forEach(filename => {
+                deleteImage(filename);
+            });
+            confirmModal.hide();
+        };
+        
+        confirmModal.show();
+    });
+    
+    // Ladda ner valda bilder
+    downloadSelectedBtn.addEventListener('click', function() {
+        const selectedFiles = Array.from(checkboxes)
+            .filter(cb => cb.checked)
+            .map(cb => cb.value);
+        
+        if (selectedFiles.length === 0) return;
+        
+        // Skapa temporär ZIP-fil med valda bilder
+        downloadSelectedImages(selectedFiles);
+    });
+    
+    function updateButtons() {
+        const checkedCount = Array.from(checkboxes).filter(cb => cb.checked).length;
+        deleteSelectedBtn.disabled = checkedCount === 0;
+        downloadSelectedBtn.disabled = checkedCount === 0;
+        deleteSelectedBtn.innerHTML = `<i class="fas fa-trash me-1"></i>Ta bort valda (${checkedCount})`;
+        downloadSelectedBtn.innerHTML = `<i class="fas fa-download me-1"></i>Ladda ner valda (${checkedCount})`;
+    }
+    
+    function updateSelectAllButton() {
+        const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+        const someChecked = Array.from(checkboxes).some(cb => cb.checked);
+        
+        if (allChecked) {
+            selectAllBtn.innerHTML = '<i class="fas fa-square me-1"></i>Avmarkera alla';
+        } else if (someChecked) {
+            selectAllBtn.innerHTML = '<i class="fas fa-check-square me-1"></i>Välj alla';
+        } else {
+            selectAllBtn.innerHTML = '<i class="fas fa-check-square me-1"></i>Välj alla';
+        }
+    }
+});
+
+function deleteImage(filename) {
+    // Visa bekräftelsemodal för enskild bild
+    const confirmModal = new bootstrap.Modal(document.getElementById('confirmDeleteModal'));
+    const confirmBtn = document.getElementById('confirmDeleteBtn');
+    const modalText = document.getElementById('confirmDeleteText');
+    
+    modalText.textContent = `Är du säker på att du vill ta bort "${filename}"?`;
+    
+    confirmBtn.onclick = function() {
+        fetch('{% url "delete_unlinked_image" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            },
+            body: `filename=${encodeURIComponent(filename)}`
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Ta bort bildkortet från DOM
+                const imageCard = document.querySelector(`input[value="${filename}"]`).closest('.image-card');
+                imageCard.remove();
+                
+                // Uppdatera statistik
+                location.reload();
+            } else {
+                showErrorModal('Fel vid borttagning: ' + (data.error || 'Okänt fel'));
+            }
+        })
+        .catch(() => {
+            showErrorModal('Något gick fel vid borttagning');
+        });
+        
+        confirmModal.hide();
+    };
+    
+    confirmModal.show();
+}
+
+function downloadImage(filename) {
+    const link = document.createElement('a');
+    link.href = `/media/unlinked_images/${encodeURIComponent(filename)}`;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
+function showErrorModal(message) {
+    const errorModal = new bootstrap.Modal(document.getElementById('errorModal'));
+    const errorText = document.getElementById('errorText');
+    errorText.textContent = message;
+    errorModal.show();
+}
+
+function downloadSelectedImages(selectedFiles) {
+    // Skapa en temporär form för att skicka valda filer till servern
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = '{% url "download_unlinked_images" %}';
+    
+    // Lägg till CSRF-token
+    const csrfInput = document.createElement('input');
+    csrfInput.type = 'hidden';
+    csrfInput.name = 'csrfmiddlewaretoken';
+    csrfInput.value = document.querySelector('[name=csrfmiddlewaretoken]').value;
+    form.appendChild(csrfInput);
+    
+    // Lägg till valda filer
+    selectedFiles.forEach(filename => {
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'selected_files';
+        input.value = filename;
+        form.appendChild(input);
+    });
+    
+    // Skicka formuläret
+    document.body.appendChild(form);
+    form.submit();
+    document.body.removeChild(form);
+}
+</script>
+
+{% csrf_token %}
+
+<!-- Bekräftelsemodal för borttagning -->
+<div class="modal fade" id="confirmDeleteModal" tabindex="-1" aria-labelledby="confirmDeleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="confirmDeleteModalLabel">
+                    <i class="fas fa-exclamation-triangle text-warning me-2"></i>
+                    Bekräfta borttagning
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Stäng"></button>
+            </div>
+            <div class="modal-body">
+                <p id="confirmDeleteText">Är du säker på att du vill ta bort denna bild?</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Avbryt</button>
+                <button type="button" class="btn btn-danger" id="confirmDeleteBtn">
+                    <i class="fas fa-trash me-1"></i>
+                    Ta bort
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Felmodal -->
+<div class="modal fade" id="errorModal" tabindex="-1" aria-labelledby="errorModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="errorModalLabel">
+                    <i class="fas fa-exclamation-circle text-danger me-2"></i>
+                    Fel
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Stäng"></button>
+            </div>
+            <div class="modal-body">
+                <p id="errorText">Ett fel uppstod.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Stäng</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %} 

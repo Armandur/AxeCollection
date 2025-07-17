@@ -25,7 +25,14 @@
 {% endblock %}
 
 {% block content %}
-<h1 class="mb-4">Kontakter</h1>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Kontakter</h1>
+    <div>
+        <a href="{% url 'contact_create' %}" class="btn btn-primary">
+            <i class="fas fa-user-plus me-2"></i>Skapa ny kontakt
+        </a>
+    </div>
+</div>
 
 <!-- Statistik-kort -->
 {% include 'axes/_contact_stats_cards.html' %}
@@ -42,6 +49,7 @@
                 <th>NAJ</th>
                 <th>Köp / Sälj</th>
                 <th>Ekonomi</th>
+                <th class="datatable-date">Senaste transaktion</th>
             </tr>
         </thead>
         <tbody>
@@ -97,6 +105,13 @@
                     <span class="{% if contact.net_value >= 0 %}profit-positive{% else %}profit-negative{% endif %} fw-bold">
                         {{ contact.net_value|format_decimal }} kr
                     </span>
+                </td>
+                <td data-order="{{ contact.latest_transaction_date|date:'Y-m-d'|default_if_none:'' }}">
+                    {% if contact.latest_transaction_date %}
+                        {{ contact.latest_transaction_date|date:'Y-m-d' }}
+                    {% else %}
+                        <span class="text-muted">–</span>
+                    {% endif %}
                 </td>
             </tr>
             {% endfor %}

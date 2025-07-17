@@ -49,6 +49,108 @@ class TransactionForm(forms.ModelForm):
         fields = ['transaction_date', 'price', 'shipping_cost', 'contact', 'platform', 'comment']
 
 
+class ContactForm(forms.ModelForm):
+    """Formulär för att skapa och redigera kontakter"""
+    
+    class Meta:
+        model = Contact
+        fields = ['name', 'email', 'phone', 'alias', 'street', 'postal_code', 'city', 'country', 'comment', 'is_naj_member']
+        labels = {
+            'name': 'Namn',
+            'email': 'E-post',
+            'phone': 'Telefon',
+            'alias': 'Alias',
+            'street': 'Gata',
+            'postal_code': 'Postnummer',
+            'city': 'Ort',
+            'country': 'Land',
+            'comment': 'Kommentar',
+            'is_naj_member': 'Medlem i Nordic Axe Junkies',
+        }
+        widgets = {
+            'name': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Ange namn'
+            }),
+            'email': forms.EmailInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'namn@example.com'
+            }),
+            'phone': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': '070-123 45 67'
+            }),
+            'alias': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Användarnamn på Tradera/eBay'
+            }),
+            'street': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Gatunamn och nummer'
+            }),
+            'postal_code': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': '123 45'
+            }),
+            'city': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Stockholm'
+            }),
+            'country': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Sverige'
+            }),
+            'comment': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 3,
+                'placeholder': 'Lägg till kommentar om kontakten...'
+            }),
+            'is_naj_member': forms.CheckboxInput(attrs={
+                'class': 'form-check-input'
+            }),
+        }
+        help_texts = {
+            'name': 'Kontaktens namn',
+            'email': 'E-postadress',
+            'phone': 'Telefonnummer',
+            'alias': 'Användarnamn på plattformar som Tradera, eBay, etc.',
+            'street': 'Gatuadress',
+            'postal_code': 'Postnummer',
+            'city': 'Ort',
+            'country': 'Land',
+            'comment': 'Kommentar om kontakten',
+            'is_naj_member': 'Är kontakten medlem i Nordic Axe Junkies?',
+        }
+        error_messages = {
+            'name': {
+                'required': 'Namn måste anges.',
+                'max_length': 'Namnet får inte vara längre än 200 tecken.',
+            },
+            'email': {
+                'required': 'E-postadress måste anges.',
+                'invalid': 'Ange en giltig e-postadress.',
+            },
+            'phone': {
+                'max_length': 'Telefonnumret får inte vara längre än 50 tecken.',
+            },
+            'alias': {
+                'max_length': 'Aliaset får inte vara längre än 100 tecken.',
+            },
+            'street': {
+                'max_length': 'Gatuadressen får inte vara längre än 200 tecken.',
+            },
+            'postal_code': {
+                'max_length': 'Postnumret får inte vara längre än 20 tecken.',
+            },
+            'city': {
+                'max_length': 'Orten får inte vara längre än 100 tecken.',
+            },
+            'country': {
+                'max_length': 'Landet får inte vara längre än 100 tecken.',
+            },
+        }
+
+
 class MeasurementForm(forms.ModelForm):
     """Formulär för att lägga till mått på en yxa"""
     
@@ -241,6 +343,51 @@ class AxeForm(forms.ModelForm):
         widget=forms.CheckboxInput(attrs={'class': 'form-check-input'}),
         label='NAJ-medlem (ny kontakt)',
         help_text='Är försäljaren medlem i Nordic Axe Junkies?'
+    )
+    
+    # Adressfält för ny kontakt
+    contact_street = forms.CharField(
+        required=False,
+        max_length=200,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Gatunamn och nummer'
+        }),
+        label='Gata (ny kontakt)',
+        help_text='Gatuadress för försäljaren'
+    )
+    
+    contact_postal_code = forms.CharField(
+        required=False,
+        max_length=20,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': '123 45'
+        }),
+        label='Postnummer (ny kontakt)',
+        help_text='Postnummer för försäljaren'
+    )
+    
+    contact_city = forms.CharField(
+        required=False,
+        max_length=100,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Stockholm'
+        }),
+        label='Ort (ny kontakt)',
+        help_text='Ort för försäljaren'
+    )
+    
+    contact_country = forms.CharField(
+        required=False,
+        max_length=100,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Sverige'
+        }),
+        label='Land (ny kontakt)',
+        help_text='Land för försäljaren'
     )
     
     # Transaktionsrelaterade fält

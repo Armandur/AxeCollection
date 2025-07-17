@@ -28,6 +28,19 @@
     .axe-link:hover {
         color: #0d6efd;
     }
+    
+    .address-lines {
+        margin: 0;
+    }
+    
+    .address-line {
+        margin: 0;
+        line-height: 1.4;
+    }
+    
+    .address-line:not(:last-child) {
+        margin-bottom: 0.25rem;
+    }
 </style>
 {% endblock %}
 
@@ -35,9 +48,12 @@
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h1>{{ contact.name }}</h1>
     <div>
-        <a href="{% url 'admin:axes_contact_change' contact.pk %}" class="btn btn-primary">
+        <a href="{% url 'contact_edit' contact.pk %}" class="btn btn-primary">
             <i class="fas fa-edit"></i> Redigera
         </a>
+        <button type="button" class="btn btn-danger" onclick="confirmDelete()">
+            <i class="fas fa-trash"></i> Ta bort
+        </button>
         <a href="{% url 'contact_list' %}" class="btn btn-secondary">
             <i class="fas fa-arrow-left"></i> Tillbaka till kontakter
         </a>
@@ -72,6 +88,30 @@
         </div>
     </div>
 </div>
+
+<!-- Adress -->
+{% if contact.street or contact.postal_code or contact.city or contact.country %}
+<div class="contact-info">
+    <div class="row">
+        <div class="col-md-12">
+            <h5>Adress</h5>
+            <div class="address-lines">
+                {% if contact.street %}
+                    <div class="address-line">{{ contact.street }}</div>
+                {% endif %}
+                {% if contact.postal_code or contact.city %}
+                    <div class="address-line">
+                        {% if contact.postal_code %}{{ contact.postal_code }}{% endif %}{% if contact.postal_code and contact.city %} {% endif %}{% if contact.city %}{{ contact.city }}{% endif %}
+                    </div>
+                {% endif %}
+                {% if contact.country %}
+                    <div class="address-line">{{ contact.country }}</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
 
 <!-- Statistik -->
 <div class="row mb-4">
@@ -301,5 +341,77 @@ $(document).ready(function() {
         carousel.cycle();
     });
 });
+</script>
+
+<!-- Bootstrap Modal för borttagning -->
+<div class="modal fade" id="deleteContactModal" tabindex="-1" aria-labelledby="deleteContactModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteContactModalLabel">
+                    <i class="fas fa-exclamation-triangle text-warning me-2"></i>
+                    Ta bort kontakt
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Stäng"></button>
+            </div>
+            <div class="modal-body">
+                <p>Är du säker på att du vill ta bort kontakten <strong>"{{ contact.name }}"</strong>?</p>
+                
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    Denna kontakt har <strong>{{ total_transactions }}</strong> transaktioner kopplade till sig.
+                </div>
+                
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="deleteTransactions" name="delete_transactions">
+                    <label class="form-check-label" for="deleteTransactions">
+                        <strong>Ta även bort alla transaktioner</strong>
+                    </label>
+                    <div class="form-text text-danger">
+                        <i class="fas fa-exclamation-triangle me-1"></i>
+                        Varning: Detta kommer att permanent ta bort alla {{ total_transactions }} transaktioner. Denna åtgärd kan inte ångras.
+                    </div>
+                </div>
+                
+                <div class="form-text mt-2">
+                    <i class="fas fa-info-circle me-1"></i>
+                    Om du inte kryssar i rutan kommer transaktionerna att behållas men kopplingen till denna kontakt tas bort.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-2"></i>Avbryt
+                </button>
+                <button type="button" class="btn btn-danger" onclick="deleteContact()">
+                    <i class="fas fa-trash me-2"></i>Ta bort kontakt
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Dolt formulär för borttagning -->
+<form id="deleteForm" method="post" action="{% url 'contact_delete' contact.pk %}" style="display: none;">
+    {% csrf_token %}
+    <input type="hidden" id="deleteTransactionsInput" name="delete_transactions" value="false">
+</form>
+
+<script>
+function confirmDelete() {
+    // Återställ checkbox till unchecked
+    document.getElementById('deleteTransactions').checked = false;
+    // Visa modal
+    var modal = new bootstrap.Modal(document.getElementById('deleteContactModal'));
+    modal.show();
+}
+
+function deleteContact() {
+    // Uppdatera hidden input baserat på checkbox
+    var deleteTransactions = document.getElementById('deleteTransactions').checked;
+    document.getElementById('deleteTransactionsInput').value = deleteTransactions;
+    
+    // Skicka formuläret
+    document.getElementById('deleteForm').submit();
+}
 </script>
 {% endblock %} 
