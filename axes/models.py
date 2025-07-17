@@ -143,6 +143,11 @@ class Axe(models.Model):
     def profit_loss(self):
         return (self.total_sale_value + self.total_sale_shipping) - (self.total_buy_value + self.total_buy_shipping)
 
+    @property
+    def measurement_count(self):
+        """Returnerar antalet registrerade mått för yxan"""
+        return self.measurements.count()
+
 class AxeImage(models.Model):
     axe = models.ForeignKey(Axe, related_name='images', on_delete=models.CASCADE) # Raderas bilden om yxan raderas
     image = models.ImageField(upload_to='axe_images/') # Django hanterar filuppladdning

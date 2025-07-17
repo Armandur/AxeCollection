@@ -65,12 +65,12 @@ En checklista för vidareutveckling av AxeCollection. Bocka av med [x] när klar
     - [x] 27.6 Fixat Django ORM-relationer med related_name='transactions'
     - [x] 27.7 Förbättrad CSV-export med hantering av radbrytningar
     - [x] 27.8 Fixat statistikkort som nu visar korrekt data för filtrerade yxor (tidigare visade alltid hela samlingen)
-28. [ ] Måttkolumn och filtrering i yxlistan
-    - [ ] 28.1 Lägg till "Mått"-kolumn i yxlistan med linjal-ikon för yxor med registrerade mått
-    - [ ] 28.2 Tooltip/popup som visar måtten vid hovring över ikonen
-    - [ ] 28.3 Filter för att visa endast yxor med/utan mått
-    - [ ] 28.4 Responsiv design för måttkolumnen på olika skärmstorlekar
-    - [ ] 28.5 Tydlig visuell indikation på vilka yxor som har kompletta mått
+28. [x] Måttkolumn och filtrering i yxlistan
+    - [x] 28.1 Lägg till "Mått"-kolumn i yxlistan med linjal-ikon för yxor med registrerade mått
+    - [x] 28.2 Visa antalet registrerade mått bredvid linjal-ikonen (t.ex. "📏 3" för 3 mått)
+    - [x] 28.3 Tooltip/popup som visar måtten vid hovring över ikonen
+    - [x] 28.4 Filter för att visa endast yxor med/utan mått
+    - [x] 28.5 Responsiv design för måttkolumnen på olika skärmstorlekar
 
 ## Yxhantering och inmatning
 

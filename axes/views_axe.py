@@ -24,6 +24,7 @@ def axe_list(request):
     status_filter = request.GET.get('status', '')
     manufacturer_filter = request.GET.get('manufacturer', '')
     platform_filter = request.GET.get('platform', '')
+    measurements_filter = request.GET.get('measurements', '')
     
     # Starta med alla yxor
     axes = Axe.objects.all().select_related('manufacturer').prefetch_related('measurements', 'images', 'transactions')
@@ -37,6 +38,11 @@ def axe_list(request):
     
     if platform_filter:
         axes = axes.filter(transactions__platform_id=platform_filter).distinct()
+    
+    if measurements_filter == 'with':
+        axes = axes.filter(measurements__isnull=False).distinct()
+    elif measurements_filter == 'without':
+        axes = axes.filter(measurements__isnull=True)
     
     # Sortera efter ID (senaste först)
     axes = axes.order_by('-id')
@@ -75,6 +81,7 @@ def axe_list(request):
         'status_filter': status_filter,
         'manufacturer_filter': manufacturer_filter,
         'platform_filter': platform_filter,
+        'measurements_filter': measurements_filter,
         'filtered_count': filtered_count,
         'bought_count': bought_count,
         'received_count': received_count,
