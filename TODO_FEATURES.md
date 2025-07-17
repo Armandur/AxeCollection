@@ -213,7 +213,7 @@ En checklista för vidareutveckling av AxeCollection. Bocka av med [x] när klar
     - [x] 56.10.3 Länkar till respektive yxas detaljsida
     - [x] 56.10.4 Färgkodning: grön för köp, röd för sälj, blå för tillagda yxor
     - [x] 56.10.5 Visar datum och pris/tillverkare för varje aktivitet
-57. [ ] QR-kod för att snabbt visa en yxa på mobilen.
+57. [ ] QR-kod för att snabbt visa en yxa på mobilen. **(Pausad – kräver vidare diskussion och behovsanalys innan implementation)**
 
 ## Framtida förbättringar
 

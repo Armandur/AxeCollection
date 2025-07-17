@@ -11,6 +11,7 @@ __pycache__/
 
 /fixes/
 /testing/
+/backups/
 
 media/axe_images/*
 media/manufacturer_images/*
