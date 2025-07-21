@@ -89,6 +89,25 @@ class TransactionForm(forms.ModelForm):
         fields = ['transaction_date', 'price', 'shipping_cost', 'contact', 'platform', 'comment']
 
 
+class PlatformForm(forms.ModelForm):
+    """Formulär för att skapa och redigera plattformar"""
+    
+    class Meta:
+        model = Platform
+        fields = ['name']
+        labels = {
+            'name': 'Namn',
+        }
+        widgets = {
+            'name': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Ange plattformsnamn'
+            }),
+        }
+        help_texts = {
+            'name': 'Namn på plattformen (t.ex. Tradera, eBay, Blocket)',
+        }
+
 class ContactForm(forms.ModelForm):
     """Formulär för att skapa och redigera kontakter"""
     country_code = forms.ChoiceField(

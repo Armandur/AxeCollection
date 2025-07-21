@@ -1,0 +1,54 @@
+{% extends 'axes/base.html' %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+        <div class="card shadow">
+            <div class="card-header">
+                <h4 class="card-title mb-0">
+                    {% if platform %}
+                        <i class="fas fa-edit me-2"></i>Redigera plattform
+                    {% else %}
+                        <i class="fas fa-plus me-2"></i>Ny plattform
+                    {% endif %}
+                </h4>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <div class="mb-3">
+                        <label for="{{ form.name.id_for_label }}" class="form-label">
+                            {{ form.name.label }}
+                        </label>
+                        {{ form.name }}
+                        {% if form.name.help_text %}
+                            <div class="form-text">{{ form.name.help_text }}</div>
+                        {% endif %}
+                        {% if form.name.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.name.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="d-flex justify-content-between">
+                        <a href="{% if platform %}{% url 'platform_detail' platform.pk %}{% else %}{% url 'platform_list' %}{% endif %}" 
+                           class="btn btn-secondary">
+                            <i class="fas fa-arrow-left me-1"></i>Tillbaka
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-1"></i>
+                            {% if platform %}Uppdatera{% else %}Skapa{% endif %}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 
