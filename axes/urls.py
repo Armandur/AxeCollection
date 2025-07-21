@@ -1,9 +1,11 @@
 from django.urls import path
+from django.contrib.auth import views as auth_views
 from . import views
 from . import views_axe
 from . import views_contact
 from . import views_manufacturer
 from . import views_transaction
+from . import views_platform
 
 urlpatterns = [
     path('', views_axe.axe_list, name='axe_list'),
@@ -38,6 +40,13 @@ urlpatterns = [
     path('transaktioner/', views_transaction.transaction_list, name='transaction_list'),
     path('api/transaction/<int:pk>/', views_transaction.api_transaction_detail, name='api_transaction_detail'),
     path('api/transaction/<int:pk>/update/', views_transaction.api_transaction_update, name='api_transaction_update'),
+    
+    # Plattformar
+    path('plattformar/', views_platform.platform_list, name='platform_list'),
+    path('plattformar/ny/', views_platform.platform_create, name='platform_create'),
+    path('plattformar/<int:pk>/', views_platform.platform_detail, name='platform_detail'),
+    path('plattformar/<int:pk>/redigera/', views_platform.platform_edit, name='platform_edit'),
+    path('plattformar/<int:pk>/ta-bort/', views_platform.platform_delete, name='platform_delete'),
     path('api/search/contacts/', views.search_contacts, name='search_contacts'),
     path('api/search/platforms/', views.search_platforms, name='search_platforms'),
     path('api/search/global/', views.global_search, name='global_search'),
@@ -47,4 +56,11 @@ urlpatterns = [
     path('okopplade-bilder/', views_axe.unlinked_images_view, name='unlinked_images'),
     path('okopplade-bilder/ta-bort/', views_axe.delete_unlinked_image, name='delete_unlinked_image'),
     path('okopplade-bilder/ladda-ner/', views_axe.download_unlinked_images, name='download_unlinked_images'),
+    
+    # Auth URLs
+    path('login/', auth_views.LoginView.as_view(template_name='axes/login.html'), name='login'),
+    path('logout/', auth_views.LogoutView.as_view(next_page='/'), name='logout'),
+    
+    # Settings
+    path('installningar/', views.settings_view, name='settings'),
 ] 

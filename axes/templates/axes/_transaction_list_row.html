@@ -32,6 +32,7 @@
     </td>
     <td data-order="{{ transaction.price }}">{{ transaction.price|format_decimal }} kr</td>
     <td data-order="{{ transaction.shipping_cost }}">{{ transaction.shipping_cost|format_decimal }} kr</td>
+    {% if user.is_authenticated or public_settings.show_contacts %}
     <td>
         {% if transaction.contact %}
             <a href="{% url 'contact_detail' transaction.contact.pk %}" class="text-decoration-none">
@@ -47,6 +48,8 @@
             <span class="text-muted">-</span>
         {% endif %}
     </td>
+    {% endif %}
+    {% if user.is_authenticated or public_settings.show_platforms %}
     <td>
         {% if transaction.platform %}
             {{ transaction.platform.name }}
@@ -54,6 +57,7 @@
             <span class="text-muted">-</span>
         {% endif %}
     </td>
+    {% endif %}
     <td>
         {% if transaction.comment %}
             <small>{{ transaction.comment|truncatechars:50 }}</small>

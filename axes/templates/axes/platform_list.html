@@ -1,0 +1,94 @@
+{% extends 'axes/base.html' %}
+
+{% block title %}Plattformar{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0">Plattformar</h1>
+    <a href="{% url 'platform_create' %}" class="btn btn-success btn-sm" title="Lägg till ny plattform">
+        <i class="fas fa-plus-circle"></i> Ny plattform
+    </a>
+</div>
+
+<div class="row">
+    {% for platform in platforms %}
+    <div class="col-md-6 col-lg-4 mb-4">
+        <div class="card h-100 shadow-sm">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <h5 class="card-title mb-0">
+                        <span class="badge {{ platform.color_class }} me-2">{{ platform.name }}</span>
+                    </h5>
+                    <div class="dropdown">
+                        <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-ellipsis-v"></i>
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li>
+                                <a class="dropdown-item" href="{% url 'platform_detail' platform.pk %}">
+                                    <i class="fas fa-eye me-2"></i>Visa detaljer
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="{% url 'platform_edit' platform.pk %}">
+                                    <i class="fas fa-edit me-2"></i>Redigera
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <a class="dropdown-item text-danger" href="{% url 'platform_delete' platform.pk %}">
+                                    <i class="fas fa-trash me-2"></i>Ta bort
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="row text-center">
+                    <div class="col-6">
+                        <div class="border-end">
+                            <h6 class="text-muted mb-1">Transaktioner</h6>
+                            <span class="h5">{{ platform.transaction_count }}</span>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <h6 class="text-muted mb-1">Köp</h6>
+                        <span class="h5 text-danger">{{ platform.buy_count }}</span>
+                    </div>
+                </div>
+                
+                <div class="row text-center mt-3">
+                    <div class="col-6">
+                        <h6 class="text-muted mb-1">Sälj</h6>
+                        <span class="h5 text-success">{{ platform.sale_count }}</span>
+                    </div>
+                    <div class="col-6">
+                        <h6 class="text-muted mb-1">Vinst/Förlust</h6>
+                        <span class="h5 {% if platform.total_sale_value > platform.total_buy_value %}text-success{% else %}text-danger{% endif %}">
+                            {{ platform.total_sale_value|add:platform.total_buy_value|floatformat:0 }} kr
+                        </span>
+                    </div>
+                </div>
+                
+                <div class="mt-3">
+                    <a href="{% url 'platform_detail' platform.pk %}" class="btn btn-outline-primary btn-sm w-100">
+                        <i class="fas fa-chart-line me-1"></i>Visa statistik
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="col-12">
+        <div class="text-center py-5">
+            <i class="fas fa-store fa-3x text-muted mb-3"></i>
+            <h4 class="text-muted">Inga plattformar ännu</h4>
+            <p class="text-muted">Lägg till din första plattform för att komma igång.</p>
+            <a href="{% url 'platform_create' %}" class="btn btn-primary">
+                <i class="fas fa-plus me-1"></i>Lägg till plattform
+            </a>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %} 

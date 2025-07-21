@@ -15,7 +15,16 @@
 {% endblock %}
 
 {% block content %}
-<h1 class="mb-4">Transaktionshistorik</h1>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Transaktionshistorik</h1>
+    {% if user.is_authenticated %}
+    <div>
+        <a href="{% url 'platform_list' %}" class="btn btn-outline-primary">
+            <i class="fas fa-cogs me-1"></i>Hantera plattformar
+        </a>
+    </div>
+    {% endif %}
+</div>
 
 <!-- Filter-sektion -->
 <div class="card mb-4">
@@ -103,8 +112,12 @@
                 <th>Yxa</th>
                 <th>Pris</th>
                 <th>Frakt</th>
+                {% if user.is_authenticated or public_settings.show_contacts %}
                 <th>Kontakt</th>
+                {% endif %}
+                {% if user.is_authenticated or public_settings.show_platforms %}
                 <th>Plattform</th>
+                {% endif %}
                 <th>Kommentar</th>
             </tr>
         </thead>

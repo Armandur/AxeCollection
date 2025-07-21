@@ -2,6 +2,7 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib import messages
 from django.urls import reverse
 from django.views.decorators.http import require_POST
+from django.contrib.auth.decorators import login_required
 from .models import Contact, Transaction
 from .forms import ContactForm
 from django.db.models import Sum
@@ -54,6 +55,7 @@ def contact_detail(request, pk):
     }
     return render(request, 'axes/contact_detail.html', context)
 
+@login_required
 def contact_create(request):
     """Vy för att skapa en ny kontakt"""
     if request.method == 'POST':
@@ -72,6 +74,7 @@ def contact_create(request):
     }
     return render(request, 'axes/contact_form.html', context)
 
+@login_required
 def contact_edit(request, pk):
     """Vy för att redigera en befintlig kontakt"""
     contact = get_object_or_404(Contact, pk=pk)
@@ -92,6 +95,7 @@ def contact_edit(request, pk):
     }
     return render(request, 'axes/contact_form.html', context) 
 
+@login_required
 @require_POST
 def contact_delete(request, pk):
     """Vy för att ta bort en kontakt"""

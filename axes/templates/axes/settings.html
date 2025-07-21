@@ -1,0 +1,149 @@
+{% extends 'axes/base.html' %}
+{% load static %}
+
+{% block title %}Inställningar - {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'axe_list' %}">Hem</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Inställningar</li>
+                </ol>
+            </nav>
+            
+            <h1 class="mb-4">
+                <i class="bi bi-gear"></i> Systeminställningar
+            </h1>
+            
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+            
+            <form method="post">
+                {% csrf_token %}
+                
+                <!-- Publika inställningar -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="bi bi-eye"></i> Publika inställningar
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted mb-3">
+                            Konfigurera vad som ska visas för icke-inloggade användare.
+                        </p>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-check form-switch mb-3">
+                                    <input class="form-check-input" type="checkbox" id="show_contacts_public" 
+                                           name="show_contacts_public" 
+                                           {% if settings.show_contacts_public %}checked{% endif %}>
+                                    <label class="form-check-label" for="show_contacts_public">
+                                        <strong>Visa kontakter publikt</strong>
+                                    </label>
+                                    <div class="form-text">
+                                        Om kontaktinformation ska visas för icke-inloggade användare
+                                    </div>
+                                </div>
+                                
+                                <div class="form-check form-switch mb-3">
+                                    <input class="form-check-input" type="checkbox" id="show_prices_public" 
+                                           name="show_prices_public" 
+                                           {% if settings.show_prices_public %}checked{% endif %}>
+                                    <label class="form-check-label" for="show_prices_public">
+                                        <strong>Visa priser publikt</strong>
+                                    </label>
+                                    <div class="form-text">
+                                        Om priser ska visas för icke-inloggade användare
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="form-check form-switch mb-3">
+                                    <input class="form-check-input" type="checkbox" id="show_platforms_public" 
+                                           name="show_platforms_public" 
+                                           {% if settings.show_platforms_public %}checked{% endif %}>
+                                    <label class="form-check-label" for="show_platforms_public">
+                                        <strong>Visa plattformar publikt</strong>
+                                    </label>
+                                    <div class="form-text">
+                                        Om plattformar ska visas för icke-inloggade användare
+                                    </div>
+                                </div>
+                                
+                                <div class="form-check form-switch mb-3">
+                                    <input class="form-check-input" type="checkbox" id="show_only_received_axes_public" 
+                                           name="show_only_received_axes_public" 
+                                           {% if settings.show_only_received_axes_public %}checked{% endif %}>
+                                    <label class="form-check-label" for="show_only_received_axes_public">
+                                        <strong>Visa endast mottagna yxor publikt</strong>
+                                    </label>
+                                    <div class="form-text">
+                                        Om endast mottagna yxor ska visas i publika listor
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Systeminställningar -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="bi bi-gear"></i> Systeminställningar
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="site_title" class="form-label">
+                                        <strong>Sajttitel</strong>
+                                    </label>
+                                    <input type="text" class="form-control" id="site_title" name="site_title" 
+                                           value="{{ settings.site_title }}" maxlength="100">
+                                    <div class="form-text">
+                                        Titel som visas i webbläsaren och på sidor
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="site_description" class="form-label">
+                                        <strong>Sajtbeskrivning</strong>
+                                    </label>
+                                    <textarea class="form-control" id="site_description" name="site_description" 
+                                              rows="3">{{ settings.site_description }}</textarea>
+                                    <div class="form-text">
+                                        Beskrivning av sajten för sökmotorer
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Spara-knapp -->
+                <div class="d-flex justify-content-end">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-check"></i> Spara inställningar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %} 

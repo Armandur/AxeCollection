@@ -63,9 +63,19 @@ def global_search(request):
         'transactions': []
     }
     
-    # Sök i yxor
-    # Skapa Q-objekt för textfält
+    # Sök i yxor (respektera "endast mottagna yxor" inställning)
     text_query = Q(manufacturer__name__icontains=query) | Q(model__icontains=query) | Q(comment__icontains=query)
+    
+    # Applicera publik filtrering om användaren inte är inloggad
+    if not request.user.is_authenticated:
+        from .models import Settings
+        try:
+            settings = Settings.get_settings()
+            if settings.show_only_received_axes_public:
+                text_query &= Q(status='MOTTAGEN')
+        except:
+            # Fallback om Settings-modellen inte finns ännu
+            pass
     
     # Kontrollera om query är ett nummer för ID-sökning
     try:
@@ -84,22 +94,23 @@ def global_search(request):
             'type': 'axe'
         })
     
-    # Sök i kontakter
-    contacts = Contact.objects.filter(
-        Q(name__icontains=query) |
-        Q(alias__icontains=query) |
-        Q(email__icontains=query)
-    )[:5]
-    
-    for contact in contacts:
-        flag_emoji = f"🇸🇪" if contact.country_code == 'SE' else f"🇫🇮" if contact.country_code == 'FI' else ""
-        results['contacts'].append({
-            'id': contact.id,
-            'title': contact.name,
-            'subtitle': f"{contact.alias or ''} {flag_emoji}".strip(),
-            'url': f'/kontakter/{contact.id}/',
-            'type': 'contact'
-        })
+    # Sök i kontakter (endast om användaren är inloggad eller kontakter visas publikt)
+    if request.user.is_authenticated or getattr(request, 'public_settings', {}).get('show_contacts', False):
+        contacts = Contact.objects.filter(
+            Q(name__icontains=query) |
+            Q(alias__icontains=query) |
+            Q(email__icontains=query)
+        )[:5]
+        
+        for contact in contacts:
+            flag_emoji = f"🇸🇪" if contact.country_code == 'SE' else f"🇫🇮" if contact.country_code == 'FI' else ""
+            results['contacts'].append({
+                'id': contact.id,
+                'title': contact.name,
+                'subtitle': f"{contact.alias or ''} {flag_emoji}".strip(),
+                'url': f'/kontakter/{contact.id}/',
+                'type': 'contact'
+            })
     
     # Sök i tillverkare
     manufacturers = Manufacturer.objects.filter(
@@ -117,20 +128,39 @@ def global_search(request):
             'type': 'manufacturer'
         })
     
-    # Sök i transaktioner
-    transactions = Transaction.objects.filter(
-        Q(axe__manufacturer__name__icontains=query) |
-        Q(axe__model__icontains=query) |
-        Q(contact__name__icontains=query) |
-        Q(platform__name__icontains=query)
-    ).select_related('axe__manufacturer', 'contact', 'platform')[:5]
+    # Sök i transaktioner (respektera publika inställningar)
+    transaction_query = Q(axe__manufacturer__name__icontains=query) | Q(axe__model__icontains=query)
+    
+    # Lägg till kontaktsökning endast om kontakter visas publikt
+    if request.user.is_authenticated or getattr(request, 'public_settings', {}).get('show_contacts', False):
+        transaction_query |= Q(contact__name__icontains=query)
+    
+    # Lägg till plattformssökning endast om plattformar visas publikt
+    if request.user.is_authenticated or getattr(request, 'public_settings', {}).get('show_platforms', True):
+        transaction_query |= Q(platform__name__icontains=query)
+    
+    transactions = Transaction.objects.filter(transaction_query).select_related('axe__manufacturer', 'contact', 'platform')[:5]
     
     for transaction in transactions:
         axe_title = f"{transaction.axe.manufacturer.name} - {transaction.axe.model}" if transaction.axe else "Okänd yxa"
+        
+        # Skapa subtitle baserat på publika inställningar
+        subtitle_parts = [f"{transaction.price} kr", transaction.transaction_date.strftime('%Y-%m-%d')]
+        
+        # Lägg till kontaktinfo endast om kontakter visas publikt
+        if request.user.is_authenticated or getattr(request, 'public_settings', {}).get('show_contacts', False):
+            if transaction.contact:
+                subtitle_parts.append(transaction.contact.name)
+        
+        # Lägg till plattformsinfo endast om plattformar visas publikt
+        if request.user.is_authenticated or getattr(request, 'public_settings', {}).get('show_platforms', True):
+            if transaction.platform:
+                subtitle_parts.append(transaction.platform.name)
+        
         results['transactions'].append({
             'id': transaction.id,
             'title': f"{transaction.type} - {axe_title}",
-            'subtitle': f"{transaction.price} kr - {transaction.transaction_date.strftime('%Y-%m-%d')}",
+            'subtitle': ' - '.join(subtitle_parts),
             'url': f'/yxor/{transaction.axe.id}/' if transaction.axe else '#',
             'type': 'transaction'
         })
@@ -352,6 +382,17 @@ def axe_list(request):
     # Starta med alla yxor
     axes = Axe.objects.all().select_related('manufacturer').prefetch_related('measurements', 'images', 'transactions')
     
+    # Applicera publik filtrering om användaren inte är inloggad
+    if not request.user.is_authenticated:
+        from .models import Settings
+        try:
+            settings = Settings.get_settings()
+            if settings.show_only_received_axes_public:
+                axes = axes.filter(status='MOTTAGEN')
+        except:
+            # Fallback om Settings-modellen inte finns ännu
+            pass
+    
     # Applicera filter
     if status_filter:
         axes = axes.filter(status=status_filter)
@@ -517,3 +558,39 @@ def statistics_dashboard(request):
     }
     
     return render(request, 'axes/statistics_dashboard.html', context)
+
+def settings_view(request):
+    """Vy för att hantera systeminställningar"""
+    if not request.user.is_authenticated:
+        return redirect('login')
+    
+    from .models import Settings
+    
+    if request.method == 'POST':
+        settings = Settings.get_settings()
+        
+        # Uppdatera inställningar från formuläret
+        settings.show_contacts_public = request.POST.get('show_contacts_public') == 'on'
+        settings.show_prices_public = request.POST.get('show_prices_public') == 'on'
+        settings.show_platforms_public = request.POST.get('show_platforms_public') == 'on'
+        settings.show_only_received_axes_public = request.POST.get('show_only_received_axes_public') == 'on'
+        settings.site_title = request.POST.get('site_title', 'AxeCollection')
+        settings.site_description = request.POST.get('site_description', '')
+        
+        settings.save()
+        
+        # Lägg till meddelande
+        from django.contrib import messages
+        messages.success(request, 'Inställningar sparade!')
+        
+        return redirect('settings')
+    
+    # Hämta nuvarande inställningar
+    settings = Settings.get_settings()
+    
+    context = {
+        'settings': settings,
+        'page_title': 'Inställningar'
+    }
+    
+    return render(request, 'axes/settings.html', context)

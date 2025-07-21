@@ -187,11 +187,15 @@
 
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <h1 class="h3 mb-0">Samling</h1>
+    <div>
+        <h1 class="h3 mb-0">Samling</h1>
+    </div>
+    {% if user.is_authenticated %}
     <a href="{% url 'axe_create' %}" class="btn btn-success btn-sm" title="Lägg till ny yxa">
         <i class="fas fa-plus-circle"></i>
         <span class="d-none d-md-inline">Lägg till ny yxa</span>
     </a>
+    {% endif %}
 </div>
 
 <!-- Filter-sektion -->
@@ -230,6 +234,7 @@
                     {% endfor %}
                 </select>
             </div>
+            {% if user.is_authenticated or public_settings.show_platforms %}
             <div class="col-md-2">
                 <label for="platform" class="form-label">Plattform</label>
                 <select name="platform" id="platform" class="form-select">
@@ -241,6 +246,7 @@
                     {% endfor %}
                 </select>
             </div>
+            {% endif %}
             <div class="col-md-2">
                 <label for="measurements" class="form-label">Mått</label>
                 <select name="measurements" id="measurements" class="form-select">
@@ -267,7 +273,7 @@
                     {% if bought_count > 0 or received_count > 0 %}
                         ({{ bought_count }} köpta, {{ received_count }} mottagna)
                     {% endif %}
-                    {% if platform_filter %}
+                    {% if platform_filter and user.is_authenticated or public_settings.show_platforms %}
                         {% for platform in platforms %}
                             {% if platform.id|stringformat:"s" == platform_filter %}
                                 från {{ platform.name }}
@@ -298,7 +304,9 @@
                 <th>Tillverkare</th>
                 <th>Modell</th>
                 <th>Status</th>
+                {% if user.is_authenticated or public_settings.show_platforms %}
                 <th>Plattform</th>
+                {% endif %}
                 <th>Mått</th>
                 <th>Kommentar</th>
                 <th>Ekonomi</th>
@@ -318,6 +326,7 @@
                 </td>
                 <td>
                     {% include 'axes/_status_badge.html' with status=axe.status %}
+                    {% if user.is_authenticated %}
                     <div class="mt-1">
                         {% if axe.status == 'KÖPT' %}
                             <button class="btn btn-sm btn-outline-success status-btn" 
@@ -340,7 +349,9 @@
                             </button>
                         {% endif %}
                     </div>
+                    {% endif %}
                 </td>
+                {% if user.is_authenticated or public_settings.show_platforms %}
                 <td>
                     {% for trans in axe.transactions.all %}
                         {% if trans.platform %}
@@ -348,6 +359,7 @@
                         {% endif %}
                     {% endfor %}
                 </td>
+                {% endif %}
                 <td class="text-center">
                     {% if axe.measurement_count > 0 %}
                         <span tabindex="0" class="measurement-popover text-primary" 
@@ -459,6 +471,7 @@ $(document).ready(function() {
             }
         },
         columnDefs: [
+            {% if user.is_authenticated or public_settings.show_platforms %}
             {
                 targets: [6], // Kommentar-kolumnen (nu på position 6)
                 responsivePriority: 2
@@ -473,6 +486,22 @@ $(document).ready(function() {
                 responsivePriority: 2,
                 className: 'all' // Visa alltid
             }
+            {% else %}
+            {
+                targets: [5], // Kommentar-kolumnen (nu på position 5)
+                responsivePriority: 2
+            },
+            {
+                targets: [0, 7], // ID och Bilder (nu på position 7)
+                responsivePriority: 1,
+                className: 'all' // Visa alltid
+            },
+            {
+                targets: [1, 2, 3, 4, 6], // Tillverkare, Modell, Status, Mått, Ekonomi
+                responsivePriority: 2,
+                className: 'all' // Visa alltid
+            }
+            {% endif %}
         ],
         drawCallback: function(settings) {
             // Initiera popovers på nya rader efter sidbyte/sortering/filtrering

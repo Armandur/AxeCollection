@@ -1,4 +1,5 @@
 from django.shortcuts import render, get_object_or_404, redirect
+from django.contrib.auth.decorators import login_required
 from .models import Axe, AxeImage, Measurement, NextAxeID, MeasurementTemplate, Transaction, Contact, Platform, Manufacturer
 from .forms import AxeForm, MeasurementForm, TransactionForm
 from django.db.models import Sum, Q, Max, Count
@@ -107,6 +108,17 @@ def axe_list(request):
     
     # Starta med alla yxor
     axes = Axe.objects.all().select_related('manufacturer').prefetch_related('measurements', 'images', 'transactions')
+    
+    # Applicera publik filtrering om användaren inte är inloggad
+    if not request.user.is_authenticated:
+        from .models import Settings
+        try:
+            settings = Settings.get_settings()
+            if settings.show_only_received_axes_public:
+                axes = axes.filter(status='MOTTAGEN')
+        except:
+            # Fallback om Settings-modellen inte finns ännu
+            pass
     
     # Applicera filter
     if status_filter:
@@ -254,6 +266,7 @@ def axe_detail(request, pk):
     }
     return render(request, 'axes/axe_detail.html', context)
 
+@login_required
 def axe_create(request):
     if request.method == 'POST':
         form = AxeForm(request.POST, request.FILES)
@@ -457,6 +470,7 @@ def axe_create(request):
     }
     return render(request, 'axes/axe_form.html', context)
 
+@login_required
 def axe_edit(request, pk):
     axe = get_object_or_404(Axe, pk=pk)
     if request.method == 'POST':
@@ -627,6 +641,17 @@ def axe_edit(request, pk):
 def axe_gallery(request, pk=None):
     """Visa yxor i galleriformat med navigation mellan dem"""
     all_axes = Axe.objects.all().select_related('manufacturer').prefetch_related('images').order_by('id')
+    
+    # Applicera publik filtrering om användaren inte är inloggad
+    if not request.user.is_authenticated:
+        from .models import Settings
+        try:
+            settings = Settings.get_settings()
+            if settings.show_only_received_axes_public:
+                all_axes = all_axes.filter(status='MOTTAGEN')
+        except:
+            # Fallback om Settings-modellen inte finns ännu
+            pass
     if pk:
         current_axe = get_object_or_404(
             Axe.objects.select_related('manufacturer').prefetch_related('images', 'measurements'), pk=pk
@@ -675,6 +700,7 @@ def axe_gallery(request, pk=None):
                 'total_axes': 0,
             })
 
+@login_required
 def receiving_workflow(request, pk):
     axe = get_object_or_404(Axe, pk=pk)
     # Ladda måttmallar
@@ -698,6 +724,7 @@ def receiving_workflow(request, pk):
                 axe.save()
                 return redirect('axe_list')
 
+@login_required
 @require_http_methods(["POST"])
 def update_axe_status(request, pk):
     """Uppdatera status för en yxa"""
@@ -720,6 +747,7 @@ def update_axe_status(request, pk):
         'measurements': measurements,
     })
 
+@login_required
 @require_POST
 def add_measurement(request, pk):
     axe = get_object_or_404(Axe, pk=pk)
@@ -742,6 +770,7 @@ def add_measurement(request, pk):
         measurement_form = MeasurementForm()
     return render(request, 'axes/add_measurement.html', {'axe': axe, 'measurement_form': measurement_form})
 
+@login_required
 @require_POST
 def add_measurements_from_template(request, pk):
     axe = get_object_or_404(Axe, pk=pk)
@@ -786,6 +815,7 @@ def add_measurements_from_template(request, pk):
         'message': f'{created_count} mått lades till framgångsrikt.'
     })
 
+@login_required
 @require_POST
 def delete_measurement(request, pk, measurement_id):
     axe = get_object_or_404(Axe, pk=pk)
@@ -808,6 +838,7 @@ def delete_measurement(request, pk, measurement_id):
             'error': 'Mått hittades inte.'
         }, status=404)
 
+@login_required
 @require_POST
 def update_measurement(request, pk, measurement_id):
     axe = get_object_or_404(Axe, pk=pk)

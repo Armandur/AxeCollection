@@ -426,3 +426,54 @@ class Transaction(models.Model):
 
     def __str__(self):
         return f"{self.type} av {self.axe} på {self.transaction_date}"
+
+class Settings(models.Model):
+    """Globala inställningar för systemet"""
+    # Publika inställningar
+    show_contacts_public = models.BooleanField(
+        default=False, 
+        verbose_name="Visa kontakter publikt",
+        help_text="Om kontaktinformation ska visas för icke-inloggade användare"
+    )
+    show_prices_public = models.BooleanField(
+        default=True, 
+        verbose_name="Visa priser publikt",
+        help_text="Om priser ska visas för icke-inloggade användare"
+    )
+    show_platforms_public = models.BooleanField(
+        default=True, 
+        verbose_name="Visa plattformar publikt",
+        help_text="Om plattformar ska visas för icke-inloggade användare"
+    )
+    show_only_received_axes_public = models.BooleanField(
+        default=False, 
+        verbose_name="Visa endast mottagna yxor publikt",
+        help_text="Om endast mottagna yxor ska visas i publika listor"
+    )
+    
+    # Systeminställningar
+    site_title = models.CharField(
+        max_length=100, 
+        default="AxeCollection",
+        verbose_name="Sajttitel",
+        help_text="Titel som visas i webbläsaren och på sidor"
+    )
+    site_description = models.TextField(
+        blank=True, 
+        null=True,
+        verbose_name="Sajtbeskrivning",
+        help_text="Beskrivning av sajten för sökmotorer"
+    )
+    
+    class Meta:
+        verbose_name = "Inställning"
+        verbose_name_plural = "Inställningar"
+    
+    def __str__(self):
+        return "Systeminställningar"
+    
+    @classmethod
+    def get_settings(cls):
+        """Hämta eller skapa inställningar"""
+        obj, created = cls.objects.get_or_create(id=1)
+        return obj
