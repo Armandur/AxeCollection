@@ -10,11 +10,11 @@ from .forms import PlatformForm
 def platform_list(request):
     """Lista alla plattformar med statistik"""
     platforms = Platform.objects.annotate(
-        transaction_count=Count('transactions'),
-        buy_count=Count('transactions', filter=Transaction.objects.filter(type='KÖP').values('id').query),
-        sale_count=Count('transactions', filter=Transaction.objects.filter(type='SÄLJ').values('id').query),
-        total_buy_value=Sum('transactions__price', filter=Transaction.objects.filter(type='KÖP').values('id').query),
-        total_sale_value=Sum('transactions__price', filter=Transaction.objects.filter(type='SÄLJ').values('id').query),
+        transaction_count=Count('transaction'),
+        buy_count=Count('transaction', filter=Transaction.objects.filter(type='KÖP').values('id').query),
+        sale_count=Count('transaction', filter=Transaction.objects.filter(type='SÄLJ').values('id').query),
+        total_buy_value=Sum('transaction__price', filter=Transaction.objects.filter(type='KÖP').values('id').query),
+        total_sale_value=Sum('transaction__price', filter=Transaction.objects.filter(type='SÄLJ').values('id').query),
     ).order_by('name')
     
     context = {
