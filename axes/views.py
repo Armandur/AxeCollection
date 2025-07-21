@@ -352,6 +352,17 @@ def axe_list(request):
     # Starta med alla yxor
     axes = Axe.objects.all().select_related('manufacturer').prefetch_related('measurements', 'images', 'transactions')
     
+    # Applicera publik filtrering om användaren inte är inloggad
+    if not request.user.is_authenticated:
+        from .models import Settings
+        try:
+            settings = Settings.get_settings()
+            if settings.show_only_received_axes_public:
+                axes = axes.filter(status='MOTTAGEN')
+        except:
+            # Fallback om Settings-modellen inte finns ännu
+            pass
+    
     # Applicera filter
     if status_filter:
         axes = axes.filter(status=status_filter)

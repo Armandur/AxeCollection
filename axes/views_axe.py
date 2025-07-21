@@ -627,6 +627,17 @@ def axe_edit(request, pk):
 def axe_gallery(request, pk=None):
     """Visa yxor i galleriformat med navigation mellan dem"""
     all_axes = Axe.objects.all().select_related('manufacturer').prefetch_related('images').order_by('id')
+    
+    # Applicera publik filtrering om användaren inte är inloggad
+    if not request.user.is_authenticated:
+        from .models import Settings
+        try:
+            settings = Settings.get_settings()
+            if settings.show_only_received_axes_public:
+                all_axes = all_axes.filter(status='MOTTAGEN')
+        except:
+            # Fallback om Settings-modellen inte finns ännu
+            pass
     if pk:
         current_axe = get_object_or_404(
             Axe.objects.select_related('manufacturer').prefetch_related('images', 'measurements'), pk=pk
