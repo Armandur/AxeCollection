@@ -204,10 +204,12 @@
                     <i class="fas fa-info-circle"></i>
                     <span class="d-none d-md-inline">Alla detaljer</span>
                 </a>
+                {% if user.is_authenticated %}
                 <a href="{% url 'axe_edit' current_axe.pk %}" class="btn btn-outline-secondary btn-sm ms-2" title="Redigera yxa">
                     <i class="fas fa-edit"></i>
                     <span class="d-none d-md-inline">Redigera yxa</span>
                 </a>
+                {% endif %}
                 {% endif %}
             </div>
         </div>
