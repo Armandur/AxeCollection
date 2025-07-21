@@ -50,6 +50,88 @@ def search_platforms(request):
     results = [{'id': p.id, 'name': p.name} for p in platforms]
     return JsonResponse({'results': results})
 
+def global_search(request):
+    """AJAX-endpoint för global sökning i yxor, kontakter, tillverkare och transaktioner"""
+    query = request.GET.get('q', '').strip()
+    if len(query) < 2:
+        return JsonResponse({'results': {}})
+    
+    results = {
+        'axes': [],
+        'contacts': [],
+        'manufacturers': [],
+        'transactions': []
+    }
+    
+    # Sök i yxor
+    axes = Axe.objects.filter(
+        Q(manufacturer__name__icontains=query) |
+        Q(model__icontains=query) |
+        Q(comment__icontains=query)
+    ).select_related('manufacturer')[:5]
+    
+    for axe in axes:
+        results['axes'].append({
+            'id': axe.id,
+            'title': f"{axe.manufacturer.name} - {axe.model}",
+            'subtitle': f"ID: {axe.id}",
+            'url': f'/yxor/{axe.id}/',
+            'type': 'axe'
+        })
+    
+    # Sök i kontakter
+    contacts = Contact.objects.filter(
+        Q(name__icontains=query) |
+        Q(alias__icontains=query) |
+        Q(email__icontains=query)
+    )[:5]
+    
+    for contact in contacts:
+        flag_emoji = f"🇸🇪" if contact.country_code == 'SE' else f"🇫🇮" if contact.country_code == 'FI' else ""
+        results['contacts'].append({
+            'id': contact.id,
+            'title': contact.name,
+            'subtitle': f"{contact.alias or ''} {flag_emoji}".strip(),
+            'url': f'/kontakter/{contact.id}/',
+            'type': 'contact'
+        })
+    
+    # Sök i tillverkare
+    manufacturers = Manufacturer.objects.filter(
+        Q(name__icontains=query) |
+        Q(information__icontains=query)
+    )[:5]
+    
+    for manufacturer in manufacturers:
+        axe_count = manufacturer.axes.count()
+        results['manufacturers'].append({
+            'id': manufacturer.id,
+            'title': manufacturer.name,
+            'subtitle': f"{axe_count} yxor",
+            'url': f'/tillverkare/{manufacturer.id}/',
+            'type': 'manufacturer'
+        })
+    
+    # Sök i transaktioner
+    transactions = Transaction.objects.filter(
+        Q(axe__manufacturer__name__icontains=query) |
+        Q(axe__model__icontains=query) |
+        Q(contact__name__icontains=query) |
+        Q(platform__name__icontains=query)
+    ).select_related('axe__manufacturer', 'contact', 'platform')[:5]
+    
+    for transaction in transactions:
+        axe_title = f"{transaction.axe.manufacturer.name} - {transaction.axe.model}" if transaction.axe else "Okänd yxa"
+        results['transactions'].append({
+            'id': transaction.id,
+            'title': f"{transaction.type} - {axe_title}",
+            'subtitle': f"{transaction.price} kr - {transaction.transaction_date.strftime('%Y-%m-%d')}",
+            'url': f'/yxor/{transaction.axe.id}/' if transaction.axe else '#',
+            'type': 'transaction'
+        })
+    
+    return JsonResponse({'results': results})
+
 # Egen widget för flera filer enligt Django-dokumentationen
 class MultipleFileInput(forms.FileInput):
     allow_multiple_selected = True

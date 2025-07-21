@@ -40,6 +40,7 @@ urlpatterns = [
     path('api/transaction/<int:pk>/update/', views_transaction.api_transaction_update, name='api_transaction_update'),
     path('api/search/contacts/', views.search_contacts, name='search_contacts'),
     path('api/search/platforms/', views.search_platforms, name='search_platforms'),
+    path('api/search/global/', views.global_search, name='global_search'),
     path('statistik/', views_axe.statistics_dashboard, name='statistics_dashboard'),
     path('yxor/senaste/info/', views_axe.get_latest_axe_info, name='get_latest_axe_info'),
     path('yxor/senaste/ta-bort/', views_axe.delete_latest_axe, name='delete_latest_axe'),

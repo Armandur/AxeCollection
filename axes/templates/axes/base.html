@@ -186,13 +186,28 @@
             
             if (query.length >= 2) {
                 searchTimeout = setTimeout(() => {
-                    // Temporär placeholder - kommer att implementera backend senare
+                    // Visa laddningsindikator
                     searchResults.innerHTML = `
                         <div class="dropdown-item text-muted">
-                            <i class="fas fa-search me-2"></i>Söker efter "${query}"...
+                            <i class="fas fa-spinner fa-spin me-2"></i>Söker efter "${query}"...
                         </div>
                     `;
                     searchResults.style.display = 'block';
+                    
+                    // Anropa backend
+                    fetch(`{% url 'global_search' %}?q=${encodeURIComponent(query)}`)
+                        .then(response => response.json())
+                        .then(data => {
+                            displayGlobalSearchResults(data.results, query);
+                        })
+                        .catch(error => {
+                            console.error('Sökfel:', error);
+                            searchResults.innerHTML = `
+                                <div class="dropdown-item text-danger">
+                                    <i class="fas fa-exclamation-triangle me-2"></i>Fel vid sökning
+                                </div>
+                            `;
+                        });
                 }, 300);
             } else {
                 searchResults.style.display = 'none';
@@ -213,6 +228,78 @@
                 searchInput.focus();
             }
         });
+    }
+    
+    // Funktion för att visa globala sökresultat
+    function displayGlobalSearchResults(results, query) {
+        let html = '';
+        let totalResults = 0;
+        
+        // Räkna totala resultat
+        Object.values(results).forEach(group => totalResults += group.length);
+        
+        if (totalResults === 0) {
+            html = `
+                <div class="dropdown-item text-muted">
+                    <i class="fas fa-search me-2"></i>Inga resultat för "${query}"
+                </div>
+            `;
+        } else {
+            // Yxor
+            if (results.axes.length > 0) {
+                html += `<div class="dropdown-header"><i class="fas fa-axe me-2"></i>Yxor (${results.axes.length})</div>`;
+                results.axes.forEach(item => {
+                    html += `
+                        <a href="${item.url}" class="dropdown-item">
+                            <div><strong>${item.title}</strong></div>
+                            <small class="text-muted">${item.subtitle}</small>
+                        </a>
+                    `;
+                });
+            }
+            
+            // Kontakter
+            if (results.contacts.length > 0) {
+                html += `<div class="dropdown-header"><i class="fas fa-user me-2"></i>Kontakter (${results.contacts.length})</div>`;
+                results.contacts.forEach(item => {
+                    html += `
+                        <a href="${item.url}" class="dropdown-item">
+                            <div><strong>${item.title}</strong></div>
+                            <small class="text-muted">${item.subtitle}</small>
+                        </a>
+                    `;
+                });
+            }
+            
+            // Tillverkare
+            if (results.manufacturers.length > 0) {
+                html += `<div class="dropdown-header"><i class="fas fa-industry me-2"></i>Tillverkare (${results.manufacturers.length})</div>`;
+                results.manufacturers.forEach(item => {
+                    html += `
+                        <a href="${item.url}" class="dropdown-item">
+                            <div><strong>${item.title}</strong></div>
+                            <small class="text-muted">${item.subtitle}</small>
+                        </a>
+                    `;
+                });
+            }
+            
+            // Transaktioner
+            if (results.transactions.length > 0) {
+                html += `<div class="dropdown-header"><i class="fas fa-exchange-alt me-2"></i>Transaktioner (${results.transactions.length})</div>`;
+                results.transactions.forEach(item => {
+                    html += `
+                        <a href="${item.url}" class="dropdown-item">
+                            <div><strong>${item.title}</strong></div>
+                            <small class="text-muted">${item.subtitle}</small>
+                        </a>
+                    `;
+                });
+            }
+        }
+        
+        searchResults.innerHTML = html;
+        searchResults.style.display = 'block';
     }
 })();
 </script>
