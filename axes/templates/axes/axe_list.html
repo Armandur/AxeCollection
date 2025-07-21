@@ -391,10 +391,10 @@
                             {{ trans.type }}
                         </span>
                         <span class="{% if trans.type == 'KÖP' %}text-danger{% else %}text-success{% endif %}">
-                            {{ trans.price|format_decimal }} kr
+                            {{ trans.price|format_currency }}
                         </span>
                         {% if trans.shipping_cost > 0 %}
-                            <span class="text-muted">({{ trans.shipping_cost|format_decimal }} kr)</span>
+                            <span class="text-muted">({{ trans.shipping_cost|format_currency }})</span>
                         {% endif %}
                         <br>
                     {% endfor %}
