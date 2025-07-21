@@ -10,7 +10,7 @@
     <td>{{ transaction.price|format_decimal }} kr</td>
     <td>{{ transaction.shipping_cost|format_decimal }} kr</td>
     <td>
-        {% if user.is_authenticated %}
+        {% if user.is_authenticated or public_settings.show_contacts %}
             {% if transaction.contact %}
                 <a href="{% url 'contact_detail' transaction.contact.pk %}" class="contact-link">
                     {% if transaction.contact.country_code %}

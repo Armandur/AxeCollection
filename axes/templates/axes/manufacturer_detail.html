@@ -534,7 +534,7 @@
                                         {% endwith %}
                                     </td>
                                     <td>
-                                        {% if user.is_authenticated %}
+                                        {% if user.is_authenticated or public_settings.show_contacts %}
                                             {% if transaction.contact %}
                                                 <a href="{% url 'contact_detail' transaction.contact.id %}" class="text-decoration-none">
                                                     {% if transaction.contact.country_code %}
@@ -575,7 +575,7 @@
 </div>
 
 <!-- Kontakter -->
-{% if unique_contacts and user.is_authenticated %}
+{% if unique_contacts and user.is_authenticated and public_settings.show_contacts %}
 <div class="row mb-4">
     <div class="col-12">
         <div class="card">

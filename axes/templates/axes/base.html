@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Yxsamling{% endblock %}</title>
+    <title>{% block title %}{{ site_settings.title|default:"Yxsamling" }}{% endblock %}</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="https://cdn.datatables.net/2.0.8/css/dataTables.bootstrap5.css">
@@ -58,7 +58,7 @@
                     <path d="M13.3597012,25.3487123 C11.1199004,22.2325423 10,19.1163723 10,16.0002023 C10,12.8854101 11.1189103,9.77061783 13.3567309,6.65582561 L13.3567108,6.6558137 C13.6215783,6.28714813 14.1399622,6.14409188 14.586314,6.31648519 C15.8505999,6.80478711 16.8319681,7.17873788 17.5304185,7.43833749 C15.8503589,9.82598584 15.0068861,12.7944738 15,16.0002023 C15.0068861,19.2059308 15.8503589,22.1915141 17.5304185,24.5791625 C16.831484,24.838942 15.8492394,25.2092147 14.5836849,25.6899807 L14.5836787,25.6899673 C14.13836,25.8591374 13.6233762,25.7155557 13.3597012,25.3487123 Z"/>
                 </g>
             </svg>
-            Yxsamling
+            {{ site_settings.title|default:"Yxsamling" }}
         </a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
@@ -75,9 +75,11 @@
                     <a class="nav-link" href="{% url 'transaction_list' %}">Transaktioner</a>
                 </li>
                                 {% if user.is_authenticated %}
+                {% if public_settings.show_contacts %}
                 <li class="nav-item">
                    <a class="nav-link" href="{% url 'contact_list' %}">Kontakter</a>
                </li>
+               {% endif %}
                <li class="nav-item">
                    <a class="nav-link" href="{% url 'settings' %}">
                        <i class="bi bi-gear"></i>
