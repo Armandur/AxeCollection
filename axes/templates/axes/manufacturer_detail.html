@@ -522,15 +522,28 @@
                                         {% endwith %}
                                     </td>
                                     <td>
-                                        {% if transaction.contact %}
-                                            <a href="{% url 'contact_detail' transaction.contact.id %}" class="text-decoration-none">
-                                                {% if transaction.contact.country_code %}
-                                                    <span class="me-1">{{ transaction.contact.country_code|country_flag }}</span>
-                                                {% endif %}
-                                                {{ transaction.contact.name }}
-                                            </a>
+                                        {% if user.is_authenticated %}
+                                            {% if transaction.contact %}
+                                                <a href="{% url 'contact_detail' transaction.contact.id %}" class="text-decoration-none">
+                                                    {% if transaction.contact.country_code %}
+                                                        <span class="me-1">{{ transaction.contact.country_code|country_flag }}</span>
+                                                    {% endif %}
+                                                    {{ transaction.contact.name }}
+                                                </a>
+                                            {% else %}
+                                                <span class="text-muted">-</span>
+                                            {% endif %}
                                         {% else %}
-                                            <span class="text-muted">-</span>
+                                            {% if transaction.contact %}
+                                                <span class="text-muted">
+                                                    {% if transaction.contact.country_code %}
+                                                        <span class="me-1">{{ transaction.contact.country_code|country_flag }}</span>
+                                                    {% endif %}
+                                                    ***
+                                                </span>
+                                            {% else %}
+                                                <span class="text-muted">-</span>
+                                            {% endif %}
                                         {% endif %}
                                     </td>
                                     <td>{{ transaction.price|format_decimal }} kr</td>
@@ -550,7 +563,7 @@
 </div>
 
 <!-- Kontakter -->
-{% if unique_contacts %}
+{% if unique_contacts and user.is_authenticated %}
 <div class="row mb-4">
     <div class="col-12">
         <div class="card">
