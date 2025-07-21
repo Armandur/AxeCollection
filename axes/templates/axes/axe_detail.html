@@ -667,30 +667,102 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // --- Ta bort transaktion ---
+    let currentTransactionId = null;
+    const deleteTransactionModal = new bootstrap.Modal(document.getElementById('deleteTransactionModal'));
+    const errorModal = new bootstrap.Modal(document.getElementById('errorModal'));
+    const confirmDeleteTransactionBtn = document.getElementById('confirmDeleteTransactionBtn');
+    const errorModalMessage = document.getElementById('errorModalMessage');
+    
+    // Funktion för att visa felmeddelande
+    function showError(message) {
+        errorModalMessage.textContent = message;
+        errorModal.show();
+    }
+    
     const deleteTransactionBtns = document.querySelectorAll('.delete-transaction-btn');
     deleteTransactionBtns.forEach(btn => {
         btn.addEventListener('click', function() {
-            const transactionId = this.getAttribute('data-transaction-id');
-            if (confirm('Är du säker på att du vill ta bort denna transaktion?')) {
-                fetch(`/api/transaction/${transactionId}/delete/`, {
-                    method: 'POST'
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        location.reload();
-                    } else {
-                        alert('Kunde inte ta bort transaktionen: ' + (data.error || 'Okänt fel.'));
-                    }
-                })
-                .catch(() => {
-                    alert('Något gick fel vid borttagning.');
-                });
-            }
+            currentTransactionId = this.getAttribute('data-transaction-id');
+            deleteTransactionModal.show();
         });
+    });
+    
+    // Hantera bekräftelse av borttagning
+    confirmDeleteTransactionBtn.addEventListener('click', function() {
+        if (currentTransactionId) {
+            fetch(`/api/transaction/${currentTransactionId}/delete/`, {
+                method: 'POST'
+            })
+            .then(response => response.json())
+            .then(data => {
+                deleteTransactionModal.hide();
+                if (data.success) {
+                    location.reload();
+                } else {
+                    showError('Kunde inte ta bort transaktionen: ' + (data.error || 'Okänt fel.'));
+                }
+            })
+            .catch(() => {
+                deleteTransactionModal.hide();
+                showError('Något gick fel vid borttagning.');
+            });
+        }
     });
 });
 </script>
+
+<!-- Modal för att ta bort transaktion -->
+<div class="modal fade" id="deleteTransactionModal" tabindex="-1" aria-labelledby="deleteTransactionModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteTransactionModalLabel">
+                    <i class="fas fa-exclamation-triangle text-warning me-2"></i>
+                    Ta bort transaktion
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Stäng"></button>
+            </div>
+            <div class="modal-body">
+                <p>Är du säker på att du vill ta bort denna transaktion?</p>
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <strong>Varning:</strong> Denna åtgärd kan inte ångras.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-2"></i>Avbryt
+                </button>
+                <button type="button" class="btn btn-danger" id="confirmDeleteTransactionBtn">
+                    <i class="fas fa-trash me-2"></i>Ta bort transaktion
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal för felmeddelanden -->
+<div class="modal fade" id="errorModal" tabindex="-1" aria-labelledby="errorModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="errorModalLabel">
+                    <i class="fas fa-exclamation-circle text-danger me-2"></i>
+                    Fel
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Stäng"></button>
+            </div>
+            <div class="modal-body">
+                <p id="errorModalMessage"></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-2"></i>Stäng
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
 
 <!-- Modal för att ta bort yxa -->
 {% if axe.is_latest %}

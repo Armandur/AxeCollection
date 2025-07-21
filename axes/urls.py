@@ -40,6 +40,7 @@ urlpatterns = [
     path('transaktioner/', views_transaction.transaction_list, name='transaction_list'),
     path('api/transaction/<int:pk>/', views_transaction.api_transaction_detail, name='api_transaction_detail'),
     path('api/transaction/<int:pk>/update/', views_transaction.api_transaction_update, name='api_transaction_update'),
+    path('api/transaction/<int:pk>/delete/', views_transaction.api_transaction_delete, name='api_transaction_delete'),
     
     # Plattformar
     path('plattformar/', views_platform.platform_list, name='platform_list'),

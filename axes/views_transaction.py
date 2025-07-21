@@ -4,6 +4,7 @@ from django.db.models import Sum
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+from django.contrib.auth.decorators import login_required
 from .models import Transaction, Contact, Platform
 
 
@@ -174,4 +175,28 @@ def api_transaction_update(request, pk):
         return JsonResponse({'success': False, 'errors': errors}, status=400)
 
     transaction.save()
-    return JsonResponse({'success': True}) 
+    return JsonResponse({'success': True})
+
+
+@csrf_exempt
+@login_required
+@require_http_methods(["POST"])
+def api_transaction_delete(request, pk):
+    """Ta bort en transaktion via AJAX (POST)."""
+    try:
+        transaction = Transaction.objects.get(pk=pk)
+    except Transaction.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Transaktion finns inte.'}, status=404)
+
+    try:
+        transaction_id = transaction.id
+        transaction.delete()
+        return JsonResponse({
+            'success': True, 
+            'message': f'Transaktion {transaction_id} togs bort framgångsrikt.'
+        })
+    except Exception as e:
+        return JsonResponse({
+            'success': False, 
+            'error': f'Fel vid borttagning av transaktion: {str(e)}'
+        }, status=500) 
