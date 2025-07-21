@@ -390,11 +390,15 @@
                             <i class="bi {% if trans.type == 'KÖP' %}bi-arrow-down-circle{% else %}bi-arrow-up-circle{% endif %} me-1"></i>
                             {{ trans.type }}
                         </span>
-                        <span class="{% if trans.type == 'KÖP' %}text-danger{% else %}text-success{% endif %}">
-                            {{ trans.price|format_currency }}
-                        </span>
-                        {% if trans.shipping_cost > 0 %}
-                            <span class="text-muted">({{ trans.shipping_cost|format_currency }})</span>
+                        {% if user.is_authenticated or public_settings.show_prices %}
+                            <span class="{% if trans.type == 'KÖP' %}text-danger{% else %}text-success{% endif %}">
+                                {{ trans.price|format_currency }}
+                            </span>
+                            {% if trans.shipping_cost > 0 %}
+                                <span class="text-muted">({{ trans.shipping_cost|format_currency }})</span>
+                            {% endif %}
+                        {% else %}
+                            <span class="text-muted">***</span>
                         {% endif %}
                         <br>
                     {% endfor %}

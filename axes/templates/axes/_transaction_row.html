@@ -7,8 +7,20 @@
             {{ transaction.type }}
         </span>
     </td>
-    <td>{{ transaction.price|format_decimal }} kr</td>
-    <td>{{ transaction.shipping_cost|format_decimal }} kr</td>
+    <td>
+        {% if user.is_authenticated or public_settings.show_prices %}
+            {{ transaction.price|format_currency }}
+        {% else %}
+            ***
+        {% endif %}
+    </td>
+    <td>
+        {% if user.is_authenticated or public_settings.show_prices %}
+            {{ transaction.shipping_cost|format_currency }}
+        {% else %}
+            ***
+        {% endif %}
+    </td>
     {% if user.is_authenticated or public_settings.show_contacts %}
     <td>
         {% if transaction.contact %}

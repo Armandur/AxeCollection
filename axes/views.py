@@ -145,7 +145,10 @@ def global_search(request):
         axe_title = f"{transaction.axe.manufacturer.name} - {transaction.axe.model}" if transaction.axe else "Okänd yxa"
         
         # Skapa subtitle baserat på publika inställningar
-        subtitle_parts = [f"{transaction.price} kr", transaction.transaction_date.strftime('%Y-%m-%d')]
+        if request.user.is_authenticated or getattr(request, 'public_settings', {}).get('show_prices', True):
+            subtitle_parts = [f"{transaction.price} kr", transaction.transaction_date.strftime('%Y-%m-%d')]
+        else:
+            subtitle_parts = ["***", transaction.transaction_date.strftime('%Y-%m-%d')]
         
         # Lägg till kontaktinfo endast om kontakter visas publikt
         if request.user.is_authenticated or getattr(request, 'public_settings', {}).get('show_contacts', False):

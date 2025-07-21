@@ -322,7 +322,13 @@
                             {% if transactions %}
                                 {% for transaction in transactions %}
                                 <div class="mb-1">
-                                    <small>{{ transaction.transaction_date|date:"Y-m-d" }} - {{ transaction.price|format_currency }}{% if transaction.shipping_cost > 0 %} ({{ transaction.shipping_cost|format_currency }} frakt){% endif %}</small>
+                                    <small>{{ transaction.transaction_date|date:"Y-m-d" }} - 
+                                        {% if user.is_authenticated or public_settings.show_prices %}
+                                            {{ transaction.price|format_currency }}{% if transaction.shipping_cost > 0 %} ({{ transaction.shipping_cost|format_currency }} frakt){% endif %}
+                                        {% else %}
+                                            ***
+                                        {% endif %}
+                                    </small>
                                 </div>
                                 {% endfor %}
                             {% else %}

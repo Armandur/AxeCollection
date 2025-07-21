@@ -30,8 +30,20 @@
         </a>
         {% endwith %}
     </td>
-                    <td data-order="{{ transaction.price }}">{{ transaction.price|format_currency }}</td>
-                <td data-order="{{ transaction.shipping_cost }}">{{ transaction.shipping_cost|format_currency }}</td>
+                    <td data-order="{{ transaction.price }}">
+                        {% if user.is_authenticated or public_settings.show_prices %}
+                            {{ transaction.price|format_currency }}
+                        {% else %}
+                            ***
+                        {% endif %}
+                    </td>
+                    <td data-order="{{ transaction.shipping_cost }}">
+                        {% if user.is_authenticated or public_settings.show_prices %}
+                            {{ transaction.shipping_cost|format_currency }}
+                        {% else %}
+                            ***
+                        {% endif %}
+                    </td>
     {% if user.is_authenticated or public_settings.show_contacts %}
     <td>
         {% if transaction.contact %}

@@ -378,20 +378,21 @@
             <div class="card-header">
                 <h5 class="card-title mb-0">Ekonomisk översikt</h5>
             </div>
+            {% if user.is_authenticated or public_settings.show_prices %}
             <div class="card-body">
                 <div class="row text-center">
                     <div class="col-md-3">
                         <h6 class="text-muted">Total köpvärde</h6>
-                        <h4 class="text-danger">{{ total_buy_value|format_decimal }} kr</h4>
+                        <h4 class="text-danger">{{ total_buy_value|format_currency }}</h4>
                     </div>
                     <div class="col-md-3">
                         <h6 class="text-muted">Total försäljningsvärde</h6>
-                        <h4 class="text-success">{{ total_sale_value|format_decimal }} kr</h4>
+                        <h4 class="text-success">{{ total_sale_value|format_currency }}</h4>
                     </div>
                     <div class="col-md-3">
                         <h6 class="text-muted">Vinst/förlust</h6>
                         <h4 class="{% if total_profit >= 0 %}profit-positive{% else %}profit-negative{% endif %}">
-                            {{ total_profit|format_decimal }} kr
+                            {{ total_profit|format_currency }}
                         </h4>
                     </div>
                     <div class="col-md-3">
@@ -400,6 +401,7 @@
                     </div>
                 </div>
             </div>
+            {% endif %}
         </div>
     </div>
 </div>
@@ -489,10 +491,16 @@
                                     <th>Datum</th>
                                     <th>Typ</th>
                                     <th>Yxa</th>
+                                    {% if user.is_authenticated or public_settings.show_contacts %}
                                     <th>Kontakt</th>
+                                    {% endif %}
+                                    {% if user.is_authenticated or public_settings.show_prices %}
                                     <th>Pris</th>
                                     <th>Frakt</th>
+                                    {% endif %}
+                                    {% if user.is_authenticated or public_settings.show_platforms %}
                                     <th>Plattform</th>
+                                    {% endif %}
                                 </tr>
                             </thead>
                             <tbody>
@@ -533,40 +541,27 @@
                                         </a>
                                         {% endwith %}
                                     </td>
+                                    {% if user.is_authenticated or public_settings.show_contacts %}
                                     <td>
-                                        {% if user.is_authenticated or public_settings.show_contacts %}
-                                            {% if transaction.contact %}
-                                                <a href="{% url 'contact_detail' transaction.contact.id %}" class="text-decoration-none">
-                                                    {% if transaction.contact.country_code %}
-                                                        <span class="me-1">{{ transaction.contact.country_code|country_flag }}</span>
-                                                    {% endif %}
-                                                    {{ transaction.contact.name }}
-                                                </a>
-                                            {% else %}
-                                                <span class="text-muted">-</span>
-                                            {% endif %}
+                                        {% if transaction.contact %}
+                                            <a href="{% url 'contact_detail' transaction.contact.id %}" class="text-decoration-none">
+                                                {% if transaction.contact.country_code %}
+                                                    <span class="me-1">{{ transaction.contact.country_code|country_flag }}</span>
+                                                {% endif %}
+                                                {{ transaction.contact.name }}
+                                            </a>
                                         {% else %}
-                                            {% if transaction.contact %}
-                                                <span class="text-muted">
-                                                    {% if transaction.contact.country_code %}
-                                                        <span class="me-1">{{ transaction.contact.country_code|country_flag }}</span>
-                                                    {% endif %}
-                                                    ***
-                                                </span>
-                                            {% else %}
-                                                <span class="text-muted">-</span>
-                                            {% endif %}
+                                            <span class="text-muted">-</span>
                                         {% endif %}
                                     </td>
-                                    <td>{{ transaction.price|format_decimal }} kr</td>
-                                    <td>{{ transaction.shipping_cost|format_decimal }} kr</td>
-                                    <td>
-                                        {% if user.is_authenticated or public_settings.show_platforms %}
-                                            {{ transaction.platform.name|default:"-" }}
-                                        {% else %}
-                                            <span class="text-muted">***</span>
-                                        {% endif %}
-                                    </td>
+                                    {% endif %}
+                                    {% if user.is_authenticated or public_settings.show_prices %}
+                                    <td>{{ transaction.price|format_currency }}</td>
+                                    <td>{{ transaction.shipping_cost|format_currency }}</td>
+                                    {% endif %}
+                                    {% if user.is_authenticated or public_settings.show_platforms %}
+                                    <td>{{ transaction.platform.name|default:"-" }}</td>
+                                    {% endif %}
                                 </tr>
                                 {% endfor %}
                             </tbody>
@@ -581,7 +576,7 @@
 </div>
 
 <!-- Kontakter -->
-{% if unique_contacts and user.is_authenticated and public_settings.show_contacts %}
+{% if unique_contacts and user.is_authenticated %}
 <div class="row mb-4">
     <div class="col-12">
         <div class="card">
