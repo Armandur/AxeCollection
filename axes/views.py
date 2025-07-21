@@ -574,6 +574,18 @@ def settings_view(request):
         settings.show_prices_public = request.POST.get('show_prices_public') == 'on'
         settings.show_platforms_public = request.POST.get('show_platforms_public') == 'on'
         settings.show_only_received_axes_public = request.POST.get('show_only_received_axes_public') == 'on'
+        
+        # Visningsinställningar för publika användare
+        settings.default_axes_rows_public = request.POST.get('default_axes_rows_public', '20')
+        settings.default_transactions_rows_public = request.POST.get('default_transactions_rows_public', '15')
+        settings.default_manufacturers_rows_public = request.POST.get('default_manufacturers_rows_public', '25')
+        
+        # Visningsinställningar för inloggade användare
+        settings.default_axes_rows_private = request.POST.get('default_axes_rows_private', '50')
+        settings.default_transactions_rows_private = request.POST.get('default_transactions_rows_private', '30')
+        settings.default_manufacturers_rows_private = request.POST.get('default_manufacturers_rows_private', '50')
+        
+        # Systeminställningar
         settings.site_title = request.POST.get('site_title', 'AxeCollection')
         settings.site_description = request.POST.get('site_description', '')
         

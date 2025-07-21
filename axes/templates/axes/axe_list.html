@@ -424,6 +424,9 @@
         </tbody>
     </table>
 </div>
+
+
+
 {% endblock %}
 
 
@@ -432,6 +435,8 @@
 $(document).ready(function() {
     var table = $('#axesTable').DataTable({
         order: [[0, 'desc']],
+        pageLength: {{ default_page_length }},
+        lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, "Alla"]],
         language: {
             "emptyTable": "Ingen data tillgänglig i tabellen",
             "info": "Visar _START_ till _END_ av _TOTAL_ poster",

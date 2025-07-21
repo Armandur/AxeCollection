@@ -98,6 +98,140 @@
                     </div>
                 </div>
                 
+                <!-- Visningsinställningar -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="bi bi-list-ul"></i> Visningsinställningar
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted mb-3">
+                            Konfigurera hur många rader som visas per sida för olika användartyper.
+                        </p>
+                        
+                        <!-- Publika användare -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h6 class="text-primary mb-3">
+                                    <i class="bi bi-eye"></i> Publika användare (icke-inloggade)
+                                </h6>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="default_axes_rows_public" class="form-label">
+                                        <strong>Yxor per sida</strong>
+                                    </label>
+                                    <select class="form-select" id="default_axes_rows_public" name="default_axes_rows_public">
+                                        <option value="10" {% if settings.default_axes_rows_public == '10' %}selected{% endif %}>10 rader</option>
+                                        <option value="25" {% if settings.default_axes_rows_public == '25' %}selected{% endif %}>25 rader</option>
+                                        <option value="50" {% if settings.default_axes_rows_public == '50' %}selected{% endif %}>50 rader</option>
+                                        <option value="100" {% if settings.default_axes_rows_public == '100' %}selected{% endif %}>100 rader</option>
+                                        <option value="-1" {% if settings.default_axes_rows_public == '-1' %}selected{% endif %}>Alla rader</option>
+                                    </select>
+                                    <div class="form-text">
+                                        Antal yxor som visas per sida
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="default_transactions_rows_public" class="form-label">
+                                        <strong>Transaktioner per sida</strong>
+                                    </label>
+                                    <select class="form-select" id="default_transactions_rows_public" name="default_transactions_rows_public">
+                                        <option value="10" {% if settings.default_transactions_rows_public == '10' %}selected{% endif %}>10 rader</option>
+                                        <option value="25" {% if settings.default_transactions_rows_public == '25' %}selected{% endif %}>25 rader</option>
+                                        <option value="50" {% if settings.default_transactions_rows_public == '50' %}selected{% endif %}>50 rader</option>
+                                        <option value="100" {% if settings.default_transactions_rows_public == '100' %}selected{% endif %}>100 rader</option>
+                                        <option value="-1" {% if settings.default_transactions_rows_public == '-1' %}selected{% endif %}>Alla rader</option>
+                                    </select>
+                                    <div class="form-text">
+                                        Antal transaktioner som visas per sida
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="default_manufacturers_rows_public" class="form-label">
+                                        <strong>Tillverkare per sida</strong>
+                                    </label>
+                                    <select class="form-select" id="default_manufacturers_rows_public" name="default_manufacturers_rows_public">
+                                        <option value="10" {% if settings.default_manufacturers_rows_public == '10' %}selected{% endif %}>10 rader</option>
+                                        <option value="25" {% if settings.default_manufacturers_rows_public == '25' %}selected{% endif %}>25 rader</option>
+                                        <option value="50" {% if settings.default_manufacturers_rows_public == '50' %}selected{% endif %}>50 rader</option>
+                                        <option value="100" {% if settings.default_manufacturers_rows_public == '100' %}selected{% endif %}>100 rader</option>
+                                        <option value="-1" {% if settings.default_manufacturers_rows_public == '-1' %}selected{% endif %}>Alla rader</option>
+                                    </select>
+                                    <div class="form-text">
+                                        Antal tillverkare som visas per sida
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Inloggade användare -->
+                        <div class="row">
+                            <div class="col-12">
+                                <h6 class="text-success mb-3">
+                                    <i class="bi bi-person-check"></i> Inloggade användare
+                                </h6>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="default_axes_rows_private" class="form-label">
+                                        <strong>Yxor per sida</strong>
+                                    </label>
+                                    <select class="form-select" id="default_axes_rows_private" name="default_axes_rows_private">
+                                        <option value="10" {% if settings.default_axes_rows_private == '10' %}selected{% endif %}>10 rader</option>
+                                        <option value="25" {% if settings.default_axes_rows_private == '25' %}selected{% endif %}>25 rader</option>
+                                        <option value="50" {% if settings.default_axes_rows_private == '50' %}selected{% endif %}>50 rader</option>
+                                        <option value="100" {% if settings.default_axes_rows_private == '100' %}selected{% endif %}>100 rader</option>
+                                        <option value="-1" {% if settings.default_axes_rows_private == '-1' %}selected{% endif %}>Alla rader</option>
+                                    </select>
+                                    <div class="form-text">
+                                        Antal yxor som visas per sida
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="default_transactions_rows_private" class="form-label">
+                                        <strong>Transaktioner per sida</strong>
+                                    </label>
+                                    <select class="form-select" id="default_transactions_rows_private" name="default_transactions_rows_private">
+                                        <option value="10" {% if settings.default_transactions_rows_private == '10' %}selected{% endif %}>10 rader</option>
+                                        <option value="25" {% if settings.default_transactions_rows_private == '25' %}selected{% endif %}>25 rader</option>
+                                        <option value="50" {% if settings.default_transactions_rows_private == '50' %}selected{% endif %}>50 rader</option>
+                                        <option value="100" {% if settings.default_transactions_rows_private == '100' %}selected{% endif %}>100 rader</option>
+                                        <option value="-1" {% if settings.default_transactions_rows_private == '-1' %}selected{% endif %}>Alla rader</option>
+                                    </select>
+                                    <div class="form-text">
+                                        Antal transaktioner som visas per sida
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="default_manufacturers_rows_private" class="form-label">
+                                        <strong>Tillverkare per sida</strong>
+                                    </label>
+                                    <select class="form-select" id="default_manufacturers_rows_private" name="default_manufacturers_rows_private">
+                                        <option value="10" {% if settings.default_manufacturers_rows_private == '10' %}selected{% endif %}>10 rader</option>
+                                        <option value="25" {% if settings.default_manufacturers_rows_private == '25' %}selected{% endif %}>25 rader</option>
+                                        <option value="50" {% if settings.default_manufacturers_rows_private == '50' %}selected{% endif %}>50 rader</option>
+                                        <option value="100" {% if settings.default_manufacturers_rows_private == '100' %}selected{% endif %}>100 rader</option>
+                                        <option value="-1" {% if settings.default_manufacturers_rows_private == '-1' %}selected{% endif %}>Alla rader</option>
+                                    </select>
+                                    <div class="form-text">
+                                        Antal tillverkare som visas per sida
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
                 <!-- Systeminställningar -->
                 <div class="card mb-4">
                     <div class="card-header">

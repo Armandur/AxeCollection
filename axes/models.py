@@ -451,6 +451,88 @@ class Settings(models.Model):
         help_text="Om endast mottagna yxor ska visas i publika listor"
     )
     
+    # Standardantal rader för publika användare
+    default_axes_rows_public = models.CharField(
+        max_length=10,
+        choices=[
+            ('10', '10 rader'),
+            ('25', '25 rader'),
+            ('50', '50 rader'),
+            ('100', '100 rader'),
+            ('-1', 'Alla rader'),
+        ],
+        default='20',
+        verbose_name="Standardantal yxor (publik)",
+        help_text="Antal yxor som visas per sida för icke-inloggade användare"
+    )
+    default_transactions_rows_public = models.CharField(
+        max_length=10,
+        choices=[
+            ('10', '10 rader'),
+            ('25', '25 rader'),
+            ('50', '50 rader'),
+            ('100', '100 rader'),
+            ('-1', 'Alla rader'),
+        ],
+        default='15',
+        verbose_name="Standardantal transaktioner (publik)",
+        help_text="Antal transaktioner som visas per sida för icke-inloggade användare"
+    )
+    default_manufacturers_rows_public = models.CharField(
+        max_length=10,
+        choices=[
+            ('10', '10 rader'),
+            ('25', '25 rader'),
+            ('50', '50 rader'),
+            ('100', '100 rader'),
+            ('-1', 'Alla rader'),
+        ],
+        default='25',
+        verbose_name="Standardantal tillverkare (publik)",
+        help_text="Antal tillverkare som visas per sida för icke-inloggade användare"
+    )
+    
+    # Standardantal rader för inloggade användare
+    default_axes_rows_private = models.CharField(
+        max_length=10,
+        choices=[
+            ('10', '10 rader'),
+            ('25', '25 rader'),
+            ('50', '50 rader'),
+            ('100', '100 rader'),
+            ('-1', 'Alla rader'),
+        ],
+        default='50',
+        verbose_name="Standardantal yxor (privat)",
+        help_text="Antal yxor som visas per sida för inloggade användare"
+    )
+    default_transactions_rows_private = models.CharField(
+        max_length=10,
+        choices=[
+            ('10', '10 rader'),
+            ('25', '25 rader'),
+            ('50', '50 rader'),
+            ('100', '100 rader'),
+            ('-1', 'Alla rader'),
+        ],
+        default='30',
+        verbose_name="Standardantal transaktioner (privat)",
+        help_text="Antal transaktioner som visas per sida för inloggade användare"
+    )
+    default_manufacturers_rows_private = models.CharField(
+        max_length=10,
+        choices=[
+            ('10', '10 rader'),
+            ('25', '25 rader'),
+            ('50', '50 rader'),
+            ('100', '100 rader'),
+            ('-1', 'Alla rader'),
+        ],
+        default='50',
+        verbose_name="Standardantal tillverkare (privat)",
+        help_text="Antal tillverkare som visas per sida för inloggade användare"
+    )
+    
     # Systeminställningar
     site_title = models.CharField(
         max_length=100, 

@@ -14,6 +14,11 @@ def settings_processor(request):
             'site_settings': {
                 'title': settings.site_title,
                 'description': settings.site_description,
+            },
+            'display_settings': {
+                'axes_rows': int(settings.default_axes_rows_private) if request.user.is_authenticated else int(settings.default_axes_rows_public),
+                'transactions_rows': int(settings.default_transactions_rows_private) if request.user.is_authenticated else int(settings.default_transactions_rows_public),
+                'manufacturers_rows': int(settings.default_manufacturers_rows_private) if request.user.is_authenticated else int(settings.default_manufacturers_rows_public),
             }
         }
     except Exception as e:
@@ -29,5 +34,10 @@ def settings_processor(request):
             'site_settings': {
                 'title': 'AxeCollection',
                 'description': '',
+            },
+            'display_settings': {
+                'axes_rows': 50 if request.user.is_authenticated else 20,
+                'transactions_rows': 30 if request.user.is_authenticated else 15,
+                'manufacturers_rows': 50 if request.user.is_authenticated else 25,
             }
         } 

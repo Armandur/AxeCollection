@@ -1,5 +1,6 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from .models import Axe, AxeImage, Measurement, NextAxeID, MeasurementTemplate, Transaction, Contact, Platform, Manufacturer
 from .forms import AxeForm, MeasurementForm, TransactionForm
 from django.db.models import Sum, Q, Max, Count
@@ -160,10 +161,20 @@ def axe_list(request):
     # Hitta sålda yxor bland filtrerade yxor (de som har minst en SÄLJ-transaktion)
     sold_axe_ids = set(filtered_transactions.filter(type='SÄLJ').values_list('axe_id', flat=True))
     
+
+    
     # Statistik för filtrerade yxor
     filtered_count = axes.count()
     bought_count = axes.filter(status='KÖPT').count()
     received_count = axes.filter(status='MOTTAGEN').count()
+    
+    # Hämta inställningar för DataTables
+    from .models import Settings
+    settings = Settings.get_settings()
+    if request.user.is_authenticated:
+        default_page_length = int(settings.default_axes_rows_private)
+    else:
+        default_page_length = int(settings.default_axes_rows_public)
     
     return render(request, 'axes/axe_list.html', {
         'axes': axes,
@@ -185,6 +196,7 @@ def axe_list(request):
         'total_profit': total_profit,
         'total_profit_with_shipping': total_profit_with_shipping,
         'sold_axe_ids': sold_axe_ids,
+        'default_page_length': default_page_length,
     })
 
 def axe_detail(request, pk):

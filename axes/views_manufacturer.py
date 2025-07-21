@@ -2,23 +2,36 @@ from django.shortcuts import render, get_object_or_404
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.csrf import csrf_exempt
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from .models import Manufacturer, ManufacturerImage, ManufacturerLink, Axe, Transaction
 from django.db.models import Sum
 import json
 
 def manufacturer_list(request):
     manufacturers = Manufacturer.objects.all().order_by('name')
+    
+
+    
     # Ta bort all tilldelning av statistikfält, använd properties direkt i template/context
     total_manufacturers = manufacturers.count()
     total_axes = Axe.objects.count()
     total_transactions = Transaction.objects.count()
     average_axes_per_manufacturer = total_axes / total_manufacturers if total_manufacturers > 0 else 0
+    # Hämta inställningar för DataTables
+    from .models import Settings
+    settings = Settings.get_settings()
+    if request.user.is_authenticated:
+        default_page_length = int(settings.default_manufacturers_rows_private)
+    else:
+        default_page_length = int(settings.default_manufacturers_rows_public)
+    
     context = {
         'manufacturers': manufacturers,
         'total_manufacturers': total_manufacturers,
         'total_axes': total_axes,
         'total_transactions': total_transactions,
         'average_axes_per_manufacturer': average_axes_per_manufacturer,
+        'default_page_length': default_page_length,
     }
     return render(request, 'axes/manufacturer_list.html', context)
 

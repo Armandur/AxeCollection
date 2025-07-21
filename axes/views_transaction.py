@@ -3,6 +3,7 @@ from django.http import JsonResponse, Http404
 from django.db.models import Sum
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from .models import Transaction, Contact, Platform
 
 
@@ -36,9 +37,19 @@ def transaction_list(request):
     total_sale_value = filtered_transactions.filter(type='SÄLJ').aggregate(total=Sum('price'))['total'] or 0
     total_profit = total_sale_value - total_buy_value
     
+
+    
     # Hämta data för filter-dropdowns
     from .models import Platform
     platforms = Platform.objects.all().order_by('name')
+    
+    # Hämta inställningar för DataTables
+    from .models import Settings
+    settings = Settings.get_settings()
+    if request.user.is_authenticated:
+        default_page_length = int(settings.default_transactions_rows_private)
+    else:
+        default_page_length = int(settings.default_transactions_rows_public)
     
     context = {
         'transactions': transactions,
@@ -52,6 +63,7 @@ def transaction_list(request):
         'total_sale_value': total_sale_value,
         'total_profit': total_profit,
         'filtered_count': transactions.count(),
+        'default_page_length': default_page_length,
     }
     return render(request, 'axes/transaction_list.html', context)
 

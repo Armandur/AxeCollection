@@ -86,6 +86,9 @@
         </tbody>
     </table>
 </div>
+
+
+
 {% endblock %}
 
 {% block scripts %}
@@ -94,6 +97,8 @@ $(document).ready(function() {
     console.log('Document ready - manufacturer_list.html');
     
     $('#manufacturersTable').DataTable({
+        pageLength: {{ default_page_length }},
+        lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, "Alla"]],
         language: {
             "emptyTable": "Ingen data tillgänglig i tabellen",
             "info": "Visar _START_ till _END_ av _TOTAL_ poster",
