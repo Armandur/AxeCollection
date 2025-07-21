@@ -84,6 +84,20 @@
                     <a class="nav-link" href="{% url 'statistics_dashboard' %}">Statistik</a>
                 </li>
             </ul>
+            
+            <!-- Global sökning -->
+            <div class="navbar-nav me-3 position-relative">
+                <div class="nav-item">
+                    <input type="text" id="globalSearchInput" class="form-control form-control-sm" 
+                           placeholder="Sök yxor, kontakter, tillverkare..." 
+                           style="width: 250px; min-width: 200px;">
+                    <div id="globalSearchResults" class="dropdown-menu w-100" 
+                         style="display: none; position: absolute; z-index: 1050; max-height: 400px; overflow-y: auto; top: 100%; left: 0; right: 0;">
+                        <!-- Sökresultat visas här -->
+                    </div>
+                </div>
+            </div>
+            
             <button id="themeToggleBtn" class="theme-toggle-btn" title="Växla tema" aria-label="Växla tema">
                 <i id="themeIcon" class="bi bi-moon"></i>
             </button>
@@ -157,6 +171,49 @@
             }
         }
     });
+})();
+
+// Global sökning
+(function() {
+    const searchInput = document.getElementById('globalSearchInput');
+    const searchResults = document.getElementById('globalSearchResults');
+    let searchTimeout;
+    
+    if (searchInput) {
+        searchInput.addEventListener('input', function() {
+            const query = this.value.trim();
+            clearTimeout(searchTimeout);
+            
+            if (query.length >= 2) {
+                searchTimeout = setTimeout(() => {
+                    // Temporär placeholder - kommer att implementera backend senare
+                    searchResults.innerHTML = `
+                        <div class="dropdown-item text-muted">
+                            <i class="fas fa-search me-2"></i>Söker efter "${query}"...
+                        </div>
+                    `;
+                    searchResults.style.display = 'block';
+                }, 300);
+            } else {
+                searchResults.style.display = 'none';
+            }
+        });
+        
+        // Dölj dropdown när användaren klickar utanför
+        document.addEventListener('click', function(e) {
+            if (!searchInput.contains(e.target) && !searchResults.contains(e.target)) {
+                searchResults.style.display = 'none';
+            }
+        });
+        
+        // Kortkommando Ctrl+K för att fokusera sökfältet
+        document.addEventListener('keydown', function(e) {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+                e.preventDefault();
+                searchInput.focus();
+            }
+        });
+    }
 })();
 </script>
 
