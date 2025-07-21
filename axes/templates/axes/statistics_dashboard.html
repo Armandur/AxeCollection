@@ -324,7 +324,11 @@
                                 <div class="transaction-price">
                                     <span class="text-danger fw-bold">{{ transaction.price|format_decimal }} kr</span>
                                     <div class="transaction-platform">
-                                        {{ transaction.platform.name|default:"Okänd plattform" }}
+                                        {% if user.is_authenticated or public_settings.show_platforms %}
+                                            {{ transaction.platform.name|default:"Okänd plattform" }}
+                                        {% else %}
+                                            <span class="text-muted">***</span>
+                                        {% endif %}
                                     </div>
                                 </div>
                                 <a href="{% url 'axe_detail' transaction.axe.id %}" class="btn btn-sm btn-outline-primary">
@@ -344,29 +348,33 @@
     <div class="col-md-6">
         <div class="card h-100">
             <div class="card-header">
-                <h5 class="card-title mb-0">
-                    <i class="fas fa-arrow-up text-success"></i> Dyraste försäljningar
-                </h5>
-            </div>
-            <div class="card-body">
-                {% if most_expensive_sales %}
-                    {% for transaction in most_expensive_sales %}
-                        <div class="top-list-item">
-                            <div class="transaction-item">
-                                <div class="transaction-info">
-                                    <div class="transaction-name">
-                                        <strong>{{ transaction.axe.manufacturer.name }} - {{ transaction.axe.model }}</strong>
+                                    <h5 class="card-title mb-0">
+                        <i class="fas fa-arrow-up text-success"></i> Dyraste försäljningar
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if most_expensive_sales %}
+                        {% for transaction in most_expensive_sales %}
+                            <div class="top-list-item">
+                                <div class="transaction-item">
+                                    <div class="transaction-info">
+                                        <div class="transaction-name">
+                                            <strong>{{ transaction.axe.manufacturer.name }} - {{ transaction.axe.model }}</strong>
+                                        </div>
+                                        <div class="transaction-date">
+                                            {{ transaction.transaction_date|date:"Y-m-d" }}
+                                        </div>
                                     </div>
-                                    <div class="transaction-date">
-                                        {{ transaction.transaction_date|date:"Y-m-d" }}
+                                    <div class="transaction-price">
+                                        <span class="text-success fw-bold">{{ transaction.price|format_decimal }} kr</span>
+                                        <div class="transaction-platform">
+                                            {% if user.is_authenticated or public_settings.show_platforms %}
+                                                {{ transaction.platform.name|default:"Okänd plattform" }}
+                                            {% else %}
+                                                <span class="text-muted">***</span>
+                                            {% endif %}
+                                        </div>
                                     </div>
-                                </div>
-                                <div class="transaction-price">
-                                    <span class="text-success fw-bold">{{ transaction.price|format_decimal }} kr</span>
-                                    <div class="transaction-platform">
-                                        {{ transaction.platform.name|default:"Okänd plattform" }}
-                                    </div>
-                                </div>
                                 <a href="{% url 'axe_detail' transaction.axe.id %}" class="btn btn-sm btn-outline-primary">
                                     <i class="fas fa-eye"></i>
                                 </a>
@@ -387,29 +395,33 @@
     <div class="col-md-6">
         <div class="card h-100">
             <div class="card-header">
-                <h5 class="card-title mb-0">
-                    <i class="fas fa-arrow-down text-success"></i> Billigaste köp
-                </h5>
-            </div>
-            <div class="card-body">
-                {% if cheapest_buys %}
-                    {% for transaction in cheapest_buys %}
-                        <div class="top-list-item">
-                            <div class="transaction-item">
-                                <div class="transaction-info">
-                                    <div class="transaction-name">
-                                        <strong>{{ transaction.axe.manufacturer.name }} - {{ transaction.axe.model }}</strong>
+                                    <h5 class="card-title mb-0">
+                        <i class="fas fa-arrow-down text-success"></i> Billigaste köp
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if cheapest_buys %}
+                        {% for transaction in cheapest_buys %}
+                            <div class="top-list-item">
+                                <div class="transaction-item">
+                                    <div class="transaction-info">
+                                        <div class="transaction-name">
+                                            <strong>{{ transaction.axe.manufacturer.name }} - {{ transaction.axe.model }}</strong>
+                                        </div>
+                                        <div class="transaction-date">
+                                            {{ transaction.transaction_date|date:"Y-m-d" }}
+                                        </div>
                                     </div>
-                                    <div class="transaction-date">
-                                        {{ transaction.transaction_date|date:"Y-m-d" }}
+                                    <div class="transaction-price">
+                                        <span class="text-success fw-bold">{{ transaction.price|format_decimal }} kr</span>
+                                        <div class="transaction-platform">
+                                            {% if user.is_authenticated or public_settings.show_platforms %}
+                                                {{ transaction.platform.name|default:"Okänd plattform" }}
+                                            {% else %}
+                                                <span class="text-muted">***</span>
+                                            {% endif %}
+                                        </div>
                                     </div>
-                                </div>
-                                <div class="transaction-price">
-                                    <span class="text-success fw-bold">{{ transaction.price|format_decimal }} kr</span>
-                                    <div class="transaction-platform">
-                                        {{ transaction.platform.name|default:"Okänd plattform" }}
-                                    </div>
-                                </div>
                                 <a href="{% url 'axe_detail' transaction.axe.id %}" class="btn btn-sm btn-outline-primary">
                                     <i class="fas fa-eye"></i>
                                 </a>
@@ -427,29 +439,33 @@
     <div class="col-md-6">
         <div class="card h-100">
             <div class="card-header">
-                <h5 class="card-title mb-0">
-                    <i class="fas fa-arrow-up text-warning"></i> Billigaste försäljningar
-                </h5>
-            </div>
-            <div class="card-body">
-                {% if cheapest_sales %}
-                    {% for transaction in cheapest_sales %}
-                        <div class="top-list-item">
-                            <div class="transaction-item">
-                                <div class="transaction-info">
-                                    <div class="transaction-name">
-                                        <strong>{{ transaction.axe.manufacturer.name }} - {{ transaction.axe.model }}</strong>
+                                    <h5 class="card-title mb-0">
+                        <i class="fas fa-arrow-up text-warning"></i> Billigaste försäljningar
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if cheapest_sales %}
+                        {% for transaction in cheapest_sales %}
+                            <div class="top-list-item">
+                                <div class="transaction-item">
+                                    <div class="transaction-info">
+                                        <div class="transaction-name">
+                                            <strong>{{ transaction.axe.manufacturer.name }} - {{ transaction.axe.model }}</strong>
+                                        </div>
+                                        <div class="transaction-date">
+                                            {{ transaction.transaction_date|date:"Y-m-d" }}
+                                        </div>
                                     </div>
-                                    <div class="transaction-date">
-                                        {{ transaction.transaction_date|date:"Y-m-d" }}
+                                    <div class="transaction-price">
+                                        <span class="text-warning fw-bold">{{ transaction.price|format_decimal }} kr</span>
+                                        <div class="transaction-platform">
+                                            {% if user.is_authenticated or public_settings.show_platforms %}
+                                                {{ transaction.platform.name|default:"Okänd plattform" }}
+                                            {% else %}
+                                                <span class="text-muted">***</span>
+                                            {% endif %}
+                                        </div>
                                     </div>
-                                </div>
-                                <div class="transaction-price">
-                                    <span class="text-warning fw-bold">{{ transaction.price|format_decimal }} kr</span>
-                                    <div class="transaction-platform">
-                                        {{ transaction.platform.name|default:"Okänd plattform" }}
-                                    </div>
-                                </div>
                                 <a href="{% url 'axe_detail' transaction.axe.id %}" class="btn btn-sm btn-outline-primary">
                                     <i class="fas fa-eye"></i>
                                 </a>

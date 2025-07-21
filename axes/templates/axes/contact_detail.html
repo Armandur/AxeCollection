@@ -293,7 +293,11 @@
                         <td>{{ transaction.shipping_cost|format_decimal }} kr</td>
                         <td>
                             {% if transaction.platform %}
-                                {{ transaction.platform.name }}
+                                {% if user.is_authenticated or public_settings.show_platforms %}
+                                    {{ transaction.platform.name }}
+                                {% else %}
+                                    <span class="text-muted">***</span>
+                                {% endif %}
                             {% else %}
                                 <span class="text-muted">-</span>
                             {% endif %}

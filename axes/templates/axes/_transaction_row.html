@@ -38,7 +38,13 @@
             {% endif %}
         {% endif %}
     </td>
-    <td>{{ transaction.platform.name|default_if_empty }}</td>
+    <td>
+        {% if user.is_authenticated or public_settings.show_platforms %}
+            {{ transaction.platform.name|default_if_empty }}
+        {% else %}
+            <span class="text-muted">***</span>
+        {% endif %}
+    </td>
     <td>{{ transaction.comment|default_if_empty }}</td>
     {% if show_actions %}
         <td class="edit-col" style="display:none;">

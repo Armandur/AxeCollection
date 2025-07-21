@@ -560,7 +560,13 @@
                                     </td>
                                     <td>{{ transaction.price|format_decimal }} kr</td>
                                     <td>{{ transaction.shipping_cost|format_decimal }} kr</td>
-                                    <td>{{ transaction.platform.name|default:"-" }}</td>
+                                    <td>
+                                        {% if user.is_authenticated or public_settings.show_platforms %}
+                                            {{ transaction.platform.name|default:"-" }}
+                                        {% else %}
+                                            <span class="text-muted">***</span>
+                                        {% endif %}
+                                    </td>
                                 </tr>
                                 {% endfor %}
                             </tbody>
