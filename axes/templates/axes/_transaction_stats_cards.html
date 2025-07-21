@@ -17,15 +17,12 @@
             </div>
         </div>
     </div>
+    {% if user.is_authenticated or public_settings.show_prices %}
     <div class="col-md-3">
         <div class="card stats-card bg-body-secondary">
             <div class="card-body text-center">
                 <h6 class="card-title text-muted">Total köpvärde</h6>
-                {% if user.is_authenticated or public_settings.show_prices %}
-                    <h4 class="text-danger">{{ total_buy_value|format_currency }}</h4>
-                {% else %}
-                    <h4 class="text-danger">***</h4>
-                {% endif %}
+                <h4 class="text-danger">{{ total_buy_value|format_currency }}</h4>
             </div>
         </div>
     </div>
@@ -33,16 +30,14 @@
         <div class="card stats-card bg-body-secondary">
             <div class="card-body text-center">
                 <h6 class="card-title text-muted">Total försäljningsvärde</h6>
-                {% if user.is_authenticated or public_settings.show_prices %}
-                    <h4 class="text-success">{{ total_sale_value|format_currency }}</h4>
-                {% else %}
-                    <h4 class="text-success">***</h4>
-                {% endif %}
+                <h4 class="text-success">{{ total_sale_value|format_currency }}</h4>
             </div>
         </div>
     </div>
+    {% endif %}
 </div>
 
+{% if user.is_authenticated or public_settings.show_prices %}
 <!-- Total vinst/förlust -->
 <div class="row mb-4">
     <div class="col-12">
@@ -50,13 +45,10 @@
             <div class="card-body text-center">
                 <h5 class="card-title">Total vinst/förlust</h5>
                 <h2 class="{% if total_profit >= 0 %}profit-positive{% else %}profit-negative{% endif %}">
-                    {% if user.is_authenticated or public_settings.show_prices %}
                     {{ total_profit|format_currency }}
-                {% else %}
-                    ***
-                {% endif %}
                 </h2>
             </div>
         </div>
     </div>
-</div> 
+</div>
+{% endif %} 

@@ -397,8 +397,6 @@
                             {% if trans.shipping_cost > 0 %}
                                 <span class="text-muted">({{ trans.shipping_cost|format_currency }})</span>
                             {% endif %}
-                        {% else %}
-                            <span class="text-muted">***</span>
                         {% endif %}
                         <br>
                     {% endfor %}

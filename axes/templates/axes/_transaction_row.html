@@ -41,7 +41,11 @@
     {% endif %}
     {% if user.is_authenticated or public_settings.show_platforms %}
     <td>
-        {{ transaction.platform.name|default_if_empty }}
+        {% if transaction.platform %}
+            <span class="badge {{ transaction.platform.color_class }}"><strong>{{ transaction.platform.name }}</strong></span>
+        {% else %}
+            <span class="text-muted">-</span>
+        {% endif %}
     </td>
     {% endif %}
     <td>{{ transaction.comment|default_if_empty }}</td>

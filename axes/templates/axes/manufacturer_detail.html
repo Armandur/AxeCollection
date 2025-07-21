@@ -163,6 +163,7 @@
     </div>
 </div>
 
+{% if manufacturer.information or user.is_authenticated %}
 <!-- Information -->
 <div class="row mb-4">
     <div class="col-12">
@@ -201,7 +202,9 @@
         </div>
     </div>
 </div>
+{% endif %}
 
+{% if images_by_type or user.is_authenticated %}
 <!-- Tillverkarens bilder -->
 <div class="row mb-4">
     <div class="col-12">
@@ -282,7 +285,9 @@
         </div>
     </div>
 </div>
+{% endif %}
 
+{% if links_by_type or user.is_authenticated %}
 <!-- Tillverkarens länkar -->
 <div class="row mb-4">
     <div class="col-12">
@@ -370,7 +375,9 @@
         </div>
     </div>
 </div>
+{% endif %}
 
+{% if user.is_authenticated or public_settings.show_prices %}
 <!-- Ekonomisk statistik -->
 <div class="row mb-4">
     <div class="col-12">
@@ -378,7 +385,6 @@
             <div class="card-header">
                 <h5 class="card-title mb-0">Ekonomisk översikt</h5>
             </div>
-            {% if user.is_authenticated or public_settings.show_prices %}
             <div class="card-body">
                 <div class="row text-center">
                     <div class="col-md-3">
@@ -401,10 +407,10 @@
                     </div>
                 </div>
             </div>
-            {% endif %}
         </div>
     </div>
 </div>
+{% endif %}
 
 <!-- Yxor -->
 <div class="row mb-4">
@@ -560,7 +566,13 @@
                                     <td>{{ transaction.shipping_cost|format_currency }}</td>
                                     {% endif %}
                                     {% if user.is_authenticated or public_settings.show_platforms %}
-                                    <td>{{ transaction.platform.name|default:"-" }}</td>
+                                    <td>
+                                        {% if transaction.platform %}
+                                            <span class="badge {{ transaction.platform.color_class }}"><strong>{{ transaction.platform.name }}</strong></span>
+                                        {% else %}
+                                            <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
                                     {% endif %}
                                 </tr>
                                 {% endfor %}

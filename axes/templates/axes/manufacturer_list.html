@@ -59,7 +59,9 @@
                 <th>Kommentar</th>
                 <th>Antal yxor</th>
                 <th>Köp / Sälj</th>
+                {% if user.is_authenticated or public_settings.show_prices %}
                 <th>Ekonomi</th>
+                {% endif %}
             </tr>
         </thead>
         <tbody>
@@ -72,19 +74,17 @@
                 <td>
                     <span class="text-danger">{{ manufacturer.buy_count }}</span> / <span class="text-success">{{ manufacturer.sale_count }}</span>
                 </td>
+                {% if user.is_authenticated or public_settings.show_prices %}
                 <td>
-                    {% if user.is_authenticated or public_settings.show_prices %}
-                        <span class="text-danger">{{ manufacturer.total_buy_value|format_currency }}</span>
-                        <br>
-                        <span class="text-success">{{ manufacturer.total_sale_value|format_currency }}</span>
-                        <br>
-                        <span class="{% if manufacturer.net_value >= 0 %}profit-positive{% else %}profit-negative{% endif %} fw-bold">
-                            {{ manufacturer.net_value|format_currency }}
-                        </span>
-                    {% else %}
-                        <span class="text-muted">***</span>
-                    {% endif %}
+                    <span class="text-danger">{{ manufacturer.total_buy_value|format_currency }}</span>
+                    <br>
+                    <span class="text-success">{{ manufacturer.total_sale_value|format_currency }}</span>
+                    <br>
+                    <span class="{% if manufacturer.net_value >= 0 %}profit-positive{% else %}profit-negative{% endif %} fw-bold">
+                        {{ manufacturer.net_value|format_currency }}
+                    </span>
                 </td>
+                {% endif %}
             </tr>
             {% endfor %}
         </tbody>
