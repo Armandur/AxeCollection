@@ -716,6 +716,7 @@ def receiving_workflow(request, pk):
         ]
     measurement_form = MeasurementForm()
     measurements = axe.measurements.all().order_by('name')
+    
     if request.method == 'POST':
         if 'status' in request.POST:
             new_status = request.POST['status']
@@ -723,6 +724,14 @@ def receiving_workflow(request, pk):
                 axe.status = new_status
                 axe.save()
                 return redirect('axe_list')
+    
+    # Returnera template för GET-requests
+    return render(request, 'axes/receiving_workflow.html', {
+        'axe': axe,
+        'measurement_templates': measurement_templates,
+        'measurement_form': measurement_form,
+        'measurements': measurements,
+    })
 
 @login_required
 @require_http_methods(["POST"])

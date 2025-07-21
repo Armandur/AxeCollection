@@ -74,6 +74,24 @@
 - **Smart defaults:** Sätt smarta standardvärden (t.ex. dagens datum för transaktioner).
 - **Validation feedback:** Ge tydlig feedback när validering misslyckas.
 
+## Senaste genomförda förbättringar (2025-07-21)
+
+### Användarhantering och publik/privat vy (2025-07-21)
+- **Inloggningssystem**: Fullständigt Django Auth-system implementerat med anpassade templates, långa sessioner (30 dagar) och starka lösenord (minst 12 tecken)
+- **Publik/privat vy**: Konfigurerbart system där känsliga uppgifter (kontakter, priser, plattformar) kan döljas för icke-inloggade användare
+- **Settings-modell**: Ny modell med konfigurerbara publika inställningar för flexibel kontroll över vad som visas publikt
+- **Context processor**: Automatisk tillgänglighet av publika inställningar i alla templates
+- **Inställningssida**: Dedikerad sida för administratörer att konfigurera publika inställningar och sajtinformation
+- **Intelligent filtrering**: Global sökning, yxlistor och transaktionsdata respekterar publika inställningar automatiskt
+- **Responsiv användarupplevelse**: Login-modal, användardropdown och konsekvent navigation som anpassas efter användarstatus
+- **Säkerhetsfunktioner**: @login_required decorator för skyddade vyer, automatisk redirect till login, session-hantering
+- **Fallback-hantering**: Robust felhantering om Settings-modellen inte finns ännu
+- **Tekniska lärdomar**:
+  - Django Auth-system: Använd Django's inbyggda auth-system för säkerhet och enkelhet
+  - Context processors: Perfekt för att göra globala inställningar tillgängliga i alla templates
+  - Session-hantering: Långa sessioner förbättrar användarupplevelsen men kräver säkerhetsåtgärder
+  - Fallback-logik: Alltid ha fallback för nya modeller som kanske inte finns ännu
+
 ## Senaste genomförda förbättringar (2025-07-18)
 
 ### JavaScript-fel och landsfält-problem (2025-07-18)

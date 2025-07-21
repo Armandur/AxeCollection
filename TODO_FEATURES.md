@@ -173,9 +173,35 @@ En checklista för vidareutveckling av AxeCollection. Bocka av med [x] när klar
 
 ## Säkerhet och användare
 
-49. [ ] Inloggning/behörighet – Privata delar eller flera användare.
+49. [x] Inloggning/behörighet – Privata delar eller flera användare.
+    - [x] 49.1 Django Auth-system implementerat med anpassade templates
+    - [x] 49.2 Långa sessioner (30 dagar) för bättre användarupplevelse
+    - [x] 49.3 Starka lösenord (minst 12 tecken) med Django's validering
+    - [x] 49.4 Login/logout-funktionalitet med redirect till rätt sida
+    - [x] 49.5 Användardropdown i navigationen med inställningar och logout
+    - [x] 49.6 Responsiv login-modal i navigationen för snabb inloggning
+    - [x] 49.7 Tydlig visuell feedback för inloggade vs icke-inloggade användare
 50. [ ] Loggning av ändringar (audit trail).
-51. [ ] Inför inloggning/adminvy så att endast inloggade kan redigera, och visa en publik vy där känsliga uppgifter (t.ex. kontaktnamn, personuppgifter och ev. priser) maskeras eller döljs.
+51. [x] Inför inloggning/adminvy så att endast inloggade kan redigera, och visa en publik vy där känsliga uppgifter (t.ex. kontaktnamn, personuppgifter och ev. priser) maskeras eller döljs.
+    - [x] 51.1 Settings-modell med konfigurerbara publika inställningar
+    - [x] 51.2 Context processor som gör publika inställningar tillgängliga i alla templates
+    - [x] 51.3 Automatisk filtrering av känslig data för icke-inloggade användare
+    - [x] 51.4 Kontroll av användarstatus i alla vyer som visar känslig information
+    - [x] 51.5 Fallback-hantering om Settings-modellen inte finns ännu
+    - [x] 51.6 Dedikerad inställningssida för administratörer
+    - [x] 51.7 Switches för alla publika inställningar med tydliga beskrivningar
+    - [x] 51.8 Sajtinställningar för titel och beskrivning
+    - [x] 51.9 Endast inloggade användare kan komma åt inställningarna
+    - [x] 51.10 Global sökning respekterar publika inställningar
+    - [x] 51.11 Kontaktsökning döljs för icke-inloggade användare om inställt
+    - [x] 51.12 Plattformssökning kan konfigureras för publik/privat visning
+    - [x] 51.13 Intelligent filtrering baserat på användarstatus
+    - [x] 51.14 Yxlistan filtreras automatiskt för icke-inloggade användare
+    - [x] 51.15 Transaktionsdata döljs eller visas baserat på inställningar
+    - [x] 51.16 Kontaktinformation maskeras för publika användare
+    - [x] 51.17 Prisinformation kan döljas för publika användare
+    - [x] 51.18 Konsekvent navigation som anpassas efter användarstatus
+    - [x] 51.19 Snygga ikoner och styling för användargränssnittet
 52. [x] Vy för okopplade bilder – Rutnätsvy med funktioner för att ta bort och ladda ner bilder som flyttats från borttagna yxor.
     - [x] 52.1 Rutnätsvy med bildkort som visar filnamn, storlek och timestamp
     - [x] 52.2 Gruppering av bilder efter timestamp (när yxan togs bort)

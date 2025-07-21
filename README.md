@@ -40,6 +40,13 @@ Ett Django-baserat system för att hantera och katalogisera yxsamlingar med avan
 
 ## Senaste uppdateringar
 
+### Användarhantering och publik/privat vy (2025-07-21)
+- **Inloggningssystem** - Fullständigt Django Auth-system med anpassade templates, långa sessioner (30 dagar) och starka lösenord (minst 12 tecken)
+- **Publik/privat vy** - Konfigurerbart system där känsliga uppgifter (kontakter, priser, plattformar) kan döljas för icke-inloggade användare
+- **Inställningssida** - Dedikerad sida för administratörer att konfigurera publika inställningar och sajtinformation
+- **Intelligent filtrering** - Global sökning, yxlistor och transaktionsdata respekterar publika inställningar automatiskt
+- **Responsiv användarupplevelse** - Login-modal, användardropdown och konsekvent navigation som anpassas efter användarstatus
+
 ### Flaggemoji för kontakter (2025-01-17)
 - **Landskod-stöd** - Kontakter kan nu ha en landskod (ISO 3166-1 alpha-2) som visas som flaggemoji
 - **Konsekvent visning** - Flaggemoji visas på alla ställen där kontakter visas: kontaktdetaljsidan, transaktionshistorik, tillverkardetaljsidan, statistik-sidan och kontaktlistan
