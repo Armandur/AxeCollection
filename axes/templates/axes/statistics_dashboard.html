@@ -269,6 +269,7 @@
     </div>
     
     <!-- Mest aktiva plattformar -->
+    {% if user.is_authenticated or public_settings.show_platforms %}
     <div class="col-md-6">
         <div class="card h-100">
             <div class="card-header">
@@ -296,6 +297,7 @@
             </div>
         </div>
     </div>
+    {% endif %}
 </div>
 
 <!-- Dyraste transaktioner -->
