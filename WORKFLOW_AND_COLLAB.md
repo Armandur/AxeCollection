@@ -76,6 +76,22 @@
 
 ## Senaste genomförda förbättringar (2025-07-21)
 
+### API för borttagning av transaktioner och Bootstrap-modal (2025-07-21)
+- **API-endpoint för transaktionsborttagning**: Implementerat `/api/transaction/<id>/delete/` endpoint med fullständig säkerhet och felhantering
+- **Bootstrap-modal istället för alert**: Ersatt `confirm()` och `alert()` med professionella Bootstrap-modaler för bättre användarupplevelse
+- **Separata modaler**: Olika modaler för bekräftelse (varning) och felmeddelanden (fel) för tydlig användarupplevelse
+- **Säkerhetsfunktioner**: `@login_required` decorator för att skydda API-endpoints från oauktoriserad åtkomst
+- **JavaScript-struktur**: Globala variabler för modal-instanser och återanvändbara funktioner för felhantering
+- **Responsiv design**: Modaler anpassas automatiskt för olika skärmstorlekar med konsekvent design
+- **Ikoner och färgkodning**: FontAwesome-ikoner och färgkodning för tydlig visuell feedback
+- **Tekniska lärdomar**:
+  - API-design: Använd RESTful endpoints med tydliga URL-mönster för konsekvent API-struktur
+  - Modal-hantering: Bootstrap Modal API ger bättre kontroll och anpassningsbarhet än standard browser-dialoger
+  - Felhantering: Separera bekräftelse- och felmodaler för tydligare användarupplevelse och bättre UX
+  - CSRF-skydd: `@csrf_exempt` för API-endpoints som inte använder Django-forms, men behåll säkerhet med `@login_required`
+  - JavaScript-organisering: Använd globala variabler för modal-instanser och återanvändbara funktioner för DRY-principer
+  - UX-konsistens: Alla modaler följer samma designmönster för enhetlig användarupplevelse
+
 ### Användarhantering och publik/privat vy (2025-07-21)
 - **Inloggningssystem**: Fullständigt Django Auth-system implementerat med anpassade templates, långa sessioner (30 dagar) och starka lösenord (minst 12 tecken)
 - **Publik/privat vy**: Konfigurerbart system där känsliga uppgifter (kontakter, priser, plattformar) kan döljas för icke-inloggade användare

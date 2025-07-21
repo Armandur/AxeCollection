@@ -89,6 +89,24 @@
 - **Responsiv layout**: Fungerar bra på alla enheter med touch-vänliga knappar
 - **Text-visning**: Tydliga riktlinjer för när text ska döljas på mobil vs alltid visas
 
+## UX-principer för modaler och dialoger
+
+### Bootstrap-modal vs browser-dialoger
+- **Bootstrap-modal för bekräftelse**: Ersätt `confirm()` med snygga Bootstrap-modaler för professionell användarupplevelse
+- **Separata modaler för olika syften**: Använd olika modaler för bekräftelse och felmeddelanden för tydlighet
+- **Konsekvent design**: Alla modaler följer samma designmönster med ikoner, färger och knappplacering
+- **Responsiv design**: Modaler anpassas automatiskt för olika skärmstorlekar
+- **Ikoner för tydlighet**: Använd FontAwesome-ikoner för att förbättra förståelsen (t.ex. ⚠️ för varning, ❌ för fel)
+- **Knappplacering**: Konsekvent placering av "Avbryt" (vänster) och "Bekräfta" (höger) knappar
+- **Färgkodning**: Använd röd för farliga åtgärder (ta bort), grå för avbryt, blå för neutrala åtgärder
+
+### Felhantering och feedback
+- **Tydliga felmeddelanden**: Visa specifika felmeddelanden med kontext om vad som gick fel
+- **Fallback-beteenden**: Ha planer för när API-anrop misslyckas eller nätverket är nere
+- **Laddningsindikatorer**: Visa spinner eller inaktivera knappar under pågående operationer
+- **Automatisk stängning**: Stäng modaler automatiskt efter framgångsrika operationer
+- **Återställning av UI**: Återställ formulär och knappar till ursprungligt tillstånd vid fel
+
 ## Framtida UX-förbättringar
 
 ### Planerade förbättringar

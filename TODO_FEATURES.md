@@ -304,6 +304,19 @@ En checklista för vidareutveckling av AxeCollection. Bocka av med [x] när klar
 
 ## Tekniska lärdomar från utveckling
 
+### API och transaktionshantering (2025-07-21)
+- **API för borttagning av transaktioner**: Implementerat `/api/transaction/<id>/delete/` endpoint med säkerhet och felhantering
+- **Bootstrap-modal istället för alert**: Ersatt `confirm()` och `alert()` med snygga Bootstrap-modaler för bättre användarupplevelse
+- **Felhantering**: Separata modaler för bekräftelse och felmeddelanden med tydlig feedback
+- **Säkerhet**: `@login_required` decorator för att skydda API-endpoints från oauktoriserad åtkomst
+- **JavaScript-struktur**: Globala variabler för modal-instanser och funktioner för återanvändbar felhantering
+- **Tekniska lärdomar**:
+  - API-design: Använd RESTful endpoints med tydliga URL-mönster (`/api/transaction/<id>/delete/`)
+  - Modal-hantering: Bootstrap Modal API ger bättre kontroll än standard browser-dialoger
+  - Felhantering: Separera bekräftelse- och felmodaler för tydligare användarupplevelse
+  - CSRF-skydd: `@csrf_exempt` för API-endpoints som inte använder Django-forms
+  - JavaScript-organisering: Använd globala variabler för modal-instanser och återanvändbara funktioner
+
 ### Django ORM och databasfält
 - **created_at vs id för sortering**: När `created_at`-fält saknas i modellen, använd `id` för att sortera efter skapandedatum (högre ID = nyare objekt)
 - **FieldError-hantering**: Validera att fältnamn finns i modellen innan användning i `order_by()` eller andra ORM-operationer
