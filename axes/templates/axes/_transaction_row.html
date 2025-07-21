@@ -9,42 +9,29 @@
     </td>
     <td>{{ transaction.price|format_decimal }} kr</td>
     <td>{{ transaction.shipping_cost|format_decimal }} kr</td>
+    {% if user.is_authenticated or public_settings.show_contacts %}
     <td>
-        {% if user.is_authenticated or public_settings.show_contacts %}
-            {% if transaction.contact %}
-                <a href="{% url 'contact_detail' transaction.contact.pk %}" class="contact-link">
-                    {% if transaction.contact.country_code %}
-                        <span class="me-1">{{ transaction.contact.country_code|country_flag }}</span>
-                    {% endif %}
-                    {% if transaction.contact.alias %}
-                        {{ transaction.contact.alias }}
-                    {% else %}
-                        {{ transaction.contact.name }}
-                    {% endif %}
-                </a>
-            {% else %}
-                -
-            {% endif %}
+        {% if transaction.contact %}
+            <a href="{% url 'contact_detail' transaction.contact.pk %}" class="contact-link">
+                {% if transaction.contact.country_code %}
+                    <span class="me-1">{{ transaction.contact.country_code|country_flag }}</span>
+                {% endif %}
+                {% if transaction.contact.alias %}
+                    {{ transaction.contact.alias }}
+                {% else %}
+                    {{ transaction.contact.name }}
+                {% endif %}
+            </a>
         {% else %}
-            {% if transaction.contact %}
-                <span class="text-muted">
-                    {% if transaction.contact.country_code %}
-                        <span class="me-1">{{ transaction.contact.country_code|country_flag }}</span>
-                    {% endif %}
-                    ***
-                </span>
-            {% else %}
-                -
-            {% endif %}
+            -
         {% endif %}
     </td>
+    {% endif %}
+    {% if user.is_authenticated or public_settings.show_platforms %}
     <td>
-        {% if user.is_authenticated or public_settings.show_platforms %}
-            {{ transaction.platform.name|default_if_empty }}
-        {% else %}
-            <span class="text-muted">***</span>
-        {% endif %}
+        {{ transaction.platform.name|default_if_empty }}
     </td>
+    {% endif %}
     <td>{{ transaction.comment|default_if_empty }}</td>
     {% if show_actions %}
         <td class="edit-col" style="display:none;">

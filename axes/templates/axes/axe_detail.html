@@ -170,8 +170,12 @@
                                     <th>Typ</th>
                                     <th>Pris</th>
                                     <th>Frakt</th>
+                                    {% if user.is_authenticated or public_settings.show_contacts %}
                                     <th>Kontakt</th>
+                                    {% endif %}
+                                    {% if user.is_authenticated or public_settings.show_platforms %}
                                     <th>Plattform</th>
+                                    {% endif %}
                                     <th>Kommentar</th>
                                     <th class="edit-col" style="display:none;">Åtgärder</th>
                                 </tr>

@@ -112,8 +112,12 @@
                 <th>Yxa</th>
                 <th>Pris</th>
                 <th>Frakt</th>
+                {% if user.is_authenticated or public_settings.show_contacts %}
                 <th>Kontakt</th>
+                {% endif %}
+                {% if user.is_authenticated or public_settings.show_platforms %}
                 <th>Plattform</th>
+                {% endif %}
                 <th>Kommentar</th>
             </tr>
         </thead>
