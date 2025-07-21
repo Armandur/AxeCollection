@@ -327,6 +327,7 @@
                 </td>
                 <td>
                     {% include 'axes/_status_badge.html' with status=axe.status %}
+                    {% if user.is_authenticated %}
                     <div class="mt-1">
                         {% if axe.status == 'KÖPT' %}
                             <button class="btn btn-sm btn-outline-success status-btn" 
@@ -349,6 +350,7 @@
                             </button>
                         {% endif %}
                     </div>
+                    {% endif %}
                 </td>
                 <td>
                     {% for trans in axe.transactions.all %}

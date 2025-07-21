@@ -16,8 +16,9 @@ def settings_processor(request):
                 'description': settings.site_description,
             }
         }
-    except:
+    except Exception as e:
         # Fallback om Settings-modellen inte finns ännu
+        print(f"Settings processor error: {e}")
         return {
             'public_settings': {
                 'show_contacts': False,
