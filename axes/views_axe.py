@@ -113,14 +113,10 @@ def axe_list(request):
         from .models import Settings
         try:
             settings = Settings.get_settings()
-            print(f"DEBUG: User not authenticated, settings.show_only_received_axes_public = {settings.show_only_received_axes_public}")
             if settings.show_only_received_axes_public:
-                print(f"DEBUG: Filtering to only show MOTTAGEN axes")
                 axes = axes.filter(status='MOTTAGEN')
-                print(f"DEBUG: After filtering, axes count = {axes.count()}")
-        except Exception as e:
+        except:
             # Fallback om Settings-modellen inte finns ännu
-            print(f"DEBUG: Settings error: {e}")
             pass
     
     # Applicera filter
