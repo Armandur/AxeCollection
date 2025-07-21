@@ -1,4 +1,5 @@
 from django.shortcuts import render, get_object_or_404, redirect
+from django.contrib.auth.decorators import login_required
 from .models import Axe, AxeImage, Measurement, NextAxeID, MeasurementTemplate, Transaction, Contact, Platform, Manufacturer
 from .forms import AxeForm, MeasurementForm, TransactionForm
 from django.db.models import Sum, Q, Max, Count
@@ -265,6 +266,7 @@ def axe_detail(request, pk):
     }
     return render(request, 'axes/axe_detail.html', context)
 
+@login_required
 def axe_create(request):
     if request.method == 'POST':
         form = AxeForm(request.POST, request.FILES)
@@ -468,6 +470,7 @@ def axe_create(request):
     }
     return render(request, 'axes/axe_form.html', context)
 
+@login_required
 def axe_edit(request, pk):
     axe = get_object_or_404(Axe, pk=pk)
     if request.method == 'POST':
@@ -697,6 +700,7 @@ def axe_gallery(request, pk=None):
                 'total_axes': 0,
             })
 
+@login_required
 def receiving_workflow(request, pk):
     axe = get_object_or_404(Axe, pk=pk)
     # Ladda måttmallar
@@ -720,6 +724,7 @@ def receiving_workflow(request, pk):
                 axe.save()
                 return redirect('axe_list')
 
+@login_required
 @require_http_methods(["POST"])
 def update_axe_status(request, pk):
     """Uppdatera status för en yxa"""
@@ -742,6 +747,7 @@ def update_axe_status(request, pk):
         'measurements': measurements,
     })
 
+@login_required
 @require_POST
 def add_measurement(request, pk):
     axe = get_object_or_404(Axe, pk=pk)
@@ -764,6 +770,7 @@ def add_measurement(request, pk):
         measurement_form = MeasurementForm()
     return render(request, 'axes/add_measurement.html', {'axe': axe, 'measurement_form': measurement_form})
 
+@login_required
 @require_POST
 def add_measurements_from_template(request, pk):
     axe = get_object_or_404(Axe, pk=pk)
@@ -808,6 +815,7 @@ def add_measurements_from_template(request, pk):
         'message': f'{created_count} mått lades till framgångsrikt.'
     })
 
+@login_required
 @require_POST
 def delete_measurement(request, pk, measurement_id):
     axe = get_object_or_404(Axe, pk=pk)
@@ -830,6 +838,7 @@ def delete_measurement(request, pk, measurement_id):
             'error': 'Mått hittades inte.'
         }, status=404)
 
+@login_required
 @require_POST
 def update_measurement(request, pk, measurement_id):
     axe = get_object_or_404(Axe, pk=pk)
