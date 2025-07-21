@@ -52,4 +52,7 @@ urlpatterns = [
     # Auth URLs
     path('login/', auth_views.LoginView.as_view(template_name='axes/login.html'), name='login'),
     path('logout/', auth_views.LogoutView.as_view(next_page='/'), name='logout'),
+    
+    # Settings
+    path('installningar/', views.settings_view, name='settings'),
 ] 

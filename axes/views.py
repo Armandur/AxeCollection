@@ -517,3 +517,39 @@ def statistics_dashboard(request):
     }
     
     return render(request, 'axes/statistics_dashboard.html', context)
+
+def settings_view(request):
+    """Vy för att hantera systeminställningar"""
+    if not request.user.is_authenticated:
+        return redirect('login')
+    
+    from .models import Settings
+    
+    if request.method == 'POST':
+        settings = Settings.get_settings()
+        
+        # Uppdatera inställningar från formuläret
+        settings.show_contacts_public = request.POST.get('show_contacts_public') == 'on'
+        settings.show_prices_public = request.POST.get('show_prices_public') == 'on'
+        settings.show_platforms_public = request.POST.get('show_platforms_public') == 'on'
+        settings.show_only_received_axes_public = request.POST.get('show_only_received_axes_public') == 'on'
+        settings.site_title = request.POST.get('site_title', 'AxeCollection')
+        settings.site_description = request.POST.get('site_description', '')
+        
+        settings.save()
+        
+        # Lägg till meddelande
+        from django.contrib import messages
+        messages.success(request, 'Inställningar sparade!')
+        
+        return redirect('settings')
+    
+    # Hämta nuvarande inställningar
+    settings = Settings.get_settings()
+    
+    context = {
+        'settings': settings,
+        'page_title': 'Inställningar'
+    }
+    
+    return render(request, 'axes/settings.html', context)
