@@ -36,6 +36,120 @@
                         {% endif %}
                     </div>
                     
+                    <div class="mb-3">
+                        <label class="form-label">
+                            {{ form.color_class.label }}
+                        </label>
+                        
+                        <!-- Dold input för att spara vald färg -->
+                        <div style="display: none;">
+                            {{ form.color_class }}
+                        </div>
+                        
+                        <!-- Färgknappar -->
+                        <div class="color-buttons mt-2">
+                            <div class="row g-2">
+                                <!-- Bootstrap 5.2 standardfärger -->
+                                <div class="col-12">
+                                    <h6 class="text-muted mb-2">Standardfärger:</h6>
+                                </div>
+                                <div class="col-auto">
+                                    <button type="button" class="btn btn-sm bg-primary color-btn" data-color="bg-primary" title="Blå (Primary)">Blå</button>
+                                </div>
+                                <div class="col-auto">
+                                    <button type="button" class="btn btn-sm bg-secondary color-btn" data-color="bg-secondary" title="Grå (Secondary)">Grå</button>
+                                </div>
+                                <div class="col-auto">
+                                    <button type="button" class="btn btn-sm bg-success color-btn" data-color="bg-success" title="Grön (Success)">Grön</button>
+                                </div>
+                                <div class="col-auto">
+                                    <button type="button" class="btn btn-sm bg-danger color-btn" data-color="bg-danger" title="Röd (Danger)">Röd</button>
+                                </div>
+                                <div class="col-auto">
+                                    <button type="button" class="btn btn-sm bg-warning color-btn" data-color="bg-warning" title="Gul/Orange (Warning)">Gul</button>
+                                </div>
+                                <div class="col-auto">
+                                    <button type="button" class="btn btn-sm bg-info color-btn" data-color="bg-info" title="Cyan (Info)">Cyan</button>
+                                </div>
+                                <div class="col-auto">
+                                    <button type="button" class="btn btn-sm bg-light color-btn" data-color="bg-light" title="Ljusgrå (Light)">Ljusgrå</button>
+                                </div>
+                                <div class="col-auto">
+                                    <button type="button" class="btn btn-sm bg-dark color-btn" data-color="bg-dark" title="Mörkgrå (Dark)">Mörkgrå</button>
+                                </div>
+                            </div>
+                            
+                            <!-- Ljusare versioner -->
+                            <div class="row g-2 mt-2">
+                                <div class="col-12">
+                                    <h6 class="text-muted mb-2">Ljusare versioner:</h6>
+                                </div>
+                                <div class="col-auto">
+                                    <button type="button" class="btn btn-sm bg-primary-subtle color-btn" data-color="bg-primary-subtle" title="Ljusare blå">Ljusare blå</button>
+                                </div>
+                                <div class="col-auto">
+                                    <button type="button" class="btn btn-sm bg-secondary-subtle color-btn" data-color="bg-secondary-subtle" title="Ljusare grå">Ljusare grå</button>
+                                </div>
+                                <div class="col-auto">
+                                    <button type="button" class="btn btn-sm bg-success-subtle color-btn" data-color="bg-success-subtle" title="Ljusare grön">Ljusare grön</button>
+                                </div>
+                                <div class="col-auto">
+                                    <button type="button" class="btn btn-sm bg-danger-subtle color-btn" data-color="bg-danger-subtle" title="Ljusare röd">Ljusare röd</button>
+                                </div>
+                                <div class="col-auto">
+                                    <button type="button" class="btn btn-sm bg-warning-subtle color-btn" data-color="bg-warning-subtle" title="Ljusare gul">Ljusare gul</button>
+                                </div>
+                                <div class="col-auto">
+                                    <button type="button" class="btn btn-sm bg-info-subtle color-btn" data-color="bg-info-subtle" title="Ljusare cyan">Ljusare cyan</button>
+                                </div>
+                                <div class="col-auto">
+                                    <button type="button" class="btn btn-sm bg-light-subtle color-btn" data-color="bg-light-subtle" title="Ännu ljusare grå">Ännu ljusare grå</button>
+                                </div>
+                                <div class="col-auto">
+                                    <button type="button" class="btn btn-sm bg-dark-subtle color-btn" data-color="bg-dark-subtle" title="Ljusare mörkgrå">Ljusare mörkgrå</button>
+                                </div>
+                            </div>
+                            
+                            <!-- Andra färger -->
+                            <div class="row g-2 mt-2">
+                                <div class="col-12">
+                                    <h6 class="text-muted mb-2">Andra färger:</h6>
+                                </div>
+                                <div class="col-auto">
+                                    <button type="button" class="btn btn-sm bg-body color-btn" data-color="bg-body" title="Bakgrundsfärg">Bakgrund</button>
+                                </div>
+                                <div class="col-auto">
+                                    <button type="button" class="btn btn-sm bg-muted color-btn" data-color="bg-muted" title="Dämpad">Dämpad</button>
+                                </div>
+                                <div class="col-auto">
+                                    <button type="button" class="btn btn-sm bg-white border color-btn" data-color="bg-white" title="Vit">Vit</button>
+                                </div>
+                                <div class="col-auto">
+                                    <button type="button" class="btn btn-sm bg-black color-btn" data-color="bg-black" title="Svart">Svart</button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Förhandsvisning av färgval -->
+                        <div class="mt-3">
+                            <small class="text-muted">Förhandsvisning:</small>
+                            <div id="color-preview" class="mt-1">
+                                <span class="badge" id="preview-badge">Plattform</span>
+                            </div>
+                        </div>
+                        
+                        {% if form.color_class.help_text %}
+                            <div class="form-text">{{ form.color_class.help_text }}</div>
+                        {% endif %}
+                        {% if form.color_class.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.color_class.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
                     <div class="d-flex justify-content-between">
                         <a href="{% if platform %}{% url 'platform_detail' platform.pk %}{% else %}{% url 'platform_list' %}{% endif %}" 
                            class="btn btn-secondary">
@@ -51,4 +165,37 @@
         </div>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const colorInput = document.getElementById('{{ form.color_class.id_for_label }}');
+    const previewBadge = document.getElementById('preview-badge');
+    const colorButtons = document.querySelectorAll('.color-btn');
+    
+    function updatePreview() {
+        const selectedColor = colorInput.value;
+        previewBadge.className = 'badge ' + selectedColor;
+        
+        // Uppdatera aktiv knapp
+        colorButtons.forEach(btn => {
+            btn.classList.remove('active', 'btn-outline-primary');
+            if (btn.dataset.color === selectedColor) {
+                btn.classList.add('active', 'btn-outline-primary');
+            }
+        });
+    }
+    
+    // Hantera klick på färgknappar
+    colorButtons.forEach(btn => {
+        btn.addEventListener('click', function() {
+            const selectedColor = this.dataset.color;
+            colorInput.value = selectedColor;
+            updatePreview();
+        });
+    });
+    
+    // Uppdatera förhandsvisning vid laddning
+    updatePreview();
+});
+</script>
 {% endblock %} 

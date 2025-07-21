@@ -1,4 +1,5 @@
 {% extends 'axes/base.html' %}
+{% load axe_filters %}
 
 {% block title %}Plattformar{% endblock %}
 
@@ -17,7 +18,7 @@
             <div class="card-body">
                 <div class="d-flex justify-content-between align-items-start mb-3">
                     <h5 class="card-title mb-0">
-                        <span class="badge {{ platform.color_class }} me-2">{{ platform.name }}</span>
+                        <span class="badge {{ platform.get_color_class }} me-2">{{ platform.name }}</span>
                     </h5>
                     <div class="dropdown">
                         <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
@@ -42,30 +43,33 @@
                             </li>
                         </ul>
                     </div>
+                    <a href="{% url 'platform_edit' platform.pk %}" class="btn btn-outline-primary btn-sm ms-2" title="Redigera färg">
+                        <i class="fas fa-palette"></i>
+                    </a>
                 </div>
                 
                 <div class="row text-center">
                     <div class="col-6">
                         <div class="border-end">
                             <h6 class="text-muted mb-1">Transaktioner</h6>
-                            <span class="h5">{{ platform.transaction_count }}</span>
+                            <span class="h5">{{ platform.get_transaction_count }}</span>
                         </div>
                     </div>
                     <div class="col-6">
                         <h6 class="text-muted mb-1">Köp</h6>
-                        <span class="h5 text-danger">{{ platform.buy_count }}</span>
+                        <span class="h5 text-danger">{{ platform.get_buy_count }}</span>
                     </div>
                 </div>
                 
                 <div class="row text-center mt-3">
                     <div class="col-6">
                         <h6 class="text-muted mb-1">Sälj</h6>
-                        <span class="h5 text-success">{{ platform.sale_count }}</span>
+                        <span class="h5 text-success">{{ platform.get_sale_count }}</span>
                     </div>
                     <div class="col-6">
                         <h6 class="text-muted mb-1">Vinst/Förlust</h6>
-                        <span class="h5 {% if platform.total_sale_value > platform.total_buy_value %}text-success{% else %}text-danger{% endif %}">
-                            {{ platform.total_sale_value|add:platform.total_buy_value|floatformat:0 }} kr
+                        <span class="h5 {% if platform.get_profit_loss >= 0 %}text-success{% else %}text-danger{% endif %}">
+                            {{ platform.get_profit_loss|format_currency }}
                         </span>
                     </div>
                 </div>

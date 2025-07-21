@@ -568,7 +568,7 @@
                                     {% if user.is_authenticated or public_settings.show_platforms %}
                                     <td>
                                         {% if transaction.platform %}
-                                            <span class="badge {{ transaction.platform.color_class }}"><strong>{{ transaction.platform.name }}</strong></span>
+                                            <span class="badge {{ transaction.platform.get_color_class }}"><strong>{{ transaction.platform.name }}</strong></span>
                                         {% else %}
                                             <span class="text-muted">-</span>
                                         {% endif %}

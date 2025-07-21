@@ -355,7 +355,7 @@
                 <td>
                     {% for trans in axe.transactions.all %}
                         {% if trans.platform %}
-                            <span class="badge {{ trans.platform.color_class }}"><strong>{{ trans.platform.name }}</strong></span>
+                            <span class="badge {{ trans.platform.get_color_class }}"><strong>{{ trans.platform.name }}</strong></span>
                         {% endif %}
                     {% endfor %}
                 </td>

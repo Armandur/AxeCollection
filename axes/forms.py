@@ -94,18 +94,23 @@ class PlatformForm(forms.ModelForm):
     
     class Meta:
         model = Platform
-        fields = ['name']
+        fields = ['name', 'color_class']
         labels = {
             'name': 'Namn',
+            'color_class': 'Färg för badge',
         }
         widgets = {
             'name': forms.TextInput(attrs={
                 'class': 'form-control',
                 'placeholder': 'Ange plattformsnamn'
             }),
+            'color_class': forms.Select(attrs={
+                'class': 'form-control'
+            }),
         }
         help_texts = {
             'name': 'Namn på plattformen (t.ex. Tradera, eBay, Blocket)',
+            'color_class': 'Välj färg för plattformens badge',
         }
 
 class ContactForm(forms.ModelForm):

@@ -382,33 +382,135 @@ class Contact(models.Model):
         return self.transactions.values('axe').distinct().count()
 
 class Platform(models.Model):
+    COLOR_CHOICES = [
+        # Bootstrap 5.2 standardfärger
+        ('bg-primary', 'Blå (Primary)'),
+        ('bg-secondary', 'Grå (Secondary)'),
+        ('bg-success', 'Grön (Success)'),
+        ('bg-danger', 'Röd (Danger)'),
+        ('bg-warning', 'Gul/Orange (Warning)'),
+        ('bg-info', 'Cyan (Info)'),
+        ('bg-light', 'Ljusgrå (Light)'),
+        ('bg-dark', 'Mörkgrå (Dark)'),
+        
+        # Ljusare versioner (subtle)
+        ('bg-primary-subtle', 'Ljusare blå'),
+        ('bg-secondary-subtle', 'Ljusare grå'),
+        ('bg-success-subtle', 'Ljusare grön'),
+        ('bg-danger-subtle', 'Ljusare röd'),
+        ('bg-warning-subtle', 'Ljusare gul'),
+        ('bg-info-subtle', 'Ljusare cyan'),
+        ('bg-light-subtle', 'Ännu ljusare grå'),
+        ('bg-dark-subtle', 'Ljusare mörkgrå'),
+        
+        # Text-färger som bakgrund (för variation)
+        ('bg-body', 'Bakgrundsfärg'),
+        ('bg-muted', 'Dämpad'),
+        ('bg-white', 'Vit'),
+        ('bg-black', 'Svart'),
+        
+        # Kombinationer och variationer
+        ('bg-primary bg-opacity-75', 'Blå 75% opacity'),
+        ('bg-secondary bg-opacity-75', 'Grå 75% opacity'),
+        ('bg-success bg-opacity-75', 'Grön 75% opacity'),
+        ('bg-danger bg-opacity-75', 'Röd 75% opacity'),
+        ('bg-warning bg-opacity-75', 'Gul 75% opacity'),
+        ('bg-info bg-opacity-75', 'Cyan 75% opacity'),
+        ('bg-light bg-opacity-75', 'Ljusgrå 75% opacity'),
+        ('bg-dark bg-opacity-75', 'Mörkgrå 75% opacity'),
+        
+        # Med text-färger för kontrast
+        ('bg-primary text-white', 'Blå med vit text'),
+        ('bg-secondary text-white', 'Grå med vit text'),
+        ('bg-success text-white', 'Grön med vit text'),
+        ('bg-danger text-white', 'Röd med vit text'),
+        ('bg-warning text-dark', 'Gul med mörk text'),
+        ('bg-info text-dark', 'Cyan med mörk text'),
+        ('bg-light text-dark', 'Ljusgrå med mörk text'),
+        ('bg-dark text-white', 'Mörkgrå med vit text'),
+    ]
+    
     name = models.CharField(max_length=100)
+    color_class = models.CharField(
+        max_length=30,
+        choices=COLOR_CHOICES,
+        default='bg-primary',
+        verbose_name="Färg för badge",
+        help_text="Välj färg för plattformens badge"
+    )
 
     def __str__(self):
         return self.name
 
-    @property
-    def color_class(self):
-        """Generera en unik pastellfärg baserat på plattformens ID"""
-        # Lista med färger som inte krockar med status/ekonomi (undvik grön/röd)
+    def get_color_class(self):
+        """Returnera den valda färgen eller fallback till automatisk färg"""
+        if self.color_class:
+            return self.color_class
+
+        # Fallback till automatisk färg om ingen valts
         platform_colors = [
+            # Bootstrap 5.2 standardfärger
             'bg-primary',           # Blå
-            'bg-info',              # Ljusblå
-            'bg-warning',           # Gul/Orange
             'bg-secondary',         # Grå
-            'bg-dark',              # Mörkgrå
+            'bg-success',           # Grön
+            'bg-danger',            # Röd
+            'bg-warning',           # Gul/Orange
+            'bg-info',              # Cyan
             'bg-light',             # Ljusgrå
+            'bg-dark',              # Mörkgrå
+            
+            # Ljusare versioner (subtle)
             'bg-primary-subtle',    # Ljusare blå
-            'bg-info-subtle',       # Ljusare ljusblå
-            'bg-warning-subtle',    # Ljusare gul
             'bg-secondary-subtle',  # Ljusare grå
-            'bg-dark-subtle',       # Ljusare mörkgrå
+            'bg-success-subtle',    # Ljusare grön
+            'bg-danger-subtle',     # Ljusare röd
+            'bg-warning-subtle',    # Ljusare gul
+            'bg-info-subtle',       # Ljusare cyan
             'bg-light-subtle',      # Ännu ljusare grå
+            'bg-dark-subtle',       # Ljusare mörkgrå
+            
+            # Text-färger som bakgrund
+            'bg-body',              # Bakgrundsfärg
+            'bg-muted',             # Dämpad
+            'bg-white',             # Vit
+            'bg-black',             # Svart
         ]
-        
+
         # Använd modulo för att få en färg baserat på ID
         color_index = self.id % len(platform_colors)
         return platform_colors[color_index]
+
+    def get_total_buy_value(self):
+        """Total köpvärde för plattformen"""
+        from decimal import Decimal
+        return sum(
+            transaction.price 
+            for transaction in self.transaction_set.filter(type='KÖP')
+        ) or Decimal('0.00')
+
+    def get_total_sale_value(self):
+        """Total försäljningsvärde för plattformen"""
+        from decimal import Decimal
+        return sum(
+            transaction.price 
+            for transaction in self.transaction_set.filter(type='SÄLJ')
+        ) or Decimal('0.00')
+
+    def get_profit_loss(self):
+        """Vinst/förlust för plattformen"""
+        return self.get_total_sale_value() - self.get_total_buy_value()
+
+    def get_transaction_count(self):
+        """Antal transaktioner på plattformen"""
+        return self.transaction_set.count()
+
+    def get_buy_count(self):
+        """Antal köp på plattformen"""
+        return self.transaction_set.filter(type='KÖP').count()
+
+    def get_sale_count(self):
+        """Antal försäljningar på plattformen"""
+        return self.transaction_set.filter(type='SÄLJ').count()
 
 class Transaction(models.Model):
     TRANSACTION_TYPES = [
