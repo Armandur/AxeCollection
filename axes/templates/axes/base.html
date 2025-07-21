@@ -106,9 +106,14 @@
                             <i class="fas fa-user me-1"></i>{{ user.username }}
                         </a>
                         <ul class="dropdown-menu" aria-labelledby="userDropdown">
-                            <li><a class="dropdown-item" href="{% url 'logout' %}">
-                                <i class="fas fa-sign-out-alt me-2"></i>Logga ut
-                            </a></li>
+                            <li>
+                                <form method="post" action="{% url 'logout' %}" style="display: inline;">
+                                    {% csrf_token %}
+                                    <button type="submit" class="dropdown-item" style="border: none; background: none; width: 100%; text-align: left;">
+                                        <i class="fas fa-sign-out-alt me-2"></i>Logga ut
+                                    </button>
+                                </form>
+                            </li>
                         </ul>
                     </div>
                 {% else %}
