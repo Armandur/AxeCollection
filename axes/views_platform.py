@@ -113,7 +113,7 @@ def platform_delete(request, pk):
     platform = get_object_or_404(Platform, pk=pk)
     
     # Kontrollera om plattformen används i transaktioner
-    transaction_count = platform.transactions.count()
+    transaction_count = platform.transaction_set.count()
     
     if request.method == 'POST':
         if transaction_count > 0:
@@ -125,9 +125,13 @@ def platform_delete(request, pk):
         messages.success(request, f'Plattformen "{platform_name}" togs bort!')
         return redirect('platform_list')
     
+    # Hämta kopplade transaktioner för att visa i bekräftelsen
+    linked_transactions = platform.transaction_set.select_related('axe__manufacturer', 'contact').order_by('-transaction_date')[:10]
+    
     context = {
         'platform': platform,
         'transaction_count': transaction_count,
+        'linked_transactions': linked_transactions,
         'page_title': f'Ta bort: {platform.name}'
     }
     

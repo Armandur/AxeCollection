@@ -23,7 +23,18 @@
                 {% if transaction_count > 0 %}
                 <div class="alert alert-warning">
                     <i class="fas fa-exclamation-triangle me-2"></i>
-                    <strong>Varning:</strong> Denna plattform används i {{ transaction_count }} transaktioner och kan inte tas bort.
+                    <strong>Varning:</strong> Denna plattform används i {{ transaction_count }} transaktioner.
+                </div>
+                
+                <div class="mb-3">
+                    <button type="button" class="btn btn-outline-info btn-sm" data-bs-toggle="modal" data-bs-target="#linkedTransactionsModal">
+                        <i class="fas fa-eye me-1"></i>Visa kopplade transaktioner ({{ transaction_count }})
+                    </button>
+                </div>
+                
+                <div class="alert alert-danger">
+                    <i class="fas fa-ban me-2"></i>
+                    <strong>Kan inte tas bort:</strong> Plattformen används i transaktioner och kan inte tas bort av säkerhetsskäl.
                 </div>
                 {% else %}
                 <div class="alert alert-info">
@@ -49,4 +60,82 @@
         </div>
     </div>
 </div>
+
+<!-- Modal för kopplade transaktioner -->
+{% if linked_transactions %}
+<div class="modal fade" id="linkedTransactionsModal" tabindex="-1" aria-labelledby="linkedTransactionsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="linkedTransactionsModalLabel">
+                    Kopplade transaktioner på {{ platform.name }}
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted mb-3">
+                    Visar de 10 senaste transaktionerna. Totalt finns {{ transaction_count }} transaktioner.
+                </p>
+                
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Datum</th>
+                                <th>Typ</th>
+                                <th>Yxa</th>
+                                <th>Kontakt</th>
+                                <th>Pris</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for transaction in linked_transactions %}
+                            <tr>
+                                <td>{{ transaction.transaction_date|date:"Y-m-d" }}</td>
+                                <td>
+                                    <span class="badge {% if transaction.type == 'KÖP' %}bg-danger{% else %}bg-success{% endif %}">
+                                        {{ transaction.type }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <a href="{% url 'axe_detail' transaction.axe.pk %}" class="text-decoration-none">
+                                        {{ transaction.axe.manufacturer.name }} - {{ transaction.axe.model }}
+                                    </a>
+                                </td>
+                                <td>
+                                    {% if transaction.contact %}
+                                        <a href="{% url 'contact_detail' transaction.contact.pk %}" class="text-decoration-none">
+                                            {{ transaction.contact.name }}
+                                        </a>
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td class="{% if transaction.type == 'KÖP' %}text-danger{% else %}text-success{% endif %}">
+                                    {{ transaction.price|floatformat:0 }} kr
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                {% if transaction_count > 10 %}
+                <div class="alert alert-info mt-3">
+                    <i class="fas fa-info-circle me-2"></i>
+                    Visar endast de 10 senaste transaktionerna. 
+                    <a href="{% url 'platform_detail' platform.pk %}" class="alert-link">Visa alla {{ transaction_count }} transaktioner</a>
+                </div>
+                {% endif %}
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Stäng</button>
+                <a href="{% url 'platform_detail' platform.pk %}" class="btn btn-primary">
+                    <i class="fas fa-chart-line me-1"></i>Visa plattformsstatistik
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
 {% endblock %} 
