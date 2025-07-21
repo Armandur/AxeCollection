@@ -64,11 +64,16 @@ def global_search(request):
     }
     
     # Sök i yxor
-    axes = Axe.objects.filter(
-        Q(manufacturer__name__icontains=query) |
-        Q(model__icontains=query) |
-        Q(comment__icontains=query)
-    ).select_related('manufacturer')[:5]
+    # Skapa Q-objekt för textfält
+    text_query = Q(manufacturer__name__icontains=query) | Q(model__icontains=query) | Q(comment__icontains=query)
+    
+    # Kontrollera om query är ett nummer för ID-sökning
+    try:
+        id_query = int(query)
+        axes = Axe.objects.filter(text_query | Q(id=id_query)).select_related('manufacturer')[:5]
+    except ValueError:
+        # Om query inte är ett nummer, sök bara i textfält
+        axes = Axe.objects.filter(text_query).select_related('manufacturer')[:5]
     
     for axe in axes:
         results['axes'].append({
