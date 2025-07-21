@@ -125,9 +125,11 @@
         <span id="manufacturer-name-text" style="display:inline;">{{ manufacturer.name }}</span>
         <input id="manufacturer-name-input" type="text" value="{{ manufacturer.name }}" class="form-control" style="width:auto; display:none; max-width:300px;" maxlength="200">
         <span class="badge bg-secondary">{{ manufacturer.id }}</span>
-        <button id="edit-name-btn" class="btn btn-outline-secondary btn-sm ms-2" onclick="toggleNameEdit()" title="Redigera namn">
-            <i class="bi bi-pencil"></i>
-        </button>
+                        {% if user.is_authenticated %}
+                <button id="edit-name-btn" class="btn btn-outline-secondary btn-sm ms-2" onclick="toggleNameEdit()" title="Redigera namn">
+                    <i class="bi bi-pencil"></i>
+                </button>
+                {% endif %}
         <button id="save-name-btn" class="btn btn-success btn-sm ms-2" style="display:none;" onclick="saveName()" title="Spara namn">
             <i class="bi bi-check"></i>
         </button>
@@ -167,9 +169,11 @@
         <div class="card">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <h5 class="card-title mb-0">Information</h5>
+                {% if user.is_authenticated %}
                 <button class="btn btn-outline-primary btn-sm" onclick="toggleCommentEdit()">
                     <i class="bi bi-pencil"></i> Redigera
                 </button>
+                {% endif %}
             </div>
             <div class="card-body">
                 <!-- Visning av information -->
@@ -205,12 +209,14 @@
             <div class="card-header d-flex justify-content-between align-items-center">
                 <h5 class="card-title mb-0">Bilder för {{ manufacturer.name }}</h5>
                 <div>
+                    {% if user.is_authenticated %}
                     <button type="button" class="btn btn-outline-primary btn-sm me-2" onclick="openUploadModal()">
                         <i class="bi bi-image"></i> Lägg till bild
                     </button>
                     <button type="button" class="btn btn-outline-secondary btn-sm me-2" onclick="toggleReorderMode()" id="reorderBtn">
                         <i class="bi bi-arrow-down-up"></i> Ändra ordning
                     </button>
+                    {% endif %}
                 </div>
             </div>
             <div class="card-body">
@@ -245,6 +251,7 @@
                                                  data-description="{{ image.description|default:'' }}"
                                                  data-image-type="{{ image.image_type }}">
                                         </picture>
+                                        {% if user.is_authenticated %}
                                         <div class="position-absolute top-0 end-0 p-2">
                                             <button class="btn btn-sm btn-outline-secondary" 
                                                     onclick="event.stopPropagation(); editImage({{ image.id }})"
@@ -252,6 +259,7 @@
                                                 <i class="bi bi-pencil"></i>
                                             </button>
                                         </div>
+                                        {% endif %}
                                     </div>
                                     <div class="card-body">
                                         {% if image.caption %}
@@ -282,12 +290,14 @@
             <div class="card-header d-flex justify-content-between align-items-center">
                 <h5 class="card-title mb-0">Länkar och resurser för {{ manufacturer.name }}</h5>
                 <div>
+                    {% if user.is_authenticated %}
                     <button type="button" class="btn btn-outline-secondary btn-sm me-2" onclick="toggleLinkReorderMode()" id="linkReorderBtn">
                         <i class="bi bi-arrow-down-up"></i> Ändra ordning
                     </button>
                     <a href="{% url 'admin:axes_manufacturerlink_add' %}?manufacturer={{ manufacturer.id }}" class="btn btn-outline-info btn-sm">
                         <i class="bi bi-link-45deg"></i> Lägg till länk
                     </a>
+                    {% endif %}
                 </div>
             </div>
             <div class="card-body">
@@ -315,6 +325,7 @@
                                 <div class="card h-100 border-0 shadow-sm {% if not link.is_active %}inactive-link{% endif %}" 
                                      {% if link.is_active %}onclick="window.open('{{ link.url }}', '_blank')" style="cursor: pointer;"{% endif %}>
                                     <div class="card-body position-relative">
+                                        {% if user.is_authenticated %}
                                         <div class="position-absolute top-0 end-0 p-2">
                                             <button class="btn btn-sm btn-outline-secondary" 
                                                     onclick="event.stopPropagation(); editLink({{ link.id }})"
@@ -322,6 +333,7 @@
                                                 <i class="bi bi-pencil"></i>
                                             </button>
                                         </div>
+                                        {% endif %}
                                         <h6 class="card-title">
                                             {% if link.is_active %}
                                                 <span class="text-decoration-none">
