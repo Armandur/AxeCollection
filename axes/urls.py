@@ -1,4 +1,5 @@
 from django.urls import path
+from django.contrib.auth import views as auth_views
 from . import views
 from . import views_axe
 from . import views_contact
@@ -47,4 +48,8 @@ urlpatterns = [
     path('okopplade-bilder/', views_axe.unlinked_images_view, name='unlinked_images'),
     path('okopplade-bilder/ta-bort/', views_axe.delete_unlinked_image, name='delete_unlinked_image'),
     path('okopplade-bilder/ladda-ner/', views_axe.download_unlinked_images, name='download_unlinked_images'),
+    
+    # Auth URLs
+    path('login/', auth_views.LoginView.as_view(template_name='axes/login.html'), name='login'),
+    path('logout/', auth_views.LogoutView.as_view(), name='logout'),
 ] 
