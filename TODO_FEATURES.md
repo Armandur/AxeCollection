@@ -215,8 +215,8 @@ En checklista för vidareutveckling av AxeCollection. Bocka av med [x] när klar
     - [x] 51.17 Prisinformation kan döljas för publika användare
     - [x] 51.18 Konsekvent navigation som anpassas efter användarstatus
     - [x] 51.19 Snygga ikoner och styling för användargränssnittet
-    - [ ] 51.20 Fixa yxdetaljsidan: Pris- och fraktkolumner visas fortfarande för publika användare trots att de ska döljas
-    - [ ] 51.21 Fixa ekonomiska statistikkort på /yxor: Kronor-relaterade kort (vinst/förlust, totala värden) visas fortfarande för publika användare, ska döljas helt
+    - [x] 51.20 Fixa yxdetaljsidan: Pris- och fraktkolumner visas fortfarande för publika användare trots att de ska döljas
+- [x] 51.21 Fixa ekonomiska statistikkort på /yxor: Kronor-relaterade kort (vinst/förlust, totala värden) visas fortfarande för publika användare, ska döljas helt
 52. [x] Vy för okopplade bilder – Rutnätsvy med funktioner för att ta bort och ladda ner bilder som flyttats från borttagna yxor.
     - [x] 52.1 Rutnätsvy med bildkort som visar filnamn, storlek och timestamp
     - [x] 52.2 Gruppering av bilder efter timestamp (när yxan togs bort)

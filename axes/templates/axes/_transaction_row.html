@@ -7,20 +7,14 @@
             {{ transaction.type }}
         </span>
     </td>
+    {% if user.is_authenticated or public_settings.show_prices %}
     <td>
-        {% if user.is_authenticated or public_settings.show_prices %}
-            {{ transaction.price|format_currency }}
-        {% else %}
-            ***
-        {% endif %}
+        {{ transaction.price|format_currency }}
     </td>
     <td>
-        {% if user.is_authenticated or public_settings.show_prices %}
-            {{ transaction.shipping_cost|format_currency }}
-        {% else %}
-            ***
-        {% endif %}
+        {{ transaction.shipping_cost|format_currency }}
     </td>
+    {% endif %}
     {% if user.is_authenticated or public_settings.show_contacts %}
     <td>
         {% if transaction.contact %}

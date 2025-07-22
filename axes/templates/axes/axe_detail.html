@@ -168,8 +168,10 @@
                                 <tr>
                                     <th>Datum</th>
                                     <th>Typ</th>
+                                    {% if user.is_authenticated or public_settings.show_prices %}
                                     <th>Pris</th>
                                     <th>Frakt</th>
+                                    {% endif %}
                                     {% if user.is_authenticated or public_settings.show_contacts %}
                                     <th>Kontakt</th>
                                     {% endif %}
