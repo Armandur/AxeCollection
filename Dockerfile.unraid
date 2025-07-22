@@ -44,22 +44,21 @@ RUN python manage.py collectstatic --noinput
 RUN ln -sf /etc/nginx/sites-available/default /etc/nginx/sites-enabled/default
 
 # Configure supervisor
-COPY supervisor.conf /etc/supervisor/conf.d/supervisord.conf
+COPY supervisor.unraid.conf /etc/supervisor/conf.d/supervisord.conf
 
-# Create a non-root user
-RUN useradd --create-home --shell /bin/bash django
-RUN chown -R django:django /app
-RUN chown -R django:django /var/log/supervisor
+# Fix permissions for Unraid (nobody:users)
+RUN chown -R nobody:users /app
+RUN chown -R nobody:users /var/log/supervisor
 
-# Fix nginx and supervisor permissions
+# Fix nginx and supervisor permissions (nginx needs root)
 RUN mkdir -p /var/log/nginx /var/cache/nginx /var/run /var/log/supervisor
 RUN chown -R root:root /var/log/nginx /var/cache/nginx /var/run
 RUN chmod -R 755 /var/log/nginx /var/cache/nginx /var/run
 RUN chown -R root:root /var/log/supervisor
 RUN chmod -R 755 /var/log/supervisor
 
-# Fix app directory permissions for django user
-RUN chown -R django:django /app/logs
+# Fix app directory permissions for nobody user
+RUN chown -R nobody:users /app/logs
 RUN chmod -R 755 /app/logs
 
 # Expose port 80 for nginx

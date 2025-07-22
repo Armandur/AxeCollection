@@ -1,0 +1,35 @@
+version: '3.8'
+
+services:
+  axecollection:
+    image: armandur/axecollection:unraid
+    ports:
+      - "80:80"
+    volumes:
+      # Persist data, media, and logs på cache-diskar för bättre prestanda
+      - /mnt/cache/appdata/axecollection/data:/app/data
+      - /mnt/cache/appdata/axecollection/media:/app/media
+      - /mnt/cache/appdata/axecollection/logs:/app/logs
+      - /mnt/cache/appdata/axecollection/staticfiles:/app/staticfiles
+      - /mnt/cache/appdata/axecollection/backups:/app/backups
+      # Nginx configuration för enkel redigering
+      - /mnt/cache/appdata/axecollection/nginx.integrated.conf:/etc/nginx/sites-available/default:ro
+    environment:
+      - DJANGO_SETTINGS_MODULE=AxeCollection.settings_production
+      - SECRET_KEY=${SECRET_KEY}
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/health/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    # Fix permissions för Unraid
+    user: "65534:100"  # nobody:users
+
+volumes:
+  data:
+  media:
+  logs:
+  staticfiles:
+  backups: 

@@ -39,13 +39,13 @@ Denna guide beskriver hur man deployar AxeCollection med en integrerad Docker-im
 2. **Port mapping**:
    - Host Port 1: `80` → Container Port 1: `80`
 
-3. **Volymer**:
-   - `/mnt/user/appdata/axecollection/data` → `/app/data`
-   - `/mnt/user/appdata/axecollection/media` → `/app/media`
-   - `/mnt/user/appdata/axecollection/logs` → `/app/logs`
-   - `/mnt/user/appdata/axecollection/staticfiles` → `/app/staticfiles`
-   - `/mnt/user/appdata/axecollection/backups` → `/app/backups`
-   - `/mnt/user/appdata/axecollection/nginx.integrated.conf` → `/etc/nginx/sites-available/default` (read-only)
+3. **Volymer** (använd cache för bättre prestanda):
+   - `/mnt/cache/appdata/axecollection/data` → `/app/data`
+   - `/mnt/cache/appdata/axecollection/media` → `/app/media`
+   - `/mnt/cache/appdata/axecollection/logs` → `/app/logs`
+   - `/mnt/cache/appdata/axecollection/staticfiles` → `/app/staticfiles`
+   - `/mnt/cache/appdata/axecollection/backups` → `/app/backups`
+   - `/mnt/cache/appdata/axecollection/nginx.integrated.conf` → `/etc/nginx/sites-available/default` (read-only)
 
 4. **Miljövariabler**:
    - `DJANGO_SETTINGS_MODULE` = `AxeCollection.settings_production`
@@ -53,18 +53,21 @@ Denna guide beskriver hur man deployar AxeCollection med en integrerad Docker-im
 
 ### Via Docker Compose i Unraid
 
-1. **Kopiera filer** till `/mnt/user/appdata/axecollection/`:
-   - `docker-compose.integrated.yml`
-   - `Dockerfile.integrated`
-   - `supervisor.conf`
+1. **Kopiera filer** till `/mnt/cache/appdata/axecollection/`:
+   - `docker-compose.unraid.yml` (eller `docker-compose.integrated.yml`)
    - `nginx.integrated.conf`
-   - `requirements.txt`
-   - Hela projektmappen
+   - `deploy-unraid.sh` (valfritt)
 
 2. **Kör**:
    ```bash
-   cd /mnt/user/appdata/axecollection
-   docker-compose -f docker-compose.integrated.yml up -d --build
+   cd /mnt/cache/appdata/axecollection
+   docker-compose up -d
+   ```
+   
+   **Eller använd deployment-scriptet**:
+   ```bash
+   chmod +x deploy-unraid.sh
+   ./deploy-unraid.sh
    ```
 
 ## Backup och återställning
