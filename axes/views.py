@@ -563,12 +563,23 @@ def statistics_dashboard(request):
     return render(request, 'axes/statistics_dashboard.html', context)
 
 def settings_view(request):
-    """Vy för att hantera systeminställningar"""
+    """Vy för att hantera systeminställningar och backup"""
     if not request.user.is_authenticated:
         return redirect('login')
     
     from .models import Settings
+    import os
+    import json
+    import zipfile
+    import subprocess
+    from django.contrib import messages
+    from django.conf import settings as django_settings
     
+    # Backup-hantering
+    if request.method == 'POST' and request.POST.get('action') == 'backup':
+        return handle_backup_action(request)
+    
+    # Vanlig settings-hantering
     if request.method == 'POST':
         settings = Settings.get_settings()
         
@@ -595,7 +606,6 @@ def settings_view(request):
         settings.save()
         
         # Lägg till meddelande
-        from django.contrib import messages
         messages.success(request, 'Inställningar sparade!')
         
         return redirect('settings')
@@ -603,9 +613,165 @@ def settings_view(request):
     # Hämta nuvarande inställningar
     settings = Settings.get_settings()
     
+    # Hämta backup-information
+    backup_info = get_backup_info(django_settings.BASE_DIR)
+    
     context = {
         'settings': settings,
+        'backup_info': backup_info,
         'page_title': 'Inställningar'
     }
     
     return render(request, 'axes/settings.html', context)
+
+def handle_backup_action(request):
+    """Hantera backup-åtgärder"""
+    from django.contrib import messages
+    
+    action = request.POST.get('backup_action')
+    
+    if action == 'create_backup':
+        return create_backup(request)
+    elif action == 'delete_backup':
+        return delete_backup(request)
+    elif action == 'restore_backup':
+        return restore_backup(request)
+    else:
+        messages.error(request, 'Ogiltig åtgärd')
+        return redirect('settings')
+
+def get_backup_info(base_dir):
+    """Hämta information om befintliga backuper"""
+    import os
+    from django.conf import settings
+    
+    backup_dir = os.path.join(base_dir, 'backups')
+    backups = []
+    
+    if os.path.exists(backup_dir):
+        for filename in os.listdir(backup_dir):
+            file_path = os.path.join(backup_dir, filename)
+            if os.path.isfile(file_path):
+                stat = os.stat(file_path)
+                from datetime import datetime
+                backup_info = {
+                    'filename': filename,
+                    'size': stat.st_size,
+                    'modified': datetime.fromtimestamp(stat.st_mtime),
+                    'path': file_path,
+                    'stats': get_backup_stats(file_path)
+                }
+                backups.append(backup_info)
+    
+    # Sortera efter senast modifierad
+    backups.sort(key=lambda x: x['modified'], reverse=True)
+    
+    return {
+        'backups': backups,
+        'backup_dir': backup_dir
+    }
+
+def get_backup_stats(backup_path):
+    """Hämta statistik från backup-fil"""
+    import zipfile
+    import json
+    import os
+    
+    try:
+        if backup_path.endswith('.zip'):
+            # Läs statistik från komprimerad backup
+            with zipfile.ZipFile(backup_path, 'r') as zipf:
+                if 'backup_stats.json' in zipf.namelist():
+                    stats_content = zipf.read('backup_stats.json').decode('utf-8')
+                    return json.loads(stats_content)
+
+        elif backup_path.endswith('.sqlite3'):
+            # För icke-komprimerade backuper, leta efter motsvarande stats-fil
+            stats_path = backup_path.replace('.sqlite3', '_stats.json')
+            if os.path.exists(stats_path):
+                with open(stats_path, 'r', encoding='utf-8') as f:
+                    return json.load(f)
+    except Exception as e:
+        # Returnera None om statistik inte kan läsas
+        pass
+    return None
+
+def create_backup(request):
+    """Skapa ny backup"""
+    import subprocess
+    from django.conf import settings
+    from django.contrib import messages
+    
+    try:
+        include_media = request.POST.get('include_media') == 'on'
+        compress = request.POST.get('compress') == 'on'
+        
+        cmd = ['python', 'manage.py', 'backup_database']
+        if include_media:
+            cmd.append('--include-media')
+        if compress:
+            cmd.append('--compress')
+        
+        result = subprocess.run(cmd, capture_output=True, text=True, cwd=settings.BASE_DIR)
+        
+        if result.returncode == 0:
+            messages.success(request, 'Backup skapad framgångsrikt!')
+        else:
+            messages.error(request, f'Fel vid backup: {result.stderr}')
+            
+    except Exception as e:
+        messages.error(request, f'Fel vid backup: {str(e)}')
+    
+    return redirect('settings')
+
+def delete_backup(request):
+    """Ta bort backup"""
+    import os
+    from django.conf import settings
+    from django.contrib import messages
+    
+    filename = request.POST.get('filename')
+    if filename:
+        backup_path = os.path.join(settings.BASE_DIR, 'backups', filename)
+        try:
+            if os.path.exists(backup_path):
+                os.remove(backup_path)
+                messages.success(request, f'Backup {filename} raderad')
+            else:
+                messages.error(request, 'Backup-filen finns inte')
+        except Exception as e:
+            messages.error(request, f'Fel vid radering: {str(e)}')
+    
+    return redirect('settings')
+
+def restore_backup(request):
+    """Återställ från backup"""
+    import os
+    import subprocess
+    from django.conf import settings
+    from django.contrib import messages
+    
+    filename = request.POST.get('filename')
+    if not filename:
+        messages.error(request, 'Ingen backup-fil vald')
+        return redirect('settings')
+    
+    backup_path = os.path.join(settings.BASE_DIR, 'backups', filename)
+    if not os.path.exists(backup_path):
+        messages.error(request, 'Backup-filen finns inte')
+        return redirect('settings')
+    
+    try:
+        # Kör återställningskommandot
+        cmd = ['python', 'manage.py', 'restore_backup', backup_path, '--confirm', '--include-media']
+        result = subprocess.run(cmd, capture_output=True, text=True, cwd=settings.BASE_DIR)
+        
+        if result.returncode == 0:
+            messages.success(request, f'Backup {filename} återställd framgångsrikt!')
+        else:
+            messages.error(request, f'Fel vid återställning: {result.stderr}')
+            
+    except Exception as e:
+        messages.error(request, f'Fel vid återställning: {str(e)}')
+    
+    return redirect('settings')

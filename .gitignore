@@ -71,6 +71,7 @@ cover/
 local_settings.py
 db.sqlite3
 db.sqlite3-journal
+*.backup
 
 # Flask stuff:
 instance/
@@ -210,6 +211,9 @@ media/
 _media/
 staticfiles/
 # static/
+
+# --- Security ---
+SECRET_KEY
 
 # --- Virtual environments ---
 .venv/

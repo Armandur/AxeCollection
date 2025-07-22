@@ -1,5 +1,6 @@
 {% extends 'axes/base.html' %}
 {% load static %}
+{% load axe_filters %}
 
 {% block title %}Inställningar - {{ block.super }}{% endblock %}
 
@@ -18,6 +19,24 @@
                 <i class="bi bi-gear"></i> Systeminställningar
             </h1>
             
+            <!-- Navigering -->
+            <nav class="settings-navbar navbar navbar-expand-lg mb-4 rounded" style="background-color: #f8f9fa !important; border: 1px solid #dee2e6;">
+                <div class="container-fluid">
+                    <span class="navbar-brand mb-0 h6" style="color: #212529 !important;">Navigera till:</span>
+                    <div class="navbar-nav">
+                        <a class="nav-link" href="#public-settings" style="color: #212529 !important;">
+                            <i class="bi bi-eye"></i> Publika inställningar
+                        </a>
+                        <a class="nav-link" href="#display-settings" style="color: #212529 !important;">
+                            <i class="bi bi-list-ul"></i> Visningsinställningar
+                        </a>
+                        <a class="nav-link" href="#backup-management" style="color: #212529 !important;">
+                            <i class="bi bi-cloud-arrow-up"></i> Backup-hantering
+                        </a>
+                    </div>
+                </div>
+            </nav>
+            
             {% if messages %}
                 {% for message in messages %}
                     <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
@@ -31,7 +50,7 @@
                 {% csrf_token %}
                 
                 <!-- Publika inställningar -->
-                <div class="card mb-4">
+                <div class="card mb-4" id="public-settings">
                     <div class="card-header">
                         <h5 class="card-title mb-0">
                             <i class="bi bi-eye"></i> Publika inställningar
@@ -99,7 +118,7 @@
                 </div>
                 
                 <!-- Visningsinställningar -->
-                <div class="card mb-4">
+                <div class="card mb-4" id="display-settings">
                     <div class="card-header">
                         <h5 class="card-title mb-0">
                             <i class="bi bi-list-ul"></i> Visningsinställningar
@@ -280,4 +299,356 @@
         </div>
     </div>
 </div>
+
+            <!-- Backup-hantering -->
+            <div class="container-fluid mt-5" id="backup-management">
+    <div class="row">
+        <div class="col-12">
+            <h2 class="mb-4">
+                <i class="bi bi-cloud-arrow-up"></i> Backup-hantering
+            </h2>
+            
+            <!-- Varning för återställning -->
+            <div class="alert alert-warning alert-dismissible fade show" role="alert">
+                <h5 class="alert-heading">
+                    <i class="bi bi-exclamation-triangle"></i> Viktigt om återställning
+                </h5>
+                <p class="mb-0">
+                    <strong>Återställning från backup ersätter all nuvarande data!</strong> 
+                    Se till att du har en backup av din nuvarande data innan du återställer från en äldre backup.
+                </p>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+            
+            <!-- Skapa ny backup -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-plus-circle"></i> Skapa ny backup
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="backup">
+                        <input type="hidden" name="backup_action" value="create_backup">
+                        
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="form-check form-switch mb-3">
+                                    <input class="form-check-input" type="checkbox" id="include_media" 
+                                           name="include_media" checked>
+                                    <label class="form-check-label" for="include_media">
+                                        <strong>Inkludera media-filer</strong>
+                                    </label>
+                                    <div class="form-text">
+                                        Inkludera alla uppladdade bilder i backup
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-4">
+                                <div class="form-check form-switch mb-3">
+                                    <input class="form-check-input" type="checkbox" id="compress" 
+                                           name="compress" checked>
+                                    <label class="form-check-label" for="compress">
+                                        <strong>Komprimera backup</strong>
+                                    </label>
+                                    <div class="form-text">
+                                        Skapa en komprimerad ZIP-fil
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-4 d-flex align-items-end">
+                                <button type="submit" class="btn btn-success">
+                                    <i class="bi bi-cloud-arrow-up"></i> Skapa backup
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Lista befintliga backuper -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-list-ul"></i> Befintliga backuper
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if backup_info.backups %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Filnamn</th>
+                                        <th>Storlek</th>
+                                        <th>Skapad</th>
+                                        <th>Innehåll</th>
+                                        <th>Åtgärder</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for backup in backup_info.backups %}
+                                        <tr>
+                                            <td>
+                                                <strong>{{ backup.filename }}</strong>
+                                            </td>
+                                            <td>
+                                                <span class="text-muted">{{ backup.size|filesizeformat }}</span>
+                                            </td>
+                                            <td>
+                                                <span class="text-muted">{{ backup.modified|date:"Y-m-d H:i:s" }}</span>
+                                            </td>
+                                            <td>
+                                                {% if backup.stats %}
+                                                    <div class="small">
+                                                        <div class="mb-1">
+                                                            <span class="text-muted">Yxor:</span> <strong>{{ backup.stats.database.axes }}</strong>
+                                                        </div>
+                                                        <div class="mb-1">
+                                                            <span class="text-muted">Kontakter:</span> <strong>{{ backup.stats.database.contacts }}</strong>
+                                                        </div>
+                                                        <div class="mb-1">
+                                                            <span class="text-muted">Tillverkare:</span> <strong>{{ backup.stats.database.manufacturers }}</strong>
+                                                        </div>
+                                                        <div class="mb-1">
+                                                            <span class="text-muted">Transaktioner:</span> <strong>{{ backup.stats.database.transactions }}</strong>
+                                                        </div>
+                                                        <div class="mb-1">
+                                                            <span class="text-muted">Bilder:</span> <strong>{{ backup.stats.database.axe_images|default:0 }}</strong>
+                                                        </div>
+                                                        {% if backup.stats.financial.total_buy_value > 0 %}
+                                                            <div class="mt-2 pt-1 border-top">
+                                                                <span class="text-muted">Köpvärde:</span> <strong>{{ backup.stats.financial.total_buy_value|format_currency }}</strong>
+                                                            </div>
+                                                        {% endif %}
+                                                    </div>
+                                                {% else %}
+                                                    <span class="text-muted">Ingen statistik tillgänglig</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                <div class="btn-group" role="group">
+                                                    <button type="button" class="btn btn-warning btn-sm" 
+                                                            onclick="showRestoreModal('{{ backup.filename }}', '{{ backup.stats.database.axes|default:0 }}', '{{ backup.stats.database.contacts|default:0 }}', '{{ backup.stats.database.manufacturers|default:0 }}', '{{ backup.stats.database.transactions|default:0 }}', '{{ backup.stats.database.axe_images|default:0 }}', '{{ backup.stats.financial.total_buy_value|default:0 }}')">
+                                                        <i class="bi bi-arrow-clockwise"></i> Återställ
+                                                    </button>
+                                                    <button type="button" class="btn btn-danger btn-sm" 
+                                                            onclick="showDeleteModal('{{ backup.filename }}')">
+                                                        <i class="bi bi-trash"></i> Ta bort
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <p class="text-muted">Inga backuper finns ännu.</p>
+                    {% endif %}
+                    
+                    <!-- Information -->
+                    <div class="mt-4">
+                        <h6>Information</h6>
+                        <ul class="text-muted small">
+                            <li>Backuper sparas i: <code>{{ backup_info.backup_dir }}</code></li>
+                            <li>Gamla backuper (äldre än 30 dagar) raderas automatiskt</li>
+                            <li>Backuper inkluderar databas och eventuellt media-filer</li>
+                            <li>Statistik visas för varje backup (antal yxor, kontakter, transaktioner, etc.)</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Restore Backup Modal -->
+<div class="modal fade" id="restoreBackupModal" tabindex="-1" aria-labelledby="restoreBackupModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-warning text-dark">
+                <h5 class="modal-title" id="restoreBackupModalLabel">
+                    <i class="bi bi-exclamation-triangle"></i> Bekräfta återställning
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-danger">
+                    <h6><i class="bi bi-exclamation-triangle"></i> VARNING!</h6>
+                    <p class="mb-0">Återställning från backup kommer att <strong>ersätta all nuvarande data</strong>!</p>
+                </div>
+                <p>Du är på väg att återställa från backup: <strong id="restoreBackupName"></strong></p>
+                <p>Backup innehåller:</p>
+                <div id="restoreBackupContent" class="text-muted ms-3"></div>
+                <p class="text-danger"><strong>Detta går inte att ångra!</strong></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="bi bi-x"></i> Avbryt
+                </button>
+                <form method="post" id="restoreBackupForm" style="display: inline;">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="backup">
+                    <input type="hidden" name="backup_action" value="restore_backup">
+                    <input type="hidden" name="filename" id="restoreBackupFilename">
+                    <button type="submit" class="btn btn-warning">
+                        <i class="bi bi-arrow-clockwise"></i> Ja, återställ från backup
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Backup Modal -->
+<div class="modal fade" id="deleteBackupModal" tabindex="-1" aria-labelledby="deleteBackupModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="deleteBackupModalLabel">
+                    <i class="bi bi-trash"></i> Bekräfta radering
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Är du säker på att du vill radera backup: <strong id="deleteBackupName"></strong>?</p>
+                <p class="text-muted">Denna åtgärd går inte att ångra.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="bi bi-x"></i> Avbryt
+                </button>
+                <form method="post" id="deleteBackupForm" style="display: inline;">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="backup">
+                    <input type="hidden" name="backup_action" value="delete_backup">
+                    <input type="hidden" name="filename" id="deleteBackupFilename">
+                    <button type="submit" class="btn btn-danger">
+                        <i class="bi bi-trash"></i> Ja, radera backup
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Smooth scrolling för navigering */
+html {
+    scroll-behavior: smooth;
+}
+
+/* Padding för att visa headers vid navigering */
+#public-settings,
+#display-settings,
+#backup-management {
+    scroll-margin-top: 4rem;
+}
+
+/* Specifik styling för settings-navigering */
+.settings-navbar {
+    background-color: #f8f9fa !important;
+}
+
+.settings-navbar .navbar-brand {
+    color: #212529 !important;
+}
+
+.settings-navbar .nav-link {
+    color: #212529 !important;
+}
+
+/* Hover-effekt för navigeringslänkar */
+.settings-navbar .nav-link:hover {
+    background-color: rgba(0, 0, 0, 0.1) !important;
+    border-radius: 0.375rem;
+    color: #000 !important;
+}
+
+/* Aktiv länk-styling */
+.settings-navbar .nav-link.active {
+    background-color: rgba(0, 123, 255, 0.15) !important;
+    border-radius: 0.375rem;
+    color: #007bff !important;
+    font-weight: 500;
+}
+
+/* Responsiv navigering */
+@media (max-width: 991.98px) {
+    .navbar-nav {
+        flex-direction: column;
+        width: 100%;
+    }
+    .navbar-nav .nav-link {
+        padding: 0.5rem 1rem;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    }
+}
+</style>
+
+<script>
+// Markera aktiv sektion i navigeringen
+function updateActiveNavLink() {
+    const sections = document.querySelectorAll('[id$="-settings"], [id="backup-management"]');
+    const navLinks = document.querySelectorAll('.settings-navbar .nav-link');
+    
+    let currentSection = '';
+    const scrollPosition = window.scrollY + 100;
+    
+    sections.forEach(section => {
+        const sectionTop = section.offsetTop;
+        const sectionHeight = section.offsetHeight;
+        
+        if (scrollPosition >= sectionTop && scrollPosition < sectionTop + sectionHeight) {
+            currentSection = section.id;
+        }
+    });
+    
+    navLinks.forEach(link => {
+        link.classList.remove('active');
+        if (link.getAttribute('href') === '#' + currentSection) {
+            link.classList.add('active');
+        }
+    });
+}
+
+// Uppdatera aktiv länk vid scrollning
+window.addEventListener('scroll', updateActiveNavLink);
+document.addEventListener('DOMContentLoaded', updateActiveNavLink);
+
+function showRestoreModal(filename, axes, contacts, manufacturers, transactions, images, buyValue) {
+    document.getElementById('restoreBackupName').textContent = filename;
+    
+    // Skapa detaljerad innehållsbeskrivning med separata rader
+    let content = `${axes} yxor\n${contacts} kontakter\n${manufacturers} tillverkare\n${transactions} transaktioner`;
+    if (images > 0) {
+        content += `\n${images} bilder`;
+    }
+    if (buyValue > 0) {
+        content += `\nKöpvärde: ${parseFloat(buyValue).toLocaleString('sv-SE')} kr`;
+    }
+    
+    document.getElementById('restoreBackupContent').innerHTML = content.replace(/\n/g, '<br>');
+    document.getElementById('restoreBackupFilename').value = filename;
+    
+    const modal = new bootstrap.Modal(document.getElementById('restoreBackupModal'));
+    modal.show();
+}
+
+function showDeleteModal(filename) {
+    document.getElementById('deleteBackupName').textContent = filename;
+    document.getElementById('deleteBackupFilename').value = filename;
+    
+    const modal = new bootstrap.Modal(document.getElementById('deleteBackupModal'));
+    modal.show();
+}
+
+
+</script>
+
 {% endblock %} 

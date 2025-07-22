@@ -77,9 +77,14 @@ Ett Django-baserat system för att hantera och katalogisera yxsamlingar med avan
 2. Skapa virtuell miljö: `python -m venv venv`
 3. Aktivera miljö: `source venv/bin/activate` (Linux/Mac) eller `venv\Scripts\activate` (Windows)
 4. Installera beroenden: `pip install -r requirements.txt`
-5. Kör migreringar: `python manage.py migrate`
-6. Skapa superuser: `python manage.py createsuperuser`
-7. Starta servern: `python manage.py runserver`
+5. **Konfigurera SECRET_KEY**: Kopiera `SECRET_KEY.example` till `SECRET_KEY` och ersätt med din egen nyckel:
+   ```bash
+   cp SECRET_KEY.example SECRET_KEY
+   # Generera ny nyckel: python -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())"
+   ```
+6. Kör migreringar: `python manage.py migrate`
+7. Skapa superuser: `python manage.py createsuperuser`
+8. Starta servern: `python manage.py runserver`
 
 ## Utveckling
 

@@ -145,7 +145,20 @@ En checklista för vidareutveckling av AxeCollection. Bocka av med [x] när klar
 44. [x] Förbättrad admin-raderingsvy för yxor – Tydlig lista över vad som tas bort, bockruta för bildradering.
 45. [ ] Batchuppladdning av yxor – Möjlighet att ladda upp flera yxor samtidigt. **(Pausad – kräver vidare diskussion och behovsanalys innan implementation)**
 46. [x] Export/import av data (CSV, Excel) direkt från admin.
-47. [ ] Automatiska backuper av databasen.
+47. [x] Automatiska backuper av databasen.
+    - [x] 47.1 Backup-funktionalitet flyttad från admin till systeminställningsvyn
+    - [x] 47.2 Integrerad backup-hantering i settings.html med modern UI
+    - [x] 47.3 Skapa, ta bort och återställ backuper direkt från inställningssidan
+    - [x] 47.4 Statistik-visning för varje backup (antal yxor, kontakter, transaktioner)
+    - [x] 47.5 Varningar för återställning med bekräftelsedialoger
+    - [x] 47.6 Stöd för komprimerade backuper och media-filer
+    - [x] 47.7 Automatisk rensning av gamla backuper (30 dagar)
+48. [x] Förbättrad navigering på systeminställningssidan.
+    - [x] 48.1 Bootstrap navbar för in-page navigering mellan sektioner
+    - [x] 48.2 Smooth scrolling med scroll-margin-top för att visa headers
+    - [x] 48.3 Aktiv länk-markering baserat på scroll-position
+    - [x] 48.4 Responsiv design för navigeringsmenyn
+    - [x] 48.5 Korrekt styling med ljus bakgrund och mörk text
 48. [x] Eget administratörsgränssnitt för tillverkare
     - [x] 48.1 Redigera tillverkare-knapp kvar på nuvarande plats (endast namnändring)
     - [x] 48.2 Ny redigera-knapp i Informations-gruppen för att redigera information
