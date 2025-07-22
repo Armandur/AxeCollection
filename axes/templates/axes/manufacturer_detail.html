@@ -124,7 +124,6 @@
     <h1 id="manufacturer-name-heading">
         <span id="manufacturer-name-text" style="display:inline;">{{ manufacturer.name }}</span>
         <input id="manufacturer-name-input" type="text" value="{{ manufacturer.name }}" class="form-control" style="width:auto; display:none; max-width:300px;" maxlength="200">
-        <span class="badge bg-secondary">{{ manufacturer.id }}</span>
                         {% if user.is_authenticated %}
                 <button id="edit-name-btn" class="btn btn-outline-secondary btn-sm ms-2" onclick="toggleNameEdit()" title="Redigera namn">
                     <i class="bi bi-pencil"></i>
@@ -137,7 +136,14 @@
             <i class="bi bi-x"></i>
         </button>
     </h1>
-
+    
+    {% if user.is_authenticated %}
+    <div class="d-flex gap-2">
+        <button class="btn btn-outline-danger btn-sm" onclick="showDeleteManufacturerModal()" title="Ta bort tillverkare">
+            <i class="bi bi-trash"></i> Ta bort tillverkare
+        </button>
+    </div>
+    {% endif %}
 </div>
 
 <!-- Statistik -->
@@ -1732,6 +1738,84 @@ function deleteLink(linkId) {
     </div>
 </div>
 
+<!-- Ta bort tillverkare Modal -->
+<div class="modal fade" id="deleteManufacturerModal" tabindex="-1" aria-labelledby="deleteManufacturerModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteManufacturerModalLabel">Ta bort tillverkare</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p><strong>Tillverkare:</strong> {{ manufacturer.name }}</p>
+                <p><strong>Antal yxor:</strong> {{ total_axes }}</p>
+                <p><strong>Antal bilder:</strong> {{ manufacturer.images.count }}</p>
+                
+                {% if total_axes > 0 %}
+                <div class="alert alert-warning">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    <strong>Varning:</strong> Denna tillverkare har {{ total_axes }} yxor kopplade.
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label">Välj vad som ska hända med yxorna:</label>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="axeAction" id="moveToUnknown" value="move" checked>
+                        <label class="form-check-label" for="moveToUnknown">
+                            Flytta yxor till "Okänd tillverkare" (rekommenderat)
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="axeAction" id="moveToSpecific" value="move_to_specific">
+                        <label class="form-check-label" for="moveToSpecific">
+                            Flytta yxor till annan tillverkare
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="axeAction" id="deleteAxes" value="delete">
+                        <label class="form-check-label" for="deleteAxes">
+                            Ta bort alla yxor (VARNING: Detta raderar all data permanent!)
+                        </label>
+                    </div>
+                </div>
+                
+                <!-- Dropdown för tillverkare (visas endast när "Flytta till annan tillverkare" är valt) -->
+                <div class="mb-3" id="manufacturerDropdownContainer" style="display: none;">
+                    <label for="targetManufacturerSelect" class="form-label">Välj tillverkare:</label>
+                    <select class="form-select" id="targetManufacturerSelect">
+                        <option value="">Laddar tillverkare...</option>
+                    </select>
+                </div>
+                {% endif %}
+                
+                <div class="mb-3">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="deleteImages" name="deleteImages">
+                        <label class="form-check-label" for="deleteImages">
+                            Ta bort kopplade bilder ({{ manufacturer.images.count }})
+                        </label>
+                    </div>
+                    <div class="form-text">
+                        <i class="bi bi-info-circle"></i>
+                        Om inte markerat flyttas bilderna till en mapp för "okopplade bilder" med timestamp och a-b-c-namngivning (t.ex. {{ manufacturer.name|slugify }}-{{ manufacturer.id }}-20250717_225600-a.jpg)
+                    </div>
+                </div>
+                
+                <p class="text-danger">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    <strong>Denna åtgärd kan inte ångras!</strong>
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Avbryt</button>
+                <button type="button" class="btn btn-danger" onclick="deleteManufacturer()">
+                    <i class="bi bi-trash"></i> Ta bort tillverkare
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- CSRF Token för AJAX-anrop -->
 {% csrf_token %}
 
@@ -1755,6 +1839,128 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 });
+
+// Visa modal för borttagning av tillverkare
+function showDeleteManufacturerModal() {
+    const modal = new bootstrap.Modal(document.getElementById('deleteManufacturerModal'));
+    modal.show();
+    
+    // Ladda tillverkare för dropdown
+    loadManufacturersForDropdown();
+    
+    // Lägg till event listeners för radio buttons
+    document.querySelectorAll('input[name="axeAction"]').forEach(radio => {
+        radio.addEventListener('change', handleAxeActionChange);
+    });
+}
+
+// Hantera ändring av yxåtgärd
+function handleAxeActionChange() {
+    const moveToSpecific = document.getElementById('moveToSpecific');
+    const dropdownContainer = document.getElementById('manufacturerDropdownContainer');
+    
+    if (moveToSpecific.checked) {
+        dropdownContainer.style.display = 'block';
+    } else {
+        dropdownContainer.style.display = 'none';
+    }
+}
+
+// Ladda tillverkare för dropdown
+function loadManufacturersForDropdown() {
+    const select = document.getElementById('targetManufacturerSelect');
+    const manufacturerId = {{ manufacturer.id }};
+    
+    fetch(`/tillverkare/dropdown/?exclude_id=${manufacturerId}`)
+        .then(response => response.json())
+        .then(data => {
+            select.innerHTML = '<option value="">Välj tillverkare...</option>';
+            data.manufacturers.forEach(manufacturer => {
+                const option = document.createElement('option');
+                option.value = manufacturer.id;
+                option.textContent = manufacturer.name;
+                select.appendChild(option);
+            });
+        })
+        .catch(error => {
+            console.error('Error loading manufacturers:', error);
+            select.innerHTML = '<option value="">Fel vid laddning av tillverkare</option>';
+        });
+}
+
+// Ta bort tillverkare
+function deleteManufacturer() {
+    const axeAction = document.querySelector('input[name="axeAction"]:checked')?.value || 'move';
+    const deleteImages = document.getElementById('deleteImages').checked;
+    const manufacturerId = {{ manufacturer.id }};
+    
+    // Validera val
+    if (axeAction === 'move_to_specific') {
+        const targetManufacturerId = document.getElementById('targetManufacturerSelect').value;
+        if (!targetManufacturerId) {
+            showNotification('Välj en tillverkare att flytta yxor till', 'error');
+            return;
+        }
+    }
+    
+    // Visa laddningsindikator
+    const deleteBtn = document.querySelector('#deleteManufacturerModal .btn-danger');
+    const originalText = deleteBtn.innerHTML;
+    deleteBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Tar bort...';
+    deleteBtn.disabled = true;
+    
+    // Förbered data för skickning
+    const formData = new FormData();
+    formData.append('axe_action', axeAction);
+    formData.append('delete_images', deleteImages);
+    if (axeAction === 'move_to_specific') {
+        formData.append('target_manufacturer_id', document.getElementById('targetManufacturerSelect').value);
+    }
+    
+    // Skicka AJAX-förfrågan
+    fetch(`/tillverkare/${manufacturerId}/ta-bort/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        },
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Visa framgångsmeddelande och omdirigera
+            let message = 'Tillverkare borttagen framgångsrikt';
+            if (data.axes_moved > 0) {
+                if (data.target_manufacturer_name) {
+                    message += `. ${data.axes_moved} yxor flyttades till "${data.target_manufacturer_name}"`;
+                } else {
+                    message += `. ${data.axes_moved} yxor flyttades`;
+                }
+            }
+            if (data.images_moved > 0) {
+                message += `. ${data.images_moved} bilder flyttades till okopplade bilder`;
+            }
+            if (data.images_deleted > 0) {
+                message += `. ${data.images_deleted} bilder togs bort permanent`;
+            }
+            showNotification(message, 'success');
+            setTimeout(() => {
+                window.location.href = '/tillverkare/';
+            }, 2000);
+        } else {
+            // Visa felmeddelande
+            showNotification('Fel vid borttagning: ' + (data.error || 'Okänt fel'), 'error');
+            deleteBtn.innerHTML = originalText;
+            deleteBtn.disabled = false;
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showNotification('Något gick fel vid borttagning', 'error');
+        deleteBtn.innerHTML = originalText;
+        deleteBtn.disabled = false;
+    });
+}
 </script>
 
 {% endblock %} 

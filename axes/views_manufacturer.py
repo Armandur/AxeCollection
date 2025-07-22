@@ -1,11 +1,17 @@
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import render, get_object_or_404, redirect
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.csrf import csrf_exempt
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+from django.contrib.auth.decorators import login_required
+from django.utils import timezone
+from django.contrib import messages
 from .models import Manufacturer, ManufacturerImage, ManufacturerLink, Axe, Transaction
 from django.db.models import Sum
 import json
+import os
+import shutil
+from django.conf import settings
 
 def manufacturer_list(request):
     manufacturers = Manufacturer.objects.all().order_by('name')
@@ -34,6 +40,41 @@ def manufacturer_list(request):
         'default_page_length': default_page_length,
     }
     return render(request, 'axes/manufacturer_list.html', context)
+
+@login_required
+def manufacturer_create(request):
+    """Skapa en ny tillverkare"""
+    if request.method == 'POST':
+        name = request.POST.get('name', '').strip()
+        information = request.POST.get('information', '').strip()
+        
+        if not name:
+            messages.error(request, 'Tillverkarnamn är obligatoriskt')
+            return render(request, 'axes/manufacturer_form.html', {
+                'name': name,
+                'information': information
+            })
+        
+        # Kontrollera om tillverkaren redan finns
+        existing_manufacturer = Manufacturer.objects.filter(name__iexact=name).first()
+        if existing_manufacturer:
+            messages.error(request, f'Tillverkaren "{name}" finns redan')
+            return render(request, 'axes/manufacturer_form.html', {
+                'name': name,
+                'information': information,
+                'existing_manufacturer': existing_manufacturer
+            })
+        
+        # Skapa tillverkaren
+        manufacturer = Manufacturer.objects.create(
+            name=name,
+            information=information if information else None
+        )
+        
+        messages.success(request, f'Tillverkaren "{manufacturer.name}" har skapats')
+        return redirect('manufacturer_detail', pk=manufacturer.pk)
+    
+    return render(request, 'axes/manufacturer_form.html')
 
 def manufacturer_detail(request, pk):
     manufacturer = get_object_or_404(Manufacturer, pk=pk)
@@ -370,6 +411,162 @@ def delete_manufacturer_link(request, link_id):
             'success': False,
             'error': str(e)
         }, status=500)
+
+@login_required
+@require_http_methods(["POST"])
+def delete_manufacturer(request, pk):
+    """Ta bort tillverkare och hantera deras bilder och yxor"""
+    try:
+        manufacturer = get_object_or_404(Manufacturer, pk=pk)
+        axe_action = request.POST.get('axe_action', 'move')
+        target_manufacturer_id = request.POST.get('target_manufacturer_id')
+        
+        axe_count = manufacturer.axe_count
+        image_count = manufacturer.images.count()
+        
+        # Hantera yxor
+        if axe_count > 0:
+            if axe_action == 'delete':
+                # Ta bort alla yxor (och deras bilder flyttas automatiskt till unlinked_images)
+                for axe in manufacturer.axes:
+                    axe.delete()
+                target_manufacturer_name = None
+            elif axe_action == 'move_to_specific' and target_manufacturer_id:
+                # Flytta yxor till specifik tillverkare
+                try:
+                    target_manufacturer = Manufacturer.objects.get(id=target_manufacturer_id)
+                    manufacturer.axe_set.update(manufacturer=target_manufacturer)
+                    target_manufacturer_name = target_manufacturer.name
+                except Manufacturer.DoesNotExist:
+                    return JsonResponse({
+                        'success': False,
+                        'error': f'Tillverkare med ID {target_manufacturer_id} finns inte'
+                    })
+            else:
+                # Flytta yxor till "Okänd tillverkare"
+                unknown_manufacturer, created = Manufacturer.objects.get_or_create(
+                    name='Okänd tillverkare'
+                )
+                manufacturer.axe_set.update(manufacturer=unknown_manufacturer)
+                target_manufacturer_name = unknown_manufacturer.name
+        
+        # Hantera tillverkarbilder
+        delete_images = request.POST.get('delete_images', 'false').lower() == 'true'
+        if image_count > 0:
+            if delete_images:
+                # Ta bort bilderna permanent
+                for image in manufacturer.images.all():
+                    image.delete()
+                images_moved = 0
+            else:
+                # Flytta bilderna till okopplade bilder
+                move_manufacturer_images_to_unlinked(manufacturer)
+                images_moved = image_count
+        
+        # Ta bort tillverkaren
+        manufacturer_name = manufacturer.name
+        manufacturer.delete()
+        
+        return JsonResponse({
+            'success': True,
+            'message': f'Tillverkare "{manufacturer_name}" har tagits bort',
+            'axes_moved': axe_count if axe_action != 'delete' else 0,
+            'axes_deleted': axe_count if axe_action == 'delete' else 0,
+            'images_moved': images_moved if 'images_moved' in locals() else 0,
+            'images_deleted': image_count if delete_images else 0,
+            'target_manufacturer_name': target_manufacturer_name
+        })
+        
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        })
+
+@require_http_methods(["GET"])
+def get_manufacturers_for_dropdown(request):
+    """Hämta tillverkare för dropdown-menyn (exkluderar den som ska tas bort)"""
+    exclude_id = request.GET.get('exclude_id')
+    manufacturers = Manufacturer.objects.exclude(id=exclude_id).order_by('name')
+    
+    return JsonResponse({
+        'manufacturers': [
+            {'id': m.id, 'name': m.name} 
+            for m in manufacturers
+        ]
+    })
+
+@require_http_methods(["GET"])
+def check_manufacturer_name(request):
+    """Kontrollera om ett tillverkarnamn redan finns"""
+    name = request.GET.get('name', '').strip()
+    if not name:
+        return JsonResponse({'exists': False, 'manufacturer': None})
+    
+    existing_manufacturer = Manufacturer.objects.filter(name__iexact=name).first()
+    if existing_manufacturer:
+        return JsonResponse({
+            'exists': True,
+            'manufacturer': {
+                'id': existing_manufacturer.id,
+                'name': existing_manufacturer.name,
+                'information': existing_manufacturer.information or '',
+                'axe_count': existing_manufacturer.axe_set.count()
+            }
+        })
+    
+    return JsonResponse({'exists': False, 'manufacturer': None})
+
+def move_manufacturer_images_to_unlinked(manufacturer):
+    """Flyttar tillverkarbilder till unlinked_images-mappen med tillverkarnamn"""
+    timestamp = timezone.now().strftime('%Y%m%d_%H%M%S')
+    
+    # Skapa mapp för okopplade tillverkarbilder
+    unlinked_folder = os.path.join(settings.MEDIA_ROOT, 'unlinked_images', 'manufacturers')
+    os.makedirs(unlinked_folder, exist_ok=True)
+    
+    moved_count = 0
+    error_count = 0
+    
+    # Skapa ett säkert filnamn från tillverkarnamnet
+    safe_manufacturer_name = "".join(c for c in manufacturer.name if c.isalnum() or c in (' ', '-', '_')).rstrip()
+    safe_manufacturer_name = safe_manufacturer_name.replace(' ', '_')
+    
+    # Sortera bilder efter typ och ordning
+    sorted_images = manufacturer.images.order_by('image_type', 'order')
+    
+    for index, manufacturer_image in enumerate(sorted_images):
+        try:
+            if manufacturer_image.image and manufacturer_image.image.name:
+                # Bestäm filnamn (a, b, c, etc.)
+                letter = chr(97 + index)  # 97 = 'a' i ASCII
+                
+                # Hämta filändelse från originalfilen
+                original_ext = os.path.splitext(manufacturer_image.image.name)[1]
+                new_filename = f"{safe_manufacturer_name}-{manufacturer.id}-{timestamp}-{letter}{original_ext}"
+                new_path = os.path.join(unlinked_folder, new_filename)
+                
+                # Kopiera filen
+                if os.path.exists(manufacturer_image.image.path):
+                    shutil.copy2(manufacturer_image.image.path, new_path)
+                    
+                    # Kopiera även .webp-filen om den finns
+                    webp_path = os.path.splitext(manufacturer_image.image.path)[0] + '.webp'
+                    if os.path.exists(webp_path):
+                        webp_new_path = os.path.join(unlinked_folder, f"{safe_manufacturer_name}-{manufacturer.id}-{timestamp}-{letter}.webp")
+                        shutil.copy2(webp_path, webp_new_path)
+                    
+                    moved_count += 1
+                
+                # Ta bort originalbilden från databasen och filsystemet
+                manufacturer_image.delete()
+                
+        except Exception as e:
+            error_count += 1
+            # Logga felet om så önskas
+            pass
+    
+    return moved_count, error_count
 
 @require_http_methods(["POST"])
 def reorder_manufacturer_links(request):

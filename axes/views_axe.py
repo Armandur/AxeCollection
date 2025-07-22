@@ -23,7 +23,7 @@ from django.contrib import messages
 
 def move_images_to_unlinked_folder(axe_images, delete_images=False):
     """
-    Flyttar bilder till en 'okopplade bilder'-mapp med timestamp och a-b-c-namngivning.
+    Flyttar yxbilder till en 'okopplade bilder'-mapp med yx-ID och a-b-c-namngivning.
     
     Args:
         axe_images: QuerySet av AxeImage-objekt
@@ -49,46 +49,52 @@ def move_images_to_unlinked_folder(axe_images, delete_images=False):
     # Skapa timestamp för borttagning
     timestamp = timezone.now().strftime('%Y%m%d_%H%M%S')
     
-    # Skapa mapp för okopplade bilder
-    unlinked_folder = os.path.join(settings.MEDIA_ROOT, 'unlinked_images')
+    # Skapa mapp för okopplade yxbilder
+    unlinked_folder = os.path.join(settings.MEDIA_ROOT, 'unlinked_images', 'axes')
     os.makedirs(unlinked_folder, exist_ok=True)
     
     moved_count = 0
     error_count = 0
     
-    # Sortera bilder efter order för att få rätt a-b-c-namngivning
-    sorted_images = axe_images.order_by('order')
+    # Gruppera bilder efter yxa för att få rätt namngivning
+    axes_with_images = {}
+    for axe_image in axe_images.select_related('axe').order_by('axe__id', 'order'):
+        axe_id = axe_image.axe.id
+        if axe_id not in axes_with_images:
+            axes_with_images[axe_id] = []
+        axes_with_images[axe_id].append(axe_image)
     
-    for index, axe_image in enumerate(sorted_images):
-        try:
-            if axe_image.image and axe_image.image.name:
-                # Bestäm filnamn (a, b, c, etc.)
-                letter = chr(97 + index)  # 97 = 'a' i ASCII
-                
-                # Hämta filändelse från originalfilen
-                original_ext = os.path.splitext(axe_image.image.name)[1]
-                new_filename = f"{timestamp}-{letter}{original_ext}"
-                new_path = os.path.join(unlinked_folder, new_filename)
-                
-                # Kopiera filen
-                if os.path.exists(axe_image.image.path):
-                    shutil.copy2(axe_image.image.path, new_path)
+    for axe_id, images in axes_with_images.items():
+        for index, axe_image in enumerate(images):
+            try:
+                if axe_image.image and axe_image.image.name:
+                    # Bestäm filnamn (a, b, c, etc.)
+                    letter = chr(97 + index)  # 97 = 'a' i ASCII
                     
-                    # Kopiera även .webp-filen om den finns
-                    webp_path = os.path.splitext(axe_image.image.path)[0] + '.webp'
-                    if os.path.exists(webp_path):
-                        webp_new_path = os.path.join(unlinked_folder, f"{timestamp}-{letter}.webp")
-                        shutil.copy2(webp_path, webp_new_path)
+                    # Hämta filändelse från originalfilen
+                    original_ext = os.path.splitext(axe_image.image.name)[1]
+                    new_filename = f"yxa-{axe_id}-{timestamp}-{letter}{original_ext}"
+                    new_path = os.path.join(unlinked_folder, new_filename)
                     
-                    moved_count += 1
-                
-                # Ta bort originalbilden från databasen och filsystemet
-                axe_image.delete()
-                
-        except Exception as e:
-            error_count += 1
-            # Logga felet om så önskas
-            pass
+                    # Kopiera filen
+                    if os.path.exists(axe_image.image.path):
+                        shutil.copy2(axe_image.image.path, new_path)
+                        
+                        # Kopiera även .webp-filen om den finns
+                        webp_path = os.path.splitext(axe_image.image.path)[0] + '.webp'
+                        if os.path.exists(webp_path):
+                            webp_new_path = os.path.join(unlinked_folder, f"yxa-{axe_id}-{timestamp}-{letter}.webp")
+                            shutil.copy2(webp_path, webp_new_path)
+                        
+                        moved_count += 1
+                    
+                    # Ta bort originalbilden från databasen och filsystemet
+                    axe_image.delete()
+                    
+            except Exception as e:
+                error_count += 1
+                # Logga felet om så önskas
+                pass
     
     return {
         'moved': moved_count, 
@@ -1255,62 +1261,118 @@ def unlinked_images_view(request):
     import os
     from datetime import datetime
     
-    unlinked_folder = os.path.join(settings.MEDIA_ROOT, 'unlinked_images')
+    unlinked_base_folder = os.path.join(settings.MEDIA_ROOT, 'unlinked_images')
     
-    if not os.path.exists(unlinked_folder):
+    if not os.path.exists(unlinked_base_folder):
         return render(request, 'axes/unlinked_images.html', {
-            'images': [],
+            'axe_groups': [],
+            'manufacturer_groups': [],
             'total_count': 0,
             'total_size': 0
         })
     
-    # Hämta alla bildfiler i mappen (exkluderar .webp för webboptimering)
+    # Hämta alla bildfiler i båda mapparna (exkluderar .webp för webboptimering)
     image_extensions = ['*.jpg', '*.jpeg', '*.png', '*.gif', '*.bmp']
-    all_files = []
     
-    for ext in image_extensions:
-        all_files.extend(glob.glob(os.path.join(unlinked_folder, ext)))
+    # Yxbilder
+    axe_folder = os.path.join(unlinked_base_folder, 'axes')
+    axe_files = []
+    if os.path.exists(axe_folder):
+        for ext in image_extensions:
+            axe_files.extend(glob.glob(os.path.join(axe_folder, ext)))
     
-    # Gruppera bilder efter timestamp (före första bindestrecket)
-    image_groups = {}
-    total_size = 0
+    # Tillverkarbilder
+    manufacturer_folder = os.path.join(unlinked_base_folder, 'manufacturers')
+    manufacturer_files = []
+    if os.path.exists(manufacturer_folder):
+        for ext in image_extensions:
+            manufacturer_files.extend(glob.glob(os.path.join(manufacturer_folder, ext)))
     
-    for file_path in all_files:
+    # Gruppera yxbilder efter yx-ID
+    axe_groups = {}
+    for file_path in axe_files:
         filename = os.path.basename(file_path)
         file_size = os.path.getsize(file_path)
-        total_size += file_size
         
-        # Extrahera timestamp från filnamnet (t.ex. "20250717_225600-a.jpg" -> "20250717_225600")
+        # Extrahera yx-ID från filnamnet (t.ex. "yxa-123-20250717_225600-a.jpg" -> "123")
+        if filename.startswith('yxa-'):
+            parts = filename.split('-')
+            if len(parts) >= 3:
+                axe_id = parts[1]
+                timestamp_part = parts[2]
+                try:
+                    timestamp_obj = datetime.strptime(timestamp_part, '%Y%m%d_%H%M%S')
+                    formatted_timestamp = timestamp_obj.strftime('%Y-%m-%d %H:%M:%S')
+                except ValueError:
+                    formatted_timestamp = timestamp_part
+                
+                if axe_id not in axe_groups:
+                    axe_groups[axe_id] = {
+                        'axe_id': axe_id,
+                        'timestamp': formatted_timestamp,
+                        'images': []
+                    }
+                
+                axe_groups[axe_id]['images'].append({
+                    'filename': filename,
+                    'file_path': file_path,
+                    'url': f'/media/unlinked_images/axes/{filename}',
+                    'size': file_size,
+                    'size_formatted': f'{file_size / 1024:.1f} KB' if file_size < 1024*1024 else f'{file_size / (1024*1024):.1f} MB'
+                })
+    
+    # Gruppera tillverkarbilder efter tillverkare
+    manufacturer_groups = {}
+    for file_path in manufacturer_files:
+        filename = os.path.basename(file_path)
+        file_size = os.path.getsize(file_path)
+        
+        # Extrahera tillverkarnamn och ID från filnamnet (t.ex. "Hults_bruk-15-20250717_225600-a.jpg")
         if '-' in filename:
-            timestamp_part = filename.split('-')[0]
-            try:
-                # Försök parsa timestamp
-                timestamp_obj = datetime.strptime(timestamp_part, '%Y%m%d_%H%M%S')
-                formatted_timestamp = timestamp_obj.strftime('%Y-%m-%d %H:%M:%S')
-            except ValueError:
-                formatted_timestamp = timestamp_part
-        else:
-            formatted_timestamp = "Okänd"
-        
-        if formatted_timestamp not in image_groups:
-            image_groups[formatted_timestamp] = []
-        
-        image_groups[formatted_timestamp].append({
-            'filename': filename,
-            'file_path': file_path,
-            'url': f'/media/unlinked_images/{filename}',
-            'size': file_size,
-            'size_formatted': f'{file_size / 1024:.1f} KB' if file_size < 1024*1024 else f'{file_size / (1024*1024):.1f} MB'
-        })
+            parts = filename.split('-')
+            if len(parts) >= 4:
+                manufacturer_name = parts[0].replace('_', ' ')
+                manufacturer_id = parts[1]
+                timestamp_part = parts[2]
+                try:
+                    timestamp_obj = datetime.strptime(timestamp_part, '%Y%m%d_%H%M%S')
+                    formatted_timestamp = timestamp_obj.strftime('%Y-%m-%d %H:%M:%S')
+                except ValueError:
+                    formatted_timestamp = timestamp_part
+                
+                group_key = f"{manufacturer_name}-{manufacturer_id}"
+                if group_key not in manufacturer_groups:
+                    manufacturer_groups[group_key] = {
+                        'manufacturer_name': manufacturer_name,
+                        'manufacturer_id': manufacturer_id,
+                        'timestamp': formatted_timestamp,
+                        'images': []
+                    }
+                
+                manufacturer_groups[group_key]['images'].append({
+                    'filename': filename,
+                    'file_path': file_path,
+                    'url': f'/media/unlinked_images/manufacturers/{filename}',
+                    'size': file_size,
+                    'size_formatted': f'{file_size / 1024:.1f} KB' if file_size < 1024*1024 else f'{file_size / (1024*1024):.1f} MB'
+                })
     
     # Sortera grupper efter timestamp (nyaste först)
-    sorted_groups = sorted(image_groups.items(), key=lambda x: x[0], reverse=True)
+    sorted_axe_groups = sorted(axe_groups.values(), key=lambda x: x['timestamp'], reverse=True)
+    sorted_manufacturer_groups = sorted(manufacturer_groups.values(), key=lambda x: x['timestamp'], reverse=True)
+    
+    # Beräkna total statistik
+    total_count = len(axe_files) + len(manufacturer_files)
+    total_size = sum(os.path.getsize(f) for f in axe_files + manufacturer_files)
     
     context = {
-        'image_groups': sorted_groups,
-        'total_count': len(all_files),
+        'axe_groups': sorted_axe_groups,
+        'manufacturer_groups': sorted_manufacturer_groups,
+        'total_count': total_count,
         'total_size': total_size,
-        'total_size_formatted': f'{total_size / 1024:.1f} KB' if total_size < 1024*1024 else f'{total_size / (1024*1024):.1f} MB'
+        'total_size_formatted': f'{total_size / 1024:.1f} KB' if total_size < 1024*1024 else f'{total_size / (1024*1024):.1f} MB',
+        'axe_count': len(axe_files),
+        'manufacturer_count': len(manufacturer_files)
     }
     
     return render(request, 'axes/unlinked_images.html', context)
@@ -1320,10 +1382,17 @@ def delete_unlinked_image(request):
     """Ta bort en okopplad bild (både original och .webp-version)"""
     try:
         filename = request.POST.get('filename')
+        image_type = request.POST.get('type', 'axe')  # 'axe' eller 'manufacturer'
         if not filename:
             return JsonResponse({'success': False, 'error': 'Inget filnamn angivet'})
         
-        file_path = os.path.join(settings.MEDIA_ROOT, 'unlinked_images', filename)
+        # Bestäm rätt mapp baserat på bildtyp
+        if image_type == 'manufacturer':
+            folder = 'manufacturers'
+        else:
+            folder = 'axes'
+        
+        file_path = os.path.join(settings.MEDIA_ROOT, 'unlinked_images', folder, filename)
         
         if os.path.exists(file_path):
             # Ta bort originalfilen
@@ -1331,7 +1400,7 @@ def delete_unlinked_image(request):
             
             # Ta bort även .webp-versionen om den finns
             name_without_ext = os.path.splitext(filename)[0]
-            webp_path = os.path.join(settings.MEDIA_ROOT, 'unlinked_images', f"{name_without_ext}.webp")
+            webp_path = os.path.join(settings.MEDIA_ROOT, 'unlinked_images', folder, f"{name_without_ext}.webp")
             if os.path.exists(webp_path):
                 os.remove(webp_path)
             
@@ -1350,31 +1419,41 @@ def download_unlinked_images(request):
     from django.http import HttpResponse
     
     try:
-        unlinked_folder = os.path.join(settings.MEDIA_ROOT, 'unlinked_images')
+        unlinked_base_folder = os.path.join(settings.MEDIA_ROOT, 'unlinked_images')
         
-        if not os.path.exists(unlinked_folder):
+        if not os.path.exists(unlinked_base_folder):
             return JsonResponse({'success': False, 'error': 'Inga okopplade bilder att ladda ner'})
         
         # Kontrollera om specifika filer är valda
         selected_files = request.POST.getlist('selected_files')
+        selected_types = request.POST.getlist('selected_types')  # 'axe' eller 'manufacturer'
         
         # Skapa temporär ZIP-fil
         with tempfile.NamedTemporaryFile(delete=False, suffix='.zip') as tmp_file:
             with zipfile.ZipFile(tmp_file.name, 'w') as zipf:
-                if selected_files:
+                if selected_files and selected_types:
                     # Ladda ner endast valda filer
-                    for filename in selected_files:
-                        file_path = os.path.join(unlinked_folder, filename)
-                        if os.path.exists(file_path) and not filename.endswith('.webp'):
-                            zipf.write(file_path, filename)
+                    for i, filename in enumerate(selected_files):
+                        if i < len(selected_types):
+                            image_type = selected_types[i]
+                            if image_type == 'manufacturer':
+                                folder = 'manufacturers'
+                            else:
+                                folder = 'axes'
+                            
+                            file_path = os.path.join(unlinked_base_folder, folder, filename)
+                            if os.path.exists(file_path) and not filename.endswith('.webp'):
+                                # Lägg till i ZIP med mappstruktur
+                                arcname = os.path.join(folder, filename)
+                                zipf.write(file_path, arcname)
                 else:
                     # Ladda ner alla filer (fallback för GET-requests)
-                    for root, dirs, files in os.walk(unlinked_folder):
+                    for root, dirs, files in os.walk(unlinked_base_folder):
                         for file in files:
                             # Exkludera .webp-filer från ZIP-nedladdning
                             if not file.endswith('.webp'):
                                 file_path = os.path.join(root, file)
-                                arcname = os.path.relpath(file_path, unlinked_folder)
+                                arcname = os.path.relpath(file_path, unlinked_base_folder)
                                 zipf.write(file_path, arcname)
         
         # Läs ZIP-filen och skicka som response

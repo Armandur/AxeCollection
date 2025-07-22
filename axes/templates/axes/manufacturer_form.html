@@ -1,0 +1,298 @@
+{% extends 'axes/base.html' %}
+{% load axe_filters %}
+
+{% block title %}Ny tillverkare - {{ block.super }}{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="https://unpkg.com/easymde/dist/easymde.min.css">
+<script src="https://unpkg.com/easymde/dist/easymde.min.js"></script>
+<style>
+    .form-container {
+        max-width: 800px;
+        margin: 0 auto;
+    }
+    
+    .form-section {
+        background: white;
+        border: 1px solid #dee2e6;
+        border-radius: 0.375rem;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .form-section h3 {
+        color: #495057;
+        margin-bottom: 1rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 2px solid #e9ecef;
+    }
+    
+    .required-field::after {
+        content: " *";
+        color: #dc3545;
+    }
+    
+    .help-text {
+        font-size: 0.875rem;
+        color: #6c757d;
+        margin-top: 0.25rem;
+    }
+    
+    .preview-section {
+        background: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 0.375rem;
+        padding: 1rem;
+        margin-top: 1rem;
+    }
+    
+    .preview-section h5 {
+        color: #495057;
+        margin-bottom: 0.5rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <h1 class="h3 mb-0">
+                    <i class="fas fa-plus me-2"></i>
+                    Ny tillverkare
+                </h1>
+                <a href="{% url 'manufacturer_list' %}" class="btn btn-outline-secondary btn-sm">
+                    <i class="fas fa-arrow-left me-1"></i>
+                    Tillbaka till lista
+                </a>
+            </div>
+        </div>
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <!-- Dynamisk varning för befintlig tillverkare -->
+    <div id="existingManufacturerAlert" class="alert alert-warning alert-dismissible fade show" role="alert" style="display: none;">
+        <div class="d-flex align-items-center">
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            <div>
+                <strong id="existingManufacturerName"></strong>
+                <br>
+                <small class="text-muted" id="existingManufacturerInfo"></small>
+            </div>
+        </div>
+        <div class="mt-2">
+            <a id="existingManufacturerLink" href="#" class="btn btn-outline-primary btn-sm">
+                <i class="fas fa-eye me-1"></i>
+                Visa befintlig tillverkare
+            </a>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+
+    <div class="form-container">
+        <form method="post" id="manufacturerForm">
+            {% csrf_token %}
+            
+            <!-- Grundinformation -->
+            <div class="form-section">
+                <h3>
+                    <i class="fas fa-info-circle me-2"></i>
+                    Grundinformation
+                </h3>
+                
+                <div class="mb-3">
+                    <label for="name" class="form-label required-field">Tillverkarnamn</label>
+                    <input type="text" 
+                           class="form-control {% if form.name.errors %}is-invalid{% endif %}" 
+                           id="name" 
+                           name="name" 
+                           value="{{ name|default:'' }}"
+                           maxlength="200" 
+                           required>
+                    <div class="help-text">
+                        Ange tillverkarens namn. Detta fält är obligatoriskt.
+                    </div>
+                    {% if form.name.errors %}
+                        <div class="invalid-feedback">
+                            {{ form.name.errors.0 }}
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <div class="mb-3">
+                    <label for="information" class="form-label">Information</label>
+                    <textarea id="information" 
+                              name="information" 
+                              placeholder="Beskriv tillverkaren, deras historia, specialiteter, etc...">{{ information|default:'' }}</textarea>
+                    <div class="help-text">
+                        Valfri information om tillverkaren. Stöder Markdown-formatering.
+                    </div>
+                </div>
+            </div>
+
+            <!-- Förhandsvisning -->
+            <div class="form-section">
+                <h3>
+                    <i class="fas fa-eye me-2"></i>
+                    Förhandsvisning
+                </h3>
+                <div class="preview-section">
+                    <h5>Namn:</h5>
+                    <p id="previewName" class="mb-3">-</p>
+                    
+                    <h5>Information:</h5>
+                    <div id="previewInformation">
+                        <em class="text-muted">Ingen information tillagd ännu</em>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Åtgärder -->
+            <div class="form-section">
+                <div class="d-flex justify-content-between align-items-center">
+                    <a href="{% url 'manufacturer_list' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-times me-1"></i>
+                        Avbryt
+                    </a>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-1"></i>
+                        Skapa tillverkare
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+let easyMDE = null;
+let nameCheckTimeout = null;
+
+document.addEventListener('DOMContentLoaded', function() {
+    const nameInput = document.getElementById('name');
+    const informationInput = document.getElementById('information');
+    const previewName = document.getElementById('previewName');
+    const previewInformation = document.getElementById('previewInformation');
+    const existingManufacturerAlert = document.getElementById('existingManufacturerAlert');
+    
+    // Initiera EasyMDE för information-fältet
+    easyMDE = new EasyMDE({
+        element: informationInput,
+        spellChecker: false,
+        status: false,
+        placeholder: 'Beskriv tillverkaren, deras historia, specialiteter, etc...',
+        toolbar: [
+            'bold', 'italic', 'heading', '|',
+            'quote', 'unordered-list', 'ordered-list', '|',
+            'link', 'image', '|',
+            'preview', 'side-by-side', 'fullscreen', '|',
+            'guide'
+        ],
+        minHeight: '200px',
+        maxHeight: '400px'
+    });
+    
+    // Debounce-funktion för namnkontroll
+    function debounce(func, wait) {
+        return function executedFunction(...args) {
+            const later = () => {
+                clearTimeout(nameCheckTimeout);
+                func(...args);
+            };
+            clearTimeout(nameCheckTimeout);
+            nameCheckTimeout = setTimeout(later, wait);
+        };
+    }
+    
+    // Kontrollera om tillverkarnamn redan finns
+    async function checkManufacturerName(name) {
+        if (!name || name.length < 2) {
+            existingManufacturerAlert.style.display = 'none';
+            return;
+        }
+        
+        try {
+            const response = await fetch(`{% url 'check_manufacturer_name' %}?name=${encodeURIComponent(name)}`);
+            const data = await response.json();
+            
+            if (data.exists) {
+                const manufacturer = data.manufacturer;
+                const nameElement = document.getElementById('existingManufacturerName');
+                const infoElement = document.getElementById('existingManufacturerInfo');
+                const linkElement = document.getElementById('existingManufacturerLink');
+                
+                nameElement.textContent = `Tillverkaren "${manufacturer.name}" finns redan!`;
+                
+                if (manufacturer.information) {
+                    // Truncate information till ~50 tecken
+                    const truncated = manufacturer.information.length > 50 
+                        ? manufacturer.information.substring(0, 50) + '...'
+                        : manufacturer.information;
+                    infoElement.textContent = truncated;
+                } else {
+                    infoElement.textContent = 'Ingen information tillagd ännu.';
+                }
+                
+                linkElement.href = `/tillverkare/${manufacturer.id}/`;
+                
+                existingManufacturerAlert.style.display = 'block';
+            } else {
+                existingManufacturerAlert.style.display = 'none';
+            }
+        } catch (error) {
+            console.error('Fel vid kontroll av tillverkarnamn:', error);
+        }
+    }
+    
+    // Debounced namnkontroll
+    const debouncedNameCheck = debounce(checkManufacturerName, 500);
+    
+    // Uppdatera förhandsvisning och kontrollera namn när namn ändras
+    nameInput.addEventListener('input', function() {
+        const name = this.value.trim();
+        if (name) {
+            previewName.textContent = name;
+            debouncedNameCheck(name);
+        } else {
+            previewName.textContent = '-';
+            existingManufacturerAlert.style.display = 'none';
+        }
+    });
+    
+    // Uppdatera förhandsvisning när information ändras
+    easyMDE.codemirror.on('change', function() {
+        const information = easyMDE.value().trim();
+        if (information) {
+            // Enkel Markdown-förhandsvisning
+            const formatted = information
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                .replace(/\n/g, '<br>');
+            previewInformation.innerHTML = formatted;
+        } else {
+            previewInformation.innerHTML = '<em class="text-muted">Ingen information tillagd ännu</em>';
+        }
+    });
+    
+    // Validering vid submit
+    document.getElementById('manufacturerForm').addEventListener('submit', function(e) {
+        const name = nameInput.value.trim();
+        if (!name) {
+            e.preventDefault();
+            alert('Tillverkarnamn är obligatoriskt');
+            nameInput.focus();
+            return false;
+        }
+    });
+});
+</script>
+{% endblock %} 

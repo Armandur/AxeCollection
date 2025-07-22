@@ -203,8 +203,12 @@
             <div class="stat-label">Total storlek</div>
         </div>
         <div class="stat-card">
-            <div class="stat-number">{{ image_groups|length }}</div>
-            <div class="stat-label">Antal grupper</div>
+            <div class="stat-number">{{ axe_count }}</div>
+            <div class="stat-label">Yxbilder</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">{{ manufacturer_count }}</div>
+            <div class="stat-label">Tillverkarbilder</div>
         </div>
     </div>
 
@@ -239,51 +243,109 @@
             </div>
         </div>
 
-        <!-- Bildgrupper -->
-        {% for timestamp, images in image_groups %}
-            <div class="timestamp-group">
-                <div class="timestamp-header">
-                    <div class="timestamp-title">{{ timestamp }}</div>
-                    <div class="timestamp-count">{{ images|length }} bilder</div>
-                </div>
-                
-                <div class="image-grid">
-                    {% for image in images %}
-                        <div class="image-card">
-                            <div class="image-container">
-                                {% if image.filename|slice:"-4:" == ".jpg" or image.filename|slice:"-5:" == ".jpeg" or image.filename|slice:"-4:" == ".png" or image.filename|slice:"-4:" == ".gif" or image.filename|slice:"-4:" == ".bmp" %}
-                                    {% with webp_url=image.url|slice:":-4"|add:".webp" %}
-                                        <img src="{{ webp_url }}" alt="{{ image.filename }}" loading="lazy" onerror="this.src='{{ image.url }}'">
-                                    {% endwith %}
-                                {% else %}
-                                    <img src="{{ image.url }}" alt="{{ image.filename }}" loading="lazy">
-                                {% endif %}
-                                <div class="image-actions">
-                                    <button type="button" class="action-btn download-btn" 
-                                            onclick="downloadImage('{{ image.filename }}')" 
-                                            title="Ladda ner">
-                                        <i class="fas fa-download"></i>
-                                    </button>
-                                    <button type="button" class="action-btn delete-btn" 
-                                            onclick="deleteImage('{{ image.filename }}')" 
-                                            title="Ta bort">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
+        <!-- Yxbilder -->
+        {% if axe_groups %}
+            <h4 class="mb-3">
+                <i class="fas fa-axe me-2"></i>
+                Yxbilder
+            </h4>
+            {% for group in axe_groups %}
+                <div class="timestamp-group">
+                    <div class="timestamp-header">
+                        <div class="timestamp-title">Yxa {{ group.axe_id }} - {{ group.timestamp }}</div>
+                        <div class="timestamp-count">{{ group.images|length }} bilder</div>
+                    </div>
+                    
+                    <div class="image-grid">
+                        {% for image in group.images %}
+                            <div class="image-card">
+                                <div class="image-container">
+                                    {% if image.filename|slice:"-4:" == ".jpg" or image.filename|slice:"-5:" == ".jpeg" or image.filename|slice:"-4:" == ".png" or image.filename|slice:"-4:" == ".gif" or image.filename|slice:"-4:" == ".bmp" %}
+                                        {% with webp_url=image.url|slice:":-4"|add:".webp" %}
+                                            <img src="{{ webp_url }}" alt="{{ image.filename }}" loading="lazy" onerror="this.src='{{ image.url }}'">
+                                        {% endwith %}
+                                    {% else %}
+                                        <img src="{{ image.url }}" alt="{{ image.filename }}" loading="lazy">
+                                    {% endif %}
+                                    <div class="image-actions">
+                                        <button type="button" class="action-btn download-btn" 
+                                                onclick="downloadImage('{{ image.filename }}', 'axe')" 
+                                                title="Ladda ner">
+                                            <i class="fas fa-download"></i>
+                                        </button>
+                                        <button type="button" class="action-btn delete-btn" 
+                                                onclick="deleteImage('{{ image.filename }}', 'axe')" 
+                                                title="Ta bort">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                    <div class="form-check position-absolute" style="top: 0.5rem; left: 0.5rem;">
+                                        <input class="form-check-input image-checkbox" type="checkbox" 
+                                               value="{{ image.filename }}" data-type="axe" id="check_{{ image.filename }}">
+                                    </div>
                                 </div>
-                                <div class="form-check position-absolute" style="top: 0.5rem; left: 0.5rem;">
-                                    <input class="form-check-input image-checkbox" type="checkbox" 
-                                           value="{{ image.filename }}" id="check_{{ image.filename }}">
+                                <div class="image-info">
+                                    <div class="image-filename">{{ image.filename }}</div>
+                                    <div class="image-meta">{{ image.size_formatted }}</div>
                                 </div>
                             </div>
-                            <div class="image-info">
-                                <div class="image-filename">{{ image.filename }}</div>
-                                <div class="image-meta">{{ image.size_formatted }}</div>
-                            </div>
-                        </div>
-                    {% endfor %}
+                        {% endfor %}
+                    </div>
                 </div>
-            </div>
-        {% endfor %}
+            {% endfor %}
+        {% endif %}
+
+        <!-- Tillverkarbilder -->
+        {% if manufacturer_groups %}
+            <h4 class="mb-3 mt-5">
+                <i class="fas fa-industry me-2"></i>
+                Tillverkarbilder
+            </h4>
+            {% for group in manufacturer_groups %}
+                <div class="timestamp-group">
+                    <div class="timestamp-header">
+                        <div class="timestamp-title">{{ group.manufacturer_name }} - {{ group.timestamp }}</div>
+                        <div class="timestamp-count">{{ group.images|length }} bilder</div>
+                    </div>
+                    
+                    <div class="image-grid">
+                        {% for image in group.images %}
+                            <div class="image-card">
+                                <div class="image-container">
+                                    {% if image.filename|slice:"-4:" == ".jpg" or image.filename|slice:"-5:" == ".jpeg" or image.filename|slice:"-4:" == ".png" or image.filename|slice:"-4:" == ".gif" or image.filename|slice:"-4:" == ".bmp" %}
+                                        {% with webp_url=image.url|slice:":-4"|add:".webp" %}
+                                            <img src="{{ webp_url }}" alt="{{ image.filename }}" loading="lazy" onerror="this.src='{{ image.url }}'">
+                                        {% endwith %}
+                                    {% else %}
+                                        <img src="{{ image.url }}" alt="{{ image.filename }}" loading="lazy">
+                                    {% endif %}
+                                    <div class="image-actions">
+                                        <button type="button" class="action-btn download-btn" 
+                                                onclick="downloadImage('{{ image.filename }}', 'manufacturer')" 
+                                                title="Ladda ner">
+                                            <i class="fas fa-download"></i>
+                                        </button>
+                                        <button type="button" class="action-btn delete-btn" 
+                                                onclick="deleteImage('{{ image.filename }}', 'manufacturer')" 
+                                                title="Ta bort">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                    <div class="form-check position-absolute" style="top: 0.5rem; left: 0.5rem;">
+                                        <input class="form-check-input image-checkbox" type="checkbox" 
+                                               value="{{ image.filename }}" data-type="manufacturer" id="check_{{ image.filename }}">
+                                    </div>
+                                </div>
+                                <div class="image-info">
+                                    <div class="image-filename">{{ image.filename }}</div>
+                                    <div class="image-meta">{{ image.size_formatted }}</div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            {% endfor %}
+        {% endif %}
     {% endif %}
 </div>
 
@@ -336,15 +398,25 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Ladda ner valda bilder
     downloadSelectedBtn.addEventListener('click', function() {
-        const selectedFiles = Array.from(checkboxes)
-            .filter(cb => cb.checked)
-            .map(cb => cb.value);
+        const selectedFiles = getSelectedFiles();
         
         if (selectedFiles.length === 0) return;
         
         // Skapa temporär ZIP-fil med valda bilder
         downloadSelectedImages(selectedFiles);
     });
+    
+    function getSelectedFiles() {
+        return Array.from(checkboxes)
+            .filter(cb => cb.checked)
+            .map(cb => cb.value);
+    }
+    
+    function getSelectedTypes() {
+        return Array.from(checkboxes)
+            .filter(cb => cb.checked)
+            .map(cb => cb.dataset.type || 'axe');
+    }
     
     function updateButtons() {
         const checkedCount = Array.from(checkboxes).filter(cb => cb.checked).length;
@@ -368,7 +440,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
-function deleteImage(filename) {
+function deleteImage(filename, type = 'axe') {
     // Visa bekräftelsemodal för enskild bild
     const confirmModal = new bootstrap.Modal(document.getElementById('confirmDeleteModal'));
     const confirmBtn = document.getElementById('confirmDeleteBtn');
@@ -377,13 +449,16 @@ function deleteImage(filename) {
     modalText.textContent = `Är du säker på att du vill ta bort "${filename}"?`;
     
     confirmBtn.onclick = function() {
+        const formData = new FormData();
+        formData.append('filename', filename);
+        formData.append('type', type);
+        
         fetch('{% url "delete_unlinked_image" %}', {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
                 'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
             },
-            body: `filename=${encodeURIComponent(filename)}`
+            body: formData
         })
         .then(response => response.json())
         .then(data => {
@@ -408,9 +483,10 @@ function deleteImage(filename) {
     confirmModal.show();
 }
 
-function downloadImage(filename) {
+function downloadImage(filename, type = 'axe') {
+    const folder = type === 'manufacturer' ? 'manufacturers' : 'axes';
     const link = document.createElement('a');
-    link.href = `/media/unlinked_images/${encodeURIComponent(filename)}`;
+    link.href = `/media/unlinked_images/${folder}/${encodeURIComponent(filename)}`;
     link.download = filename;
     document.body.appendChild(link);
     link.click();
@@ -425,6 +501,15 @@ function showErrorModal(message) {
 }
 
 function downloadSelectedImages(selectedFiles) {
+    // Hämta även bildtyperna
+    const selectedTypes = [];
+    selectedFiles.forEach(filename => {
+        const checkbox = document.querySelector(`input[value="${filename}"]`);
+        if (checkbox) {
+            selectedTypes.push(checkbox.dataset.type || 'axe');
+        }
+    });
+    
     // Skapa en temporär form för att skicka valda filer till servern
     const form = document.createElement('form');
     form.method = 'POST';
