@@ -146,6 +146,20 @@ En checklista för vidareutveckling av AxeCollection. Bocka av med [x] när klar
 45. [ ] Batchuppladdning av yxor – Möjlighet att ladda upp flera yxor samtidigt. **(Pausad – kräver vidare diskussion och behovsanalys innan implementation)**
 46. [x] Export/import av data (CSV, Excel) direkt från admin.
 47. [x] Automatiska backuper av databasen.
+48. [x] Deployment-konfiguration för produktion med SQLite
+    - [x] 48.1 Produktionssettings-fil med säkerhetskonfiguration
+    - [x] 48.2 Dockerfile med Gunicorn för produktion
+    - [x] 48.3 Docker Compose-konfiguration med volymer
+    - [x] 48.4 Deployment-guide med steg-för-steg instruktioner
+    - [x] 48.5 Backup-script för automatisk säkerhetskopiering
+    - [x] 48.6 Miljövariabler och konfigurationsmallar
+    - [x] 48.7 Nginx-konfiguration för webbserver
+    - [x] 48.8 SSL/HTTPS-konfiguration
+    - [x] 48.9 Logging och övervakning
+    - [x] 48.10 Säkerhetsinställningar för produktion
+    - [x] 48.11 Omorganisation av deployment-filer till deploy/-mapp
+    - [x] 48.12 Uppdaterad dokumentation för ny struktur
+    - [x] 48.13 Tydlig separation mellan utveckling och deployment
     - [x] 47.1 Backup-funktionalitet flyttad från admin till systeminställningsvyn
     - [x] 47.2 Integrerad backup-hantering i settings.html med modern UI
     - [x] 47.3 Skapa, ta bort och återställ backuper direkt från inställningssidan

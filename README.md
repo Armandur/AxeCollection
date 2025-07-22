@@ -73,6 +73,8 @@ Ett Django-baserat system för att hantera och katalogisera yxsamlingar med avan
 
 ## Installation
 
+### Utvecklingsmiljö
+
 1. Klona repot
 2. Skapa virtuell miljö: `python -m venv venv`
 3. Aktivera miljö: `source venv/bin/activate` (Linux/Mac) eller `venv\Scripts\activate` (Windows)
@@ -85,6 +87,19 @@ Ett Django-baserat system för att hantera och katalogisera yxsamlingar med avan
 6. Kör migreringar: `python manage.py migrate`
 7. Skapa superuser: `python manage.py createsuperuser`
 8. Starta servern: `python manage.py runserver`
+
+### Produktionsmiljö
+
+Se `deploy/` mappen för komplett deployment-konfiguration med Docker.
+
+**Snabb start för produktion:**
+```bash
+cp deploy/env.example .env
+# Redigera .env och sätt SECRET_KEY
+docker-compose -f deploy/docker-compose.yml up -d
+```
+
+Se `deploy/DEPLOYMENT.md` för detaljerade instruktioner.
 
 ## Utveckling
 
