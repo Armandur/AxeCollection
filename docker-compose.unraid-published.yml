@@ -15,8 +15,12 @@ services:
       # Nginx configuration för enkel redigering
       - /mnt/cache/appdata/axecollection/nginx.integrated.conf:/etc/nginx/sites-available/default:ro
     environment:
-      - DJANGO_SETTINGS_MODULE=AxeCollection.settings_production
+      - DJANGO_SETTINGS_MODULE=AxeCollection.settings_production_http
       - SECRET_KEY=${SECRET_KEY}
+      # Automatisk superuser-skapande (avkommentera och ändra värdena)
+      - DJANGO_SUPERUSER_USERNAME=admin
+      - DJANGO_SUPERUSER_EMAIL=admin@example.com
+      - DJANGO_SUPERUSER_PASSWORD=din_säkra_lösenord
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost/health/"]
@@ -25,7 +29,7 @@ services:
       retries: 3
       start_period: 40s
     # Fix permissions för Unraid
-    user: "65534:100"  # nobody:users
+    user: "99:100"  # Unraid nobody:users  # nobody:users
 
 volumes:
   data:

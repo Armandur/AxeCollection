@@ -579,6 +579,10 @@ def settings_view(request):
     if request.method == 'POST' and request.POST.get('action') == 'backup':
         return handle_backup_action(request)
     
+    # Backup-uppladdning
+    if request.method == 'POST' and request.POST.get('action') == 'upload_backup':
+        return handle_backup_upload(request)
+    
     # Vanlig settings-hantering
     if request.method == 'POST':
         settings = Settings.get_settings()
@@ -639,6 +643,58 @@ def handle_backup_action(request):
     else:
         messages.error(request, 'Ogiltig åtgärd')
         return redirect('settings')
+
+def handle_backup_upload(request):
+    """Hantera backup-uppladdning"""
+    from django.contrib import messages
+    from .forms import BackupUploadForm
+    from django.http import JsonResponse
+    import os
+    from django.conf import settings
+    
+    if request.method == 'POST':
+        form = BackupUploadForm(request.POST, request.FILES)
+        if form.is_valid():
+            uploaded_file = form.cleaned_data['backup_file']
+            
+            # Skapa backup-mapp om den inte finns
+            backup_dir = os.path.join(settings.BASE_DIR, 'backups')
+            if not os.path.exists(backup_dir):
+                os.makedirs(backup_dir)
+            
+            # Spara filen
+            file_path = os.path.join(backup_dir, uploaded_file.name)
+            with open(file_path, 'wb+') as destination:
+                for chunk in uploaded_file.chunks():
+                    destination.write(chunk)
+            
+            # Fixa behörigheter för Unraid
+            try:
+                os.chown(file_path, 99, 100)  # nobody:users
+                os.chmod(file_path, 0o644)
+            except:
+                pass  # Ignorera om behörigheter inte kan sättas
+            
+            # Kontrollera om det är en AJAX-request
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({
+                    'success': True,
+                    'message': f'Backup-fil "{uploaded_file.name}" laddades upp framgångsrikt!'
+                })
+            else:
+                messages.success(request, f'Backup-fil "{uploaded_file.name}" laddades upp framgångsrikt!')
+        else:
+            error_message = ' '.join([' '.join(errors) for errors in form.errors.values()])
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({
+                    'success': False,
+                    'message': error_message
+                }, status=400)
+            else:
+                for error in form.errors.values():
+                    messages.error(request, error)
+    
+    return redirect('settings')
 
 def get_backup_info(base_dir):
     """Hämta information om befintliga backuper"""

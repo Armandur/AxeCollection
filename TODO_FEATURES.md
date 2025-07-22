@@ -161,6 +161,19 @@ En checklista för vidareutveckling av AxeCollection. Bocka av med [x] när klar
 45. [ ] Batchuppladdning av yxor – Möjlighet att ladda upp flera yxor samtidigt. **(Pausad – kräver vidare diskussion och behovsanalys innan implementation)**
 46. [x] Export/import av data (CSV, Excel) direkt från admin.
 47. [x] Automatiska backuper av databasen.
+    - [x] 47.1 Backup-funktionalitet flyttad från admin till systeminställningsvyn
+    - [x] 47.2 Integrerad backup-hantering i settings.html med modern UI
+    - [x] 47.3 Skapa, ta bort och återställ backuper direkt från inställningssidan
+    - [x] 47.4 Statistik-visning för varje backup (antal yxor, kontakter, transaktioner)
+    - [x] 47.5 Varningar för återställning med bekräftelsedialoger
+    - [x] 47.6 Stöd för komprimerade backuper och media-filer
+    - [x] 47.7 Automatisk rensning av gamla backuper (30 dagar)
+    - [ ] 47.8 Backup-uppladdning via webbgränssnitt - Lösa problem med stora filer (>100MB) och nginx-konfiguration
+        - [ ] 47.8.1 Fixa nginx client_max_body_size för stora backupfiler (2GB+)
+        - [ ] 47.8.2 Förbättra JavaScript AJAX-uppladdning för stora filer
+        - [ ] 47.8.3 Lägg till progress-indikator för stora filer
+        - [ ] 47.8.4 Testa och verifiera att uppladdning fungerar för filer >100MB
+        - [ ] 47.8.5 Dokumentera lösningen för framtida deployment
 48. [x] Deployment-konfiguration för produktion med SQLite
     - [x] 48.1 Produktionssettings-fil med säkerhetskonfiguration
     - [x] 48.2 Dockerfile med Gunicorn för produktion
@@ -329,6 +342,7 @@ En checklista för vidareutveckling av AxeCollection. Bocka av med [x] när klar
 ## Framtida förbättringar
 
 63. [x] Fixa JavaScript-fel och landsfält-problem
+64. [x] Fixa duplicerad "Detaljer"-knapp på /galleri-sidan
     - [x] 62.1 Fixa SyntaxError på yxformuläret (`window.axeId = ;` när axe.pk inte finns)
     - [x] 62.2 Ersätt komplex sökbar select med enkel dropdown för landsfält på kontaktformuläret
     - [x] 62.3 Ta bort all debug-kod (console.log) från båda formulären
@@ -337,14 +351,14 @@ En checklista för vidareutveckling av AxeCollection. Bocka av med [x] när klar
     - [x] 62.6 Stöd för redigering av befintliga kontakter med landskod
     - [x] 62.7 Rensa kod från onödiga CSS-regler och JavaScript-funktioner
     - [x] 63.8 Förbättra användarupplevelse med enkel och pålitlig dropdown-lista
-64. [ ] Förbättrad felhantering och validering i formulär.
-65. [ ] Snabbare AJAX-sökningar med caching.
-66. [ ] Tangentbordsnavigering i lightbox (piltangenter för att bläddra mellan bilder).
-67. [ ] Touch-gester för mobil navigering i lightbox (swipe för att bläddra).
-68. [ ] Zoom-funktionalitet i lightbox för att se bilder i full storlek.
-69. [ ] Automatisk bildrotation baserat på EXIF-data.
-70. [ ] Bulk-redigering av bilder (redigera flera bilder samtidigt).
-71. [ ] Bildkommentarer med @-mentions för att länka till tillverkare eller yxor.
+65. [ ] Förbättrad felhantering och validering i formulär.
+66. [ ] Snabbare AJAX-sökningar med caching.
+67. [ ] Tangentbordsnavigering i lightbox (piltangenter för att bläddra mellan bilder).
+68. [ ] Touch-gester för mobil navigering i lightbox (swipe för att bläddra).
+69. [ ] Zoom-funktionalitet i lightbox för att se bilder i full storlek.
+70. [ ] Automatisk bildrotation baserat på EXIF-data.
+71. [ ] Bulk-redigering av bilder (redigera flera bilder samtidigt).
+72. [ ] Bildkommentarer med @-mentions för att länka till tillverkare eller yxor.
 
 ## Tekniska lärdomar från utveckling
 

@@ -11,6 +11,7 @@ Denna guide beskriver hur man deployar AxeCollection med en integrerad Docker-im
 
 ## Snabb start
 
+### Lokal testning
 1. **Kopiera miljöfil**:
    ```bash
    cp env.example .env
@@ -27,6 +28,17 @@ Denna guide beskriver hur man deployar AxeCollection med en integrerad Docker-im
    docker-compose -f docker-compose.integrated.yml up -d --build
    ```
 
+### Produktion (Unraid)
+1. **Använd färdig image från Docker Hub**:
+   ```bash
+   docker pull armandur/axecollection:unraid
+   ```
+
+2. **Kör med docker-compose**:
+   ```bash
+   docker-compose -f docker-compose.unraid-published.yml up -d
+   ```
+
 ## Unraid Deployment
 
 ### Via Unraid Docker-appen
@@ -34,7 +46,7 @@ Denna guide beskriver hur man deployar AxeCollection med en integrerad Docker-im
 1. **Lägg till container**:
    - Klicka "Add Container"
    - Namn: `axecollection`
-   - Repository: `axecollection:latest` (efter att du byggt image)
+   - Repository: `armandur/axecollection:unraid` (från Docker Hub)
 
 2. **Port mapping**:
    - Host Port 1: `80` → Container Port 1: `80`

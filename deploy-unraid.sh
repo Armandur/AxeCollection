@@ -12,9 +12,9 @@ echo "=================================="
 echo "📁 Skapar mappar..."
 mkdir -p /mnt/cache/appdata/axecollection/{data,media,logs,staticfiles,backups}
 
-# Fixa behörigheter för Unraid (nobody:users)
+# Fixa behörigheter för Unraid (nobody:users - UID 99, GID 100)
 echo "🔐 Fixar behörigheter för Unraid..."
-chown -R nobody:users /mnt/cache/appdata/axecollection
+chown -R 99:100 /mnt/cache/appdata/axecollection
 chmod -R 755 /mnt/cache/appdata/axecollection
 
 # Kopiera nginx-konfiguration om den inte finns
@@ -30,8 +30,14 @@ if [ ! -f "/mnt/cache/appdata/axecollection/.env" ]; then
     cat > /mnt/cache/appdata/axecollection/.env << EOF
 # AxeCollection Environment Variables
 SECRET_KEY=din_secret_key_här
+
+# Optional: Django Superuser (uncomment and set values to create automatically)
+# DJANGO_SUPERUSER_USERNAME=admin
+# DJANGO_SUPERUSER_EMAIL=admin@example.com
+# DJANGO_SUPERUSER_PASSWORD=your_secure_password
 EOF
     echo "⚠️  Uppdatera SECRET_KEY i /mnt/cache/appdata/axecollection/.env"
+    echo "💡 Du kan också aktivera automatisk superuser-skapande genom att uncommenta DJANGO_SUPERUSER_* raderna"
 fi
 
 # Kopiera docker-compose.yml
