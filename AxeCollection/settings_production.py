@@ -68,6 +68,9 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
+# Static files configuration (no WhiteNoise for now - will be handled by web server in production)
+STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'
+
 # Logging configuration
 LOGGING = {
     'version': 1,

@@ -27,9 +27,8 @@ RUN pip install --no-cache-dir -r requirements.txt gunicorn
 # Copy project
 COPY . .
 
-# Copy deployment files to root for Docker Compose
-COPY deploy/docker-compose.yml ./docker-compose.yml
-COPY deploy/backup.sh ./backup.sh
+# Copy backup script
+COPY backup.sh ./backup.sh
 
 # Create necessary directories
 RUN mkdir -p /app/data /app/logs /app/media /app/staticfiles

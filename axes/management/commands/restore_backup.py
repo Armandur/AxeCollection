@@ -57,6 +57,9 @@ class Command(BaseCommand):
                 self.style.ERROR('Backup-filen måste vara .zip eller .sqlite3')
             )
         
+        # Fixa sökvägar efter återställning
+        self.fix_image_paths()
+        
         self.stdout.write(
             self.style.SUCCESS('Återställning slutförd!')
         )
@@ -121,4 +124,48 @@ class Command(BaseCommand):
         
         # Kopiera media från backup
         shutil.copytree(media_backup_dir, settings.MEDIA_ROOT)
-        self.stdout.write('  Återställde media-filer') 
+        self.stdout.write('  Återställde media-filer')
+    
+    def fix_image_paths(self):
+        """Fix image paths after restore to handle Windows/Linux differences"""
+        from django.db import connection
+        
+        cursor = connection.cursor()
+        
+        # Check for backslashes in image paths (Windows to Linux)
+        cursor.execute("SELECT COUNT(*) FROM axes_axeimage WHERE image LIKE '%\\\\%'")
+        count_with_backslashes = cursor.fetchone()[0]
+        
+        # Check for incorrect /app/media/ prefix (should be removed)
+        cursor.execute("SELECT COUNT(*) FROM axes_axeimage WHERE image LIKE '/app/media/%'")
+        count_with_app_media = cursor.fetchone()[0]
+        
+        # Check for incorrect media/ prefix (should be removed)
+        cursor.execute("SELECT COUNT(*) FROM axes_axeimage WHERE image LIKE 'media/%'")
+        count_with_media_prefix = cursor.fetchone()[0]
+        
+        fixes_made = 0
+        
+        # Fix backslashes
+        if count_with_backslashes > 0:
+            cursor.execute("UPDATE axes_axeimage SET image = REPLACE(image, '\\\\', '/')")
+            self.stdout.write(f'  Fixade {count_with_backslashes} sökvägar med backslashes')
+            fixes_made += count_with_backslashes
+        
+        # Remove incorrect /app/media/ prefix
+        if count_with_app_media > 0:
+            cursor.execute("UPDATE axes_axeimage SET image = REPLACE(image, '/app/media/', '')")
+            self.stdout.write(f'  Tog bort /app/media/ prefix från {count_with_app_media} sökvägar')
+            fixes_made += count_with_app_media
+        
+        # Remove incorrect media/ prefix
+        if count_with_media_prefix > 0:
+            cursor.execute("UPDATE axes_axeimage SET image = REPLACE(image, 'media/', '')")
+            self.stdout.write(f'  Tog bort media/ prefix från {count_with_media_prefix} sökvägar')
+            fixes_made += count_with_media_prefix
+        
+        if fixes_made > 0:
+            connection.commit()
+            self.stdout.write(f'  Fixade totalt {fixes_made} bildsökvägar')
+        else:
+            self.stdout.write('  Inga sökvägsproblem hittades') 

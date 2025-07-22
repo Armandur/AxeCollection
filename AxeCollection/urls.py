@@ -24,7 +24,8 @@ urlpatterns = [
     path('', include('axes.urls')),
 ]
 
-# Lägg till media URL:er för utveckling
-if settings.DEBUG:
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
-    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+# Lägg till media URL:er för både utveckling och produktion
+urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
+# Lägg till static URL:er för både utveckling och produktion
+urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

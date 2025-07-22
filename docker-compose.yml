@@ -2,7 +2,9 @@ version: '3.8'
 
 services:
   web:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile
     ports:
       - "8000:8000"
     volumes:
@@ -11,6 +13,7 @@ services:
       - ./media:/app/media
       - ./logs:/app/logs
       - ./staticfiles:/app/staticfiles
+      - ./backups:/app/backups
     environment:
       - DJANGO_SETTINGS_MODULE=AxeCollection.settings_production
       - SECRET_KEY=${SECRET_KEY}
@@ -26,4 +29,5 @@ volumes:
   data:
   media:
   logs:
-  staticfiles: 
+  staticfiles:
+  backups: 

@@ -96,6 +96,21 @@ En checklista för vidareutveckling av AxeCollection. Bocka av med [x] när klar
     - [x] 30.4 Filter för att visa endast yxor med/utan mått
     - [x] 30.5 Responsiv design för måttkolumnen på olika skärmstorlekar
 
+## Deployment och miljöhantering
+
+1. [x] Automatisk hantering av sökvägar för olika miljöer
+    - [x] 1.1 Skapa script för att fixa bildsökvägar vid deployment (Windows backslashes → Linux forward slashes)
+    - [x] 1.2 Automatisk konvertering av `/app/media/` prefix för Docker-miljöer
+    - [x] 1.3 Hantera sökvägar för både utvecklingsmiljö (Windows) och produktionsmiljö (Linux)
+    - [x] 1.4 Integrera sökvägsfix i deployment-processen
+    - [x] 1.5 Testa och verifiera att bilder fungerar i både test- och produktionsmiljö
+2. [ ] Media-filhantering i produktionsmiljö
+    - [ ] 2.1 Konfigurera Nginx för att servera media-filer i produktion
+    - [ ] 2.2 Eller implementera CDN-lösning för media-filer
+    - [ ] 2.3 Eller konfigurera Django för att servera media-filer i produktion (inte rekommenderat för hög belastning)
+    - [ ] 2.4 Testa och verifiera att alla bilder fungerar korrekt i produktionsmiljö
+    - [ ] 2.5 Dokumentera lösningen för framtida deployment
+
 ## Yxhantering och inmatning
 
 31. [x] Redigera transaktion, plattform och kontakt för en yxa via detaljvyn
