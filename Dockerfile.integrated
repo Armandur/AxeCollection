@@ -49,12 +49,14 @@ COPY supervisor.conf /etc/supervisor/conf.d/supervisord.conf
 # Create a non-root user
 RUN useradd --create-home --shell /bin/bash django
 RUN chown -R django:django /app
-RUN chown -R django:django /var/log/nginx /var/log/supervisor
+RUN chown -R django:django /var/log/supervisor
 
-# Fix nginx permissions
-RUN mkdir -p /var/log/nginx /var/cache/nginx /var/run
+# Fix nginx and supervisor permissions
+RUN mkdir -p /var/log/nginx /var/cache/nginx /var/run /var/log/supervisor
 RUN chown -R root:root /var/log/nginx /var/cache/nginx /var/run
 RUN chmod -R 755 /var/log/nginx /var/cache/nginx /var/run
+RUN chown -R root:root /var/log/supervisor
+RUN chmod -R 755 /var/log/supervisor
 
 # Expose port 80 for nginx
 EXPOSE 80
