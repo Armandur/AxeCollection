@@ -1,0 +1,35 @@
+version: '3.8'
+
+services:
+  axecollection:
+    build:
+      context: .
+      dockerfile: Dockerfile.integrated
+    ports:
+      - "80:80"
+    volumes:
+      # Persist data, media, and logs
+      - ./data:/app/data
+      - ./media:/app/media
+      - ./logs:/app/logs
+      - ./staticfiles:/app/staticfiles
+      - ./backups:/app/backups
+      # Nginx configuration for easy editing
+      - ./nginx.integrated.conf:/etc/nginx/sites-available/default:ro
+    environment:
+      - DJANGO_SETTINGS_MODULE=AxeCollection.settings_production
+      - SECRET_KEY=${SECRET_KEY}
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/health/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+volumes:
+  data:
+  media:
+  logs:
+  staticfiles:
+  backups: 
