@@ -65,7 +65,9 @@ STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 # Media files configuration
-MEDIA_URL = '/media/'
+# In production with Nginx, Django needs MEDIA_URL to generate correct URLs
+# Nginx will handle the actual serving of files
+MEDIA_URL = '/media/'  # Django needs this to generate correct URLs
 MEDIA_ROOT = BASE_DIR / 'media'
 
 # Static files configuration (no WhiteNoise for now - will be handled by web server in production)

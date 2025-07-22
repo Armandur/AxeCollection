@@ -382,6 +382,17 @@
 - **Navigationslogik:** Gruppbaserad navigering (endast inom samma bildtyp) ger bättre användarupplevelse än global navigering
 - **Debugging:** Linter-fel kan vara falska positiva - alltid testa funktionalitet i webbläsaren
 
+### Deployment och media-filhantering (2025-07-22)
+- **Nginx-konfiguration**: Använd Nginx för att servera media-filer direkt i produktion via `location /media/` block
+- **Docker-volymer**: Mappa volymer för `/data`, `/media`, `/logs`, `/staticfiles`, `/backups` för data-persistens
+- **MEDIA_URL-hantering**: Sätt `MEDIA_URL = '/media/'` i produktion för korrekt URL-generering av Django
+- **Sökvägsfix vid backup-återställning**: `restore_backup.py` fixar automatiskt Windows backslashes och `/app/media/` prefix
+- **Python-baserad sökvägsfix**: Använd Python-loop istället för SQL-frågor för att hitta och fixa backslashes (mer pålitligt)
+- **Miljöspecifik hantering**: Ta bort `media/` prefix i både utveckling och produktion (hanteras automatiskt av Django/Nginx)
+- **Docker-rebuild**: Använd `docker-compose build --no-cache` för att säkerställa att alla ändringar inkluderas
+- **Settings-kopiering**: Kom ihåg att kopiera uppdaterade settings-filer till containern med `docker-compose cp`
+- **Container-restart**: Starta om containern efter settings-ändringar med `docker-compose restart web`
+
 ### Statistik och visualisering (2025-07-15)
 - **Chart.js för staplade diagram**: Använd `stacked: true` för att visa köp och sälj i samma stapel med tydlig fördelning
 - **Färgkodning för statistik**: Konsekvent färgschema - röd för köp/utgifter, blå för sälj/intäkter, grön för köp-aktivitet

@@ -104,12 +104,12 @@ En checklista för vidareutveckling av AxeCollection. Bocka av med [x] när klar
     - [x] 1.3 Hantera sökvägar för både utvecklingsmiljö (Windows) och produktionsmiljö (Linux)
     - [x] 1.4 Integrera sökvägsfix i deployment-processen
     - [x] 1.5 Testa och verifiera att bilder fungerar i både test- och produktionsmiljö
-2. [ ] Media-filhantering i produktionsmiljö
-    - [ ] 2.1 Konfigurera Nginx för att servera media-filer i produktion
-    - [ ] 2.2 Eller implementera CDN-lösning för media-filer
-    - [ ] 2.3 Eller konfigurera Django för att servera media-filer i produktion (inte rekommenderat för hög belastning)
-    - [ ] 2.4 Testa och verifiera att alla bilder fungerar korrekt i produktionsmiljö
-    - [ ] 2.5 Dokumentera lösningen för framtida deployment
+2. [x] Media-filhantering i produktionsmiljö
+    - [x] 2.1 Konfigurera Nginx för att servera media-filer i produktion
+    - [x] 2.2 Eller implementera CDN-lösning för media-filer
+    - [x] 2.3 Eller konfigurera Django för att servera media-filer i produktion (inte rekommenderat för hög belastning)
+    - [x] 2.4 Testa och verifiera att alla bilder fungerar korrekt i produktionsmiljö
+    - [x] 2.5 Dokumentera lösningen för framtida deployment
 
 ## Yxhantering och inmatning
 

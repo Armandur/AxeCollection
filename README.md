@@ -40,6 +40,13 @@ Ett Django-baserat system för att hantera och katalogisera yxsamlingar med avan
 
 ## Senaste uppdateringar
 
+### Media-filhantering i produktion (2025-07-22)
+- **Nginx-integration** - Konfigurerad Nginx för att servera media-filer direkt i produktion
+- **Automatisk sökvägsfix** - `restore_backup.py` fixar automatiskt Windows backslashes och sökvägar vid återställning
+- **Korrekt URL-generering** - Django genererar korrekta `/media/` URL:er för både yxbilder och tillverkarbilder
+- **Robust deployment** - Media-filer fungerar korrekt i både utveckling och produktion
+- **Docker-optimering** - Uppdaterad Docker-konfiguration med volymer för data-persistens
+
 ### Användarhantering och publik/privat vy (2025-07-21)
 - **Inloggningssystem** - Fullständigt Django Auth-system med anpassade templates, långa sessioner (30 dagar) och starka lösenord (minst 12 tecken)
 - **Publik/privat vy** - Konfigurerbart system där känsliga uppgifter (kontakter, priser, plattformar) kan döljas för icke-inloggade användare
@@ -90,14 +97,17 @@ Ett Django-baserat system för att hantera och katalogisera yxsamlingar med avan
 
 ### Produktionsmiljö
 
-Se `deploy/` mappen för komplett deployment-konfiguration med Docker.
-
 **Snabb start för produktion:**
 ```bash
-cp deploy/env.example .env
+cp env.example .env
 # Redigera .env och sätt SECRET_KEY
-docker-compose -f deploy/docker-compose.yml up -d
+docker-compose up -d
 ```
+
+**Media-filhantering:**
+- Nginx serverar media-filer direkt via `/media/` URL:er
+- Automatisk sökvägsfix vid backup-återställning
+- Korrekt URL-generering för både yxbilder och tillverkarbilder
 
 Se `deploy/DEPLOYMENT.md` för detaljerade instruktioner.
 

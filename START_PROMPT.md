@@ -46,6 +46,11 @@ python manage.py migrate
 
 # Samla statiska filer
 python manage.py collectstatic
+
+# Docker-produktion
+docker-compose up -d
+docker-compose build --no-cache
+docker-compose cp filnamn web:/app/sökväg/
 ```
 
 ## Viktiga beslut och lärdomar
@@ -54,6 +59,8 @@ python manage.py collectstatic
 - **Bildhantering**: Drag & drop, URL-uppladdning, .webp-optimering
 - **Måttmallar**: Fördefinierade mallar för olika yxtyper
 - **Transaktionshantering**: Automatisk typbestämning baserat på pris
+- **Media-filhantering**: Nginx serverar media-filer i produktion, automatisk sökvägsfix vid backup-återställning
+- **Deployment**: Docker med volymer för data-persistens, settings-kopiering till containern krävs
 
 ## Nästa steg
 1. Läs igenom markdown-filerna för att förstå projektet
