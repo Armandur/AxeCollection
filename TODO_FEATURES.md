@@ -230,7 +230,7 @@ En checklista för vidareutveckling av AxeCollection. Bocka av med [x] när klar
     - [x] 52.10 Hover-effekter och animationer för bättre användarupplevelse
     - [x] 52.11 .webp-optimering: visar .webp-versioner för snabbare laddning men laddar ner originalfiler
     - [x] 52.12 Korrekt svenska grammatik med plural-former för "antal bilder" och "antal grupper"
-    - [ ] 52.13 Lägg till länk till vyn i admin-navigation (kommer att implementeras när inloggning/adminvy införs)
+    - [x] 52.13 Lägg till länk till vyn i admin-navigation (kommer att implementeras när inloggning/adminvy införs)
     - [ ] 52.14 Implementera motsvarande hantering för borttagning av tillverkare och deras bilder (flytt till okopplade bilder)
         - [ ] 52.14.1 Analysera vad som ska hända med yxor som tillhör tillverkaren (behåll som "okänd tillverkare" vs förhindra borttagning)
         - [ ] 52.14.2 Utvärdera om funktionen ens behövs eller om tillverkare ska vara permanent
