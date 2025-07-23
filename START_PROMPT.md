@@ -51,6 +51,17 @@ python manage.py collectstatic
 docker-compose up -d
 docker-compose build --no-cache
 docker-compose cp filnamn web:/app/sökväg/
+
+# Docker-felsökning
+docker logs container_name
+docker exec -it container_name bash
+docker exec -u root container_name chown -R nobody:users /app/data
+
+# Git-workflow
+git add .
+git commit -m "Svenskt commit-meddelande"
+git commit --amend --no-edit  # Lägg till i senaste commit
+git push --force-with-lease   # Efter amend
 ```
 
 ## Viktiga beslut och lärdomar
@@ -61,12 +72,18 @@ docker-compose cp filnamn web:/app/sökväg/
 - **Transaktionshantering**: Automatisk typbestämning baserat på pris
 - **Media-filhantering**: Nginx serverar media-filer i produktion, automatisk sökvägsfix vid backup-återställning
 - **Deployment**: Docker med volymer för data-persistens, settings-kopiering till containern krävs
+- **Docker-problem**: Line endings (CRLF vs LF), behörigheter (nobody:users), Nginx-konfiguration
+- **Host-konfiguration**: Dynamisk via UI och miljövariabler för ALLOWED_HOSTS/CSRF_TRUSTED_ORIGINS
+- **Commit-meddelanden**: Använd svenska enligt användarens preferens
+- **TODO-lista**: Uppdatera löpande och markera klara med [x]
 
 ## Nästa steg
 1. Läs igenom markdown-filerna för att förstå projektet
 2. Starta servern för att se aktuell status
 3. Diskutera vad som ska arbetas med härnäst
 4. Följ vårt etablerade arbetsflöde för iterativ utveckling
+5. Kontrollera TODO_FEATURES.md för aktuella uppgifter
+6. Uppdatera dokumentation efter större ändringar
 
 ## Kontakt och kommunikation
 - Alla beslut dokumenteras i chatten och markdown-filer

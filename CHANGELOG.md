@@ -10,7 +10,9 @@ Alla viktiga ändringar i AxeCollection dokumenteras i denna fil.
 - **Automatisk startup-script** som hanterar databasinitialisering och migreringar
 - **Backup-uppladdning via webbgränssnitt** med stöd för filer upp till 2GB
 - **CSRF-konfiguration** för HTTPS-produktion (`https://yxor.pettersson-vik.se/`)
-- **Docker Hub-publishing** av image som `armandur/axecollection:unraid`
+- **Docker Hub-publishing** av image som `armandur/axecollection:latest` och `armandur/axecollection:unraid`
+- **Dynamisk host-konfiguration** via UI för externa hosts och CSRF origins
+- **Robust startup-process** med fixade line endings och behörigheter
 
 ### Ändrat
 - **Nginx-konfiguration** för stora filer (`client_max_body_size 2G`)
@@ -23,6 +25,10 @@ Alla viktiga ändringar i AxeCollection dokumenteras i denna fil.
 - **CSRF-fel** för HTTPS-produktion
 - **Timeout-problem** för stora backupfiler
 - **JavaScript-URL-problem** i backup-uppladdning
+- **"exec /app/start.sh: no such file or directory"** - fixade line endings och behörigheter
+- **Nginx standard-sida** - korrekt Nginx-konfiguration inbyggd i imagen
+- **Windows line endings** - automatisk konvertering i Dockerfile
+- **Demo-installationer** - stöd för flera instanser med olika host-konfigurationer
 
 ### Tekniska detaljer
 - **Dockerfile.unraid**: Multi-stage build med korrekt användarhantering

@@ -62,6 +62,9 @@
 - **Webbrequests:** Använd `Invoke-WebRequest` med `-UseBasicParsing` för att testa webbsidor
 - **Statuskod-kontroll:** Använd `Select-Object -ExpandProperty StatusCode` för att kontrollera HTTP-status
 - **Background-jobb:** Använd `-is_background` för långvariga processer som Django-servern
+- **Docker-kommandon:** Använd `docker exec -it` för interaktiva kommandon, `docker logs` för loggvisning
+- **Git-amend:** Använd `git commit --amend --no-edit` för att lägga till ändringar i senaste commit
+- **Force push:** Använd `git push --force-with-lease` för säker force push efter amend
 
 ### Dataexport och import
 - **CSV-säkerhet:** Hantera radbrytningar och specialtecken i textfält för korrekt export
@@ -73,6 +76,40 @@
 - **Conditional fields:** Visa olika fält beroende på om objekt skapas eller redigeras.
 - **Smart defaults:** Sätt smarta standardvärden (t.ex. dagens datum för transaktioner).
 - **Validation feedback:** Ge tydlig feedback när validering misslyckas.
+
+### Docker och deployment
+- **Line endings:** Windows CRLF vs Linux LF kan orsaka "no such file or directory" i Docker
+- **Behörigheter:** Unraid kräver `nobody:users` (UID 99, GID 100) för korrekt filåtkomst
+- **Nginx-konfiguration:** Inkludera `nginx.integrated.conf` i Dockerfile för korrekt proxy-konfiguration
+- **Startup-script:** Använd `start.sh` för databasinitialisering och behörighetsfix
+- **Host-konfiguration:** Använd miljövariabler eller UI för ALLOWED_HOSTS och CSRF_TRUSTED_ORIGINS
+- **Demo-installationer:** Stöd för flera instanser med olika host-konfigurationer
+- **Databasbehörigheter:** Fixa readonly database med `docker exec -u root` kommandon
+
+### Commit-meddelanden och dokumentation
+- **Svenska commit-meddelanden:** Använd svenska för commit-meddelanden enligt användarens preferens
+- **TODO-lista:** Uppdatera `TODO_FEATURES.md` med nya punkter och markera klara med [x]
+- **Dokumentation:** Uppdatera README.md, CHANGELOG.md och DEPLOYMENT_INTEGRATED.md efter större ändringar
+- **Amend-workflow:** Använd `git commit --amend` för att lägga till små ändringar i senaste commit
+
+## Senaste genomförda förbättringar (2025-07-23)
+
+### Docker startup-problem och deployment-fixar (2025-07-23)
+- **Line endings-problem:** Windows CRLF vs Linux LF orsakade "exec /app/start.sh: no such file or directory"
+- **Lösning:** Lägg till `RUN sed -i 's/\r$//' /app/start.sh` i Dockerfile för automatisk konvertering
+- **Nginx-konfiguration:** Inkludera `nginx.integrated.conf` direkt i Dockerfile istället för att montera som volym
+- **Behörigheter:** Flytta `COPY start.sh` före `chown` för att säkerställa rätt ägare
+- **Startup-process:** Förbättra `start.sh` med automatisk katalogskapning och robust felhantering
+- **Host-konfiguration:** Implementera dynamisk konfiguration via UI och miljövariabler för ALLOWED_HOSTS/CSRF_TRUSTED_ORIGINS
+- **Demo-installationer:** Stöd för flera instanser med olika host-konfigurationer
+- **Dokumentation:** Omfattande felsökningssektion i DEPLOYMENT_INTEGRATED.md
+- **Tekniska lärdomar**:
+  - Docker-build: Ordningen av COPY och chown-kommandon är kritisk för behörigheter
+  - Line endings: Alltid konvertera Windows line endings i Docker-containrar
+  - Nginx: Inkludera konfiguration i imagen istället för att förlita sig på volym-mappning
+  - Startup-script: Använd robusta script med automatisk katalogskapning och felhantering
+  - Host-konfiguration: Flexibel konfiguration via både miljövariabler och UI
+  - Dokumentation: Uppdatera alla relevanta .md-filer efter större ändringar
 
 ## Senaste genomförda förbättringar (2025-07-21)
 

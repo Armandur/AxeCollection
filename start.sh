@@ -10,6 +10,9 @@ echo "================================"
 
 # Fix permissions for all app directories (Unraid: nobody:users)
 echo "🔐 Fixing permissions..."
+# Create directories if they don't exist
+mkdir -p /app/data/ /app/logs/ /app/media/ /app/backups/ /app/staticfiles/
+
 chown -R nobody:users /app/data/
 chmod -R 755 /app/data/
 chown -R nobody:users /app/logs/
@@ -63,7 +66,6 @@ fi
 echo "🎉 Startup script completed!"
 echo "================================"
 
-# Start the original command (supervisord)
+# Start supervisord
 echo "🚀 Starting supervisord..."
-echo "Command: $@"
-exec "$@" 
+exec /usr/bin/supervisord -c /etc/supervisor/conf.d/supervisord.conf 

@@ -46,7 +46,9 @@ Ett Django-baserat system för att hantera och katalogisera yxsamlingar med avan
 - **Automatisk startup** - Smart startup-script som hanterar databasinitialisering, migreringar och behörigheter
 - **Backup-hantering** - Integrerad backup-uppladdning via webbgränssnitt (stöd för filer upp till 2GB)
 - **CSRF-fixar** - Korrekt konfiguration för HTTPS-produktion (`https://yxor.pettersson-vik.se/`)
-- **Docker Hub-publishing** - Image tillgänglig som `armandur/axecollection:unraid`
+- **Docker Hub-publishing** - Image tillgänglig som `armandur/axecollection:latest` och `armandur/axecollection:unraid`
+- **Dynamisk host-konfiguration** - UI-baserad konfiguration av externa hosts och CSRF origins
+- **Robust startup-process** - Fixade line endings, behörigheter och Nginx-konfiguration för stabil deployment
 
 ### Media-filhantering i produktion (2025-07-22)
 - **Nginx-integration** - Konfigurerad Nginx för att servera media-filer direkt i produktion

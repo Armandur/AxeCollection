@@ -98,6 +98,61 @@ En checklista för vidareutveckling av AxeCollection. Bocka av med [x] när klar
     - [x] 30.1 Lägg till "Mått"-kolumn i yxlistan med linjal-ikon för yxor med registrerade mått
     - [x] 30.2 Visa antalet registrerade mått bredvid linjal-ikonen (t.ex. "📏 3" för 3 mått)
     - [x] 30.3 Tooltip/popup som visar måtten vid hovring över ikonen
+
+## Docker och Deployment
+
+31. [x] Fixa Docker startup-problem
+    - [x] 31.1 "exec /app/start.sh: no such file or directory" - fixade line endings och behörigheter
+    - [x] 31.2 Nginx visar standard-sida istället för Django - korrekt Nginx-konfiguration inbyggd
+    - [x] 31.3 Windows line endings i start.sh - automatisk konvertering i Dockerfile
+    - [x] 31.4 Behörigheter för Unraid (nobody:users) - korrekt UID/GID-hantering
+    - [x] 31.5 CSRF-fel vid inloggning - dynamisk host-konfiguration via UI och miljövariabler
+    - [x] 31.6 Demo-installationer - stöd för flera instanser med olika host-konfigurationer
+    - [x] 31.7 Databasbehörigheter på Unraid - automatisk fix av readonly database
+    - [x] 31.8 Robust startup-process - automatisk skapande av kataloger och behörigheter
+
+32. [ ] Fixa dark mode-konsistens
+    - [ ] 32.1 Kontaktdetaljsida - vita bakgrunder på kontaktinformation, medlemskap och adress
+    - [ ] 32.2 Systematisk genomgång av alla sidor för dark mode-konsistens
+
+33. [ ] Lägg till footer
+    - [ ] 33.1 Designa footer med relevant information (version, länkar, kontakt)
+    - [ ] 33.2 Implementera footer på alla sidor
+    - [ ] 33.3 Anpassa footer för både light och dark mode
+
+34. [ ] Kommentarsystem (framtida funktion)
+    - [ ] 34.1 Möjlighet att kommentera yxor
+    - [ ] 34.2 Möjlighet att kommentera tillverkare
+    - [ ] 34.3 Moderationssystem för kommentarer
+    - [ ] 34.4 Användarhantering för kommentarer
+
+35. [ ] Implementera Django REST Framework och ViewSets
+    - [ ] 35.1 Utvärdera nuvarande API-struktur och identifiera förbättringsmöjligheter
+    - [ ] 35.2 Skapa serializers för alla modeller (Axe, Contact, Manufacturer, Transaction, etc.)
+    - [ ] 35.3 Implementera ViewSets för CRUD-operationer
+    - [ ] 35.4 Använda routers för automatisk URL-generering
+    - [ ] 35.5 Lägg till browsable API för bättre utvecklarupplevelse
+    - [ ] 35.6 Implementera filtrering och sökning via DRF-filter
+    - [ ] 35.7 Lägg till pagination för stora datasets
+    - [ ] 35.8 Säkerställ att befintlig AJAX-funktionalitet fungerar med nya API:er
+    - [ ] 35.9 Dokumentera API:er med DRF:s inbyggda dokumentation
+
+36. [ ] Fixa enskilda mått
+    - [ ] 36.1 Ensamma mått kan inte läggas till, bara via batch-inlägg
+    - [ ] 36.2 Implementera funktionalitet för att lägga till enskilda mått
+    - [ ] 36.3 Testa att både enskilda och batch-mått fungerar korrekt
+
+37. [ ] Fixa omorganisering av yxbilder i produktion
+    - [ ] 37.1 Omorganisering av yxbilder fungerar inte på Unraid-produktionsservern
+    - [ ] 37.2 Undersök skillnader mellan utvecklings- och produktionsmiljö
+    - [ ] 37.3 Kontrollera filbehörigheter och sökvägar i produktion
+    - [ ] 37.4 Testa drag & drop-funktionalitet i produktionsmiljö
+
+38. [ ] Formulär för tillverkarlänkar
+    - [ ] 38.1 Skapa formulär för att lägga till länkar och resurser på tillverkare
+    - [ ] 38.2 Implementera i tillverkardetaljsidan (för närvarande bara via Django admin)
+    - [ ] 38.3 Lägg till funktionalitet för att redigera och ta bort länkar
+    - [ ] 38.4 Säkerställ att order-fältet fungerar för sortering av länkar
     - [x] 30.4 Filter för att visa endast yxor med/utan mått
     - [x] 30.5 Responsiv design för måttkolumnen på olika skärmstorlekar
 

@@ -46,22 +46,22 @@ Denna guide beskriver hur man deployar AxeCollection med en integrerad Docker-im
 1. **Lägg till container**:
    - Klicka "Add Container"
    - Namn: `axecollection`
-   - Repository: `armandur/axecollection:unraid` (från Docker Hub)
+   - Repository: `armandur/axecollection:latest` (från Docker Hub)
 
 2. **Port mapping**:
-   - Host Port 1: `80` → Container Port 1: `80`
+   - Host Port 1: `8082` → Container Port 1: `80` (eller valfri port)
 
 3. **Volymer** (använd cache för bättre prestanda):
    - `/mnt/cache/appdata/axecollection/data` → `/app/data`
    - `/mnt/cache/appdata/axecollection/media` → `/app/media`
    - `/mnt/cache/appdata/axecollection/logs` → `/app/logs`
-   - `/mnt/cache/appdata/axecollection/staticfiles` → `/app/staticfiles`
    - `/mnt/cache/appdata/axecollection/backups` → `/app/backups`
-   - `/mnt/cache/appdata/axecollection/nginx.integrated.conf` → `/etc/nginx/sites-available/default` (read-only)
 
 4. **Miljövariabler**:
-   - `DJANGO_SETTINGS_MODULE` = `AxeCollection.settings_production`
+   - `DJANGO_SETTINGS_MODULE` = `AxeCollection.settings_production_http`
    - `SECRET_KEY` = `din_secret_key_här`
+   - `ALLOWED_HOSTS` = `192.168.1.2,localhost,127.0.0.1` (anpassa efter din setup)
+   - `CSRF_TRUSTED_ORIGINS` = `http://192.168.1.2:8082,https://din-domain.se` (anpassa efter din setup)
 
 ### Via Docker Compose i Unraid
 
@@ -227,4 +227,46 @@ docker exec axecollection python manage.py collectstatic --noinput
 4. **Gunicorn startar inte**:
    - Kontrollera Django-inställningar
    - Titta på gunicorn-loggar
-   - Kontrollera att alla migreringar är körda 
+   - Kontrollera att alla migreringar är körda
+
+5. **"exec /app/start.sh: no such file or directory"**:
+   - Använd den senaste imagen: `armandur/axecollection:latest`
+   - Kontrollera att containern har rätt behörigheter
+
+6. **Nginx visar standard-sidan istället för Django**:
+   - Använd den senaste imagen som innehåller korrekt Nginx-konfiguration
+   - Kontrollera att `nginx.integrated.conf` är korrekt kopierad
+
+7. **CSRF-fel vid inloggning**:
+   - Lägg till rätt hosts i miljövariabler:
+     ```bash
+     ALLOWED_HOSTS="192.168.1.2,localhost,127.0.0.1,din-domain.se"
+     CSRF_TRUSTED_ORIGINS="http://192.168.1.2:8082,https://din-domain.se"
+     ```
+   - Eller använd UI:t: Inställningar → Host-konfiguration
+
+8. **Databasbehörigheter på Unraid**:
+   ```bash
+   # Fixa behörigheter från host-systemet
+   docker exec -u root axecollection chown -R nobody:users /app/data
+   docker exec -u root axecollection chmod -R 755 /app/data
+   ```
+
+### Demo-installation
+För att skapa en demo-installation:
+```bash
+docker run -d \
+  --name axecollection-demo \
+  -p 8092:80 \
+  -v "/path/to/demo/data:/app/data" \
+  -v "/path/to/demo/media:/app/media" \
+  -v "/path/to/demo/logs:/app/logs" \
+  -v "/path/to/demo/backups:/app/backups" \
+  -e DJANGO_SETTINGS_MODULE=AxeCollection.settings_production_http \
+  -e ALLOWED_HOSTS="192.168.1.2,192.168.1.97,localhost,127.0.0.1,yxor-demo.pettersson-vik.se" \
+  -e CSRF_TRUSTED_ORIGINS="http://192.168.1.2:8092,http://192.168.1.97:8092,https://yxor-demo.pettersson-vik.se" \
+  armandur/axecollection:latest
+
+# Skapa testdata
+docker exec -it axecollection-demo python manage.py generate_test_data
+``` 

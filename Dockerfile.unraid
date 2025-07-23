@@ -43,11 +43,18 @@ RUN mkdir -p /app/data /app/logs /app/media /app/staticfiles /var/log/nginx /var
 # Collect static files
 RUN python manage.py collectstatic --noinput
 
-# Configure nginx (will be mounted from host)
+# Configure nginx
+COPY nginx.integrated.conf /etc/nginx/sites-available/default
 RUN ln -sf /etc/nginx/sites-available/default /etc/nginx/sites-enabled/default
 
 # Configure supervisor
 COPY supervisor.unraid.conf /etc/supervisor/conf.d/supervisord.conf
+
+# Create startup script for database initialization and permissions
+COPY start.sh /app/start.sh
+RUN chmod +x /app/start.sh
+# Fix Windows line endings if present
+RUN sed -i 's/\r$//' /app/start.sh
 
 # Fix permissions for Unraid (nobody:users - UID 99, GID 100)
 RUN chown -R nobody:users /app
@@ -68,10 +75,6 @@ RUN chmod -R 755 /app/logs
 RUN chown -R nobody:users /tmp
 RUN chmod -R 1777 /tmp
 
-# Create startup script for database initialization and permissions
-COPY start.sh /app/start.sh
-RUN chmod +x /app/start.sh
-
 # Expose port 80 for nginx
 EXPOSE 80
 
@@ -80,4 +83,4 @@ HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
     CMD curl -f http://localhost/health/ || exit 1
 
 # Run supervisor to manage both nginx and gunicorn
-CMD ["/app/start.sh", "/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"] 
+CMD ["/app/start.sh"] 
