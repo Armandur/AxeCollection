@@ -17,6 +17,8 @@ services:
     environment:
       - DJANGO_SETTINGS_MODULE=AxeCollection.settings_production
       - SECRET_KEY=${SECRET_KEY}
+      - ALLOWED_HOSTS=${ALLOWED_HOSTS:-localhost,127.0.0.1,0.0.0.0}
+      - CSRF_TRUSTED_ORIGINS=${CSRF_TRUSTED_ORIGINS:-http://localhost,http://127.0.0.1}
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "python", "manage.py", "check"]

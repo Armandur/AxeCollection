@@ -30,6 +30,9 @@
                         <a class="nav-link" href="#display-settings" style="color: #212529 !important;">
                             <i class="bi bi-list-ul"></i> Visningsinställningar
                         </a>
+                        <a class="nav-link" href="#host-settings" style="color: #212529 !important;">
+                            <i class="bi bi-globe"></i> Host-konfiguration
+                        </a>
                         <a class="nav-link" href="#backup-management" style="color: #212529 !important;">
                             <i class="bi bi-cloud-arrow-up"></i> Backup-hantering
                         </a>
@@ -288,6 +291,58 @@
                                     </div>
                                 </div>
                             </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Host-konfiguration -->
+                <div class="card mb-4" id="host-settings">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="bi bi-globe"></i> Host-konfiguration
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted mb-3">
+                            Konfigurera externa hosts för demo-server eller publika instanser.
+                        </p>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="external_hosts" class="form-label">
+                                        <strong>Externa hosts</strong>
+                                    </label>
+                                    <textarea class="form-control" id="external_hosts" name="external_hosts" 
+                                              rows="4" placeholder="localhost,127.0.0.1,demo.domain.com">{{ settings.external_hosts }}</textarea>
+                                    <div class="form-text">
+                                        Komma-separerad lista av externa hosts som får komma åt servern
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="external_csrf_origins" class="form-label">
+                                        <strong>CSRF-tillåtna origins</strong>
+                                    </label>
+                                    <textarea class="form-control" id="external_csrf_origins" name="external_csrf_origins" 
+                                              rows="4" placeholder="http://localhost,https://demo.domain.com">{{ settings.external_csrf_origins }}</textarea>
+                                    <div class="form-text">
+                                        Komma-separerad lista av CSRF-tillåtna origins med protokoll
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="alert alert-info">
+                            <h6><i class="bi bi-info-circle"></i> Användning:</h6>
+                            <ul class="mb-0">
+                                <li><strong>Externa hosts:</strong> Domäner eller IP-adresser som får komma åt servern</li>
+                                <li><strong>CSRF-tillåtna origins:</strong> URLs med protokoll som får skicka CSRF-tokens</li>
+                                <li>Exempel: <code>demo.domain.com,192.168.1.100</code></li>
+                                <li>Exempel: <code>https://demo.domain.com,http://192.168.1.100</code></li>
+                            </ul>
                         </div>
                     </div>
                 </div>

@@ -340,12 +340,11 @@ def axe_create(request):
                         default_storage.delete(old_path)
                     temp_paths.append((image, temp_path, file_ext))
                     # Döp om .webp om den finns
-                    if os.path.exists(os.path.join(settings.MEDIA_ROOT, old_webp)):
+                    if default_storage.exists(old_webp):
                         try:
-                            os.rename(
-                                os.path.join(settings.MEDIA_ROOT, old_webp),
-                                os.path.join(settings.MEDIA_ROOT, temp_webp)
-                            )
+                            with default_storage.open(old_webp, 'rb') as old_webp_file:
+                                default_storage.save(temp_webp, old_webp_file)
+                            default_storage.delete(old_webp)
                         except Exception:
                             pass
                     temp_webps.append(temp_webp)
@@ -361,12 +360,11 @@ def axe_create(request):
                     # Döp om .webp om den finns
                     temp_webp = temp_webps[idx-1]
                     final_webp = f'axe_images/{axe.id}{chr(96 + idx)}.webp'
-                    if os.path.exists(os.path.join(settings.MEDIA_ROOT, temp_webp)):
+                    if default_storage.exists(temp_webp):
                         try:
-                            os.rename(
-                                os.path.join(settings.MEDIA_ROOT, temp_webp),
-                                os.path.join(settings.MEDIA_ROOT, final_webp)
-                            )
+                            with default_storage.open(temp_webp, 'rb') as temp_webp_file:
+                                default_storage.save(final_webp, temp_webp_file)
+                            default_storage.delete(temp_webp)
                         except Exception:
                             pass
                     # Uppdatera databasen
@@ -595,12 +593,11 @@ def axe_edit(request, pk):
                         default_storage.delete(old_path)
                     temp_paths.append((image, temp_path, file_ext))
                     # Döp om .webp om den finns
-                    if os.path.exists(os.path.join(settings.MEDIA_ROOT, old_webp)):
+                    if default_storage.exists(old_webp):
                         try:
-                            os.rename(
-                                os.path.join(settings.MEDIA_ROOT, old_webp),
-                                os.path.join(settings.MEDIA_ROOT, temp_webp)
-                            )
+                            with default_storage.open(old_webp, 'rb') as old_webp_file:
+                                default_storage.save(temp_webp, old_webp_file)
+                            default_storage.delete(old_webp)
                         except Exception:
                             pass
                     temp_webps.append(temp_webp)
@@ -616,12 +613,11 @@ def axe_edit(request, pk):
                     # Döp om .webp om den finns
                     temp_webp = temp_webps[idx-1]
                     final_webp = f'axe_images/{axe.id}{chr(96 + idx)}.webp'
-                    if os.path.exists(os.path.join(settings.MEDIA_ROOT, temp_webp)):
+                    if default_storage.exists(temp_webp):
                         try:
-                            os.rename(
-                                os.path.join(settings.MEDIA_ROOT, temp_webp),
-                                os.path.join(settings.MEDIA_ROOT, final_webp)
-                            )
+                            with default_storage.open(temp_webp, 'rb') as temp_webp_file:
+                                default_storage.save(final_webp, temp_webp_file)
+                            default_storage.delete(temp_webp)
                         except Exception:
                             pass
                     # Uppdatera databasen med den nya ordningen

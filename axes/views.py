@@ -607,10 +607,23 @@ def settings_view(request):
         settings.site_title = request.POST.get('site_title', 'AxeCollection')
         settings.site_description = request.POST.get('site_description', '')
         
+        # Extern host-konfiguration
+        settings.external_hosts = request.POST.get('external_hosts', '')
+        settings.external_csrf_origins = request.POST.get('external_csrf_origins', '')
+        
         settings.save()
         
-        # Lägg till meddelande
-        messages.success(request, 'Inställningar sparade!')
+        # Uppdatera host-konfigurationen om den ändrades
+        if (request.POST.get('external_hosts') != settings.external_hosts or 
+            request.POST.get('external_csrf_origins') != settings.external_csrf_origins):
+            try:
+                from django.core.management import call_command
+                call_command('update_hosts')
+                messages.success(request, 'Inställningar sparade och host-konfiguration uppdaterad!')
+            except Exception as e:
+                messages.warning(request, f'Inställningar sparade men host-konfiguration kunde inte uppdateras: {e}')
+        else:
+            messages.success(request, 'Inställningar sparade!')
         
         return redirect('settings')
     

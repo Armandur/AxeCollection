@@ -32,11 +32,11 @@ En checklista för vidareutveckling av AxeCollection. Bocka av med [x] när klar
     - [x] 15.4 Fallback för URL:er som inte kan laddas (CORS-problem)
     - [x] 15.5 Laddningsindikator under nedladdning av URL:er
     - [x] 15.6 Optimera omdöpningslogik - kör endast när nödvändigt
-16. [ ] Fixa rearranging av yxbilder – Implementera drag & drop-funktionalitet för att ändra ordning på yxbilder i galleriet och redigeringsläge.
-    - [ ] 16.1 Drag & drop-API för att uppdatera bildordning
-    - [ ] 16.2 Visuell feedback under drag-operationer
-    - [ ] 16.3 Automatisk uppdatering av filnamn efter omordning
-    - [ ] 16.4 Testa funktionaliteten med demobilder
+16. [x] Fixa rearranging av yxbilder – Implementera drag & drop-funktionalitet för att ändra ordning på yxbilder i galleriet och redigeringsläge.
+    - [x] 16.1 Drag & drop-API för att uppdatera bildordning
+    - [x] 16.2 Visuell feedback under drag-operationer
+    - [x] 16.3 Automatisk uppdatering av filnamn efter omordning
+    - [x] 16.4 Testa funktionaliteten med demobilder
 
 ## Användarupplevelse
 

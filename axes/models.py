@@ -649,6 +649,20 @@ class Settings(models.Model):
         help_text="Beskrivning av sajten för sökmotorer"
     )
     
+    # Extern host-konfiguration
+    external_hosts = models.TextField(
+        blank=True,
+        null=True,
+        verbose_name="Externa hosts",
+        help_text="Komma-separerad lista av externa hosts (t.ex. demo.domain.com,192.168.1.100)"
+    )
+    external_csrf_origins = models.TextField(
+        blank=True,
+        null=True,
+        verbose_name="CSRF-tillåtna origins",
+        help_text="Komma-separerad lista av CSRF-tillåtna origins med protokoll (t.ex. https://demo.domain.com,http://192.168.1.100)"
+    )
+    
     class Meta:
         verbose_name = "Inställning"
         verbose_name_plural = "Inställningar"
