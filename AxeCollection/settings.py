@@ -142,6 +142,11 @@ LOGIN_URL = '/login/'
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/'
 
+# File upload settings for large backup files
+DATA_UPLOAD_MAX_MEMORY_SIZE = 2 * 1024 * 1024 * 1024  # 2GB
+FILE_UPLOAD_MAX_MEMORY_SIZE = 2 * 1024 * 1024 * 1024  # 2GB
+FILE_UPLOAD_TEMP_DIR = None  # Use system temp directory
+
 # Session settings (långa sessioner som du ville ha)
 SESSION_COOKIE_AGE = 30 * 24 * 60 * 60  # 30 dagar
 SESSION_EXPIRE_AT_BROWSER_CLOSE = False

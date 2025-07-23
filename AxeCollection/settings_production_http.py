@@ -1,8 +1,6 @@
 """
-Production settings for AxeCollection project.
-
-Based on the definitive guide to using Django SQLite in production:
-https://alldjango.com/articles/definitive-guide-to-using-django-sqlite-in-production
+HTTP Production settings for AxeCollection project (for local testing).
+This is a copy of production settings but with HTTP instead of HTTPS.
 """
 
 import os
@@ -46,10 +44,10 @@ SECURE_HSTS_SECONDS = 31536000  # 1 year
 SECURE_HSTS_INCLUDE_SUBDOMAINS = True
 SECURE_HSTS_PRELOAD = True
 
-# HTTPS settings for production domain
-SECURE_SSL_REDIRECT = True
-SESSION_COOKIE_SECURE = True
-CSRF_COOKIE_SECURE = True
+# HTTPS settings - DISABLED for HTTP testing
+SECURE_SSL_REDIRECT = False
+SESSION_COOKIE_SECURE = False
+CSRF_COOKIE_SECURE = False
 
 # Database configuration for production SQLite
 DATABASES = {
@@ -122,18 +120,22 @@ CACHES = {
 SESSION_COOKIE_AGE = 30 * 24 * 60 * 60  # 30 days
 SESSION_EXPIRE_AT_BROWSER_CLOSE = False
 SESSION_COOKIE_HTTPONLY = True
-SESSION_COOKIE_SECURE = True  # HTTPS required
+SESSION_COOKIE_SECURE = False  # HTTP allowed for testing
 
-# CSRF configuration for HTTPS production
+# CSRF configuration for HTTP testing
 CSRF_COOKIE_HTTPONLY = True
-CSRF_COOKIE_SECURE = True  # HTTPS required
+CSRF_COOKIE_SECURE = False  # HTTP allowed for testing
 CSRF_TRUSTED_ORIGINS = [
-    'https://yxor.pettersson-vik.se',
-    'https://www.yxor.pettersson-vik.se',
-    # Local development (for testing)
     'http://localhost',
     'http://127.0.0.1',
+    'http://0.0.0.0',
     'http://192.168.1.2',  # Your Unraid server IP
+    'http://172.17.0.52',  # Docker internal IP
+    # Production domain (both HTTP and HTTPS for testing)
+    'http://yxor.pettersson-vik.se',
+    'https://yxor.pettersson-vik.se',
+    'http://www.yxor.pettersson-vik.se',
+    'https://www.yxor.pettersson-vik.se',
 ]
 
 # Password validation (same as development)

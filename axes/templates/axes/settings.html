@@ -33,6 +33,9 @@
                         <a class="nav-link" href="#backup-management" style="color: #212529 !important;">
                             <i class="bi bi-cloud-arrow-up"></i> Backup-hantering
                         </a>
+                        <a class="nav-link" href="#backup-upload" style="color: #212529 !important;">
+                            <i class="bi bi-upload"></i> Backup-uppladdning
+                        </a>
                     </div>
                 </div>
             </nav>
@@ -370,6 +373,62 @@
                 </div>
             </div>
             
+            <!-- Ladda upp backup -->
+            <div class="card mb-4" id="backup-upload">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-upload"></i> Ladda upp backup
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="upload_backup">
+                        
+                        <div class="row">
+                            <div class="col-md-8">
+                                <div class="mb-3">
+                                    <label for="backup_file" class="form-label">
+                                        <strong>Välj backup-fil</strong>
+                                    </label>
+                                    <input type="file" class="form-control" id="backup_file" 
+                                           name="backup_file" accept=".zip,.sqlite3" required>
+                                    <div class="form-text">
+                                        Välj en backup-fil (.zip eller .sqlite3) att ladda upp till servern
+                                    </div>
+                                    
+                                    <!-- Progress bar för stora filer -->
+                                    <div id="upload-progress" class="mt-3" style="display: none;">
+                                        <div class="progress">
+                                            <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                                                 role="progressbar" style="width: 0%"></div>
+                                        </div>
+                                        <small class="text-muted" id="upload-status">Förbereder uppladdning...</small>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-4 d-flex align-items-end">
+                                <button type="submit" class="btn btn-primary" id="upload-btn">
+                                    <i class="bi bi-upload"></i> Ladda upp backup
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="alert alert-info">
+                            <h6><i class="bi bi-info-circle"></i> Information om backup-uppladdning</h6>
+                            <ul class="mb-0">
+                                <li>Stödda format: <strong>.zip</strong> och <strong>.sqlite3</strong></li>
+                                <li>Maximal filstorlek: <strong>2GB</strong></li>
+                                <li>Filen sparas i: <code>/app/backups/</code></li>
+                                <li>Du kan sedan återställa från den uppladdade backupen</li>
+                                <li>Stora filer kan ta flera minuter att ladda upp</li>
+                            </ul>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
             <!-- Lista befintliga backuper -->
             <div class="card">
                 <div class="card-header">
@@ -546,7 +605,8 @@ html {
 /* Padding för att visa headers vid navigering */
 #public-settings,
 #display-settings,
-#backup-management {
+#backup-management,
+#backup-upload {
     scroll-margin-top: 4rem;
 }
 
@@ -594,7 +654,7 @@ html {
 <script>
 // Markera aktiv sektion i navigeringen
 function updateActiveNavLink() {
-    const sections = document.querySelectorAll('[id$="-settings"], [id="backup-management"]');
+    const sections = document.querySelectorAll('[id$="-settings"], [id="backup-management"], [id="backup-upload"]');
     const navLinks = document.querySelectorAll('.settings-navbar .nav-link');
     
     let currentSection = '';
@@ -647,6 +707,90 @@ function showDeleteModal(filename) {
     const modal = new bootstrap.Modal(document.getElementById('deleteBackupModal'));
     modal.show();
 }
+
+// Backup upload progress handling
+document.addEventListener('DOMContentLoaded', function() {
+    const fileInput = document.getElementById('backup_file');
+    const uploadForm = fileInput.closest('form');
+    const progressDiv = document.getElementById('upload-progress');
+    const progressBar = progressDiv.querySelector('.progress-bar');
+    const uploadStatus = document.getElementById('upload-status');
+    const uploadBtn = document.getElementById('upload-btn');
+    
+    if (fileInput && uploadForm) {
+        uploadForm.addEventListener('submit', function(e) {
+            const file = fileInput.files[0];
+            if (file && file.size > 50 * 1024 * 1024 && file.size < 100 * 1024 * 1024) { // Endast AJAX för filer 50MB-100MB
+                e.preventDefault();
+                
+                // Visa progress bar
+                progressDiv.style.display = 'block';
+                uploadBtn.disabled = true;
+                uploadBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Laddar upp...';
+                
+                // Skapa FormData för AJAX upload
+                const formData = new FormData(uploadForm);
+                const xhr = new XMLHttpRequest();
+                
+                xhr.upload.addEventListener('progress', function(e) {
+                    if (e.lengthComputable) {
+                        const percentComplete = (e.loaded / e.total) * 100;
+                        progressBar.style.width = percentComplete + '%';
+                        progressBar.setAttribute('aria-valuenow', percentComplete);
+                        
+                        const loadedMB = (e.loaded / (1024 * 1024)).toFixed(1);
+                        const totalMB = (e.total / (1024 * 1024)).toFixed(1);
+                        uploadStatus.textContent = `Laddar upp... ${loadedMB}MB av ${totalMB}MB (${percentComplete.toFixed(1)}%)`;
+                    }
+                });
+                
+                xhr.addEventListener('load', function() {
+                    if (xhr.status === 200) {
+                        try {
+                            const response = JSON.parse(xhr.responseText);
+                            if (response.success) {
+                                progressBar.style.width = '100%';
+                                uploadStatus.textContent = 'Uppladdning slutförd! Omdirigerar...';
+                                setTimeout(() => {
+                                    window.location.reload();
+                                }, 1000);
+                            } else {
+                                uploadStatus.textContent = response.message || 'Fel vid uppladdning.';
+                                uploadBtn.disabled = false;
+                                uploadBtn.innerHTML = '<i class="bi bi-upload"></i> Ladda upp backup';
+                                progressDiv.style.display = 'none';
+                            }
+                        } catch (e) {
+                            // Om det inte är JSON, behandla som vanlig redirect
+                            progressBar.style.width = '100%';
+                            uploadStatus.textContent = 'Uppladdning slutförd! Omdirigerar...';
+                            setTimeout(() => {
+                                window.location.reload();
+                            }, 1000);
+                        }
+                    } else {
+                        uploadStatus.textContent = 'Fel vid uppladdning. Försök igen.';
+                        uploadBtn.disabled = false;
+                        uploadBtn.innerHTML = '<i class="bi bi-upload"></i> Ladda upp backup';
+                        progressDiv.style.display = 'none';
+                    }
+                });
+                
+                xhr.addEventListener('error', function() {
+                    uploadStatus.textContent = 'Nätverksfel. Kontrollera din anslutning.';
+                    uploadBtn.disabled = false;
+                    uploadBtn.innerHTML = '<i class="bi bi-upload"></i> Ladda upp backup';
+                    progressDiv.style.display = 'none';
+                });
+                
+                // Använd korrekt URL istället för form.action
+                xhr.open('POST', window.location.pathname);
+                xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+                xhr.send(formData);
+            }
+        });
+    }
+});
 
 
 </script>

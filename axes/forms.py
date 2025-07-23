@@ -1,7 +1,6 @@
 from django import forms
-from .models import Transaction, Contact, Platform, Measurement, MeasurementType, MeasurementTemplate
+from .models import Transaction, Contact, Platform, Measurement, MeasurementType, MeasurementTemplate, Axe, Manufacturer, Settings
 from django.utils import timezone
-from .models import Axe
 
 # Lista med länder (ISO 3166-1 alpha-2, namn, flagg-emoji)
 COUNTRIES = [
@@ -564,3 +563,41 @@ class AxeForm(forms.ModelForm):
             'comment': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Lägg till kommentar om yxan...'}),
             'status': forms.Select(attrs={'class': 'form-select'}),
         } 
+
+class BackupUploadForm(forms.Form):
+    """Form för att ladda upp backupfiler"""
+    backup_file = forms.FileField(
+        label='Backup-fil',
+        help_text='Välj en backup-fil (.zip eller .sqlite3) att ladda upp',
+        widget=forms.FileInput(attrs={
+            'class': 'form-control',
+            'accept': '.zip,.sqlite3'
+        })
+    )
+    
+    def clean_backup_file(self):
+        file = self.cleaned_data.get('backup_file')
+        if file:
+            # Kontrollera filstorlek (max 2GB)
+            max_size = 2 * 1024 * 1024 * 1024  # 2GB
+            if file.size > max_size:
+                raise forms.ValidationError('Filen är för stor. Maximal storlek är 2GB.')
+            
+            # Kontrollera filtyp
+            allowed_extensions = ['.zip', '.sqlite3']
+            file_extension = file.name.lower()
+            if not any(file_extension.endswith(ext) for ext in allowed_extensions):
+                raise forms.ValidationError('Endast .zip och .sqlite3 filer är tillåtna.')
+            
+            # Kontrollera att filen inte redan finns
+            import os
+            from django.conf import settings
+            backup_dir = os.path.join(settings.BASE_DIR, 'backups')
+            if not os.path.exists(backup_dir):
+                os.makedirs(backup_dir)
+            
+            file_path = os.path.join(backup_dir, file.name)
+            if os.path.exists(file_path):
+                raise forms.ValidationError('En fil med samma namn finns redan.')
+        
+        return file 

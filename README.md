@@ -40,6 +40,14 @@ Ett Django-baserat system för att hantera och katalogisera yxsamlingar med avan
 
 ## Senaste uppdateringar
 
+### Docker-integration och Unraid-deployment (2025-07-23)
+- **Integrerad Docker-image** - En enda container med Nginx, Gunicorn och Django för enkel deployment
+- **Unraid-optimering** - Konfigurerad för Unraid's `nobody:users` (UID 99, GID 100) och `/mnt/cache/appdata` volymer
+- **Automatisk startup** - Smart startup-script som hanterar databasinitialisering, migreringar och behörigheter
+- **Backup-hantering** - Integrerad backup-uppladdning via webbgränssnitt (stöd för filer upp till 2GB)
+- **CSRF-fixar** - Korrekt konfiguration för HTTPS-produktion (`https://yxor.pettersson-vik.se/`)
+- **Docker Hub-publishing** - Image tillgänglig som `armandur/axecollection:unraid`
+
 ### Media-filhantering i produktion (2025-07-22)
 - **Nginx-integration** - Konfigurerad Nginx för att servera media-filer direkt i produktion
 - **Automatisk sökvägsfix** - `restore_backup.py` fixar automatiskt Windows backslashes och sökvägar vid återställning
