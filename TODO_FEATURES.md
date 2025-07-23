@@ -32,6 +32,11 @@ En checklista för vidareutveckling av AxeCollection. Bocka av med [x] när klar
     - [x] 15.4 Fallback för URL:er som inte kan laddas (CORS-problem)
     - [x] 15.5 Laddningsindikator under nedladdning av URL:er
     - [x] 15.6 Optimera omdöpningslogik - kör endast när nödvändigt
+16. [ ] Fixa rearranging av yxbilder – Implementera drag & drop-funktionalitet för att ändra ordning på yxbilder i galleriet och redigeringsläge.
+    - [ ] 16.1 Drag & drop-API för att uppdatera bildordning
+    - [ ] 16.2 Visuell feedback under drag-operationer
+    - [ ] 16.3 Automatisk uppdatering av filnamn efter omordning
+    - [ ] 16.4 Testa funktionaliteten med demobilder
 
 ## Användarupplevelse
 
@@ -225,19 +230,28 @@ En checklista för vidareutveckling av AxeCollection. Bocka av med [x] när klar
     - [x] 48.21 Visuell hantering för inaktiva länkar (gråtonad styling, URL som text, "Inaktiv"-badge)
     - [x] 48.22 Hover-effekter på bild- och länkkort för bättre användarupplevelse
     - [x] 48.23 Template filter för att visa information i tillverkarlistan (strippa markdown, begränsa längd)
+49. [ ] Måttmallshantering i inställningsmenyn – Möjlighet att skapa, redigera och hantera måttmallar direkt från systeminställningarna.
+    - [ ] 49.1 Lägg till sektion för måttmallshantering i inställningsmenyn
+    - [ ] 49.2 Formulär för att skapa nya måttmallar med namn och beskrivning
+    - [ ] 49.3 Drag & drop-gränssnitt för att lägga till/ta bort måtttyper i mallar
+    - [ ] 49.4 Redigering av befintliga måttmallar (namn, beskrivning, måtttyper)
+    - [ ] 49.5 Borttagning av måttmallar med varning om konsekvenser
+    - [ ] 49.6 Förhandsvisning av måttmallar med lista över inkluderade måtttyper
+    - [ ] 49.7 Validering för att säkerställa att mallar har minst ett mått
+    - [ ] 49.8 AJAX-hantering för snabb uppdatering utan sidladdning
 
 ## Säkerhet och användare
 
-49. [x] Inloggning/behörighet – Privata delar eller flera användare.
-    - [x] 49.1 Django Auth-system implementerat med anpassade templates
-    - [x] 49.2 Långa sessioner (30 dagar) för bättre användarupplevelse
-    - [x] 49.3 Starka lösenord (minst 12 tecken) med Django's validering
-    - [x] 49.4 Login/logout-funktionalitet med redirect till rätt sida
-    - [x] 49.5 Användardropdown i navigationen med inställningar och logout
-    - [x] 49.6 Responsiv login-modal i navigationen för snabb inloggning
-    - [x] 49.7 Tydlig visuell feedback för inloggade vs icke-inloggade användare
-50. [ ] Loggning av ändringar (audit trail).
-51. [x] Inför inloggning/adminvy så att endast inloggade kan redigera, och visa en publik vy där känsliga uppgifter (t.ex. kontaktnamn, personuppgifter och ev. priser) maskeras eller döljs.
+50. [x] Inloggning/behörighet – Privata delar eller flera användare.
+    - [x] 50.1 Django Auth-system implementerat med anpassade templates
+    - [x] 50.2 Långa sessioner (30 dagar) för bättre användarupplevelse
+    - [x] 50.3 Starka lösenord (minst 12 tecken) med Django's validering
+    - [x] 50.4 Login/logout-funktionalitet med redirect till rätt sida
+    - [x] 50.5 Användardropdown i navigationen med inställningar och logout
+    - [x] 50.6 Responsiv login-modal i navigationen för snabb inloggning
+    - [x] 50.7 Tydlig visuell feedback för inloggade vs icke-inloggade användare
+51. [ ] Loggning av ändringar (audit trail).
+52. [x] Inför inloggning/adminvy så att endast inloggade kan redigera, och visa en publik vy där känsliga uppgifter (t.ex. kontaktnamn, personuppgifter och ev. priser) maskeras eller döljs.
     - [x] 51.1 Settings-modell med konfigurerbara publika inställningar
     - [x] 51.2 Context processor som gör publika inställningar tillgängliga i alla templates
     - [x] 51.3 Automatisk filtrering av känslig data för icke-inloggade användare
@@ -258,46 +272,59 @@ En checklista för vidareutveckling av AxeCollection. Bocka av med [x] när klar
     - [x] 51.18 Konsekvent navigation som anpassas efter användarstatus
     - [x] 51.19 Snygga ikoner och styling för användargränssnittet
     - [x] 51.20 Fixa yxdetaljsidan: Pris- och fraktkolumner visas fortfarande för publika användare trots att de ska döljas
-- [x] 51.21 Fixa ekonomiska statistikkort på /yxor: Kronor-relaterade kort (vinst/förlust, totala värden) visas fortfarande för publika användare, ska döljas helt
-52. [x] Vy för okopplade bilder – Rutnätsvy med funktioner för att ta bort och ladda ner bilder som flyttats från borttagna yxor.
-    - [x] 52.1 Rutnätsvy med bildkort som visar filnamn, storlek och timestamp
-    - [x] 52.2 Gruppering av bilder efter timestamp (när yxan togs bort)
-    - [x] 52.3 Soptunne-ikon för att ta bort enskilda bilder
-    - [x] 52.4 Ladda ner-ikon för att spara ner enskilda bilder
-    - [x] 52.5 Massåtgärder med checkboxar för att välja flera bilder
-    - [x] 52.6 "Ladda ner valda"-knapp som skapar ZIP-fil med valda bilder
-    - [x] 52.7 Statistik-kort som visar totalt antal bilder, storlek och antal grupper
-    - [x] 52.8 Responsiv design som fungerar på mobil och desktop
-    - [x] 52.9 AJAX-hantering för borttagning utan sidladdning
-    - [x] 52.10 Hover-effekter och animationer för bättre användarupplevelse
-    - [x] 52.11 .webp-optimering: visar .webp-versioner för snabbare laddning men laddar ner originalfiler
-    - [x] 52.12 Korrekt svenska grammatik med plural-former för "antal bilder" och "antal grupper"
-    - [x] 52.13 Lägg till länk till vyn i admin-navigation (kommer att implementeras när inloggning/adminvy införs)
-    - [ ] 52.14 Implementera motsvarande hantering för borttagning av tillverkare och deras bilder (flytt till okopplade bilder)
-        - [ ] 52.14.1 Analysera vad som ska hända med yxor som tillhör tillverkaren (behåll som "okänd tillverkare" vs förhindra borttagning)
-        - [ ] 52.14.2 Utvärdera om funktionen ens behövs eller om tillverkare ska vara permanent
+- [x] 52.21 Fixa ekonomiska statistikkort på /yxor: Kronor-relaterade kort (vinst/förlust, totala värden) visas fortfarande för publika användare, ska döljas helt
+53. [x] Vy för okopplade bilder – Rutnätsvy med funktioner för att ta bort och ladda ner bilder som flyttats från borttagna yxor.
+    - [x] 53.1 Rutnätsvy med bildkort som visar filnamn, storlek och timestamp
+    - [x] 53.2 Gruppering av bilder efter timestamp (när yxan togs bort)
+    - [x] 53.3 Soptunne-ikon för att ta bort enskilda bilder
+    - [x] 53.4 Ladda ner-ikon för att spara ner enskilda bilder
+    - [x] 53.5 Massåtgärder med checkboxar för att välja flera bilder
+    - [x] 53.6 "Ladda ner valda"-knapp som skapar ZIP-fil med valda bilder
+    - [x] 53.7 Statistik-kort som visar totalt antal bilder, storlek och antal grupper
+    - [x] 53.8 Responsiv design som fungerar på mobil och desktop
+    - [x] 53.9 AJAX-hantering för borttagning utan sidladdning
+    - [x] 53.10 Hover-effekter och animationer för bättre användarupplevelse
+    - [x] 53.11 .webp-optimering: visar .webp-versioner för snabbare laddning men laddar ner originalfiler
+    - [x] 53.12 Korrekt svenska grammatik med plural-former för "antal bilder" och "antal grupper"
+    - [x] 53.13 Lägg till länk till vyn i admin-navigation (kommer att implementeras när inloggning/adminvy införs)
+    - [x] 53.14 Implementera motsvarande hantering för borttagning av tillverkare och deras bilder (flytt till okopplade bilder)
+        - [x] 53.14.1 Analysera vad som ska hända med yxor som tillhör tillverkaren (behåll som "okänd tillverkare" vs förhindra borttagning)
+        - [x] 53.14.2 Utvärdera om funktionen ens behövs eller om tillverkare ska vara permanent
 
 ## Prestanda och kodkvalitet
 
-53. [ ] Fler automatiska tester (unit/integration).
-54. [ ] CI/CD – Automatiska tester vid push (GitHub Actions).
-55. [ ] Kodgranskning – Linting och kodstil (t.ex. black, flake8).
-56. [x] Periodvis kodgranskning: Gå igenom och granska koden stegvis för att identifiera behov av övergripande refaktorering, buggfixar och tillsnyggning. Gör detta processvis så att varje steg kan testas innan nästa påbörjas.
-    - [x] 56.1 Refaktorera vyer till mindre filer (views_axe.py, views_contact.py, views_manufacturer.py, views_transaction.py)
-    - [x] 56.2 Flytta statistik- och ekonomi-beräkning från vyer till model-properties
-    - [x] 56.3 Skapa återanvändbara template-includes för statistik-kort (_stat_card.html, _axe_stats_cards.html, _contact_stats_cards.html, _transaction_stats_cards.html)
-    - [x] 56.4 Uppdatera templates för att använda nya includes och model-properties
-    - [x] 56.5 Förenkla fler templates med includes och templatetags (t.ex. transaktionsrader, status-badges, breadcrumbs)
-    - [x] 56.5.1 Förbättrade breadcrumbs och rubrik på detaljsidan: ID - Tillverkare - Modell
-    - [x] 56.6 Refaktorera formulär med återanvändbara komponenter
+54. [ ] Fler automatiska tester (unit/integration).
+55. [ ] CI/CD – Automatiska tester vid push (GitHub Actions).
+56. [ ] Kodgranskning – Linting och kodstil (t.ex. black, flake8).
+57. [x] Periodvis kodgranskning: Gå igenom och granska koden stegvis för att identifiera behov av övergripande refaktorering, buggfixar och tillsnyggning. Gör detta processvis så att varje steg kan testas innan nästa påbörjas.
+    - [x] 57.1 Refaktorera vyer till mindre filer (views_axe.py, views_contact.py, views_manufacturer.py, views_transaction.py)
+    - [x] 57.2 Flytta statistik- och ekonomi-beräkning från vyer till model-properties
+    - [x] 57.3 Skapa återanvändbara template-includes för statistik-kort (_stat_card.html, _axe_stats_cards.html, _contact_stats_cards.html, _transaction_stats_cards.html)
+    - [x] 57.4 Uppdatera templates för att använda nya includes och model-properties
+    - [x] 57.5 Förenkla fler templates med includes och templatetags (t.ex. transaktionsrader, status-badges, breadcrumbs)
+    - [x] 57.5.1 Förbättrade breadcrumbs och rubrik på detaljsidan: ID - Tillverkare - Modell
+    - [x] 57.6 Refaktorera formulär med återanvändbara komponenter
     - [x] Skapat och infört _form_field.html, _form_checkbox.html, _form_input_group.html
     - [x] Använt dessa i axe_form.html för kontakt, plattform, transaktion
     - [x] Förenklat och DRY:at markup för fält, checkboxar och input-grupper
     - [x] Förbättrat frontend-UX för dropdowns och sektioner
     - [x] Fixat buggar kring next_id och TemplateSyntaxError
     - [x] Dokumenterat vanliga fel och lösningar
-    - [ ] 56.7 Lägg till tester för vyer, modeller och templatetags
-    - [ ] 56.8 Prestandaoptimering (caching, lazy loading, etc.)
+    - [ ] 57.7 Lägg till tester för vyer, modeller och templatetags
+    - [ ] 57.8 Prestandaoptimering (caching, lazy loading, etc.)
+
+## Testdata och demo
+
+73. [x] Skapa fingerad testdata för demo och testning
+    - [x] 73.1 Exportera nuvarande databas-struktur för att förstå datamodellen
+    - [x] 73.2 Skapa script för att generera realistisk testdata (yxor, tillverkare, kontakter, transaktioner)
+    - [x] 73.3 Inkludera olika typer av yxor med varierande mått, bilder och transaktioner
+    - [x] 73.4 Skapa tillverkare med olika antal bilder och länkar
+    - [x] 73.5 Generera kontakter från olika länder med flaggemoji
+    - [x] 73.6 Skapa transaktioner med olika plattformar och priser
+    - [x] 73.7 Testa alla funktioner med testdata (sökning, filtrering, statistik, etc.)
+    - [ ] 73.8 Förbereda för publik demo-webbplats
+    - [x] 73.9 Dokumentera hur man återställer till testdata
 57. [x] Dokumentation av förbättringar - Uppdatera markdown-filer med genomförda förbättringar och lärdomar
 
 ## Design och presentation
