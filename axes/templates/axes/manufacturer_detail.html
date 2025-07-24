@@ -1489,20 +1489,36 @@ function editLink(linkId) {
     let title = '';
     let url = '';
     
-    const titleLink = linkCard.querySelector('.card-title a');
-    if (titleLink) {
-        // Aktiv länk
-        title = titleLink.textContent.trim();
-        url = titleLink.href;
-    } else {
-        // Inaktiv länk
+    // Kontrollera om länken är aktiv eller inaktiv
+    const cardElement = linkCard.querySelector('.card');
+    const isActive = !cardElement.classList.contains('inactive-link');
+    
+    if (isActive) {
+        // Aktiv länk: titel i span, URL i onclick attribut
         const titleSpan = linkCard.querySelector('.card-title span');
-        const urlElement = linkCard.querySelector('.card-title small');
+        if (titleSpan) {
+            title = titleSpan.textContent.replace(/\s*\u{1F517}|\s*↗/gu, '').trim(); // Ta bort eventuella ikoner
+        }
+        
+        // Hämta URL från onclick attributet
+        const onclick = cardElement.getAttribute('onclick');
+        if (onclick) {
+            const urlMatch = onclick.match(/window\.open\('([^']+)'/);
+            if (urlMatch) {
+                url = urlMatch[1];
+            }
+        }
+    } else {
+        // Inaktiv länk: titel i första span, URL i small element
+        const titleSpan = linkCard.querySelector('.card-title span:first-child');
         if (titleSpan) {
             title = titleSpan.textContent.trim();
         }
+        
+        const urlElement = linkCard.querySelector('.card-title small');
         if (urlElement) {
-            url = urlElement.textContent.replace('🔗', '').trim();
+            // Ta bort ikon och få ren URL
+            url = urlElement.textContent.replace(/^\s*\S+\s*/, '').trim(); // Ta bort första ordet/ikonen
         }
     }
     
@@ -1516,8 +1532,7 @@ function editLink(linkId) {
     const descriptionElement = linkCard.querySelector('.card-text');
     document.getElementById('editLinkDescription').value = descriptionElement ? descriptionElement.textContent.trim() : '';
     
-    // Sätt aktiv status baserat på om kortet har inactive-link klassen
-    const isActive = !linkCard.querySelector('.card').classList.contains('inactive-link');
+    // Sätt aktiv status
     document.getElementById('editLinkIsActive').checked = isActive;
     
     // Visa redigeringsmodal
@@ -1571,12 +1586,29 @@ function saveLinkEdit() {
     });
 }
 
-function deleteLink(linkId) {
-    if (!confirm('Är du säker på att du vill ta bort denna länk?')) {
-        return;
-    }
+function showDeleteLinkModal() {
+    // Hämta länkinformation från redigera-modalen
+    const linkId = document.getElementById('editLinkId').value;
+    const linkTitle = document.getElementById('editLinkTitle').value;
+    const linkUrl = document.getElementById('editLinkUrl').value;
     
-    const deleteBtn = document.querySelector('#editLinkModal .btn-danger');
+    // Fyll i informationen i bekräftelsemodaln
+    document.getElementById('deleteLinkTitle').textContent = linkTitle;
+    document.getElementById('deleteLinkUrl').textContent = linkUrl;
+    
+    // Visa bekräftelsemodaln
+    const deleteModal = new bootstrap.Modal(document.getElementById('deleteLinkModal'));
+    deleteModal.show();
+    
+    // Sätt upp bekräftelseknappen
+    const confirmBtn = document.getElementById('confirmDeleteLinkBtn');
+    confirmBtn.onclick = function() {
+        confirmDeleteLink(linkId);
+    };
+}
+
+function confirmDeleteLink(linkId) {
+    const deleteBtn = document.getElementById('confirmDeleteLinkBtn');
     const originalText = deleteBtn.innerHTML;
     deleteBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Tar bort...';
     deleteBtn.disabled = true;
@@ -1604,9 +1636,11 @@ function deleteLink(linkId) {
                 }
             }
             
-            // Stäng modal
-            const modal = bootstrap.Modal.getInstance(document.getElementById('editLinkModal'));
-            modal.hide();
+            // Stäng båda modalerna
+            const deleteModal = bootstrap.Modal.getInstance(document.getElementById('deleteLinkModal'));
+            deleteModal.hide();
+            const editModal = bootstrap.Modal.getInstance(document.getElementById('editLinkModal'));
+            editModal.hide();
             
             showNotification('Länk borttagen!', 'success');
         } else {
@@ -1850,7 +1884,7 @@ function saveNewLink() {
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-danger" onclick="deleteLink(document.getElementById('editLinkId').value)">
+                <button type="button" class="btn btn-danger" onclick="showDeleteLinkModal()">
                     <i class="bi bi-trash"></i> Ta bort länk
                 </button>
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Avbryt</button>
@@ -1907,6 +1941,40 @@ function saveNewLink() {
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Avbryt</button>
                 <button type="button" class="btn btn-primary" onclick="saveNewLink()">
                     <i class="bi bi-plus-circle"></i> Lägg till länk
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Ta bort länk bekräftelse Modal -->
+<div class="modal fade" id="deleteLinkModal" tabindex="-1" aria-labelledby="deleteLinkModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteLinkModalLabel">
+                    <i class="bi bi-exclamation-triangle text-warning me-2"></i>
+                    Ta bort länk
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Är du säker på att du vill ta bort denna länk?</p>
+                <div class="card border-warning">
+                    <div class="card-body">
+                        <h6 class="card-title" id="deleteLinkTitle">Länktitel</h6>
+                        <p class="card-text text-muted" id="deleteLinkUrl">URL</p>
+                    </div>
+                </div>
+                <p class="text-danger mt-3">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    <strong>Denna åtgärd kan inte ångras!</strong>
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Avbryt</button>
+                <button type="button" class="btn btn-danger" id="confirmDeleteLinkBtn">
+                    <i class="bi bi-trash"></i> Ta bort länk
                 </button>
             </div>
         </div>
