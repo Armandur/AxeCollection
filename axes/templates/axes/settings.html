@@ -23,23 +23,29 @@
             <nav class="settings-navbar navbar navbar-expand-lg mb-4 rounded" style="background-color: var(--bs-secondary-bg) !important; border: 1px solid var(--bs-border-color);">
                 <div class="container-fluid">
                     <span class="navbar-brand mb-0 h6" style="color: var(--bs-body-color) !important;">Navigera till:</span>
-                    <div class="navbar-nav">
-                        <a class="nav-link" href="#public-settings" style="color: var(--bs-body-color) !important;">
-                            <i class="bi bi-eye"></i> Publika inställningar
-                        </a>
-                        <a class="nav-link" href="#display-settings" style="color: var(--bs-body-color) !important;">
-                            <i class="bi bi-list-ul"></i> Visningsinställningar
-                        </a>
-                        <a class="nav-link" href="#host-settings" style="color: var(--bs-body-color) !important;">
-                            <i class="bi bi-globe"></i> Host-konfiguration
-                        </a>
-                        <a class="nav-link" href="#backup-management" style="color: var(--bs-body-color) !important;">
-                            <i class="bi bi-cloud-arrow-up"></i> Backup-hantering
-                        </a>
-                        <a class="nav-link" href="#backup-upload" style="color: var(--bs-body-color) !important;">
-                            <i class="bi bi-upload"></i> Backup-uppladdning
-                        </a>
-                    </div>
+                                         <div class="navbar-nav">
+                         <a class="nav-link" href="#public-settings" style="color: var(--bs-body-color) !important;">
+                             <i class="bi bi-eye"></i> Publika inställningar
+                         </a>
+                         <a class="nav-link" href="#display-settings" style="color: var(--bs-body-color) !important;">
+                             <i class="bi bi-list-ul"></i> Visningsinställningar
+                         </a>
+                         <a class="nav-link" href="#site-settings" style="color: var(--bs-body-color) !important;">
+                             <i class="bi bi-gear"></i> Sidinställningar
+                         </a>
+                         <a class="nav-link" href="#host-settings" style="color: var(--bs-body-color) !important;">
+                             <i class="bi bi-globe"></i> Host-konfiguration
+                         </a>
+                         <a class="nav-link" href="#measurement-templates" style="color: var(--bs-body-color) !important;">
+                             <i class="bi bi-rulers"></i> Måttmallar
+                         </a>
+                         <a class="nav-link" href="#backup-management" style="color: var(--bs-body-color) !important;">
+                             <i class="bi bi-cloud-arrow-up"></i> Backup-hantering
+                         </a>
+                         <a class="nav-link" href="#backup-upload" style="color: var(--bs-body-color) !important;">
+                             <i class="bi bi-upload"></i> Backup-uppladdning
+                         </a>
+                     </div>
                 </div>
             </nav>
             
@@ -257,13 +263,13 @@
                     </div>
                 </div>
                 
-                <!-- Systeminställningar -->
-                <div class="card mb-4">
-                    <div class="card-header">
-                        <h5 class="card-title mb-0">
-                            <i class="bi bi-gear"></i> Systeminställningar
-                        </h5>
-                    </div>
+                                 <!-- Sidinställningar -->
+                 <div class="card mb-4" id="site-settings">
+                     <div class="card-header">
+                         <h5 class="card-title mb-0">
+                             <i class="bi bi-gear"></i> Sidinställningar
+                         </h5>
+                     </div>
                     <div class="card-body">
                         <div class="row">
                             <div class="col-md-6">
@@ -354,6 +360,60 @@
                     </button>
                 </div>
             </form>
+        </div>
+    </div>
+</div>
+
+            <!-- Måttmallshantering -->
+            <div class="container-fluid mt-5" id="measurement-templates">
+    <div class="row">
+        <div class="col-12">
+            <h2 class="mb-4">
+                <i class="bi bi-rulers"></i> Måttmallshantering
+            </h2>
+            
+            <p class="text-muted mb-4">
+                Hantera mallar för att snabbt lägga till vanliga mått på yxor. Skapa egna måtttyper och kombinera dem i användbara mallar.
+            </p>
+            
+            <!-- Måttmallar -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-list-check"></i> Måttmallar
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted mb-3">
+                        Skapa mallar som kombinerar flera måtttyper för snabbare inmatning.
+                    </p>
+                    
+                    <!-- Lägg till ny mall -->
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createTemplateModal">
+                                <i class="bi bi-plus-circle"></i> Skapa ny mall
+                            </button>
+                        </div>
+                        <div class="col-md-6">
+                            <button type="button" class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#manageMeasurementTypesModal">
+                                <i class="bi bi-gear"></i> Hantera måtttyper
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Lista befintliga mallar -->
+                    <div id="measurement-templates-list">
+                        <!-- Dynamiskt innehåll laddas via AJAX -->
+                        <div class="text-center py-4">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Laddar...</span>
+                            </div>
+                            <p class="text-muted mt-2">Laddar måttmallar...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </div>
@@ -651,19 +711,183 @@
     </div>
 </div>
 
+<!-- Skapa ny måttmall Modal -->
+<div class="modal fade" id="createTemplateModal" tabindex="-1" aria-labelledby="createTemplateModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="createTemplateModalLabel">
+                    <i class="bi bi-plus-circle"></i> Skapa ny måttmall
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="createTemplateForm">
+                    {% csrf_token %}
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="template_name" class="form-label">
+                                    <strong>Mallnamn</strong>
+                                </label>
+                                <input type="text" class="form-control" id="template_name" name="template_name" required>
+                                <div class="form-text">T.ex. "Standardyxa", "Detaljerad yxa"</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="template_sort_order" class="form-label">
+                                    <strong>Sorteringsordning</strong>
+                                </label>
+                                <input type="number" class="form-control" id="template_sort_order" name="template_sort_order" value="0" min="0">
+                                <div class="form-text">Lägre nummer = visas först</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="template_description" class="form-label">
+                            <strong>Beskrivning</strong>
+                        </label>
+                        <textarea class="form-control" id="template_description" name="template_description" rows="3"></textarea>
+                        <div class="form-text">Valfri beskrivning av mallen</div>
+                    </div>
+                    
+                    <h6 class="mb-3">
+                        <i class="bi bi-list-check"></i> Välj måtttyper som ska ingå i mallen:
+                    </h6>
+                    <div id="measurement-types-selection">
+                        <!-- Dynamiskt innehåll laddas via AJAX -->
+                        <div class="text-center py-3">
+                            <div class="spinner-border spinner-border-sm text-primary" role="status">
+                                <span class="visually-hidden">Laddar...</span>
+                            </div>
+                            <span class="text-muted ms-2">Laddar måtttyper...</span>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="bi bi-x"></i> Avbryt
+                </button>
+                <button type="button" class="btn btn-primary" id="saveTemplateBtn">
+                    <i class="bi bi-check"></i> Skapa mall
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Hantera måtttyper Modal -->
+<div class="modal fade" id="manageMeasurementTypesModal" tabindex="-1" aria-labelledby="manageMeasurementTypesModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="manageMeasurementTypesModalLabel">
+                    <i class="bi bi-gear"></i> Hantera måtttyper
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Lägg till ny måtttyp -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h6 class="card-title mb-0">
+                            <i class="bi bi-plus-circle"></i> Lägg till ny måtttyp
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <form id="createMeasurementTypeForm">
+                            {% csrf_token %}
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label for="measurement_type_name" class="form-label">
+                                            <strong>Namn</strong>
+                                        </label>
+                                        <input type="text" class="form-control" id="measurement_type_name" name="measurement_type_name" required>
+                                        <div class="form-text">T.ex. "Bladlängd"</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="mb-3">
+                                        <label for="measurement_type_unit" class="form-label">
+                                            <strong>Enhet</strong>
+                                        </label>
+                                        <input type="text" class="form-control" id="measurement_type_unit" name="measurement_type_unit" required>
+                                        <div class="form-text">T.ex. "mm", "gram"</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="mb-3">
+                                        <label for="measurement_type_sort_order" class="form-label">
+                                            <strong>Ordning</strong>
+                                        </label>
+                                        <input type="number" class="form-control" id="measurement_type_sort_order" name="measurement_type_sort_order" value="0" min="0">
+                                    </div>
+                                </div>
+                                <div class="col-md-2 d-flex align-items-end">
+                                    <button type="button" class="btn btn-primary w-100" id="addMeasurementTypeBtn">
+                                        <i class="bi bi-plus"></i> Lägg till
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="measurement_type_description" class="form-label">
+                                    <strong>Beskrivning</strong>
+                                </label>
+                                <textarea class="form-control" id="measurement_type_description" name="measurement_type_description" rows="2"></textarea>
+                                <div class="form-text">Valfri beskrivning av måtttypen</div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                
+                <!-- Lista befintliga måtttyper -->
+                <div class="card">
+                    <div class="card-header">
+                        <h6 class="card-title mb-0">
+                            <i class="bi bi-list-ul"></i> Befintliga måtttyper
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div id="measurement-types-list">
+                            <!-- Dynamiskt innehåll laddas via AJAX -->
+                            <div class="text-center py-3">
+                                <div class="spinner-border spinner-border-sm text-primary" role="status">
+                                    <span class="visually-hidden">Laddar...</span>
+                                </div>
+                                <span class="text-muted ms-2">Laddar måtttyper...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="bi bi-x"></i> Stäng
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <style>
 /* Smooth scrolling för navigering */
 html {
     scroll-behavior: smooth;
 }
 
-/* Padding för att visa headers vid navigering */
-#public-settings,
-#display-settings,
-#backup-management,
-#backup-upload {
-    scroll-margin-top: 4rem;
-}
+ /* Padding för att visa headers vid navigering */
+ #public-settings,
+ #display-settings,
+ #site-settings,
+ #host-settings,
+ #measurement-templates,
+ #backup-management,
+ #backup-upload {
+     scroll-margin-top: 4rem;
+ }
 
 /* Specifik styling för settings-navigering */
 .settings-navbar {
@@ -709,7 +933,7 @@ html {
 <script>
 // Markera aktiv sektion i navigeringen
 function updateActiveNavLink() {
-    const sections = document.querySelectorAll('[id$="-settings"], [id="backup-management"], [id="backup-upload"]');
+    const sections = document.querySelectorAll('[id$="-settings"], [id="measurement-templates"], [id="backup-management"], [id="backup-upload"]');
     const navLinks = document.querySelectorAll('.settings-navbar .nav-link');
     
     let currentSection = '';
@@ -846,6 +1070,323 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 });
+
+// === MÅTTMALL-HANTERING ===
+// Ladda måttmallar när sidan laddas
+document.addEventListener('DOMContentLoaded', function() {
+    loadMeasurementTemplates();
+    
+    // Ladda måtttyper när modaler öppnas
+    document.getElementById('createTemplateModal').addEventListener('shown.bs.modal', function() {
+        loadMeasurementTypesSelection();
+    });
+    
+    document.getElementById('manageMeasurementTypesModal').addEventListener('shown.bs.modal', function() {
+        loadMeasurementTypesList();
+    });
+    
+    // Event listeners för knappar
+    document.getElementById('saveTemplateBtn').addEventListener('click', createMeasurementTemplate);
+    document.getElementById('addMeasurementTypeBtn').addEventListener('click', createMeasurementType);
+});
+
+// Ladda måttmallar
+function loadMeasurementTemplates() {
+    fetch('/api/measurement-templates/')
+        .then(response => response.json())
+        .then(data => {
+            const container = document.getElementById('measurement-templates-list');
+            if (data.success && data.templates.length > 0) {
+                let html = '<div class="row">';
+                data.templates.forEach(template => {
+                    html += `
+                        <div class="col-md-6 mb-3">
+                            <div class="card">
+                                <div class="card-header">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <h6 class="mb-0">
+                                            <i class="bi bi-list-check"></i> ${template.name}
+                                        </h6>
+                                        <div class="btn-group btn-group-sm">
+                                            <button type="button" class="btn btn-outline-primary" onclick="editTemplate(${template.id})">
+                                                <i class="bi bi-pencil"></i>
+                                            </button>
+                                            <button type="button" class="btn btn-outline-danger" onclick="deleteTemplate(${template.id}, '${template.name}')">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="card-body">
+                                    ${template.description ? `<p class="text-muted mb-2">${template.description}</p>` : ''}
+                                    <div class="mb-2">
+                                        <small class="text-muted">Innehåller:</small>
+                                    </div>
+                                    <div class="d-flex flex-wrap">
+                                        ${template.measurement_types.map(mt => 
+                                            `<span class="badge bg-secondary me-1 mb-1">${mt.name} (${mt.unit})</span>`
+                                        ).join('')}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+                html += '</div>';
+                container.innerHTML = html;
+            } else {
+                container.innerHTML = `
+                    <div class="text-center py-4">
+                        <i class="bi bi-list-check text-muted" style="font-size: 3rem;"></i>
+                        <p class="text-muted">Inga måttmallar skapade ännu.</p>
+                        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createTemplateModal">
+                            <i class="bi bi-plus-circle"></i> Skapa din första mall
+                        </button>
+                    </div>
+                `;
+            }
+        })
+        .catch(error => {
+            console.error('Fel vid laddning av måttmallar:', error);
+            document.getElementById('measurement-templates-list').innerHTML = `
+                <div class="alert alert-danger">
+                    <i class="bi bi-exclamation-triangle"></i> Fel vid laddning av måttmallar
+                </div>
+            `;
+        });
+}
+
+// Ladda måtttyper för val i mall-modal
+function loadMeasurementTypesSelection() {
+    fetch('/api/measurement-types/')
+        .then(response => response.json())
+        .then(data => {
+            const container = document.getElementById('measurement-types-selection');
+            if (data.success && data.measurement_types.length > 0) {
+                let html = '<div class="row">';
+                data.measurement_types.forEach(mt => {
+                    html += `
+                        <div class="col-md-6 mb-2">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" 
+                                       id="mt_${mt.id}" name="measurement_types" value="${mt.id}">
+                                <label class="form-check-label" for="mt_${mt.id}">
+                                    <strong>${mt.name}</strong> (${mt.unit})
+                                    ${mt.description ? `<br><small class="text-muted">${mt.description}</small>` : ''}
+                                </label>
+                            </div>
+                        </div>
+                    `;
+                });
+                html += '</div>';
+                container.innerHTML = html;
+            } else {
+                container.innerHTML = `
+                    <div class="alert alert-warning">
+                        <i class="bi bi-exclamation-triangle"></i> Inga måtttyper finns. Skapa måtttyper först!
+                    </div>
+                `;
+            }
+        })
+        .catch(error => {
+            console.error('Fel vid laddning av måtttyper:', error);
+            container.innerHTML = `
+                <div class="alert alert-danger">
+                    <i class="bi bi-exclamation-triangle"></i> Fel vid laddning av måtttyper
+                </div>
+            `;
+        });
+}
+
+// Skapa ny måttmall
+function createMeasurementTemplate() {
+    const form = document.getElementById('createTemplateForm');
+    const formData = new FormData(form);
+    
+    // Samla valda måtttyper
+    const selectedTypes = [];
+    document.querySelectorAll('input[name="measurement_types"]:checked').forEach(checkbox => {
+        selectedTypes.push(checkbox.value);
+    });
+    
+    if (selectedTypes.length === 0) {
+        alert('Du måste välja minst en måtttyp för mallen.');
+        return;
+    }
+    
+    formData.append('measurement_types', JSON.stringify(selectedTypes));
+    
+    const btn = document.getElementById('saveTemplateBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Skapar...';
+    
+    fetch('/api/measurement-templates/create/', {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            bootstrap.Modal.getInstance(document.getElementById('createTemplateModal')).hide();
+            form.reset();
+            loadMeasurementTemplates();
+            showNotification('Måttmall skapad!', 'success');
+        } else {
+            showNotification('Fel vid skapande av mall: ' + (data.error || 'Okänt fel'), 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Fel:', error);
+        showNotification('Fel vid skapande av mall', 'error');
+    })
+    .finally(() => {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-check"></i> Skapa mall';
+    });
+}
+
+// Enkel notifikationsfunktion
+function showNotification(message, type) {
+    // Skapa en Bootstrap alert som försvinner automatiskt
+    const alert = document.createElement('div');
+    alert.className = `alert alert-${type === 'success' ? 'success' : 'danger'} alert-dismissible fade show position-fixed`;
+    alert.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+    alert.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    document.body.appendChild(alert);
+    
+    // Ta bort automatiskt efter 5 sekunder
+    setTimeout(() => {
+        if (alert.parentNode) {
+            alert.remove();
+        }
+    }, 5000);
+}
+
+// Ladda måtttyper för hantering i modal
+function loadMeasurementTypesList() {
+    fetch('/api/measurement-types/')
+        .then(response => response.json())
+        .then(data => {
+            const container = document.getElementById('measurement-types-list');
+            if (data.success && data.measurement_types.length > 0) {
+                let html = `
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Namn</th>
+                                    <th>Enhet</th>
+                                    <th>Beskrivning</th>
+                                    <th>Ordning</th>
+                                    <th>Åtgärder</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                `;
+                data.measurement_types.forEach(mt => {
+                    html += `
+                        <tr>
+                            <td><strong>${mt.name}</strong></td>
+                            <td><span class="badge bg-secondary">${mt.unit}</span></td>
+                            <td>${mt.description || '<span class="text-muted">-</span>'}</td>
+                            <td>${mt.sort_order}</td>
+                            <td>
+                                <div class="btn-group btn-group-sm">
+                                    <button type="button" class="btn btn-outline-primary" onclick="editMeasurementType(${mt.id})">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-outline-danger" onclick="deleteMeasurementType(${mt.id}, '${mt.name}')">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                });
+                html += '</tbody></table></div>';
+                container.innerHTML = html;
+            } else {
+                container.innerHTML = `
+                    <div class="text-center py-4">
+                        <i class="bi bi-gear text-muted" style="font-size: 3rem;"></i>
+                        <p class="text-muted">Inga måtttyper skapade ännu.</p>
+                    </div>
+                `;
+            }
+        })
+        .catch(error => {
+            console.error('Fel vid laddning av måtttyper:', error);
+            container.innerHTML = `
+                <div class="alert alert-danger">
+                    <i class="bi bi-exclamation-triangle"></i> Fel vid laddning av måtttyper
+                </div>
+            `;
+        });
+}
+
+// Skapa ny måtttyp
+function createMeasurementType() {
+    const form = document.getElementById('createMeasurementTypeForm');
+    const formData = new FormData(form);
+    
+    const btn = document.getElementById('addMeasurementTypeBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Skapar...';
+    
+    fetch('/api/measurement-types/create/', {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            form.reset();
+            loadMeasurementTypesList();
+            loadMeasurementTypesSelection(); // Uppdatera även valet i mall-modalen
+            showNotification('Måtttyp skapad!', 'success');
+        } else {
+            showNotification('Fel vid skapande av måtttyp: ' + (data.error || 'Okänt fel'), 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Fel:', error);
+        showNotification('Fel vid skapande av måtttyp', 'error');
+    })
+    .finally(() => {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-plus"></i> Lägg till';
+    });
+}
+
+// Placeholder-funktioner för redigering och borttagning (kommer att implementeras senare)
+function editTemplate(templateId) {
+    showNotification('Redigering av mallar kommer i nästa version', 'info');
+}
+
+function deleteTemplate(templateId, templateName) {
+    if (confirm(`Är du säker på att du vill ta bort mallen "${templateName}"?`)) {
+        showNotification('Borttagning av mallar kommer i nästa version', 'info');
+    }
+}
+
+function editMeasurementType(typeId) {
+    showNotification('Redigering av måtttyper kommer i nästa version', 'info');
+}
+
+function deleteMeasurementType(typeId, typeName) {
+    if (confirm(`Är du säker på att du vill ta bort måtttypen "${typeName}"?`)) {
+        showNotification('Borttagning av måtttyper kommer i nästa version', 'info');
+    }
+}
 
 
 </script>

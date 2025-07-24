@@ -22,6 +22,7 @@ from .views_axe import (
 )
 from .views_contact import contact_list, contact_detail
 from .views_manufacturer import manufacturer_list, manufacturer_detail
+from django.contrib.auth.decorators import login_required
 
 # Create your views here.
 
@@ -844,3 +845,188 @@ def restore_backup(request):
         messages.error(request, f'Fel vid återställning: {str(e)}')
     
     return redirect('settings')
+
+@login_required
+def api_measurement_templates(request):
+    """API för att hämta alla måttmallar"""
+    try:
+        templates = MeasurementTemplate.objects.filter(is_active=True).prefetch_related('items__measurement_type').order_by('sort_order', 'name')
+        
+        templates_data = []
+        for template in templates:
+            measurement_types = []
+            for item in template.items.all():
+                measurement_types.append({
+                    'id': item.measurement_type.id,
+                    'name': item.measurement_type.name,
+                    'unit': item.measurement_type.unit,
+                    'sort_order': item.sort_order
+                })
+            
+            templates_data.append({
+                'id': template.id,
+                'name': template.name,
+                'description': template.description,
+                'sort_order': template.sort_order,
+                'measurement_types': measurement_types
+            })
+        
+        return JsonResponse({
+            'success': True,
+            'templates': templates_data
+        })
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=500)
+
+@login_required
+def api_measurement_types(request):
+    """API för att hämta alla måtttyper"""
+    try:
+        from .models import MeasurementType
+        measurement_types = MeasurementType.objects.filter(is_active=True).order_by('sort_order', 'name')
+        
+        types_data = []
+        for mt in measurement_types:
+            types_data.append({
+                'id': mt.id,
+                'name': mt.name,
+                'unit': mt.unit,
+                'description': mt.description,
+                'sort_order': mt.sort_order
+            })
+        
+        return JsonResponse({
+            'success': True,
+            'measurement_types': types_data
+        })
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=500)
+
+@login_required
+@require_http_methods(["POST"])
+def api_create_measurement_template(request):
+    """API för att skapa ny måttmall"""
+    try:
+        from .models import MeasurementTemplate, MeasurementTemplateItem, MeasurementType
+        import json
+        
+        name = request.POST.get('template_name', '').strip()
+        description = request.POST.get('template_description', '').strip()
+        sort_order = int(request.POST.get('template_sort_order', 0))
+        measurement_types_json = request.POST.get('measurement_types', '[]')
+        
+        if not name:
+            return JsonResponse({
+                'success': False,
+                'error': 'Mallnamn är obligatoriskt'
+            }, status=400)
+        
+        # Kontrollera om namnet redan finns
+        if MeasurementTemplate.objects.filter(name=name).exists():
+            return JsonResponse({
+                'success': False,
+                'error': 'En mall med detta namn finns redan'
+            }, status=400)
+        
+        try:
+            measurement_type_ids = json.loads(measurement_types_json)
+        except:
+            return JsonResponse({
+                'success': False,
+                'error': 'Ogiltiga måtttyper'
+            }, status=400)
+        
+        if not measurement_type_ids:
+            return JsonResponse({
+                'success': False,
+                'error': 'Du måste välja minst en måtttyp'
+            }, status=400)
+        
+        # Skapa mallen
+        template = MeasurementTemplate.objects.create(
+            name=name,
+            description=description,
+            sort_order=sort_order
+        )
+        
+        # Lägg till måtttyper till mallen
+        for i, mt_id in enumerate(measurement_type_ids):
+            try:
+                measurement_type = MeasurementType.objects.get(id=mt_id, is_active=True)
+                MeasurementTemplateItem.objects.create(
+                    template=template,
+                    measurement_type=measurement_type,
+                    sort_order=i
+                )
+            except MeasurementType.DoesNotExist:
+                # Ignorera ogiltiga måtttyper
+                pass
+        
+        return JsonResponse({
+            'success': True,
+            'message': f'Måttmall "{name}" skapad framgångsrikt',
+            'template_id': template.id
+        })
+        
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=500)
+
+@login_required
+@require_http_methods(["POST"])
+def api_create_measurement_type(request):
+    """API för att skapa ny måtttyp"""
+    try:
+        from .models import MeasurementType
+        
+        name = request.POST.get('measurement_type_name', '').strip()
+        unit = request.POST.get('measurement_type_unit', '').strip()
+        description = request.POST.get('measurement_type_description', '').strip()
+        sort_order = int(request.POST.get('measurement_type_sort_order', 0))
+        
+        if not name or not unit:
+            return JsonResponse({
+                'success': False,
+                'error': 'Namn och enhet är obligatoriska'
+            }, status=400)
+        
+        # Kontrollera om namnet redan finns
+        if MeasurementType.objects.filter(name=name).exists():
+            return JsonResponse({
+                'success': False,
+                'error': 'En måtttyp med detta namn finns redan'
+            }, status=400)
+        
+        # Skapa måtttypen
+        measurement_type = MeasurementType.objects.create(
+            name=name,
+            unit=unit,
+            description=description,
+            sort_order=sort_order
+        )
+        
+        return JsonResponse({
+            'success': True,
+            'message': f'Måtttyp "{name}" skapad framgångsrikt',
+            'measurement_type': {
+                'id': measurement_type.id,
+                'name': measurement_type.name,
+                'unit': measurement_type.unit,
+                'description': measurement_type.description,
+                'sort_order': measurement_type.sort_order
+            }
+        })
+        
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=500)
