@@ -221,6 +221,17 @@ En checklista för vidareutveckling av AxeCollection. Bocka av med [x] när klar
 40. [x] Plattformshantering – Skapa nya plattformar direkt från yxformuläret med smart matchning.
 41. [x] Automatisk transaktionstypbestämning – Baserat på pris (negativ = köp, positiv = sälj).
 42. [x] Separata formulär för skapande vs redigering – Olika fält visas beroende på om yxa skapas eller redigeras.
+43. [ ] Lägg till yxa via auktions-URL – Möjlighet att lägga till yxa genom att ange URL till vunnen Tradera- eller eBay-auktion.
+    - [ ] 43.1 Implementera URL-parser för Tradera-auktioner som extraherar titel, beskrivning, bilder och slutpris
+    - [ ] 43.2 Implementera URL-parser för eBay-auktioner med motsvarande funktionalitet  
+    - [ ] 43.3 Automatisk förfyllning av yxformulär baserat på extraherad auktionsdata
+    - [ ] 43.4 Automatisk nedladdning och lagring av auktionsbilder
+    - [ ] 43.5 Intelligent kategorisering och tillverkargissning baserat på auktionsbeskrivning
+    - [ ] 43.6 Automatisk skapande av transaktion med slutpris som köpvärde
+    - [ ] 43.7 Felhantering för ogiltiga URL:er eller auktioner som inte kan parsas
+    - [ ] 43.8 Stöd för olika auktionsformat och språk (svenska/engelska)
+    - [ ] 43.9 Förhandsvisning av extraherad data innan sparning
+    - [ ] 43.10 Möjlighet att redigera och justera automatiskt extraherad information
 
 ## Admin och datahantering
 
