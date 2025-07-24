@@ -774,24 +774,27 @@ def update_axe_status(request, pk):
 @require_POST
 def add_measurement(request, pk):
     axe = get_object_or_404(Axe, pk=pk)
-    if request.method == 'POST':
-        measurement_form = MeasurementForm(request.POST)
-        if measurement_form.is_valid():
-            measurement = measurement_form.save(commit=False)
-            measurement.axe = axe
-            measurement.save()
-            return JsonResponse({
-                'success': True,
-                'message': 'Mått lades till framgångsrikt.'
-            })
-        else:
-            return JsonResponse({
-                'success': False,
-                'error': 'Ogiltig måttdata.'
-            }, status=400)
+    measurement_form = MeasurementForm(request.POST)
+    
+    if measurement_form.is_valid():
+        measurement = measurement_form.save(commit=False)
+        measurement.axe = axe
+        measurement.save()
+        return JsonResponse({
+            'success': True,
+            'message': 'Mått lades till framgångsrikt.'
+        })
     else:
-        measurement_form = MeasurementForm()
-    return render(request, 'axes/add_measurement.html', {'axe': axe, 'measurement_form': measurement_form})
+        # Returnera detaljerade felmeddelanden
+        errors = []
+        for field, field_errors in measurement_form.errors.items():
+            for error in field_errors:
+                errors.append(f"{field}: {error}")
+        
+        return JsonResponse({
+            'success': False,
+            'error': '; '.join(errors) if errors else 'Ogiltig måttdata.'
+        }, status=400)
 
 @login_required
 @require_POST

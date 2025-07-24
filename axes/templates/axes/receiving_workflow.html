@@ -49,9 +49,10 @@
     }
     .custom-field {
         display: none;
+        margin-top: 10px;
     }
     .custom-field.show {
-        display: block;
+        display: block !important;
     }
 </style>
 {% endblock %}
@@ -83,6 +84,11 @@
                         <span class="d-none d-md-inline">Redigera yxa</span>
                     </a>
                 </div>
+            </div>
+
+            <!-- Notifikationer -->
+            <div id="notification" class="alert" style="display: none;">
+                <span id="notification-message"></span>
             </div>
 
             <!-- Status-indikator -->

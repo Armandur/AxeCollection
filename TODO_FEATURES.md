@@ -137,10 +137,10 @@ En checklista för vidareutveckling av AxeCollection. Bocka av med [x] när klar
     - [ ] 35.8 Säkerställ att befintlig AJAX-funktionalitet fungerar med nya API:er
     - [ ] 35.9 Dokumentera API:er med DRF:s inbyggda dokumentation
 
-36. [ ] Fixa enskilda mått
-    - [ ] 36.1 Ensamma mått kan inte läggas till, bara via batch-inlägg
-    - [ ] 36.2 Implementera funktionalitet för att lägga till enskilda mått
-    - [ ] 36.3 Testa att både enskilda och batch-mått fungerar korrekt
+36. [x] Fixa enskilda mått
+    - [x] 36.1 Ensamma mått kan inte läggas till, bara via batch-inlägg
+    - [x] 36.2 Implementera funktionalitet för att lägga till enskilda mått
+    - [x] 36.3 Testa att både enskilda och batch-mått fungerar korrekt
 
 37. [ ] Fixa omorganisering av yxbilder i produktion
     - [ ] 37.1 Omorganisering av yxbilder fungerar inte på Unraid-produktionsservern
@@ -208,6 +208,13 @@ En checklista för vidareutveckling av AxeCollection. Bocka av med [x] när klar
     - [x] Automatisk UI-uppdatering vid borttagning av mått (tomt tillstånd, räknare)
     - [x] Event listener-baserad hantering istället för inline onclick
     - [x] Korrekt omindexering av batch-formulärrader vid borttagning
+    - [x] Bekräfta/ångra-knappar för inline-redigering istället för modaler
+    - [x] Fullständig hantering av "Övrigt"-alternativet med textinput för anpassat måttnamn
+    - [x] Bootstrap modal för borttagningsbekräftelse istället för alert()
+    - [x] Korrekt skickande av data till backend (standardmått vs anpassade mått)
+    - [x] Förhindring av dubbla anrop med spärr under uppdatering
+    - [x] Automatisk enhetsfyllning när standardmåtttyper väljs
+    - [x] Visuell feedback med spinner och inaktiverade knappar under uppdatering
 37. [x] Snabbval av tillverkare – Dropdown för att välja tillverkare.
 38. [x] Kontakthantering – Skapa nya kontakter direkt från yxformuläret med smart matchning.
 39. [x] Transaktionshantering – Koppla yxor till köp/försäljning med pris, frakt och datum.
@@ -294,6 +301,7 @@ En checklista för vidareutveckling av AxeCollection. Bocka av med [x] när klar
     - [ ] 49.6 Förhandsvisning av måttmallar med lista över inkluderade måtttyper
     - [ ] 49.7 Validering för att säkerställa att mallar har minst ett mått
     - [ ] 49.8 AJAX-hantering för snabb uppdatering utan sidladdning
+    - [ ] 49.9 Enhethantering - Möjlighet att definiera/ändra måttenheter och välja enhet för måttmallar (gram, mm, grader °)
 
 ## Säkerhet och användare
 
@@ -488,5 +496,18 @@ En checklista för vidareutveckling av AxeCollection. Bocka av med [x] när klar
 - **Django server errors**: Kontrollera terminalen för detaljerade felmeddelanden vid 500-fel
 - **Linter-fel**: Åtgärda syntaxfel och saknade imports innan testning
 - **Git återställning**: Använd `git restore .` för att snabbt återställa oönskade ändringar
+
+### Inline-redigering och formulärhantering (2025-01-15)
+- **Bekräfta/ångra-knappar**: Ersätter modaler med direkta knappar för bättre användarupplevelse och snabbare arbetsflöde
+- **"Övrigt"-alternativhantering**: Kombinerad dropdown + textinput med automatisk visning/dölj-logik för anpassade måttnamn
+- **Backend-kompatibilitet**: Separata fält (`name` vs `custom_name`) för standardmått och anpassade mått krävs korrekt hantering i frontend
+- **Duplikatsäkerhet**: `data-updating` attribut förhindrar dubbla API-anrop under pågående uppdateringar
+- **Användarfeedback**: Kombinera visuell feedback (spinner, inaktiverade knappar) med notifikationer för tydlig status
+- **Tekniska lärdomar**:
+  - Form-validering: Backend `MeasurementForm` förväntar sig specifika fältnamn - matcha exakt i frontend
+  - Event listeners: Använd delegering på document-nivå för dynamiskt skapade element
+  - State management: Spara ursprungliga värden i data-attribut för ångra-funktionalitet  
+  - DOM-hantering: Rensa och återställ DOM-element korrekt vid avbruten/slutförd redigering
+  - Error debugging: Console-loggar hjälper att identifiera backend-valideringsfel
 
  

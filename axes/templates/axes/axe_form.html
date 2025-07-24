@@ -25,6 +25,30 @@ window.measurementTemplates = {{ measurement_templates|safe }};
     right: 0 !important;
     margin-top: 0 !important;
 }
+
+/* Custom field för måttformulär */
+.custom-field {
+    display: none;
+    margin-top: 10px;
+}
+.custom-field.show {
+    display: block !important;
+}
+
+/* Inline redigering av mått */
+tr.editing {
+    background-color: #fff3cd;
+    border: 2px solid #ffecb3;
+}
+
+tr.editing td {
+    padding: 8px !important;
+}
+
+tr.editing .form-control-sm {
+    font-size: 0.875rem;
+    padding: 0.25rem 0.5rem;
+}
 </style>
 {% endblock %}
 
@@ -326,135 +350,6 @@ window.measurementTemplates = {{ measurement_templates|safe }};
 
                         <!-- Flytta hiddenInputs hit, precis före knapparna -->
                         <div id="hiddenInputs"></div>
-
-                        <!-- Måttsektion (endast i redigeringsläge) -->
-                        {% if is_edit %}
-                        <div class="card">
-                            <div class="card-header">
-                                <h6 class="mb-0">
-                                    <i class="fas fa-ruler me-2"></i>Mått (<span class="measurement-count">{{ measurements.count }}</span>)
-                                </h6>
-                            </div>
-                            <div class="card-body">
-                                <!-- Måttmallar -->
-                                {% if measurement_templates %}
-                                <div class="mb-3">
-                                    <p class="text-muted small mb-2">Välj en mall för att snabbt lägga till vanliga mått:</p>
-                                    <div class="d-flex flex-wrap">
-                                        {% for template_name, template_measurements in measurement_templates.items %}
-                                        <button type="button" class="btn btn-outline-primary btn-sm me-2 mb-2 template-btn" 
-                                                data-template="{{ template_name }}"
-                                                title="{{ template_name }}: {{ template_measurements|length }} mått">
-                                            <i class="fas fa-list me-1"></i>{{ template_name }}
-                                        </button>
-                                        {% endfor %}
-                                    </div>
-                                </div>
-                                {% endif %}
-
-                                <!-- Manuellt tillägg av mått -->
-                                <div class="measurement-form mb-3">
-                                    <h6 class="mb-3">Lägg till nytt mått</h6>
-                                    <form id="measurementForm" method="post" action="{% url 'add_measurement' axe.pk %}">
-                                        {% csrf_token %}
-                                        <div class="row">
-                                            <div class="col-md-4">
-                                                {{ measurement_form.name.label_tag }}
-                                                {{ measurement_form.name }}
-                                                <div class="custom-field" id="custom-name-field">
-                                                    {{ measurement_form.custom_name.label_tag }}
-                                                    {{ measurement_form.custom_name }}
-                                                </div>
-                                            </div>
-                                            <div class="col-md-3">
-                                                {{ measurement_form.value.label_tag }}
-                                                {{ measurement_form.value }}
-                                            </div>
-                                            <div class="col-md-3">
-                                                {{ measurement_form.unit.label_tag }}
-                                                {{ measurement_form.unit }}
-                                            </div>
-                                            <div class="col-md-2 d-flex align-items-end">
-                                                <button type="submit" class="btn btn-primary w-100">
-                                                    <i class="fas fa-plus me-1"></i>
-                                                    <span class="d-none d-md-inline">Lägg till</span>
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </form>
-                                </div>
-
-                                <!-- Batch-måttformulär (dolt från början) -->
-                                <div class="measurement-form mt-3" id="batchMeasurementFormContainer" style="display:none;">
-                                    <div class="alert alert-info mb-3">
-                                        <i class="fas fa-info-circle me-2"></i>
-                                        <strong>Batch-läggning av mått:</strong> Fyll i värdena nedan och klicka "Lägg till alla" för att lägga till alla mått samtidigt. Måtten sparas direkt och visas i tabellen nedan.
-                                    </div>
-                                    <h6 class="mb-3">Lägg till flera mått från mall</h6>
-                                    <form id="batchMeasurementForm" method="post" action="{% url 'add_measurements_from_template' axe.pk %}">
-                                        {% csrf_token %}
-                                        <div id="batchMeasurementRows"></div>
-                                        <div class="text-end mt-2">
-                                            <button type="submit" class="btn btn-success">
-                                                <i class="fas fa-plus me-1"></i>Lägg till mått
-                                            </button>
-                                            <button type="button" class="btn btn-link text-danger" data-action="hideBatchForm">Avbryt</button>
-                                        </div>
-                                    </form>
-                                </div>
-
-                                <!-- Befintliga mått med inline-redigering -->
-                                <div class="table-responsive measurement-list" {% if not measurements %}style="display:none;"{% endif %}>
-                                    <table class="table table-hover">
-                                        <thead>
-                                            <tr>
-                                                <th>Måtttyp</th>
-                                                <th>Värde</th>
-                                                <th>Enhet</th>
-                                                <th>Åtgärder</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody id="measurementsTableBody">
-                                            {% for measurement in measurements %}
-                                            <tr data-measurement-id="{{ measurement.id }}">
-                                                <td>
-                                                    <strong>{{ measurement.name }}</strong>
-                                                </td>
-                                                <td>
-                                                    <input type="number" 
-                                                           class="form-control form-control-sm measurement-value" 
-                                                           value="{{ measurement.value }}" 
-                                                           step="any" 
-                                                           style="width: 80px;"
-                                                           onchange="updateMeasurement({{ measurement.id }}, this.value, this.parentElement.nextElementSibling.querySelector('.measurement-unit').value)">
-                                                </td>
-                                                <td>
-                                                    <input type="text" 
-                                                           class="form-control form-control-sm measurement-unit" 
-                                                           value="{{ measurement.unit }}" 
-                                                           style="width: 60px;"
-                                                           onchange="updateMeasurement({{ measurement.id }}, this.parentElement.previousElementSibling.querySelector('.measurement-value').value, this.value)">
-                                                </td>
-                                                <td>
-                                                    <button type="button" class="btn btn-sm btn-outline-danger" 
-                                                            onclick="deleteMeasurement({{ measurement.id }})">
-                                                        <i class="fas fa-trash"></i>
-                                                    </button>
-                                                </td>
-                                            </tr>
-                                            {% endfor %}
-                                        </tbody>
-                                    </table>
-                                </div>
-                                
-                                <div class="measurement-empty-state text-center py-3" {% if measurements %}style="display:none;"{% endif %}>
-                                    <i class="fas fa-ruler fa-2x mb-2"></i><br>
-                                    <p class="text-muted">Inga mått registrerade än. Lägg till ditt första mått ovan.</p>
-                                </div>
-                            </div>
-                        </div>
-                        {% endif %}
-
                         <div class="d-flex justify-content-between">
                             <a href="{% if is_edit %}{% url 'axe_detail' axe.pk %}{% else %}{% url 'axe_list' %}{% endif %}" class="btn btn-secondary">
                                 <i class="fas fa-arrow-left me-2"></i>Tillbaka
@@ -469,6 +364,136 @@ window.measurementTemplates = {{ measurement_templates|safe }};
         </div>
     </div>
 </div>
+
+<!-- Måttsektion (endast i redigeringsläge) - Flyttad utanför axeForm -->
+{% if is_edit %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="fas fa-ruler me-2"></i>Mått (<span class="measurement-count">{{ measurements.count }}</span>)
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <!-- Måttmallar -->
+                    {% if measurement_templates %}
+                    <div class="mb-3">
+                        <p class="text-muted small mb-2">Välj en mall för att snabbt lägga till vanliga mått:</p>
+                        <div class="d-flex flex-wrap">
+                            {% for template_name, template_measurements in measurement_templates.items %}
+                            <button type="button" class="btn btn-outline-primary btn-sm me-2 mb-2 template-btn" 
+                                    data-template="{{ template_name }}"
+                                    title="{{ template_name }}: {{ template_measurements|length }} mått">
+                                <i class="fas fa-list me-1"></i>{{ template_name }}
+                            </button>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Manuellt tillägg av mått -->
+                    <div class="measurement-form mb-3">
+                        <h6 class="mb-3">Lägg till nytt mått</h6>
+                        <form id="measurementForm" method="post" action="{% url 'add_measurement' axe.pk %}">
+                            {% csrf_token %}
+                            <div class="row">
+                                <div class="col-md-4">
+                                    {{ measurement_form.name.label_tag }}
+                                    {{ measurement_form.name }}
+                                    <div class="custom-field" id="custom-name-field">
+                                        {{ measurement_form.custom_name.label_tag }}
+                                        {{ measurement_form.custom_name }}
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    {{ measurement_form.value.label_tag }}
+                                    {{ measurement_form.value }}
+                                </div>
+                                <div class="col-md-3">
+                                    {{ measurement_form.unit.label_tag }}
+                                    {{ measurement_form.unit }}
+                                </div>
+                                <div class="col-md-2 d-flex align-items-end">
+                                    <button type="submit" class="btn btn-primary w-100">
+                                        <i class="fas fa-plus me-1"></i>
+                                        <span class="d-none d-md-inline">Lägg till</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Batch-måttformulär (dolt från början) -->
+                    <div class="measurement-form mt-3" id="batchMeasurementFormContainer" style="display:none;">
+                        <div class="alert alert-info mb-3">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <strong>Batch-läggning av mått:</strong> Fyll i värdena nedan och klicka "Lägg till alla" för att lägga till alla mått samtidigt. Måtten sparas direkt och visas i tabellen nedan.
+                        </div>
+                        <h6 class="mb-3">Lägg till flera mått från mall</h6>
+                        <form id="batchMeasurementForm" method="post" action="{% url 'add_measurements_from_template' axe.pk %}">
+                            {% csrf_token %}
+                            <div id="batchMeasurementRows"></div>
+                            <div class="text-end mt-2">
+                                <button type="submit" class="btn btn-success">
+                                    <i class="fas fa-plus me-1"></i>Lägg till mått
+                                </button>
+                                <button type="button" class="btn btn-link text-danger" data-action="hideBatchForm">Avbryt</button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Befintliga mått med inline-redigering -->
+                    <div class="table-responsive measurement-list" {% if not measurements %}style="display:none;"{% endif %}>
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Måtttyp</th>
+                                    <th>Värde</th>
+                                    <th>Enhet</th>
+                                    <th>Åtgärder</th>
+                                </tr>
+                            </thead>
+                            <tbody id="measurementsTableBody">
+                                {% for measurement in measurements %}
+                                <tr data-measurement-id="{{ measurement.id }}">
+                                    <td class="measurement-name">{{ measurement.name }}</td>
+                                    <td class="measurement-value">{{ measurement.value }}</td>
+                                    <td class="measurement-unit">{{ measurement.unit }}</td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm" role="group">
+                                            <button type="button" class="btn btn-outline-primary btn-edit-measurement" 
+                                                    data-measurement-id="{{ measurement.id }}"
+                                                    data-name="{{ measurement.name }}"
+                                                    data-value="{{ measurement.value }}"
+                                                    data-unit="{{ measurement.unit }}"
+                                                    title="Redigera mått">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                            <button type="button" class="btn btn-outline-danger btn-delete-measurement" 
+                                                    data-measurement-id="{{ measurement.id }}"
+                                                    title="Ta bort mått">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div class="measurement-empty-state text-center py-3" {% if measurements %}style="display:none;"{% endif %}>
+                        <i class="fas fa-ruler fa-2x mb-2"></i><br>
+                        <p class="text-muted">Inga mått registrerade än. Lägg till ditt första mått ovan.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
 
 <style>
 .upload-area {
@@ -530,13 +555,7 @@ window.measurementTemplates = {{ measurement_templates|safe }};
     margin-bottom: 1rem;
 }
 
-.custom-field {
-    display: none;
-}
 
-.custom-field.show {
-    display: block;
-}
 
 .template-btn {
     margin: 0.25rem;
