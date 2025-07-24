@@ -148,11 +148,11 @@ En checklista för vidareutveckling av AxeCollection. Bocka av med [x] när klar
     - [ ] 37.3 Kontrollera filbehörigheter och sökvägar i produktion
     - [ ] 37.4 Testa drag & drop-funktionalitet i produktionsmiljö
 
-38. [ ] Formulär för tillverkarlänkar
-    - [ ] 38.1 Skapa formulär för att lägga till länkar och resurser på tillverkare
-    - [ ] 38.2 Implementera i tillverkardetaljsidan (för närvarande bara via Django admin)
-    - [ ] 38.3 Lägg till funktionalitet för att redigera och ta bort länkar
-    - [ ] 38.4 Säkerställ att order-fältet fungerar för sortering av länkar
+38. [x] Formulär för tillverkarlänkar
+    - [x] 38.1 Skapa formulär för att lägga till länkar och resurser på tillverkare
+    - [x] 38.2 Implementera i tillverkardetaljsidan (för närvarande bara via Django admin)
+    - [x] 38.3 Lägg till funktionalitet för att redigera och ta bort länkar
+    - [x] 38.4 Säkerställ att order-fältet fungerar för sortering av länkar
     - [x] 30.4 Filter för att visa endast yxor med/utan mått
     - [x] 30.5 Responsiv design för måttkolumnen på olika skärmstorlekar
 

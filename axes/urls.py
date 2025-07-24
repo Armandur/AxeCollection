@@ -37,6 +37,7 @@ urlpatterns = [
     path('tillverkare/bild/ordning/', views_manufacturer.reorder_manufacturer_images, name='reorder_manufacturer_images'),
     path('tillverkare/lank/<int:link_id>/redigera/', views_manufacturer.edit_manufacturer_link, name='edit_manufacturer_link'),
     path('tillverkare/lank/<int:link_id>/ta-bort/', views_manufacturer.delete_manufacturer_link, name='delete_manufacturer_link'),
+    path('tillverkare/lank/lagg-till/', views_manufacturer.add_manufacturer_link, name='add_manufacturer_link'),
     path('tillverkare/lank/ordning/', views_manufacturer.reorder_manufacturer_links, name='reorder_manufacturer_links'),
     path('tillverkare/<int:pk>/ta-bort/', views_manufacturer.delete_manufacturer, name='delete_manufacturer'),
     path('tillverkare/dropdown/', views_manufacturer.get_manufacturers_for_dropdown, name='get_manufacturers_for_dropdown'),

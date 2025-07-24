@@ -7,7 +7,7 @@ from django.contrib.auth.decorators import login_required
 from django.utils import timezone
 from django.contrib import messages
 from .models import Manufacturer, ManufacturerImage, ManufacturerLink, Axe, Transaction
-from django.db.models import Sum
+from django.db.models import Sum, Max
 import json
 import os
 import shutil
@@ -567,6 +567,74 @@ def move_manufacturer_images_to_unlinked(manufacturer):
             pass
     
     return moved_count, error_count
+
+@require_http_methods(["POST"])
+def add_manufacturer_link(request):
+    """Lägg till ny tillverkarlänk via AJAX"""
+    try:
+        data = json.loads(request.body)
+        manufacturer_id = data.get('manufacturer_id')
+        title = data.get('title', '').strip()
+        url = data.get('url', '').strip()
+        link_type = data.get('link_type', 'OTHER')
+        description = data.get('description', '').strip()
+        is_active = data.get('is_active', True)
+        
+        # Validering
+        if not manufacturer_id or not title or not url:
+            return JsonResponse({
+                'success': False,
+                'error': 'Tillverkare, titel och URL krävs'
+            }, status=400)
+        
+        if len(title) > 255:
+            return JsonResponse({
+                'success': False,
+                'error': 'Titel får vara max 255 tecken'
+            }, status=400)
+        
+        try:
+            manufacturer = Manufacturer.objects.get(id=manufacturer_id)
+        except Manufacturer.DoesNotExist:
+            return JsonResponse({
+                'success': False,
+                'error': 'Tillverkare hittades inte'
+            }, status=404)
+        
+        # Bestäm nästa ordningsnummer för denna tillverkare och länktyp
+        max_order = ManufacturerLink.objects.filter(
+            manufacturer=manufacturer,
+            link_type=link_type
+        ).aggregate(max_order=Max('order'))['max_order']
+        next_order = (max_order or 0) + 1
+        
+        # Skapa ny länk
+        link = ManufacturerLink.objects.create(
+            manufacturer=manufacturer,
+            title=title,
+            url=url,
+            link_type=link_type,
+            description=description if description else None,
+            is_active=is_active,
+            order=next_order
+        )
+        
+        return JsonResponse({
+            'success': True,
+            'message': 'Länk tillagd',
+            'link_id': link.id
+        })
+        
+    except json.JSONDecodeError:
+        return JsonResponse({
+            'success': False,
+            'error': 'Ogiltig JSON-data'
+        }, status=400)
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=500)
 
 @require_http_methods(["POST"])
 def reorder_manufacturer_links(request):

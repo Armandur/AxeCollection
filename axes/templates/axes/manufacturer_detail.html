@@ -354,9 +354,9 @@
                     <button type="button" class="btn btn-outline-secondary btn-sm me-2" onclick="toggleLinkReorderMode()" id="linkReorderBtn">
                         <i class="bi bi-arrow-down-up"></i> Ändra ordning
                     </button>
-                    <a href="{% url 'admin:axes_manufacturerlink_add' %}?manufacturer={{ manufacturer.id }}" class="btn btn-outline-info btn-sm">
+                    <button type="button" class="btn btn-outline-info btn-sm" data-bs-toggle="modal" data-bs-target="#addLinkModal">
                         <i class="bi bi-link-45deg"></i> Lägg till länk
-                    </a>
+                    </button>
                     {% endif %}
                 </div>
             </div>
@@ -1622,6 +1622,81 @@ function deleteLink(linkId) {
         deleteBtn.disabled = false;
     });
 }
+
+function saveNewLink() {
+    const title = document.getElementById('addLinkTitle').value.trim();
+    const url = document.getElementById('addLinkUrl').value.trim();
+    const linkType = document.getElementById('addLinkType').value;
+    const description = document.getElementById('addLinkDescription').value.trim();
+    const isActive = document.getElementById('addLinkIsActive').checked;
+    
+    // Validering
+    if (!title || !url) {
+        showNotification('Titel och URL är obligatoriska', 'error');
+        return;
+    }
+    
+    // Kontrollera URL-format
+    try {
+        new URL(url);
+    } catch (e) {
+        showNotification('Ogiltig URL-format', 'error');
+        return;
+    }
+    
+    const saveBtn = document.querySelector('#addLinkModal .btn-primary');
+    const originalText = saveBtn.innerHTML;
+    saveBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Sparar...';
+    saveBtn.disabled = true;
+    
+    fetch('/tillverkare/lank/lagg-till/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        },
+        body: JSON.stringify({
+            manufacturer_id: {{ manufacturer.id }},
+            title: title,
+            url: url,
+            link_type: linkType,
+            description: description,
+            is_active: isActive
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Stäng modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('addLinkModal'));
+            modal.hide();
+            
+            // Rensa formuläret
+            document.getElementById('addLinkTitle').value = '';
+            document.getElementById('addLinkUrl').value = '';
+            document.getElementById('addLinkType').value = 'WEBSITE';
+            document.getElementById('addLinkDescription').value = '';
+            document.getElementById('addLinkIsActive').checked = true;
+            
+            showNotification('Länk tillagd!', 'success');
+            
+            // Ladda om sidan för att visa den nya länken
+            setTimeout(() => {
+                location.reload();
+            }, 1000);
+        } else {
+            showNotification('Fel: ' + data.error, 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showNotification('Ett fel uppstod vid sparande', 'error');
+    })
+    .finally(() => {
+        saveBtn.innerHTML = originalText;
+        saveBtn.disabled = false;
+    });
+}
 </script>
 
 <!-- Lightbox Modal -->
@@ -1781,6 +1856,57 @@ function deleteLink(linkId) {
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Avbryt</button>
                 <button type="button" class="btn btn-primary" onclick="saveLinkEdit()">
                     <i class="bi bi-check"></i> Spara
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Lägg till länk Modal -->
+<div class="modal fade" id="addLinkModal" tabindex="-1" aria-labelledby="addLinkModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addLinkModalLabel">Lägg till ny länk</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label for="addLinkTitle" class="form-label">Titel <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" id="addLinkTitle" maxlength="255" required>
+                </div>
+                <div class="mb-3">
+                    <label for="addLinkUrl" class="form-label">URL <span class="text-danger">*</span></label>
+                    <input type="url" class="form-control" id="addLinkUrl" required placeholder="https://...">
+                </div>
+                <div class="mb-3">
+                    <label for="addLinkType" class="form-label">Länktyp</label>
+                    <select class="form-select" id="addLinkType" required>
+                        <option value="WEBSITE">Hemsida</option>
+                        <option value="CATALOG">Katalog</option>
+                        <option value="VIDEO">Video/Film</option>
+                        <option value="ARTICLE">Artikel</option>
+                        <option value="DOCUMENT">Dokument</option>
+                        <option value="OTHER">Övrigt</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label for="addLinkDescription" class="form-label">Beskrivning</label>
+                    <textarea class="form-control" id="addLinkDescription" rows="3" placeholder="Beskriv vad länken innehåller..."></textarea>
+                </div>
+                <div class="mb-3">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="addLinkIsActive" checked>
+                        <label class="form-check-label" for="addLinkIsActive">
+                            Länken är aktiv
+                        </label>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Avbryt</button>
+                <button type="button" class="btn btn-primary" onclick="saveNewLink()">
+                    <i class="bi bi-plus-circle"></i> Lägg till länk
                 </button>
             </div>
         </div>
