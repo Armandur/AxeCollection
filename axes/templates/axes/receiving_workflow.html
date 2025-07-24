@@ -54,6 +54,109 @@
     .custom-field.show {
         display: block !important;
     }
+    
+    /* Bilduppladdning CSS - samma som i axe_form.html */
+    .upload-area {
+        border: 2px dashed var(--bs-border-color);
+        border-radius: 8px;
+        padding: 2rem;
+        text-align: center;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        background-color: var(--bs-secondary-bg);
+    }
+    
+    .upload-area:hover,
+    .upload-area.dragover {
+        border-color: var(--bs-primary);
+        background-color: var(--bs-primary-bg-subtle);
+    }
+    
+    .upload-area input[type="file"] {
+        display: none;
+    }
+    
+    .preview-item {
+        position: relative;
+        margin-bottom: 1rem;
+    }
+    
+    .preview-item img {
+        width: 100%;
+        height: 150px;
+        object-fit: cover;
+        border-radius: 8px;
+        border: 2px solid #dee2e6;
+    }
+    
+    .preview-item .remove-btn {
+        position: absolute;
+        top: -8px;
+        right: -8px;
+        background: #dc3545;
+        color: white;
+        border: none;
+        border-radius: 50%;
+        width: 24px;
+        height: 24px;
+        font-size: 12px;
+        cursor: pointer;
+    }
+    
+    .preview-item .remove-btn:hover {
+        background: #c82333;
+    }
+    
+    /* Mobiloptimeringar för bilduppladdning */
+    @media (max-width: 768px) {
+        .mobile-upload-buttons {
+            justify-content: center;
+        }
+        
+        .mobile-upload-buttons .btn {
+            flex: 1;
+            min-width: 120px;
+        }
+        
+        .preview-item {
+            margin-bottom: 0.5rem;
+        }
+        
+        .preview-item img {
+            height: 120px;
+        }
+    }
+    
+    /* Animation för URL-input */
+    .url-input-enter {
+        animation: slideDown 0.3s ease-out;
+    }
+    
+    .url-input-exit {
+        animation: slideUp 0.3s ease-in;
+    }
+    
+    @keyframes slideDown {
+        from {
+            opacity: 0;
+            transform: translateY(-10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    @keyframes slideUp {
+        from {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        to {
+            opacity: 0;
+            transform: translateY(-10px);
+        }
+    }
 </style>
 {% endblock %}
 
@@ -231,13 +334,84 @@
                             Steg 2: Lägg till mottagningsbilder
                         </h3>
                         
+                        <!-- Bilduppladdningsformulär -->
+                        <div class="card mb-3">
+                            <div class="card-header">
+                                <h6 class="mb-0">Ladda upp nya bilder</h6>
+                            </div>
+                            <div class="card-body">
+                                <form id="imageUploadForm" method="post" action="{% url 'receiving_workflow' axe.pk %}" enctype="multipart/form-data">
+                                    {% csrf_token %}
+                                    
+                                    <!-- Mobilvänliga knappar -->
+                                    <div class="d-flex flex-wrap gap-2 mb-3 mobile-upload-buttons">
+                                        <button type="button" class="btn btn-primary btn-sm" onclick="openReceivingCamera()">
+                                            <i class="fas fa-camera me-1"></i>Ta foto
+                                        </button>
+                                        <button type="button" class="btn btn-outline-primary btn-sm" onclick="selectReceivingFiles()">
+                                            <i class="fas fa-images me-1"></i>Välj bilder
+                                        </button>
+                                        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="toggleReceivingUrlInput()">
+                                            <i class="fas fa-link me-1"></i>Lägg till URL
+                                        </button>
+                                    </div>
+
+                                    <!-- Drag & drop område (dolt på mobil) -->
+                                    <div class="upload-area d-none d-md-block" id="receivingUploadArea">
+                                        <div class="upload-content">
+                                            <i class="fas fa-cloud-upload-alt fa-3x text-muted mb-3"></i>
+                                            <h5>Dra och släpp bilder här</h5>
+                                            <p class="text-muted">eller klicka för att välja filer</p>
+                                            <p class="text-muted small">Du kan också klistra in bilder (Ctrl+V) eller dra URL:er från webbläsaren</p>
+                                            <input type="file" id="receivingMainFileInput" name="images" accept="image/*" multiple style="display: none;">
+                                        </div>
+                                    </div>
+
+                                    <!-- Dolda filinputs för mobil -->
+                                    <div class="d-none">
+                                        <input type="file" id="receivingCameraInput" accept="image/*" capture="environment" multiple>
+                                        <input type="file" id="receivingFileInput" accept="image/*" multiple>
+                                    </div>
+
+                                    <!-- URL-input för bilder (kollapsbar) -->
+                                    <div class="mb-4" id="receivingUrlInputSection" style="display: none;">
+                                        <label for="receivingImageUrl" class="form-label">Lägg till bild från URL</label>
+                                        <div class="input-group">
+                                            <input type="url" class="form-control" id="receivingImageUrl" placeholder="https://example.com/bild.jpg">
+                                            <button class="btn btn-outline-secondary" type="button" id="receivingAddUrlBtn">
+                                                <i class="fas fa-plus"></i> Lägg till
+                                            </button>
+                                        </div>
+                                        <div class="form-text">Klistra in URL:er från Tradera, eBay eller andra sidor</div>
+                                    </div>
+
+                                    <!-- Förhandsvisning av nya bilder -->
+                                    <div id="receivingImagePreview" class="mb-4" style="display: none;">
+                                        <h6>Förhandsvisning av nya bilder:</h6>
+                                        <div class="row" id="receivingPreviewContainer"></div>
+                                    </div>
+
+                                    <!-- Dolda inputs för URL:er och andra data -->
+                                    <div id="receivingHiddenInputs"></div>
+
+                                    <!-- Uppladdningsknapp -->
+                                    <div class="text-center" id="receivingUploadButtonContainer" style="display: none;">
+                                        <button type="submit" class="btn btn-success" id="receivingUploadButton">
+                                            <i class="fas fa-upload me-2"></i>Ladda upp bilder
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                        
+                        <!-- Befintliga bilder -->
                         <div class="card">
                             <div class="card-header">
-                                <h6 class="mb-0">Bilder ({{ images.count }})</h6>
+                                <h6 class="mb-0">Befintliga bilder ({{ images.count }})</h6>
                             </div>
                             <div class="card-body">
                                 {% if images %}
-                                    <div class="row">
+                                    <div class="row" id="existingReceivingImagesContainer">
                                         {% for image in images %}
                                         <div class="col-md-4 col-lg-3 mb-3">
                                             <div class="card">
@@ -253,18 +427,11 @@
                                         {% endfor %}
                                     </div>
                                 {% else %}
-                                    <p class="text-muted text-center py-3">
+                                    <p class="text-muted text-center py-3" id="receivingNoImagesMessage">
                                         <i class="fas fa-camera fa-2x mb-2"></i><br>
                                         Inga bilder uppladdade än.
                                     </p>
                                 {% endif %}
-                                
-                                <div class="text-center mt-3">
-                                    <a href="{% url 'axe_edit' axe.pk %}" class="btn btn-primary">
-                                        <i class="fas fa-plus me-1"></i>
-                                        Lägg till bilder
-                                    </a>
-                                </div>
                             </div>
                         </div>
                     </div>
@@ -327,5 +494,294 @@
 <script>
 window.axeId = {{ axe.pk }};
 window.measurementTemplates = {{ measurement_templates|safe }};
+
+// === BILDUPPLADDNINGSFUNKTIONALITET ===
+document.addEventListener('DOMContentLoaded', function() {
+    // Konstanter för bilduppladdning
+    const receivingUploadArea = document.getElementById('receivingUploadArea');
+    const receivingMainFileInput = document.getElementById('receivingMainFileInput');
+    const receivingCameraInput = document.getElementById('receivingCameraInput');
+    const receivingFileInput = document.getElementById('receivingFileInput');
+    const receivingImagePreview = document.getElementById('receivingImagePreview');
+    const receivingPreviewContainer = document.getElementById('receivingPreviewContainer');
+    const receivingImageUrlInput = document.getElementById('receivingImageUrl');
+    const receivingAddUrlBtn = document.getElementById('receivingAddUrlBtn');
+    const receivingUrlInputSection = document.getElementById('receivingUrlInputSection');
+    const receivingUploadButtonContainer = document.getElementById('receivingUploadButtonContainer');
+    const receivingSelectedItems = new Map(); // Map för att hålla reda på både filer och URL:er
+
+    // Mobilvänliga funktioner (globala så de kan anropas från onclick)
+    window.openReceivingCamera = function() {
+        receivingCameraInput.click();
+    };
+
+    window.selectReceivingFiles = function() {
+        receivingFileInput.click();
+    };
+
+    window.toggleReceivingUrlInput = function() {
+        if (!receivingUrlInputSection) {
+            return;
+        }
+        
+        if (receivingUrlInputSection.style.display === 'none' || receivingUrlInputSection.style.display === '') {
+            receivingUrlInputSection.style.display = 'block';
+            receivingUrlInputSection.classList.add('url-input-enter');
+            if (receivingImageUrlInput) {
+                receivingImageUrlInput.focus();
+            }
+        } else {
+            receivingUrlInputSection.classList.add('url-input-exit');
+            setTimeout(() => {
+                receivingUrlInputSection.style.display = 'none';
+                receivingUrlInputSection.classList.remove('url-input-exit');
+            }, 300);
+        }
+    };
+
+    // Ta bort förhandsvisningsbild
+    window.removeReceivingPreview = function(button) {
+        const previewItem = button.closest('.preview-item');
+        const itemId = previewItem.dataset.itemId;
+        receivingSelectedItems.delete(itemId);
+        previewItem.remove();
+        
+        if (receivingPreviewContainer.children.length === 0) {
+            receivingImagePreview.style.display = 'none';
+            receivingUploadButtonContainer.style.display = 'none';
+        }
+    };
+
+    // Kamerainput hantering
+    if (receivingCameraInput) {
+        receivingCameraInput.addEventListener('change', (e) => {
+            const files = Array.from(e.target.files);
+            handleReceivingFiles(files);
+            receivingCameraInput.value = '';
+        });
+    }
+
+    // Filval input hantering
+    if (receivingFileInput) {
+        receivingFileInput.addEventListener('change', (e) => {
+            const files = Array.from(e.target.files);
+            handleReceivingFiles(files);
+            receivingFileInput.value = '';
+        });
+    }
+
+    // Drag & drop funktionalitet
+    if (receivingUploadArea) {
+        receivingUploadArea.addEventListener('click', () => receivingMainFileInput.click());
+        
+        receivingUploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            receivingUploadArea.classList.add('dragover');
+        });
+        
+        receivingUploadArea.addEventListener('dragleave', () => {
+            receivingUploadArea.classList.remove('dragover');
+        });
+        
+        receivingUploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            receivingUploadArea.classList.remove('dragover');
+            
+            const files = Array.from(e.dataTransfer.files).filter(file => file.type.startsWith('image/'));
+            handleReceivingFiles(files);
+            
+            // Hantera URL:er
+            let urlText = e.dataTransfer.getData('text');
+            if (!urlText) {
+                urlText = e.dataTransfer.getData('url');
+            }
+            if (!urlText) {
+                const html = e.dataTransfer.getData('text/html');
+                if (html) {
+                    const urlMatch = html.match(/href=["']([^"']+)["']/);
+                    if (urlMatch) {
+                        urlText = urlMatch[1];
+                    }
+                }
+            }
+            
+            if (urlText && isReceivingImageUrl(urlText)) {
+                handleReceivingImageUrl(urlText);
+            }
+        });
+    }
+
+    // Huvudfilinput hantering
+    if (receivingMainFileInput) {
+        receivingMainFileInput.addEventListener('change', (e) => {
+            const files = Array.from(e.target.files);
+            handleReceivingFiles(files);
+        });
+    }
+
+    // URL-hantering
+    if (receivingAddUrlBtn && receivingImageUrlInput) {
+        receivingAddUrlBtn.addEventListener('click', () => {
+            const url = receivingImageUrlInput.value.trim();
+            if (url) {
+                handleReceivingImageUrl(url);
+                receivingImageUrlInput.value = '';
+                showReceivingNotification('URL-bild tillagd', 'success');
+            } else {
+                showReceivingNotification('Ange en giltig URL', 'error');
+            }
+        });
+
+        receivingImageUrlInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                receivingAddUrlBtn.click();
+            }
+        });
+    }
+
+    // Bilduppladdningsfunktioner
+    function handleReceivingFiles(files) {
+        files.forEach(file => {
+            if (file.type.startsWith('image/')) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    addReceivingImagePreview(file, e.target.result);
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+    }
+
+    function handleReceivingImageUrl(url) {
+        if (isReceivingImageUrl(url)) {
+            addReceivingImagePreview(null, url, url);
+        }
+    }
+
+    function isReceivingImageUrl(text) {
+        try {
+            const url = new URL(text);
+        } catch (e) {
+            return false;
+        }
+        
+        const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp'];
+        const url = text.toLowerCase();
+        const hasImageExtension = imageExtensions.some(ext => url.includes(ext));
+        const isKnownSite = url.includes('tradera.com') || 
+                           url.includes('ebay.com') ||
+                           url.includes('blocket.se') ||
+                           url.includes('facebook.com') ||
+                           url.includes('instagram.com');
+        
+        return hasImageExtension || isKnownSite;
+    }
+
+    function addReceivingImagePreview(file, dataUrl, url = null) {
+        const previewDiv = document.createElement('div');
+        previewDiv.className = 'col-6 col-md-3 mb-3 preview-item';
+        
+        previewDiv.innerHTML = `
+            <div class="card position-relative">
+                <img src="${dataUrl}" class="card-img-top" alt="Förhandsvisning" style="height: 150px; object-fit: cover;">
+                <button type="button" class="btn btn-danger btn-sm position-absolute" style="top: 5px; right: 5px; width: 30px; height: 30px; border-radius: 50%;" onclick="removeReceivingPreview(this)">
+                    <i class="fas fa-times"></i>
+                </button>
+                <div class="card-body p-2">
+                    <small class="text-muted">${file ? file.name : 'URL-bild'}</small>
+                </div>
+            </div>
+        `;
+        
+        const itemId = Date.now() + Math.random();
+        receivingSelectedItems.set(itemId, { file, url, element: previewDiv });
+        previewDiv.dataset.itemId = itemId;
+        
+        receivingPreviewContainer.appendChild(previewDiv);
+        receivingImagePreview.style.display = 'block';
+        receivingUploadButtonContainer.style.display = 'block';
+    }
+
+    function showReceivingNotification(message, type) {
+        // Enkel notifikationsfunktion för nu
+        console.log(`[${type.toUpperCase()}] ${message}`);
+    }
+
+    // Formulärhantering
+    const imageUploadForm = document.getElementById('imageUploadForm');
+    if (imageUploadForm) {
+        imageUploadForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // Förbered formuläret
+            const dataTransfer = new DataTransfer();
+            
+            // Lägg till alla filer
+            receivingSelectedItems.forEach((item, itemId) => {
+                if (item.file) {
+                    dataTransfer.items.add(item.file);
+                }
+            });
+            
+            receivingMainFileInput.files = dataTransfer.files;
+            
+            // Lägg till URL:er som dolda inputs
+            const hiddenInputs = document.getElementById('receivingHiddenInputs');
+            hiddenInputs.innerHTML = '';
+            
+            receivingSelectedItems.forEach((item, itemId) => {
+                if (item.url) {
+                    const hiddenInput = document.createElement('input');
+                    hiddenInput.type = 'hidden';
+                    hiddenInput.name = 'image_urls';
+                    hiddenInput.value = item.url;
+                    hiddenInputs.appendChild(hiddenInput);
+                }
+            });
+            
+            // Skicka formuläret
+            const uploadButton = document.getElementById('receivingUploadButton');
+            const originalText = uploadButton.innerHTML;
+            uploadButton.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Laddar upp...';
+            uploadButton.disabled = true;
+            
+            // Använd fetch för AJAX-uppladdning
+            const formData = new FormData(imageUploadForm);
+            
+            fetch(imageUploadForm.action, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                }
+            })
+            .then(response => {
+                if (response.ok) {
+                    // Ladda om sidan för att visa nya bilder
+                    location.reload();
+                } else {
+                    throw new Error('Uppladdning misslyckades');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showReceivingNotification('Ett fel uppstod vid uppladdning', 'error');
+                uploadButton.innerHTML = originalText;
+                uploadButton.disabled = false;
+            });
+        });
+    }
+
+    // Klistra in hantering
+    document.addEventListener('paste', (e) => {
+        const items = e.clipboardData.items;
+        for (let item of items) {
+            if (item.type.startsWith('image/')) {
+                const file = item.getAsFile();
+                handleReceivingFiles([file]);
+            }
+        }
+    });
+});
 </script>
 {% endblock %} 

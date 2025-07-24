@@ -730,14 +730,101 @@ def receiving_workflow(request, pk):
         ]
     measurement_form = MeasurementForm()
     measurements = axe.measurements.all().order_by('name')
+    images = axe.images.all().order_by('order')
     
     if request.method == 'POST':
+        # Hantera statusändringar
         if 'status' in request.POST:
             new_status = request.POST['status']
             if new_status in ['KÖPT', 'MOTTAGEN', 'SÄLJD']:
                 axe.status = new_status
                 axe.save()
                 return redirect('axe_list')
+        
+        # Hantera bilduppladdning
+        elif 'images' in request.FILES or 'image_urls' in request.POST:
+            # Hantera nya bilder
+            if 'images' in request.FILES:
+                max_order = axe.images.aggregate(Max('order'))['order__max'] or 0
+                for i, image_file in enumerate(request.FILES.getlist('images'), 1):
+                    try:
+                        axe_image = AxeImage(axe=axe, image=image_file, order=max_order + i)
+                        axe_image.save()
+                    except Exception as e:
+                        pass
+
+            # Hantera URL-bilder
+            if 'image_urls' in request.POST:
+                max_order = axe.images.aggregate(Max('order'))['order__max'] or 0
+                for i, image_url in enumerate(request.POST.getlist('image_urls'), 1):
+                    if image_url and image_url.startswith('http'):
+                        try:
+                            response = requests.get(image_url, timeout=10)
+                            if response.status_code == 200:
+                                file_extension = os.path.splitext(urlparse(image_url).path)[1] or '.jpg'
+                                filename = f"{axe.id}_{uuid.uuid4().hex[:8]}{file_extension}"
+                                image_file = ContentFile(response.content, name=filename)
+                                axe_image = AxeImage(axe=axe, image=image_file, order=max_order + i)
+                                axe_image.save()
+                        except Exception as e:
+                            pass
+
+            # Omdöpning av bilder (samma logik som i axe_edit)
+            remaining_images = list(axe.images.all().order_by('order'))
+            if remaining_images:
+                temp_paths = []
+                temp_webps = []
+                # Steg 1: Döp om till temporära namn
+                for idx, image in enumerate(remaining_images, 1):
+                    old_path = image.image.name
+                    file_ext = os.path.splitext(old_path)[1]
+                    temp_filename = f"{axe.id}_tmp_{idx}{file_ext}"
+                    temp_path = f'axe_images/{temp_filename}'
+                    # Temporärt namn för .webp
+                    old_webp = os.path.splitext(old_path)[0] + '.webp'
+                    temp_webp = f'axe_images/{axe.id}_tmp_{idx}.webp'
+                    # Döp om originalfilen
+                    if old_path != temp_path and default_storage.exists(old_path):
+                        with default_storage.open(old_path, 'rb') as old_file:
+                            default_storage.save(temp_path, old_file)
+                        default_storage.delete(old_path)
+                    temp_paths.append((image, temp_path, file_ext))
+                    # Döp om .webp om den finns
+                    if default_storage.exists(old_webp):
+                        try:
+                            with default_storage.open(old_webp, 'rb') as old_webp_file:
+                                default_storage.save(temp_webp, old_webp_file)
+                            default_storage.delete(old_webp)
+                        except Exception:
+                            pass
+                    temp_webps.append(temp_webp)
+                # Steg 2: Döp om till slutgiltiga namn
+                for idx, (image, temp_path, file_ext) in enumerate(temp_paths, 1):
+                    final_filename = f"{axe.id}{chr(96 + idx)}{file_ext}"
+                    final_path = f'axe_images/{final_filename}'
+                    # Döp om originalfilen
+                    if temp_path != final_path and default_storage.exists(temp_path):
+                        with default_storage.open(temp_path, 'rb') as temp_file:
+                            default_storage.save(final_path, temp_file)
+                        default_storage.delete(temp_path)
+                    # Döp om .webp om den finns
+                    temp_webp = temp_webps[idx-1]
+                    final_webp = f'axe_images/{axe.id}{chr(96 + idx)}.webp'
+                    if default_storage.exists(temp_webp):
+                        try:
+                            with default_storage.open(temp_webp, 'rb') as temp_webp_file:
+                                default_storage.save(final_webp, temp_webp_file)
+                            default_storage.delete(temp_webp)
+                        except Exception:
+                            pass
+                    # Uppdatera databasen
+                    image.image = final_path
+                    image.order = idx
+                    image.description = f'Bild {chr(96 + idx).upper()} av {axe.manufacturer.name} {axe.model}'
+                    image.save()
+
+            # Omladda sidan för att visa nya bilder
+            return redirect('receiving_workflow', pk=axe.pk)
     
     # Returnera template för GET-requests
     return render(request, 'axes/receiving_workflow.html', {
@@ -745,6 +832,7 @@ def receiving_workflow(request, pk):
         'measurement_templates': measurement_templates,
         'measurement_form': measurement_form,
         'measurements': measurements,
+        'images': images,
     })
 
 @login_required
