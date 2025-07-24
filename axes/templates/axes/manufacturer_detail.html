@@ -692,7 +692,9 @@ $(document).ready(function() {
     // Starta carousel när popover visas
     $(document).on('shown.bs.popover', '.axe-image-popover-link', function () {
         var popover = $(this);
-        var axeId = popover.closest('tr').find('td:first').text().trim();
+        // Extrahera axe ID från länkens href istället för från första kolumnen
+        var href = popover.attr('href');
+        var axeId = href.split('/').filter(Boolean).slice(-1)[0]; // Få sista delen av URL:en
         var rowIndex = popover.closest('tr').index();
         var carouselId = '#carousel-' + axeId + '-' + (rowIndex + 1);
         var carouselEl = document.querySelector(carouselId);
