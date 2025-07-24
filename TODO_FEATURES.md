@@ -115,10 +115,10 @@ En checklista för vidareutveckling av AxeCollection. Bocka av med [x] när klar
     - [x] 32.1 Kontaktdetaljsida - vita bakgrunder på kontaktinformation, medlemskap och adress
     - [x] 32.2 Systematisk genomgång av alla sidor för dark mode-konsistens
 
-33. [ ] Lägg till footer
-    - [ ] 33.1 Designa footer med relevant information (version, länkar, kontakt)
-    - [ ] 33.2 Implementera footer på alla sidor
-    - [ ] 33.3 Anpassa footer för både light och dark mode
+33. [x] Lägg till footer
+    - [x] 33.1 Designa footer med relevant information (version, länkar, kontakt)
+    - [x] 33.2 Implementera footer på alla sidor
+    - [x] 33.3 Anpassa footer för både light och dark mode
 
 34. [ ] Kommentarsystem (framtida funktion)
     - [ ] 34.1 Möjlighet att kommentera yxor
@@ -380,6 +380,15 @@ En checklista för vidareutveckling av AxeCollection. Bocka av med [x] när klar
     - [x] 73.7 Testa alla funktioner med testdata (sökning, filtrering, statistik, etc.)
     - [ ] 73.8 Förbereda för publik demo-webbplats
     - [x] 73.9 Dokumentera hur man återställer till testdata
+
+74. [ ] Docker demo-läge med miljövariabel
+    - [ ] 74.1 Lägg till miljövariabel DEMO_MODE för Docker-containern
+    - [ ] 74.2 Implementera logik som kontrollerar DEMO_MODE vid container-start
+    - [ ] 74.3 Automatisk körning av `generate_test_data --clear` när DEMO_MODE=true
+    - [ ] 74.4 Säkerställ att demo-läget endast körs vid container-start, inte vid reload
+    - [ ] 74.5 Dokumentera användning av demo-läge i deployment-guider
+    - [ ] 74.6 Testa demo-läge i olika Docker-miljöer (utveckling, produktion)
+
 57. [x] Dokumentation av förbättringar - Uppdatera markdown-filer med genomförda förbättringar och lärdomar
 
 ## Design och presentation

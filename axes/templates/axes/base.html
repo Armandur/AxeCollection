@@ -43,6 +43,52 @@
             background-color: #23272b !important;
         }
         /* Ta bort all egen bakgrundsfärg på html/body för tema, låt Bootstrap sköta det */
+        
+        /* Footer styling */
+        .footer {
+            background-color: var(--bs-body-bg);
+            border-top: 1px solid var(--bs-border-color);
+            margin-top: auto;
+        }
+        
+        .footer h6 {
+            color: var(--bs-body-color);
+            font-size: 0.9rem;
+        }
+        
+        .footer .text-muted {
+            color: var(--bs-secondary-color) !important;
+        }
+        
+        .footer a.text-muted:hover {
+            color: var(--bs-primary) !important;
+            transform: translateX(2px);
+            transition: all 0.2s ease;
+        }
+        
+        .footer .bi-heart-fill {
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+        
+        /* Säkerställ att body tar hela höjden */
+        html, body {
+            height: 100%;
+        }
+        
+        body {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .container.mt-4 {
+            flex: 1;
+        }
     </style>
     {% block extra_head %}{% endblock %}
 </head>
@@ -153,6 +199,76 @@
 <div class="container mt-4">
     {% block content %}{% endblock %}
 </div>
+
+<!-- Footer -->
+<footer class="footer mt-5 py-4 border-top">
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-3 col-md-6 mb-3">
+                <h6 class="fw-bold">
+                    <i class="bi bi-tools me-2"></i>AxeCollection
+                </h6>
+                <p class="text-muted small mb-2">
+                    Ett Django-baserat system för att hantera och katalogisera yxsamlingar.
+                </p>
+                <p class="text-muted small mb-0">
+                    <i class="bi bi-code-square me-1"></i>
+                    <span class="version-info">{{ app_version }}</span>
+                </p>
+            </div>
+            
+            <div class="col-lg-3 col-md-6 mb-3">
+                <h6 class="fw-bold">Funktioner</h6>
+                <ul class="list-unstyled small text-muted">
+                    <li><i class="bi bi-check-circle me-1"></i>Yxhantering & katalogisering</li>
+                    <li><i class="bi bi-check-circle me-1"></i>Avancerad bildhantering</li>
+                    <li><i class="bi bi-check-circle me-1"></i>Transaktioner & statistik</li>
+                    <li><i class="bi bi-check-circle me-1"></i>Måttregistrering</li>
+                </ul>
+            </div>
+            
+            <div class="col-lg-3 col-md-6 mb-3">
+                <h6 class="fw-bold">Teknik</h6>
+                <ul class="list-unstyled small text-muted">
+                    <li><i class="bi bi-heart-fill text-success me-1"></i>Django 5.1</li>
+                    <li><i class="bi bi-heart-fill text-primary me-1"></i>Bootstrap 5.3</li>
+                    <li><i class="bi bi-heart-fill text-info me-1"></i>SQLite</li>
+                    <li><i class="bi bi-heart-fill text-warning me-1"></i>JavaScript/AJAX</li>
+                </ul>
+            </div>
+            
+            <div class="col-lg-3 col-md-6 mb-3">
+                <h6 class="fw-bold">Länkar</h6>
+                <div class="d-flex flex-column">
+                    <a href="https://github.com/Armandur/AxeCollection" class="text-decoration-none text-muted small mb-2" target="_blank">
+                        <i class="bi bi-github me-2"></i>GitHub Repository
+                    </a>
+                    <a href="https://github.com/Armandur/AxeCollection/issues" class="text-decoration-none text-muted small mb-2" target="_blank">
+                        <i class="bi bi-bug me-2"></i>Rapportera problem
+                    </a>
+                    <a href="https://github.com/Armandur/AxeCollection/blob/main/TODO_FEATURES.md" class="text-decoration-none text-muted small mb-2" target="_blank">
+                        <i class="bi bi-list-check me-2"></i>Framtida funktioner
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <hr class="my-3">
+        
+        <div class="row align-items-center">
+            <div class="col-md-6">
+                <p class="text-muted small mb-0">
+                    © {{ current_year }} AxeCollection. Utvecklat med <i class="bi bi-heart-fill text-danger"></i> för yxentusiaster.
+                </p>
+            </div>
+            <div class="col-md-6 text-md-end">
+                <small class="text-muted">
+                    <i class="bi bi-clock me-1"></i>Senast uppdaterad: <span class="build-date">{{ build_date|default:"2025-01-25" }}</span>
+                </small>
+            </div>
+        </div>
+    </div>
+</footer>
 
 <!-- Login Modal -->
 <div class="modal fade" id="loginModal" tabindex="-1" aria-labelledby="loginModalLabel" aria-hidden="true">
