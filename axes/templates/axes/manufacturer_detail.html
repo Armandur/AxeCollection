@@ -33,7 +33,7 @@
 }
 
 .reorder-mode .manufacturer-image-card.drag-over {
-    border: 2px dashed #007bff;
+    border: 2px dashed var(--bs-primary);
     transform: scale(1.05);
 }
 
@@ -47,22 +47,22 @@
 }
 
 .manufacturer-image-card:hover .card {
-    background-color: #f8f9fa;
-    border-color: #dee2e6;
+    background-color: var(--bs-secondary-bg);
+    border-color: var(--bs-border-color);
 }
 
 /* Semi-bold styling för bildtext */
 .manufacturer-image-card .card-title {
     font-weight: 600;
-    color: #495057;
+    color: var(--bs-body-color);
 }
 
 /* Navigationsknappar styling */
 #prevImageBtn:hover,
 #nextImageBtn:hover {
-    color: #212529 !important;
-    background-color: rgba(255,255,255,0.95) !important;
-    border-color: #212529 !important;
+    color: var(--bs-body-color) !important;
+    background-color: var(--bs-secondary-bg) !important;
+    border-color: var(--bs-border-color) !important;
 }
 
 /* Drag & drop för länkordning - endast aktiv i reorder-läge */
@@ -84,7 +84,7 @@
 }
 
 .link-reorder-mode .manufacturer-link-card.drag-over {
-    border: 2px dashed #007bff;
+    border: 2px dashed var(--bs-primary);
     transform: scale(1.05);
 }
 
@@ -98,22 +98,71 @@
 }
 
 .manufacturer-link-card:hover .card {
-    background-color: #f8f9fa;
-    border-color: #dee2e6;
+    background-color: var(--bs-secondary-bg);
+    border-color: var(--bs-border-color);
 }
 
 /* Inaktiva länkar styling */
 .inactive-link {
     opacity: 0.6;
-    background-color: #f8f9fa;
+    background-color: var(--bs-secondary-bg);
 }
 
 .inactive-link .card-title {
-    color: #6c757d !important;
+    color: var(--bs-secondary-color) !important;
 }
 
 .inactive-link:hover {
     opacity: 0.8;
+}
+
+/* EasyMDE dark mode anpassningar */
+[data-bs-theme="dark"] .EasyMDEContainer {
+    background-color: var(--bs-body-bg);
+    border-color: var(--bs-border-color);
+}
+
+[data-bs-theme="dark"] .EasyMDEContainer .CodeMirror {
+    background-color: var(--bs-body-bg);
+    color: var(--bs-body-color);
+    border-color: var(--bs-border-color);
+}
+
+[data-bs-theme="dark"] .EasyMDEContainer .CodeMirror-cursor {
+    border-color: var(--bs-body-color);
+}
+
+[data-bs-theme="dark"] .EasyMDEContainer .editor-toolbar {
+    background-color: var(--bs-secondary-bg);
+    border-color: var(--bs-border-color);
+}
+
+[data-bs-theme="dark"] .EasyMDEContainer .editor-toolbar button {
+    color: var(--bs-body-color);
+}
+
+[data-bs-theme="dark"] .EasyMDEContainer .editor-toolbar button:hover {
+    background-color: var(--bs-tertiary-bg);
+}
+
+[data-bs-theme="dark"] .EasyMDEContainer .editor-preview {
+    background-color: var(--bs-body-bg);
+    color: var(--bs-body-color);
+}
+
+/* Lightbox navigationsknappar dark mode */
+#prevImageBtn,
+#nextImageBtn {
+    background-color: var(--bs-secondary-bg) !important;
+    color: var(--bs-body-color) !important;
+    border-color: var(--bs-border-color) !important;
+}
+
+#prevImageBtn:hover,
+#nextImageBtn:hover {
+    background-color: var(--bs-tertiary-bg) !important;
+    color: var(--bs-body-color) !important;
+    border-color: var(--bs-border-color) !important;
 }
 </style>
 {% endblock %}
@@ -1586,11 +1635,11 @@ function deleteLink(linkId) {
             <div class="modal-body text-center position-relative">
                 <!-- Navigationsknappar -->
                 <button type="button" class="btn btn-outline-dark position-absolute top-50 start-0 translate-middle-y ms-3" 
-                        id="prevImageBtn" onclick="showPreviousImage()" style="z-index: 1050; display: none; background-color: rgba(255,255,255,0.9); color: #212529;">
+                        id="prevImageBtn" onclick="showPreviousImage()" style="z-index: 1050; display: none;">
                     <i class="bi bi-chevron-left"></i>
                 </button>
                 <button type="button" class="btn btn-outline-dark position-absolute top-50 end-0 translate-middle-y me-3" 
-                        id="nextImageBtn" onclick="showNextImage()" style="z-index: 1050; display: none; background-color: rgba(255,255,255,0.9); color: #212529;">
+                        id="nextImageBtn" onclick="showNextImage()" style="z-index: 1050; display: none;">
                     <i class="bi bi-chevron-right"></i>
                 </button>
                 

@@ -472,19 +472,19 @@ window.measurementTemplates = {{ measurement_templates|safe }};
 
 <style>
 .upload-area {
-    border: 2px dashed #dee2e6;
+    border: 2px dashed var(--bs-border-color);
     border-radius: 8px;
     padding: 2rem;
     text-align: center;
     transition: all 0.3s ease;
     cursor: pointer;
-    background-color: #f8f9fa;
+    background-color: var(--bs-secondary-bg);
 }
 
 .upload-area:hover,
 .upload-area.dragover {
-    border-color: #007bff;
-    background-color: #e3f2fd;
+    border-color: var(--bs-primary);
+    background-color: var(--bs-primary-bg-subtle);
 }
 
 .upload-area input[type="file"] {
@@ -524,7 +524,7 @@ window.measurementTemplates = {{ measurement_templates|safe }};
 
 /* Måttsektion CSS */
 .measurement-form {
-    background-color: #f8f9fa;
+    background-color: var(--bs-secondary-bg);
     border-radius: 0.5rem;
     padding: 1.5rem;
     margin-bottom: 1rem;
@@ -843,7 +843,7 @@ document.addEventListener('DOMContentLoaded', function() {
             // Visa en laddningsindikator medan vi försöker ladda bilden
             previewDiv.innerHTML = `
                 <div class="card position-relative">
-                    <div class="text-center p-3" style="background: #f8f9fa; height: 150px; display: flex; align-items: center; justify-content: center;">
+                                            <div class="text-center p-3" style="background: var(--bs-secondary-bg); height: 150px; display: flex; align-items: center; justify-content: center;">
                         <div>
                             <i class="fas fa-spinner fa-spin fa-2x text-muted mb-2"></i>
                             <br><small class="text-muted">Laddar bild...</small>
@@ -878,7 +878,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Bilden kunde inte laddas, visa fallback
                 previewDiv.innerHTML = `
                     <div class="card position-relative">
-                        <div class="text-center p-3" style="background: #f8f9fa; height: 150px; display: flex; align-items: center; justify-content: center;">
+                        <div class="text-center p-3" style="background: var(--bs-secondary-bg); height: 150px; display: flex; align-items: center; justify-content: center;">
                             <div>
                                 <i class="fas fa-link fa-2x text-muted mb-2"></i>
                                 <br><small class="text-muted">URL-bild</small>

@@ -111,9 +111,9 @@ En checklista för vidareutveckling av AxeCollection. Bocka av med [x] när klar
     - [x] 31.7 Databasbehörigheter på Unraid - automatisk fix av readonly database
     - [x] 31.8 Robust startup-process - automatisk skapande av kataloger och behörigheter
 
-32. [ ] Fixa dark mode-konsistens
-    - [ ] 32.1 Kontaktdetaljsida - vita bakgrunder på kontaktinformation, medlemskap och adress
-    - [ ] 32.2 Systematisk genomgång av alla sidor för dark mode-konsistens
+32. [x] Fixa dark mode-konsistens
+    - [x] 32.1 Kontaktdetaljsida - vita bakgrunder på kontaktinformation, medlemskap och adress
+    - [x] 32.2 Systematisk genomgång av alla sidor för dark mode-konsistens
 
 33. [ ] Lägg till footer
     - [ ] 33.1 Designa footer med relevant information (version, länkar, kontakt)

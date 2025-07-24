@@ -20,23 +20,23 @@
             </h1>
             
             <!-- Navigering -->
-            <nav class="settings-navbar navbar navbar-expand-lg mb-4 rounded" style="background-color: #f8f9fa !important; border: 1px solid #dee2e6;">
+            <nav class="settings-navbar navbar navbar-expand-lg mb-4 rounded" style="background-color: var(--bs-secondary-bg) !important; border: 1px solid var(--bs-border-color);">
                 <div class="container-fluid">
-                    <span class="navbar-brand mb-0 h6" style="color: #212529 !important;">Navigera till:</span>
+                    <span class="navbar-brand mb-0 h6" style="color: var(--bs-body-color) !important;">Navigera till:</span>
                     <div class="navbar-nav">
-                        <a class="nav-link" href="#public-settings" style="color: #212529 !important;">
+                        <a class="nav-link" href="#public-settings" style="color: var(--bs-body-color) !important;">
                             <i class="bi bi-eye"></i> Publika inställningar
                         </a>
-                        <a class="nav-link" href="#display-settings" style="color: #212529 !important;">
+                        <a class="nav-link" href="#display-settings" style="color: var(--bs-body-color) !important;">
                             <i class="bi bi-list-ul"></i> Visningsinställningar
                         </a>
-                        <a class="nav-link" href="#host-settings" style="color: #212529 !important;">
+                        <a class="nav-link" href="#host-settings" style="color: var(--bs-body-color) !important;">
                             <i class="bi bi-globe"></i> Host-konfiguration
                         </a>
-                        <a class="nav-link" href="#backup-management" style="color: #212529 !important;">
+                        <a class="nav-link" href="#backup-management" style="color: var(--bs-body-color) !important;">
                             <i class="bi bi-cloud-arrow-up"></i> Backup-hantering
                         </a>
-                        <a class="nav-link" href="#backup-upload" style="color: #212529 !important;">
+                        <a class="nav-link" href="#backup-upload" style="color: var(--bs-body-color) !important;">
                             <i class="bi bi-upload"></i> Backup-uppladdning
                         </a>
                     </div>
@@ -667,29 +667,29 @@ html {
 
 /* Specifik styling för settings-navigering */
 .settings-navbar {
-    background-color: #f8f9fa !important;
+    background-color: var(--bs-secondary-bg) !important;
 }
 
 .settings-navbar .navbar-brand {
-    color: #212529 !important;
+    color: var(--bs-body-color) !important;
 }
 
 .settings-navbar .nav-link {
-    color: #212529 !important;
+    color: var(--bs-body-color) !important;
 }
 
 /* Hover-effekt för navigeringslänkar */
 .settings-navbar .nav-link:hover {
-    background-color: rgba(0, 0, 0, 0.1) !important;
+    background-color: var(--bs-tertiary-bg) !important;
     border-radius: 0.375rem;
-    color: #000 !important;
+    color: var(--bs-body-color) !important;
 }
 
 /* Aktiv länk-styling */
 .settings-navbar .nav-link.active {
-    background-color: rgba(0, 123, 255, 0.15) !important;
+    background-color: var(--bs-primary-bg-subtle) !important;
     border-radius: 0.375rem;
-    color: #007bff !important;
+    color: var(--bs-primary) !important;
     font-weight: 500;
 }
 
