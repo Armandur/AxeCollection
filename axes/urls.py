@@ -73,6 +73,8 @@ urlpatterns = [
     # Måttmall-API
     path('api/measurement-templates/', views.api_measurement_templates, name='api_measurement_templates'),
     path('api/measurement-templates/create/', views.api_create_measurement_template, name='api_create_measurement_template'),
+    path('api/measurement-templates/<int:template_id>/update/', views.api_update_measurement_template, name='api_update_measurement_template'),
+    path('api/measurement-templates/<int:template_id>/delete/', views.api_delete_measurement_template, name='api_delete_measurement_template'),
     path('api/measurement-types/', views.api_measurement_types, name='api_measurement_types'),
     path('api/measurement-types/create/', views.api_create_measurement_type, name='api_create_measurement_type'),
     path('api/measurement-types/<int:type_id>/update/', views.api_update_measurement_type, name='api_update_measurement_type'),

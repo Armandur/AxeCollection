@@ -711,35 +711,65 @@
      </div>
  </div>
  
- <!-- Delete Measurement Type Modal -->
- <div class="modal fade" id="deleteMeasurementTypeModal" tabindex="-1" aria-labelledby="deleteMeasurementTypeModalLabel" aria-hidden="true">
-     <div class="modal-dialog">
-         <div class="modal-content">
-             <div class="modal-header bg-danger text-white">
-                 <h5 class="modal-title" id="deleteMeasurementTypeModalLabel">
-                     <i class="bi bi-trash"></i> Bekräfta borttagning av måtttyp
-                 </h5>
-                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-             </div>
-             <div class="modal-body">
-                 <div class="alert alert-warning">
-                     <h6><i class="bi bi-exclamation-triangle"></i> Varning!</h6>
-                     <p class="mb-0">Att ta bort en måtttyp kan påverka befintliga mått och måttmallar.</p>
-                 </div>
-                 <p>Är du säker på att du vill ta bort måtttypen: <strong id="deleteMeasurementTypeName"></strong>?</p>
-                 <p class="text-muted">Denna åtgärd går inte att ångra.</p>
-             </div>
-             <div class="modal-footer">
-                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                     <i class="bi bi-x"></i> Avbryt
-                 </button>
-                 <button type="button" class="btn btn-danger" id="confirmDeleteMeasurementTypeBtn">
-                     <i class="bi bi-trash"></i> Ja, ta bort måtttyp
-                 </button>
-             </div>
-         </div>
-     </div>
- </div>
+   <!-- Delete Measurement Type Modal -->
+  <div class="modal fade" id="deleteMeasurementTypeModal" tabindex="-1" aria-labelledby="deleteMeasurementTypeModalLabel" aria-hidden="true">
+      <div class="modal-dialog">
+          <div class="modal-content">
+              <div class="modal-header bg-danger text-white">
+                  <h5 class="modal-title" id="deleteMeasurementTypeModalLabel">
+                      <i class="bi bi-trash"></i> Bekräfta borttagning av måtttyp
+                  </h5>
+                  <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+              </div>
+              <div class="modal-body">
+                  <div class="alert alert-warning">
+                      <h6><i class="bi bi-exclamation-triangle"></i> Varning!</h6>
+                      <p class="mb-0">Att ta bort en måtttyp kan påverka befintliga mått och måttmallar.</p>
+                  </div>
+                  <p>Är du säker på att du vill ta bort måtttypen: <strong id="deleteMeasurementTypeName"></strong>?</p>
+                  <p class="text-muted">Denna åtgärd går inte att ångra.</p>
+              </div>
+              <div class="modal-footer">
+                  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                      <i class="bi bi-x"></i> Avbryt
+                  </button>
+                  <button type="button" class="btn btn-danger" id="confirmDeleteMeasurementTypeBtn">
+                      <i class="bi bi-trash"></i> Ja, ta bort måtttyp
+                  </button>
+              </div>
+          </div>
+      </div>
+  </div>
+  
+  <!-- Delete Measurement Template Modal -->
+  <div class="modal fade" id="deleteMeasurementTemplateModal" tabindex="-1" aria-labelledby="deleteMeasurementTemplateModalLabel" aria-hidden="true">
+      <div class="modal-dialog">
+          <div class="modal-content">
+              <div class="modal-header bg-danger text-white">
+                  <h5 class="modal-title" id="deleteMeasurementTemplateModalLabel">
+                      <i class="bi bi-trash"></i> Bekräfta borttagning av måttmall
+                  </h5>
+                  <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+              </div>
+              <div class="modal-body">
+                  <div class="alert alert-warning">
+                      <h6><i class="bi bi-exclamation-triangle"></i> Varning!</h6>
+                      <p class="mb-0">Att ta bort en måttmall går inte att ångra.</p>
+                  </div>
+                  <p>Är du säker på att du vill ta bort måttmallen: <strong id="deleteMeasurementTemplateName"></strong>?</p>
+                  <p class="text-muted">Denna åtgärd går inte att ångra.</p>
+              </div>
+              <div class="modal-footer">
+                  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                      <i class="bi bi-x"></i> Avbryt
+                  </button>
+                  <button type="button" class="btn btn-danger" id="confirmDeleteMeasurementTemplateBtn">
+                      <i class="bi bi-trash"></i> Ja, ta bort måttmall
+                  </button>
+              </div>
+          </div>
+      </div>
+  </div>
 
 <!-- Skapa ny måttmall Modal -->
 <div class="modal fade" id="createTemplateModal" tabindex="-1" aria-labelledby="createTemplateModalLabel" aria-hidden="true">
@@ -999,14 +1029,16 @@ tr.editing-measurement-type td:last-child {
      display: inline-block;
  }
  
- /* Fixa z-index för bekräftelsemodaler som ska visas över andra modaler */
- #deleteMeasurementTypeModal {
-     z-index: 1060;
- }
- 
- #deleteMeasurementTypeModal .modal-backdrop {
-     z-index: 1055;
- }
+   /* Fixa z-index för bekräftelsemodaler som ska visas över andra modaler */
+  #deleteMeasurementTypeModal,
+  #deleteMeasurementTemplateModal {
+      z-index: 1060;
+  }
+  
+  #deleteMeasurementTypeModal .modal-backdrop,
+  #deleteMeasurementTemplateModal .modal-backdrop {
+      z-index: 1055;
+  }
 </style>
 
 <script>
@@ -1155,10 +1187,19 @@ document.addEventListener('DOMContentLoaded', function() {
 document.addEventListener('DOMContentLoaded', function() {
     loadMeasurementTemplates();
     
-    // Ladda måtttyper när modaler öppnas
-    document.getElementById('createTemplateModal').addEventListener('shown.bs.modal', function() {
-        loadMeasurementTypesSelection();
-    });
+         // Ladda måtttyper när modaler öppnas
+     document.getElementById('createTemplateModal').addEventListener('shown.bs.modal', function() {
+         // Kontrollera om vi inte är i redigeringsläge
+         const btn = document.getElementById('saveTemplateBtn');
+         if (btn.getAttribute('data-editing') !== 'true') {
+             loadMeasurementTypesSelection();
+         }
+     });
+     
+     // Återställ modal när den stängs
+     document.getElementById('createTemplateModal').addEventListener('hidden.bs.modal', function() {
+         resetTemplateModal();
+     });
     
     document.getElementById('manageMeasurementTypesModal').addEventListener('shown.bs.modal', function() {
         loadMeasurementTypesList();
@@ -1168,12 +1209,19 @@ document.addEventListener('DOMContentLoaded', function() {
       document.getElementById('saveTemplateBtn').addEventListener('click', createMeasurementTemplate);
       document.getElementById('addMeasurementTypeBtn').addEventListener('click', createMeasurementType);
       
-      // Event listener för bekräftelse av borttagning av måtttyp
-      document.getElementById('confirmDeleteMeasurementTypeBtn').addEventListener('click', function() {
-          const typeId = this.getAttribute('data-type-id');
-          const typeName = this.getAttribute('data-type-name');
-          confirmDeleteMeasurementType(typeId, typeName);
-      });
+             // Event listener för bekräftelse av borttagning av måtttyp
+       document.getElementById('confirmDeleteMeasurementTypeBtn').addEventListener('click', function() {
+           const typeId = this.getAttribute('data-type-id');
+           const typeName = this.getAttribute('data-type-name');
+           confirmDeleteMeasurementType(typeId, typeName);
+       });
+       
+       // Event listener för bekräftelse av borttagning av måttmall
+       document.getElementById('confirmDeleteMeasurementTemplateBtn').addEventListener('click', function() {
+           const templateId = this.getAttribute('data-template-id');
+           const templateName = this.getAttribute('data-template-name');
+           confirmDeleteMeasurementTemplate(templateId, templateName);
+       });
       
       // Inline editing - event listeners handled directly in onclick attributes
  });
@@ -1244,97 +1292,121 @@ function loadMeasurementTemplates() {
         });
 }
 
-// Ladda måtttyper för val i mall-modal
-function loadMeasurementTypesSelection() {
-    fetch('/api/measurement-types/')
-        .then(response => response.json())
-        .then(data => {
-            const container = document.getElementById('measurement-types-selection');
-            if (data.success && data.measurement_types.length > 0) {
-                let html = '<div class="row">';
-                data.measurement_types.forEach(mt => {
-                    html += `
-                        <div class="col-md-6 mb-2">
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" 
-                                       id="mt_${mt.id}" name="measurement_types" value="${mt.id}">
-                                <label class="form-check-label" for="mt_${mt.id}">
-                                    <strong>${mt.name}</strong> (${mt.unit})
-                                    ${mt.description ? `<br><small class="text-muted">${mt.description}</small>` : ''}
-                                </label>
-                            </div>
-                        </div>
-                    `;
-                });
-                html += '</div>';
-                container.innerHTML = html;
-            } else {
-                container.innerHTML = `
-                    <div class="alert alert-warning">
-                        <i class="bi bi-exclamation-triangle"></i> Inga måtttyper finns. Skapa måtttyper först!
-                    </div>
-                `;
-            }
-        })
-        .catch(error => {
-            console.error('Fel vid laddning av måtttyper:', error);
-            container.innerHTML = `
-                <div class="alert alert-danger">
-                    <i class="bi bi-exclamation-triangle"></i> Fel vid laddning av måtttyper
-                </div>
-            `;
-        });
-}
+ // Ladda måtttyper för val i mall-modal
+ function loadMeasurementTypesSelection() {
+     loadMeasurementTypesSelectionForEdit([]);
+ }
+ 
+ // Ladda måtttyper för val i mall-modal med förvalda alternativ
+ function loadMeasurementTypesSelectionForEdit(selectedIds = []) {
+     fetch('/api/measurement-types/')
+         .then(response => response.json())
+         .then(data => {
+             const container = document.getElementById('measurement-types-selection');
+             if (data.success && data.measurement_types.length > 0) {
+                 let html = '<div class="row">';
+                 data.measurement_types.forEach(mt => {
+                     const isSelected = selectedIds.includes(mt.id);
+                     html += `
+                         <div class="col-md-6 mb-2">
+                             <div class="form-check">
+                                 <input class="form-check-input" type="checkbox" 
+                                        id="mt_${mt.id}" name="measurement_types" value="${mt.id}"
+                                        ${isSelected ? 'checked' : ''}>
+                                 <label class="form-check-label" for="mt_${mt.id}">
+                                     <strong>${mt.name}</strong> (${mt.unit})
+                                     ${mt.description ? `<br><small class="text-muted">${mt.description}</small>` : ''}
+                                 </label>
+                             </div>
+                         </div>
+                     `;
+                 });
+                 html += '</div>';
+                 container.innerHTML = html;
+             } else {
+                 container.innerHTML = `
+                     <div class="alert alert-warning">
+                         <i class="bi bi-exclamation-triangle"></i> Inga måtttyper finns. Skapa måtttyper först!
+                     </div>
+                 `;
+             }
+         })
+         .catch(error => {
+             console.error('Fel vid laddning av måtttyper:', error);
+             container.innerHTML = `
+                 <div class="alert alert-danger">
+                     <i class="bi bi-exclamation-triangle"></i> Fel vid laddning av måtttyper
+                 </div>
+             `;
+         });
+ }
 
-// Skapa ny måttmall
-function createMeasurementTemplate() {
-    const form = document.getElementById('createTemplateForm');
-    const formData = new FormData(form);
-    
-    // Samla valda måtttyper
-    const selectedTypes = [];
-    document.querySelectorAll('input[name="measurement_types"]:checked').forEach(checkbox => {
-        selectedTypes.push(checkbox.value);
-    });
-    
-    if (selectedTypes.length === 0) {
-        alert('Du måste välja minst en måtttyp för mallen.');
-        return;
-    }
-    
-    formData.append('measurement_types', JSON.stringify(selectedTypes));
-    
-    const btn = document.getElementById('saveTemplateBtn');
-    btn.disabled = true;
-    btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Skapar...';
-    
-    fetch('/api/measurement-templates/create/', {
-        method: 'POST',
-        body: formData,
-        headers: {
-            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
-        }
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            bootstrap.Modal.getInstance(document.getElementById('createTemplateModal')).hide();
-            form.reset();
-            loadMeasurementTemplates();
-            showNotification('Måttmall skapad!', 'success');
-        } else {
-            showNotification('Fel vid skapande av mall: ' + (data.error || 'Okänt fel'), 'error');
-        }
-    })
-    .catch(error => {
-        console.error('Fel:', error);
-        showNotification('Fel vid skapande av mall', 'error');
-    })
-    .finally(() => {
-        btn.disabled = false;
-        btn.innerHTML = '<i class="bi bi-check"></i> Skapa mall';
-    });
-}
+ // Skapa eller uppdatera måttmall
+ function createMeasurementTemplate() {
+     const form = document.getElementById('createTemplateForm');
+     const formData = new FormData(form);
+     
+     // Samla valda måtttyper
+     const selectedTypes = [];
+     document.querySelectorAll('input[name="measurement_types"]:checked').forEach(checkbox => {
+         selectedTypes.push(checkbox.value);
+     });
+     
+     if (selectedTypes.length === 0) {
+         alert('Du måste välja minst en måtttyp för mallen.');
+         return;
+     }
+     
+     formData.append('measurement_types', JSON.stringify(selectedTypes));
+     
+     const btn = document.getElementById('saveTemplateBtn');
+     const isEditing = btn.getAttribute('data-editing') === 'true';
+     const templateId = btn.getAttribute('data-template-id');
+     
+     btn.disabled = true;
+     btn.innerHTML = isEditing ? '<i class="bi bi-hourglass-split"></i> Uppdaterar...' : '<i class="bi bi-hourglass-split"></i> Skapar...';
+     
+     const url = isEditing ? `/api/measurement-templates/${templateId}/update/` : '/api/measurement-templates/create/';
+     
+     fetch(url, {
+         method: 'POST',
+         body: formData,
+         headers: {
+             'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+         }
+     })
+     .then(response => response.json())
+     .then(data => {
+         if (data.success) {
+             bootstrap.Modal.getInstance(document.getElementById('createTemplateModal')).hide();
+             form.reset();
+             resetTemplateModal();
+             loadMeasurementTemplates();
+             showNotification(isEditing ? 'Måttmall uppdaterad!' : 'Måttmall skapad!', 'success');
+         } else {
+             showNotification('Fel vid ' + (isEditing ? 'uppdatering' : 'skapande') + ' av mall: ' + (data.error || 'Okänt fel'), 'error');
+         }
+     })
+     .catch(error => {
+         console.error('Fel:', error);
+         showNotification('Fel vid ' + (isEditing ? 'uppdatering' : 'skapande') + ' av mall', 'error');
+     })
+     .finally(() => {
+         btn.disabled = false;
+         btn.innerHTML = isEditing ? '<i class="bi bi-check"></i> Uppdatera mall' : '<i class="bi bi-check"></i> Skapa mall';
+     });
+ }
+ 
+ // Återställ template-modal till skapande-läge
+ function resetTemplateModal() {
+     const btn = document.getElementById('saveTemplateBtn');
+     btn.removeAttribute('data-template-id');
+     btn.removeAttribute('data-editing');
+     btn.innerHTML = '<i class="bi bi-check"></i> Skapa mall';
+     
+     document.getElementById('createTemplateModalLabel').innerHTML = '<i class="bi bi-plus-circle"></i> Skapa ny måttmall';
+     document.getElementById('createTemplateForm').reset();
+ }
 
  // Enkel notifikationsfunktion
  function showNotification(message, type) {
@@ -1462,16 +1534,84 @@ function createMeasurementType() {
     });
 }
 
- // Placeholder-funktioner för redigering och borttagning (mallar kommer senare)
- function editTemplate(templateId) {
-     showNotification('Redigering av mallar kommer i nästa version', 'info');
- }
- 
- function deleteTemplate(templateId, templateName) {
-     if (confirm(`Är du säker på att du vill ta bort mallen "${templateName}"?`)) {
-         showNotification('Borttagning av mallar kommer i nästa version', 'info');
-     }
- }
+   // Redigering och borttagning av måttmallar
+  function editTemplate(templateId) {
+      // Hämta mall-data och fyll i modal
+      fetch('/api/measurement-templates/')
+          .then(response => response.json())
+          .then(data => {
+              if (data.success) {
+                  const template = data.templates.find(t => t.id === templateId);
+                  if (template) {
+                      // Fyll i formuläret med befintliga värden
+                      document.getElementById('template_name').value = template.name;
+                      document.getElementById('template_description').value = template.description || '';
+                      document.getElementById('template_sort_order').value = template.sort_order;
+                      
+                      // Ändra modal-titel och knapp-text
+                      document.getElementById('createTemplateModalLabel').innerHTML = '<i class="bi bi-pencil"></i> Redigera måttmall';
+                      document.getElementById('saveTemplateBtn').innerHTML = '<i class="bi bi-check"></i> Uppdatera mall';
+                      document.getElementById('saveTemplateBtn').setAttribute('data-template-id', templateId);
+                      document.getElementById('saveTemplateBtn').setAttribute('data-editing', 'true');
+                      
+                      // Ladda måtttyper och markera befintliga
+                      loadMeasurementTypesSelectionForEdit(template.measurement_types.map(mt => mt.id));
+                      
+                      // Visa modal
+                      const modal = new bootstrap.Modal(document.getElementById('createTemplateModal'));
+                      modal.show();
+                  }
+              }
+          })
+          .catch(error => {
+              console.error('Fel vid hämtning av mall-data:', error);
+              showNotification('Fel vid hämtning av mall-data', 'error');
+          });
+  }
+  
+  function deleteTemplate(templateId, templateName) {
+      // Spara ID och namn för modalens bekräftelseknapp
+      document.getElementById('deleteMeasurementTemplateName').textContent = templateName;
+      document.getElementById('confirmDeleteMeasurementTemplateBtn').setAttribute('data-template-id', templateId);
+      document.getElementById('confirmDeleteMeasurementTemplateBtn').setAttribute('data-template-name', templateName);
+      
+      // Visa modal
+      const modal = new bootstrap.Modal(document.getElementById('deleteMeasurementTemplateModal'));
+      modal.show();
+  }
+  
+  // Bekräfta borttagning av måttmall
+  function confirmDeleteMeasurementTemplate(templateId, templateName) {
+      const btn = document.getElementById('confirmDeleteMeasurementTemplateBtn');
+      btn.disabled = true;
+      btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Tar bort...';
+      
+      fetch(`/api/measurement-templates/${templateId}/delete/`, {
+          method: 'POST',
+          headers: {
+              'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+              'Content-Type': 'application/json'
+          }
+      })
+      .then(response => response.json())
+      .then(data => {
+          if (data.success) {
+              bootstrap.Modal.getInstance(document.getElementById('deleteMeasurementTemplateModal')).hide();
+              loadMeasurementTemplates();
+              showNotification('Måttmall borttagen!', 'success');
+          } else {
+              showNotification('Fel vid borttagning av måttmall: ' + (data.error || 'Okänt fel'), 'error');
+          }
+      })
+      .catch(error => {
+          console.error('Fel:', error);
+          showNotification('Fel vid borttagning av måttmall', 'error');
+      })
+      .finally(() => {
+          btn.disabled = false;
+          btn.innerHTML = '<i class="bi bi-trash"></i> Ja, ta bort måttmall';
+      });
+  }
 
 // Legacy modal editing functions (replaced by inline editing)
 // function editMeasurementType(typeId) - removed, replaced by startMeasurementTypeInlineEdit

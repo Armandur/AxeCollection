@@ -1118,3 +1118,105 @@ def api_delete_measurement_type(request, type_id):
             'success': False,
             'error': str(e)
         }, status=500)
+
+@login_required
+def api_update_measurement_template(request, template_id):
+    """API för att uppdatera en befintlig måttmall"""
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'Endast POST-förfrågningar tillåtna'})
+    
+    try:
+        from .models import MeasurementTemplate, MeasurementTemplateItem, MeasurementType
+        import json
+        
+        template = get_object_or_404(MeasurementTemplate, id=template_id)
+        
+        # Hämta data från formuläret
+        name = request.POST.get('template_name', '').strip()
+        description = request.POST.get('template_description', '').strip()
+        sort_order = request.POST.get('template_sort_order', '0')
+        measurement_types_json = request.POST.get('measurement_types', '[]')
+        
+        # Validering
+        if not name:
+            return JsonResponse({'success': False, 'error': 'Mallnamn är obligatoriskt'})
+        
+        # Kontrollera om namnet redan finns (exklusive nuvarande mall)
+        if MeasurementTemplate.objects.filter(name=name).exclude(id=template_id).exists():
+            return JsonResponse({'success': False, 'error': f'En mall med namnet "{name}" finns redan'})
+        
+        try:
+            measurement_type_ids = json.loads(measurement_types_json)
+        except:
+            return JsonResponse({'success': False, 'error': 'Ogiltiga måtttyper'})
+        
+        if not measurement_type_ids:
+            return JsonResponse({'success': False, 'error': 'Du måste välja minst en måtttyp'})
+        
+        try:
+            sort_order = int(sort_order)
+        except ValueError:
+            sort_order = 0
+        
+        # Uppdatera mallen
+        template.name = name
+        template.description = description
+        template.sort_order = sort_order
+        template.save()
+        
+        # Ta bort befintliga måtttyper från mallen
+        MeasurementTemplateItem.objects.filter(template=template).delete()
+        
+        # Lägg till nya måtttyper till mallen
+        for i, mt_id in enumerate(measurement_type_ids):
+            try:
+                measurement_type = MeasurementType.objects.get(id=mt_id, is_active=True)
+                MeasurementTemplateItem.objects.create(
+                    template=template,
+                    measurement_type=measurement_type,
+                    sort_order=i
+                )
+            except MeasurementType.DoesNotExist:
+                # Ignorera ogiltiga måtttyper
+                pass
+        
+        return JsonResponse({
+            'success': True,
+            'message': f'Måttmall "{name}" uppdaterad framgångsrikt',
+            'template_id': template.id
+        })
+        
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=500)
+
+@login_required
+def api_delete_measurement_template(request, template_id):
+    """API för att ta bort en måttmall"""
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'Endast POST-förfrågningar tillåtna'})
+    
+    try:
+        from .models import MeasurementTemplate, MeasurementTemplateItem
+        
+        template = get_object_or_404(MeasurementTemplate, id=template_id)
+        template_name = template.name
+        
+        # Ta bort alla måtttyper från mallen först
+        MeasurementTemplateItem.objects.filter(template=template).delete()
+        
+        # Ta bort mallen
+        template.delete()
+        
+        return JsonResponse({
+            'success': True,
+            'message': f'Måttmallen "{template_name}" har tagits bort'
+        })
+        
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=500)
