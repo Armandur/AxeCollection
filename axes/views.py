@@ -1,5 +1,5 @@
 from django.shortcuts import render, get_object_or_404, redirect
-from .models import Axe, Transaction, Contact, Manufacturer, ManufacturerImage, ManufacturerLink, NextAxeID, AxeImage, Platform, Measurement
+from .models import Axe, Transaction, Contact, Manufacturer, ManufacturerImage, ManufacturerLink, NextAxeID, AxeImage, Platform, Measurement, MeasurementType
 from django.db.models import Sum, Q, Max, Count, Avg
 from django.http import JsonResponse, Http404
 from django.views.decorators.http import require_POST
@@ -1023,6 +1023,94 @@ def api_create_measurement_type(request):
                 'description': measurement_type.description,
                 'sort_order': measurement_type.sort_order
             }
+        })
+        
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=500)
+
+@login_required
+def api_update_measurement_type(request, type_id):
+    """API för att uppdatera en befintlig måtttyp"""
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'Endast POST-förfrågningar tillåtna'})
+    
+    try:
+        measurement_type = get_object_or_404(MeasurementType, id=type_id)
+        
+        # Hämta data från formuläret
+        name = request.POST.get('measurement_type_name', '').strip()
+        unit = request.POST.get('measurement_type_unit', '').strip()
+        description = request.POST.get('measurement_type_description', '').strip()
+        sort_order = request.POST.get('measurement_type_sort_order', '0')
+        
+        # Validering
+        if not name:
+            return JsonResponse({'success': False, 'error': 'Namn är obligatoriskt'})
+        if not unit:
+            return JsonResponse({'success': False, 'error': 'Enhet är obligatorisk'})
+        
+        # Kontrollera om namnet redan finns (exklusive nuvarande måtttyp)
+        if MeasurementType.objects.filter(name=name).exclude(id=type_id).exists():
+            return JsonResponse({'success': False, 'error': f'En måtttyp med namnet "{name}" finns redan'})
+        
+        try:
+            sort_order = int(sort_order)
+        except ValueError:
+            sort_order = 0
+        
+        # Uppdatera måtttypen
+        measurement_type.name = name
+        measurement_type.unit = unit
+        measurement_type.description = description
+        measurement_type.sort_order = sort_order
+        measurement_type.save()
+        
+        return JsonResponse({
+            'success': True,
+            'measurement_type': {
+                'id': measurement_type.id,
+                'name': measurement_type.name,
+                'unit': measurement_type.unit,
+                'description': measurement_type.description,
+                'sort_order': measurement_type.sort_order
+            }
+        })
+        
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=500)
+
+@login_required
+def api_delete_measurement_type(request, type_id):
+    """API för att ta bort en måtttyp"""
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'Endast POST-förfrågningar tillåtna'})
+    
+    try:
+        from .models import MeasurementType, MeasurementTemplateItem
+        
+        measurement_type = get_object_or_404(MeasurementType, id=type_id)
+        type_name = measurement_type.name
+        
+        # Kontrollera om måtttypen används i måttmallar
+        template_items = MeasurementTemplateItem.objects.filter(measurement_type=measurement_type).count()
+        if template_items > 0:
+            return JsonResponse({
+                'success': False, 
+                'error': f'Måtttypen "{type_name}" kan inte tas bort eftersom den används i måttmallar. Ta bort den från mallarna först.'
+            })
+        
+        # Ta bort måtttypen
+        measurement_type.delete()
+        
+        return JsonResponse({
+            'success': True,
+            'message': f'Måtttypen "{type_name}" har tagits bort'
         })
         
     except Exception as e:
