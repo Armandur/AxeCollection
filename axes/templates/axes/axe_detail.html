@@ -120,7 +120,7 @@
                     </div>
                     <div class="col-md-6">
                         {% if axe.measurements.all %}
-                            <h6><strong>Mätningar:</strong></h6>
+                            <h6><strong>Mått:</strong></h6>
                             <ul class="list-unstyled">
                                 {% for measurement in axe.measurements.all %}
                                     <li>{{ measurement.name }}: {{ measurement.value|format_decimal }} {{ measurement.unit }}</li>

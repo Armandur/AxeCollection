@@ -370,7 +370,7 @@
                                 <div class="measurement-details">
                                     {% for measurement in axe.measurements.all %}
                                         <div class="measurement-item">
-                                            <strong>{{ measurement.name }}:</strong> {{ measurement.value }} {{ measurement.unit }}
+                                            <strong>{{ measurement.name }}:</strong> {{ measurement.value|format_decimal }} {{ measurement.unit }}
                                         </div>
                                     {% endfor %}
                                 </div>'

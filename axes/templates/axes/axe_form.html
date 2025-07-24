@@ -459,14 +459,14 @@ tr.editing .form-control-sm {
                                 {% for measurement in measurements %}
                                 <tr data-measurement-id="{{ measurement.id }}">
                                     <td class="measurement-name">{{ measurement.name }}</td>
-                                    <td class="measurement-value">{{ measurement.value }}</td>
+                                    <td class="measurement-value">{{ measurement.value|format_decimal }}</td>
                                     <td class="measurement-unit">{{ measurement.unit }}</td>
                                     <td>
                                         <div class="btn-group btn-group-sm" role="group">
                                             <button type="button" class="btn btn-outline-primary btn-edit-measurement" 
                                                     data-measurement-id="{{ measurement.id }}"
                                                     data-name="{{ measurement.name }}"
-                                                    data-value="{{ measurement.value }}"
+                                                    data-value="{{ measurement.value|format_decimal }}"
                                                     data-unit="{{ measurement.unit }}"
                                                     title="Redigera mått">
                                                 <i class="fas fa-edit"></i>

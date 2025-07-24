@@ -297,7 +297,7 @@
                             <p class="card-text"><strong>Mått:</strong></p>
                             <ul class="list-unstyled">
                                 {% for measurement in current_axe.measurements.all %}
-                                <li>{{ measurement.name }}: {{ measurement.value }} {{ measurement.unit }}</li>
+                                <li>{{ measurement.name }}: {{ measurement.value|format_decimal }} {{ measurement.unit }}</li>
                                 {% endfor %}
                             </ul>
                             {% endif %}
