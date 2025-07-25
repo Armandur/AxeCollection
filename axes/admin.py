@@ -29,9 +29,28 @@ class ManufacturerLinkAdmin(admin.ModelAdmin):
     ordering = ('manufacturer', 'order')
 
 class ManufacturerAdmin(admin.ModelAdmin):
-    list_display = ('name', 'information')
+    list_display = ('name', 'parent', 'manufacturer_type', 'information')
+    list_filter = ('manufacturer_type', 'parent')
     search_fields = ('name', 'information')
     inlines = [ManufacturerImageInline, ManufacturerLinkInline]
+    
+    def get_queryset(self, request):
+        # Visa huvudtillverkare först, sedan undertillverkare
+        return super().get_queryset(request).select_related('parent').order_by('parent__name', 'name')
+    
+    def get_list_display(self, request):
+        # Lägg till hierarki-visning
+        list_display = list(super().get_list_display(request))
+        if 'hierarchical_name' not in list_display:
+            list_display.insert(0, 'hierarchical_name')
+        return list_display
+    
+    def hierarchical_name(self, obj):
+        if obj.parent:
+            return f"└─ {obj.name}"
+        return obj.name
+    hierarchical_name.short_description = 'Namn'
+    hierarchical_name.admin_order_field = 'name'
 
 class AxeDeleteForm(forms.Form):
     delete_images = forms.BooleanField(

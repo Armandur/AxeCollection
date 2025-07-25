@@ -28,6 +28,7 @@ urlpatterns = [
     path('kontakter/<int:pk>/ta-bort/', views_contact.contact_delete, name='contact_delete'),
     path('tillverkare/', views_manufacturer.manufacturer_list, name='manufacturer_list'),
     path('tillverkare/ny/', views_manufacturer.manufacturer_create, name='manufacturer_create'),
+    path('tillverkare/<int:pk>/redigera/', views_manufacturer.manufacturer_edit, name='manufacturer_edit'),
     path('tillverkare/<int:pk>/', views_manufacturer.manufacturer_detail, name='manufacturer_detail'),
     path('tillverkare/<int:pk>/redigera-information/', views_manufacturer.edit_manufacturer_information, name='edit_manufacturer_information'),
     path('tillverkare/<int:pk>/redigera-namn/', views_manufacturer.edit_manufacturer_name, name='edit_manufacturer_name'),

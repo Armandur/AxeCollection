@@ -242,6 +242,15 @@ def strip_markdown_and_truncate(value, max_length=100):
     return text
 
 @register.filter
+def times(value):
+    """Upprepa text ett visst antal gånger"""
+    try:
+        count = int(value)
+        return range(count)
+    except (ValueError, TypeError):
+        return range(0)
+
+@register.filter
 def basename(value):
     """Returnerar filnamnet utan sökväg."""
     return os.path.basename(value)

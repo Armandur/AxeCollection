@@ -85,7 +85,9 @@ class TodoManager:
         for line in lines:
             # Header lines (innan första sektionen)
             if not line.startswith('##') and current_section is None:
-                self.header_lines.append(line)
+                # Lägg bara till icke-tomma rader i header_lines
+                if line.strip():
+                    self.header_lines.append(line)
                 continue
                 
             # Sektion (## X. Sektionsnamn)
@@ -177,7 +179,6 @@ class TodoManager:
         
         # Header
         content.extend(self.header_lines)
-        content.append("")
         
         # Sections med automatisk numrering
         for section_idx, section in enumerate(self.sections, 1):

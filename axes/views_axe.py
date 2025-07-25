@@ -132,7 +132,17 @@ def axe_list(request):
         axes = axes.filter(status=status_filter)
     
     if manufacturer_filter:
-        axes = axes.filter(manufacturer_id=manufacturer_filter)
+        # Filtrera på både huvud- och undertillverkare
+        manufacturer = Manufacturer.objects.filter(id=manufacturer_filter).first()
+        if manufacturer:
+            # Om det är en huvudtillverkare, inkludera alla undertillverkare
+            if manufacturer.is_main_manufacturer:
+                sub_manufacturer_ids = [sub.id for sub in manufacturer.all_sub_manufacturers]
+                sub_manufacturer_ids.append(manufacturer.id)
+                axes = axes.filter(manufacturer_id__in=sub_manufacturer_ids)
+            else:
+                # Om det är en undertillverkare, visa endast den
+                axes = axes.filter(manufacturer_id=manufacturer_filter)
     
     if platform_filter:
         axes = axes.filter(transactions__platform_id=platform_filter).distinct()

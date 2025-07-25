@@ -39,15 +39,84 @@ class NextAxeID(models.Model):
         return obj.next_id
 
 class Manufacturer(models.Model):
+    MANUFACTURER_TYPE_CHOICES = [
+        ('TILLVERKARE', 'Tillverkare'),
+        ('SMED', 'Smed'),
+    ]
+    
     name = models.CharField(max_length=200)
     information = models.TextField(blank=True, null=True, verbose_name="Information")
+    manufacturer_type = models.CharField(
+        max_length=15,
+        choices=MANUFACTURER_TYPE_CHOICES,
+        default='TILLVERKARE',
+        verbose_name="Typ av tillverkare",
+        help_text="Är detta en fabrik, smedja, bruk eller annan tillverkare - eller en enskild smed?"
+    )
+    parent = models.ForeignKey(
+        'self', 
+        on_delete=models.SET_NULL, 
+        blank=True, 
+        null=True, 
+        related_name='sub_manufacturers',
+        verbose_name="Överordnad tillverkare",
+        help_text="Välj en överordnad tillverkare om detta är en undertillverkare/smed"
+    )
 
     def __str__(self):
         return self.name
 
     @property
+    def is_sub_manufacturer(self):
+        """Returnerar True om detta är en undertillverkare"""
+        return self.parent is not None
+
+    @property
+    def is_main_manufacturer(self):
+        """Returnerar True om detta är en huvudtillverkare (ingen parent)"""
+        return self.parent is None
+
+    @property
+    def hierarchy_level(self):
+        """Returnerar hierarkinivån för tillverkaren (0 för huvudtillverkare, 1+ för undertillverkare)"""
+        level = 0
+        current = self
+        while current.parent:
+            level += 1
+            current = current.parent
+        return level
+
+    @property
+    def full_name(self):
+        """Returnerar fullständigt namn med hierarki"""
+        if self.parent:
+            return f"{self.parent.name} - {self.name}"
+        return self.name
+
+    @property
+    def all_sub_manufacturers(self):
+        """Returnerar alla undertillverkare (rekursivt)"""
+        sub_manufacturers = list(self.sub_manufacturers.all())
+        for sub in self.sub_manufacturers.all():
+            sub_manufacturers.extend(sub.all_sub_manufacturers)
+        return sub_manufacturers
+
+    @property
+    def all_axes_including_sub_manufacturers(self):
+        """Returnerar alla yxor från denna tillverkare och alla undertillverkare"""
+        axes = list(self.axe_set.all())
+        for sub_manufacturer in self.all_sub_manufacturers:
+            axes.extend(sub_manufacturer.axe_set.all())
+        return axes
+
+    @property
     def axes(self):
         return self.axe_set.all()
+
+    class Meta:
+        ordering = ['name']
+        verbose_name = "Tillverkare"
+        verbose_name_plural = "Tillverkare"
 
     @property
     def axe_count(self):

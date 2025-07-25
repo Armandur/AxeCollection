@@ -13,13 +13,67 @@ import os
 import shutil
 from django.conf import settings
 
-def manufacturer_list(request):
-    manufacturers = Manufacturer.objects.all().order_by('name')
+def get_available_parents(current_manufacturer=None):
+    """
+    Hämta alla tillgängliga föräldrar för en tillverkare.
+    Exkluderar den aktuella tillverkaren och alla dess undertillverkare (rekursivt).
+    """
+    if current_manufacturer is None:
+        # För nya tillverkare, alla tillverkare är tillgängliga
+        return Manufacturer.objects.all().order_by('name')
     
+    # För befintliga tillverkare, exkludera sig själv och alla undertillverkare
+    excluded_ids = {current_manufacturer.id}
+    
+    # Rekursivt hitta alla undertillverkare
+    def get_all_sub_manufacturer_ids(manufacturer):
+        for sub in manufacturer.sub_manufacturers.all():
+            excluded_ids.add(sub.id)
+            get_all_sub_manufacturer_ids(sub)
+    
+    get_all_sub_manufacturer_ids(current_manufacturer)
+    
+    return Manufacturer.objects.exclude(id__in=excluded_ids).order_by('name')
 
+
+
+def manufacturer_list(request):
+    # Hämta alla tillverkare och sortera dem hierarkiskt
+    all_manufacturers = Manufacturer.objects.all().order_by('name')
+    manufacturers = []
+    
+    # Använd property:et hierarchy_level istället för manuell tilldelning
+    manufacturers = list(all_manufacturers)
+    
+    # Sortera hierarkiskt: huvudtillverkare först, sedan undertillverkare med indentation
+    def sort_hierarchically(manufacturers):
+        # Gruppera efter huvudtillverkare
+        main_manufacturers = [m for m in manufacturers if m.hierarchy_level == 0]
+        sorted_list = []
+        
+        for main in main_manufacturers:
+            sorted_list.append(main)
+            # Hitta alla undertillverkare för denna huvudtillverkare
+            subs = [m for m in manufacturers if m.hierarchy_level > 0 and is_descendant(m, main)]
+            # Sortera undertillverkare efter hierarkinivå och namn
+            subs.sort(key=lambda x: (x.hierarchy_level, x.name))
+            sorted_list.extend(subs)
+        
+        return sorted_list
+    
+    def is_descendant(manufacturer, ancestor):
+        """Kontrollera om manufacturer är en efterkommande till ancestor"""
+        current = manufacturer
+        while current.parent:
+            if current.parent == ancestor:
+                return True
+            current = current.parent
+        return False
+    
+    manufacturers = sort_hierarchically(manufacturers)
     
     # Ta bort all tilldelning av statistikfält, använd properties direkt i template/context
-    total_manufacturers = manufacturers.count()
+    total_manufacturers = len(manufacturers)
     total_axes = Axe.objects.count()
     total_transactions = Transaction.objects.count()
     average_axes_per_manufacturer = total_axes / total_manufacturers if total_manufacturers > 0 else 0
@@ -47,12 +101,17 @@ def manufacturer_create(request):
     if request.method == 'POST':
         name = request.POST.get('name', '').strip()
         information = request.POST.get('information', '').strip()
+        parent_id = request.POST.get('parent', '').strip()
+        manufacturer_type = request.POST.get('manufacturer_type', 'TILLVERKARE')
         
         if not name:
             messages.error(request, 'Tillverkarnamn är obligatoriskt')
             return render(request, 'axes/manufacturer_form.html', {
                 'name': name,
-                'information': information
+                'information': information,
+                'parent': parent_id,
+                'manufacturer_type': manufacturer_type,
+                'available_parents': get_available_parents()
             })
         
         # Kontrollera om tillverkaren redan finns
@@ -62,19 +121,153 @@ def manufacturer_create(request):
             return render(request, 'axes/manufacturer_form.html', {
                 'name': name,
                 'information': information,
-                'existing_manufacturer': existing_manufacturer
+                'parent': parent_id,
+                'manufacturer_type': manufacturer_type,
+                'existing_manufacturer': existing_manufacturer,
+                'available_parents': get_available_parents()
             })
+        
+        # Hämta parent om vald
+        parent = None
+        if parent_id:
+            try:
+                parent = Manufacturer.objects.get(id=parent_id)
+            except Manufacturer.DoesNotExist:
+                messages.error(request, 'Vald överordnad tillverkare finns inte')
+                return render(request, 'axes/manufacturer_form.html', {
+                    'name': name,
+                    'information': information,
+                    'parent': parent_id,
+                    'manufacturer_type': manufacturer_type,
+                    'available_parents': get_available_parents()
+                })
+        
+        # Behåll användarens val av manufacturer_type, oavsett om det är en undertillverkare eller inte
         
         # Skapa tillverkaren
         manufacturer = Manufacturer.objects.create(
             name=name,
-            information=information if information else None
+            information=information if information else None,
+            parent=parent,
+            manufacturer_type=manufacturer_type
         )
         
         messages.success(request, f'Tillverkaren "{manufacturer.name}" har skapats')
         return redirect('manufacturer_detail', pk=manufacturer.pk)
     
-    return render(request, 'axes/manufacturer_form.html')
+    return render(request, 'axes/manufacturer_form.html', {
+        'available_parents': get_available_parents()
+    })
+
+@login_required
+def manufacturer_edit(request, pk):
+    """Redigera en befintlig tillverkare"""
+    manufacturer = get_object_or_404(Manufacturer, pk=pk)
+    
+    if request.method == 'POST':
+        name = request.POST.get('name', '').strip()
+        information = request.POST.get('information', '').strip()
+        parent_id = request.POST.get('parent', '').strip()
+        manufacturer_type = request.POST.get('manufacturer_type', 'TILLVERKARE')
+        
+        if not name:
+            messages.error(request, 'Tillverkarnamn är obligatoriskt')
+            return render(request, 'axes/manufacturer_form.html', {
+                'manufacturer': manufacturer,
+                'name': name,
+                'information': information,
+                'parent': parent_id,
+                'manufacturer_type': manufacturer_type,
+                'available_parents': get_available_parents(manufacturer),
+                'is_edit': True
+            })
+        
+        # Kontrollera om tillverkarnamn redan finns (exkludera sig själv)
+        existing_manufacturer = Manufacturer.objects.filter(name__iexact=name).exclude(id=manufacturer.id).first()
+        if existing_manufacturer:
+            messages.error(request, f'Tillverkaren "{name}" finns redan')
+            return render(request, 'axes/manufacturer_form.html', {
+                'manufacturer': manufacturer,
+                'name': name,
+                'information': information,
+                'parent': parent_id,
+                'manufacturer_type': manufacturer_type,
+                'existing_manufacturer': existing_manufacturer,
+                'available_parents': get_available_parents(manufacturer),
+                'is_edit': True
+            })
+        
+        # Validera parent (förhindra cirkulära referenser)
+        parent = None
+        if parent_id:
+            try:
+                parent = Manufacturer.objects.get(id=parent_id)
+                # Kontrollera att parent inte är denna tillverkare själv
+                if parent.id == manufacturer.id:
+                    messages.error(request, 'En tillverkare kan inte vara sin egen överordnad tillverkare')
+                    return render(request, 'axes/manufacturer_form.html', {
+                        'manufacturer': manufacturer,
+                        'name': name,
+                        'information': information,
+                        'parent': parent_id,
+                        'manufacturer_type': manufacturer_type,
+                        'available_parents': get_available_parents(manufacturer),
+                        'is_edit': True
+                    })
+                
+                # Kontrollera att parent inte är en undertillverkare av denna tillverkare (rekursivt)
+                def check_circular_reference(check_manufacturer, target_id):
+                    if check_manufacturer.parent_id == target_id:
+                        return True
+                    if check_manufacturer.parent:
+                        return check_circular_reference(check_manufacturer.parent, target_id)
+                    return False
+                
+                if check_circular_reference(parent, manufacturer.id):
+                    messages.error(request, 'En tillverkare kan inte vara överordnad tillverkare till sin egen överordnad tillverkare')
+                    return render(request, 'axes/manufacturer_form.html', {
+                        'manufacturer': manufacturer,
+                        'name': name,
+                        'information': information,
+                        'parent': parent_id,
+                        'manufacturer_type': manufacturer_type,
+                        'available_parents': get_available_parents(manufacturer),
+                        'is_edit': True
+                    })
+                    
+            except Manufacturer.DoesNotExist:
+                messages.error(request, 'Vald överordnad tillverkare finns inte')
+                return render(request, 'axes/manufacturer_form.html', {
+                    'manufacturer': manufacturer,
+                    'name': name,
+                    'information': information,
+                    'parent': parent_id,
+                    'manufacturer_type': manufacturer_type,
+                    'available_parents': get_available_parents(manufacturer),
+                    'is_edit': True
+                })
+        
+        # Behåll användarens val av manufacturer_type, oavsett om det är en undertillverkare eller inte
+        
+        # Uppdatera tillverkaren
+        manufacturer.name = name
+        manufacturer.information = information if information else None
+        manufacturer.parent = parent
+        manufacturer.manufacturer_type = manufacturer_type
+        manufacturer.save()
+        
+        messages.success(request, f'Tillverkaren "{manufacturer.name}" har uppdaterats')
+        return redirect('manufacturer_detail', pk=manufacturer.pk)
+    
+    return render(request, 'axes/manufacturer_form.html', {
+        'manufacturer': manufacturer,
+        'name': manufacturer.name,
+        'information': manufacturer.information or '',
+        'parent': manufacturer.parent.id if manufacturer.parent else '',
+        'manufacturer_type': manufacturer.manufacturer_type,
+        'available_parents': get_available_parents(manufacturer),
+        'is_edit': True
+    })
 
 def manufacturer_detail(request, pk):
     manufacturer = get_object_or_404(Manufacturer, pk=pk)
@@ -139,6 +332,28 @@ def manufacturer_detail(request, pk):
     for transaction in transactions:
         if transaction.contact:
             unique_contacts.add(transaction.contact)
+    
+    # Skapa breadcrumbs som visar hierarki
+    breadcrumbs = [
+        {'text': 'Hem', 'url': '/yxor/'},
+        {'text': 'Tillverkare', 'url': '/tillverkare/'}
+    ]
+    
+    # Lägg till överordnad tillverkare om det finns
+    if manufacturer.parent:
+        breadcrumbs.append({
+            'text': manufacturer.parent.name, 
+            'url': f'/tillverkare/{manufacturer.parent.id}/'
+        })
+    
+    # Lägg till aktuell tillverkare
+    breadcrumbs.append({'text': manufacturer.name, 'url': None})
+    
+    # Förbereda separata listor för undertillverkare och smeder
+    sub_manufacturers = manufacturer.sub_manufacturers.all().order_by('name')
+    sub_tillverkare = [m for m in sub_manufacturers if m.manufacturer_type == 'TILLVERKARE']
+    sub_smeder = [m for m in sub_manufacturers if m.manufacturer_type == 'SMED']
+    
     context = {
         'manufacturer': manufacturer,
         'axes': axes,
@@ -156,6 +371,9 @@ def manufacturer_detail(request, pk):
         'average_profit_per_axe': average_profit_per_axe,
         'buy_count': buy_count,
         'sale_count': sale_count,
+        'breadcrumbs': breadcrumbs,
+        'sub_tillverkare': sub_tillverkare,
+        'sub_smeder': sub_smeder,
     }
     return render(request, 'axes/manufacturer_detail.html', context)
 
