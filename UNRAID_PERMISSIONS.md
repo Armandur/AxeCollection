@@ -9,7 +9,7 @@ Unraid använder standardanvändaren `nobody:users` (UID: 65534, GID: 100) för 
 ### Alternativ 1: Använd den publicerade imagen med user-mapping
 
 ```yaml
-# docker-compose.unraid-published.yml
+# docker-compose.published.yml
 services:
   axecollection:
     image: armandur/axecollection:latest
@@ -28,12 +28,12 @@ services:
 ### Alternativ 2: Bygg egen imagen för Unraid
 
 ```yaml
-# docker-compose.unraid.yml
+# docker-compose.yml
 services:
   axecollection:
     build:
       context: .
-      dockerfile: Dockerfile.unraid
+      dockerfile: Dockerfile
     # ... resten av konfigurationen
 ```
 
@@ -95,9 +95,9 @@ docker logs axecollection | grep -i permission
 
 För enklaste deployment på Unraid:
 
-1. **Använd `docker-compose.unraid-published.yml`** med den publicerade imagen
+1. **Använd `docker-compose.published.yml`** med den publicerade imagen
 2. **Kör deployment-scriptet** som fixar behörigheter automatiskt
-3. **Om problem kvarstår**, bygg egen imagen med `Dockerfile.unraid`
+3. **Om problem kvarstår**, bygg egen imagen med `Dockerfile`
 
 ## Snabb fix för behörighetsproblem
 

@@ -31,7 +31,7 @@ Alla viktiga ändringar i AxeCollection dokumenteras i denna fil.
 - **Demo-installationer** - stöd för flera instanser med olika host-konfigurationer
 
 ### Tekniska detaljer
-- **Dockerfile.unraid**: Multi-stage build med korrekt användarhantering
+- **Dockerfile**: Multi-stage build med korrekt användarhantering för Unraid
 - **supervisor.unraid.conf**: Konfiguration för Django och Nginx
 - **nginx.integrated.conf**: Optimerad för stora filer och HTTPS
 - **start.sh**: Smart startup-script med databasinitialisering

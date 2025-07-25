@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   axecollection:
-    image: armandur/axecollection:unraid
+    image: armandur/axecollection:latest
     ports:
       - "80:80"
     volumes:

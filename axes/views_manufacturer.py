@@ -45,7 +45,7 @@ def get_available_parents(current_manufacturer=None):
         return False
     
     def sort_hierarchically(manufacturers):
-        """Sorterar tillverkare hierarkiskt: huvudtillverkare först, sedan undertillverkare"""
+        """Sorterar tillverkare hierarkiskt: huvudtillverkare först, sedan undertillverkare i korrekt ordning"""
         main_manufacturers = [m for m in manufacturers if m.hierarchy_level == 0]
         sorted_list = []
         
@@ -53,9 +53,22 @@ def get_available_parents(current_manufacturer=None):
             sorted_list.append(main)
             # Hitta alla undertillverkare för denna huvudtillverkare
             subs = [m for m in manufacturers if m.hierarchy_level > 0 and _is_descendant(m, main)]
-            # Sortera undertillverkare efter hierarkinivå och namn
-            subs.sort(key=lambda x: (x.hierarchy_level, x.name))
-            sorted_list.extend(subs)
+            
+            # Sortera undertillverkare hierarkiskt
+            def sort_children_recursive(parent=None):
+                """Sorterar barn rekursivt under en förälder"""
+                children = [m for m in manufacturers if m.parent == parent]
+                children.sort(key=lambda x: x.name)  # Sortera barn alfabetiskt
+                result = []
+                for child in children:
+                    result.append(child)
+                    # Lägg till alla barn till detta barn rekursivt
+                    result.extend(sort_children_recursive(child))
+                return result
+            
+            # Sortera alla undertillverkare rekursivt
+            sorted_subs = sort_children_recursive(main)
+            sorted_list.extend(sorted_subs)
         
         return sorted_list
     
@@ -65,29 +78,10 @@ def get_available_parents(current_manufacturer=None):
 
 def manufacturer_list(request):
     # Hämta alla tillverkare och sortera dem hierarkiskt
-    all_manufacturers = Manufacturer.objects.all().order_by('name')
-    manufacturers = []
+    all_manufacturers = Manufacturer.objects.all()
     
-    # Använd property:et hierarchy_level istället för manuell tilldelning
-    manufacturers = list(all_manufacturers)
-    
-    # Sortera hierarkiskt: huvudtillverkare först, sedan undertillverkare med indentation
-    def sort_hierarchically(manufacturers):
-        # Gruppera efter huvudtillverkare
-        main_manufacturers = [m for m in manufacturers if m.hierarchy_level == 0]
-        sorted_list = []
-        
-        for main in main_manufacturers:
-            sorted_list.append(main)
-            # Hitta alla undertillverkare för denna huvudtillverkare
-            subs = [m for m in manufacturers if m.hierarchy_level > 0 and is_descendant(m, main)]
-            # Sortera undertillverkare efter hierarkinivå och namn
-            subs.sort(key=lambda x: (x.hierarchy_level, x.name))
-            sorted_list.extend(subs)
-        
-        return sorted_list
-    
-    def is_descendant(manufacturer, ancestor):
+    # Sortera hierarkiskt istället för alfabetiskt
+    def _is_descendant(manufacturer, ancestor):
         """Kontrollera om manufacturer är en efterkommande till ancestor"""
         current = manufacturer
         while current.parent:
@@ -96,7 +90,35 @@ def manufacturer_list(request):
             current = current.parent
         return False
     
-    manufacturers = sort_hierarchically(manufacturers)
+    def sort_hierarchically(manufacturers):
+        """Sorterar tillverkare hierarkiskt: huvudtillverkare först, sedan undertillverkare i korrekt ordning"""
+        main_manufacturers = [m for m in manufacturers if m.hierarchy_level == 0]
+        sorted_list = []
+        
+        for main in main_manufacturers:
+            sorted_list.append(main)
+            # Hitta alla undertillverkare för denna huvudtillverkare
+            subs = [m for m in manufacturers if m.hierarchy_level > 0 and _is_descendant(m, main)]
+            
+            # Sortera undertillverkare hierarkiskt
+            def sort_children_recursive(parent=None):
+                """Sorterar barn rekursivt under en förälder"""
+                children = [m for m in manufacturers if m.parent == parent]
+                children.sort(key=lambda x: x.name)  # Sortera barn alfabetiskt
+                result = []
+                for child in children:
+                    result.append(child)
+                    # Lägg till alla barn till detta barn rekursivt
+                    result.extend(sort_children_recursive(child))
+                return result
+            
+            # Sortera alla undertillverkare rekursivt
+            sorted_subs = sort_children_recursive(main)
+            sorted_list.extend(sorted_subs)
+        
+        return sorted_list
+    
+    manufacturers = sort_hierarchically(all_manufacturers)
     
     # Ta bort all tilldelning av statistikfält, använd properties direkt i template/context
     total_manufacturers = len(manufacturers)
@@ -824,7 +846,7 @@ def get_manufacturers_for_dropdown(request):
         return False
     
     def sort_hierarchically(manufacturers):
-        """Sorterar tillverkare hierarkiskt: huvudtillverkare först, sedan undertillverkare"""
+        """Sorterar tillverkare hierarkiskt: huvudtillverkare först, sedan undertillverkare i korrekt ordning"""
         main_manufacturers = [m for m in manufacturers if m.hierarchy_level == 0]
         sorted_list = []
         
@@ -832,9 +854,22 @@ def get_manufacturers_for_dropdown(request):
             sorted_list.append(main)
             # Hitta alla undertillverkare för denna huvudtillverkare
             subs = [m for m in manufacturers if m.hierarchy_level > 0 and _is_descendant(m, main)]
-            # Sortera undertillverkare efter hierarkinivå och namn
-            subs.sort(key=lambda x: (x.hierarchy_level, x.name))
-            sorted_list.extend(subs)
+            
+            # Sortera undertillverkare hierarkiskt
+            def sort_children_recursive(parent=None):
+                """Sorterar barn rekursivt under en förälder"""
+                children = [m for m in manufacturers if m.parent == parent]
+                children.sort(key=lambda x: x.name)  # Sortera barn alfabetiskt
+                result = []
+                for child in children:
+                    result.append(child)
+                    # Lägg till alla barn till detta barn rekursivt
+                    result.extend(sort_children_recursive(child))
+                return result
+            
+            # Sortera alla undertillverkare rekursivt
+            sorted_subs = sort_children_recursive(main)
+            sorted_list.extend(sorted_subs)
         
         return sorted_list
     

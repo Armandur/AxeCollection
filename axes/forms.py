@@ -370,7 +370,7 @@ class AxeForm(forms.ModelForm):
             return False
         
         def sort_hierarchically(manufacturers):
-            """Sorterar tillverkare hierarkiskt: huvudtillverkare först, sedan undertillverkare"""
+            """Sorterar tillverkare hierarkiskt: huvudtillverkare först, sedan undertillverkare i korrekt ordning"""
             main_manufacturers = [m for m in manufacturers if m.hierarchy_level == 0]
             sorted_list = []
             
@@ -378,9 +378,22 @@ class AxeForm(forms.ModelForm):
                 sorted_list.append(main)
                 # Hitta alla undertillverkare för denna huvudtillverkare
                 subs = [m for m in manufacturers if m.hierarchy_level > 0 and _is_descendant(m, main)]
-                # Sortera undertillverkare efter hierarkinivå och namn
-                subs.sort(key=lambda x: (x.hierarchy_level, x.name))
-                sorted_list.extend(subs)
+                
+                # Sortera undertillverkare hierarkiskt
+                def sort_children_recursive(parent=None):
+                    """Sorterar barn rekursivt under en förälder"""
+                    children = [m for m in manufacturers if m.parent == parent]
+                    children.sort(key=lambda x: x.name)  # Sortera barn alfabetiskt
+                    result = []
+                    for child in children:
+                        result.append(child)
+                        # Lägg till alla barn till detta barn rekursivt
+                        result.extend(sort_children_recursive(child))
+                    return result
+                
+                # Sortera alla undertillverkare rekursivt
+                sorted_subs = sort_children_recursive(main)
+                sorted_list.extend(sorted_subs)
             
             return sorted_list
         
@@ -420,57 +433,53 @@ class AxeForm(forms.ModelForm):
         if not manufacturer.parent:
             return ""
         
-        # Hitta alla syskon (tillverkare med samma parent)
-        siblings = [m for m in manufacturers_list if m.parent == manufacturer.parent]
-        siblings.sort(key=lambda x: x.name)  # Sortera efter namn för konsistent ordning
+        # Bygg vägen från roten till denna tillverkare
+        path = []
+        current = manufacturer
+        while current.parent:
+            path.append(current)
+            current = current.parent
+        path.reverse()  # Nu har vi vägen från roten till tillverkaren
         
-        # Hitta positionen av denna tillverkare bland syskonen
-        try:
-            position = siblings.index(manufacturer)
-            is_last = position == len(siblings) - 1
-        except ValueError:
-            is_last = True
-        
-        # Skapa prefix baserat på hierarkinivå
+        # Skapa prefix för varje nivå i vägen
         prefix = ""
-        
-        # För första nivån (hierarchy_level == 1)
-        if manufacturer.hierarchy_level == 1:
-            if is_last:
-                prefix = "└─ "
-            else:
-                prefix = "├─ "
-        
-        # För andra nivån och högre
-        elif manufacturer.hierarchy_level > 1:
-            # Lägg till vertikala linjer för alla nivåer ovanför
-            for level in range(1, manufacturer.hierarchy_level):
-                # Kontrollera om det finns syskon på denna nivå som inte är sista
-                parent_at_level = manufacturer
-                for _ in range(manufacturer.hierarchy_level - level):
-                    parent_at_level = parent_at_level.parent
-                
-                siblings_at_level = [m for m in manufacturers_list if m.parent == parent_at_level.parent and m.hierarchy_level == level]
-                siblings_at_level.sort(key=lambda x: x.name)
-                
-                try:
-                    pos_at_level = siblings_at_level.index(parent_at_level)
-                    is_last_at_level = pos_at_level == len(siblings_at_level) - 1
-                except ValueError:
-                    is_last_at_level = True
-                
-                if is_last_at_level:
-                    prefix = "   " + prefix  # Inget vertikalt streck
-                else:
-                    prefix = "│  " + prefix  # Vertikalt streck
+        for i, node in enumerate(path):
+            # Hitta alla syskon på denna nivå
+            siblings = [m for m in manufacturers_list if m.parent == node.parent]
+            siblings.sort(key=lambda x: x.name)
             
-            # Lägg till den sista delen
-            if is_last:
-                prefix += "└─ "
+            try:
+                position = siblings.index(node)
+                is_last = position == len(siblings) - 1
+            except ValueError:
+                is_last = True
+            
+            if i == len(path) - 1:
+                # Detta är den sista noden (tillverkaren själv)
+                if is_last:
+                    prefix += "└─&nbsp;"  # └─ + 1 space (total 4 units including the box characters)
+                else:
+                    prefix += "├─&nbsp;"  # ├─ + 1 space (total 4 units including the box characters)
             else:
-                prefix += "├─ "
+                # Detta är en mellannivå, kontrollera om vi ska visa vertikalt streck
+                # Vi visar vertikalt streck endast om det finns fler syskon efter denna nod
+                # och om det finns barn under denna nod som kommer efter denna gren
+                if is_last:
+                    prefix = "&nbsp;&nbsp;&nbsp;&nbsp;" + prefix  # 4 spaces for consistent indentation
+                else:
+                    # Kontrollera om det finns barn under denna nod som kommer efter denna gren
+                    has_children_after = False
+                    for sibling in siblings[position + 1:]:
+                        if any(m.parent == sibling for m in manufacturers_list):
+                            has_children_after = True
+                            break
+                    
+                    if has_children_after:
+                        prefix = "│&nbsp;&nbsp;&nbsp;" + prefix  # │ + 3 spaces (total 4 units including the box character)
+                    else:
+                        prefix = "&nbsp;&nbsp;&nbsp;&nbsp;" + prefix  # 4 spaces for consistent indentation
         
-        return prefix
+        return mark_safe(prefix)
     
     def clean_manufacturer(self):
         """Konvertera manufacturer ID till Manufacturer-objekt"""

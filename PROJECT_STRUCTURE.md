@@ -89,7 +89,7 @@ docker-compose -f deploy/docker-compose.yml up -d
 - `env.example` → `deploy/env.example`
 
 **Kvar i root:**
-- `Dockerfile` (Docker-standard)
+- `Dockerfile` (Docker-konfiguration optimerad för Unraid)
 - `.dockerignore` (Docker-standard)
 - `AxeCollection/settings_production.py` (Django-standard)
 - `AxeCollection/wsgi_production.py` (Django-standard)

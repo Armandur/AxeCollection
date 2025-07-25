@@ -77,7 +77,7 @@
                 <td>
                     {% if manufacturer.is_sub_manufacturer %}
                         <div class="d-flex align-items-center">
-                            {{ manufacturer|hierarchy_prefix:manufacturers }}<span class="text-muted me-3" style="width: 20px;">{{ manufacturer.name }}</span>
+                            <span class="text-muted me-2">{{ manufacturer|hierarchy_prefix:manufacturers }}</span>
                             {% if manufacturer.manufacturer_type == 'SMED' %}
                                 <i class="fas fa-user text-primary me-2"></i>
                                 {{ manufacturer.name }}
@@ -89,10 +89,10 @@
                     {% else %}
                         {% if manufacturer.manufacturer_type == 'SMED' %}
                             <i class="fas fa-user text-primary me-2"></i>
-                            <strong>{{ manufacturer.name }}</strong>
+                            {{ manufacturer.name }}
                         {% else %}
                             <i class="fas fa-industry text-primary me-2"></i>
-                            <strong>{{ manufacturer.name }}</strong>
+                            {{ manufacturer.name }}
                         {% endif %}
                     {% endif %}
                 </td>

@@ -36,7 +36,7 @@ Denna guide beskriver hur man deployar AxeCollection med en integrerad Docker-im
 
 2. **Kör med docker-compose**:
    ```bash
-   docker-compose -f docker-compose.unraid-published.yml up -d
+   docker-compose -f docker-compose.published.yml up -d
    ```
 
 ## Unraid Deployment
@@ -67,7 +67,7 @@ Denna guide beskriver hur man deployar AxeCollection med en integrerad Docker-im
 ### Via Docker Compose i Unraid
 
 1. **Kopiera filer** till `/mnt/cache/appdata/axecollection/`:
-   - `docker-compose.unraid.yml` (eller `docker-compose.integrated.yml`)
+   - `docker-compose.yml`
    - `nginx.integrated.conf`
    - `deploy-unraid.sh` (valfritt)
 
@@ -285,7 +285,7 @@ Lägg till `DEMO_MODE=true` i din `.env`-fil eller sätt miljövariabeln direkt:
 DEMO_MODE=true
 
 # Eller direkt i docker-compose
-docker-compose -f docker-compose.unraid.yml up -d -e DEMO_MODE=true
+docker-compose -f docker-compose.yml up -d -e DEMO_MODE=true
 ```
 
 #### Via Unraid Docker-appen

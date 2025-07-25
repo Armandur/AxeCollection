@@ -42,7 +42,7 @@ fi
 
 # Kopiera docker-compose.yml
 echo "📋 Kopierar docker-compose.yml..."
-cp docker-compose.unraid.yml /mnt/cache/appdata/axecollection/docker-compose.yml
+cp docker-compose.yml /mnt/cache/appdata/axecollection/docker-compose.yml
 
 # Gå till mappen
 cd /mnt/cache/appdata/axecollection
