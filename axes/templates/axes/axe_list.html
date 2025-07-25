@@ -229,7 +229,11 @@
                     <option value="">Alla tillverkare</option>
                     {% for manufacturer in manufacturers %}
                         <option value="{{ manufacturer.id }}" {% if manufacturer_filter == manufacturer.id|stringformat:"s" %}selected{% endif %}>
-                            {{ manufacturer.name }}
+                            {% if manufacturer.parent %}
+                                {% for i in manufacturer.hierarchy_level|times %}&nbsp;&nbsp;&nbsp;&nbsp;{% endfor %}└─ {{ manufacturer.name }}
+                            {% else %}
+                                {{ manufacturer.name }}
+                            {% endif %}
                         </option>
                     {% endfor %}
                 </select>

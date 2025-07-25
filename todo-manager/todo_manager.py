@@ -60,7 +60,7 @@ class Section:
     items: List[TodoItem]
 
 class TodoManager:
-    def __init__(self, filename: str = "../TODO_FEATURES.md"):
+    def __init__(self, filename: str = "TODO_FEATURES.md"):
         self.filename = filename
         self.sections: List[Section] = []
         self.header_lines: List[str] = []

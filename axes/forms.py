@@ -420,7 +420,8 @@ class AxeForm(forms.ModelForm):
                 return Manufacturer.objects.get(id=manufacturer_id)
             except Manufacturer.DoesNotExist:
                 raise forms.ValidationError('Vald tillverkare finns inte.')
-        return None
+        else:
+            raise forms.ValidationError('Tillverkare måste väljas.')
     
     images = MultipleFileField(
         required=False,
@@ -645,13 +646,15 @@ class AxeForm(forms.ModelForm):
 
     class Meta:
         model = Axe
-        fields = ['model', 'comment', 'status']  # manufacturer tas bort eftersom det definieras i __init__
+        fields = ['manufacturer', 'model', 'comment', 'status']  # Lägg till manufacturer tillbaka
         labels = {
+            'manufacturer': 'Tillverkare',
             'model': 'Modell',
             'comment': 'Kommentar',
             'status': 'Status',
         }
         widgets = {
+            'manufacturer': forms.Select(attrs={'class': 'form-select'}),
             'model': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ange modellnamn'}),
             'comment': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Lägg till kommentar om yxan...'}),
             'status': forms.Select(attrs={'class': 'form-select'}),

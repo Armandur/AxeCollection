@@ -286,6 +286,13 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
+                {% if demo_mode %}
+                <div class="alert alert-info mb-3">
+                    <i class="fas fa-info-circle me-2"></i>
+                    <strong>Demo-läge:</strong> Använd <code>demo</code> som användarnamn och <code>demo123</code> som lösenord för att logga in.
+                </div>
+                {% endif %}
+                
                 <form method="post" action="{% url 'login' %}">
                     {% csrf_token %}
                     

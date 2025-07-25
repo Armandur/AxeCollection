@@ -51,7 +51,7 @@ En checklista för vidareutveckling av AxeCollection. Bocka av med [x] när klar
     - [x] 24.1 Designa footer med relevant information (version, länkar, kontakt)
     - [x] 24.2 Implementera footer på alla sidor
     - [x] 24.3 Anpassa footer för både light och dark mode
-25. [ ] I demo-mode ska det visas en hint på logga in med demo/demo123 som användaruppgifter
+25. [x] I demo-mode ska det visas en hint på logga in med demo/demo123 som användaruppgifter
 
 ## 3. Sök och filtrering
 
@@ -104,7 +104,7 @@ En checklista för vidareutveckling av AxeCollection. Bocka av med [x] när klar
     - [x] 34.1 Lägg till "Mått"-kolumn i yxlistan med linjal-ikon för yxor med registrerade mått
     - [x] 34.2 Visa antalet registrerade mått bredvid linjal-ikonen (t.ex. "📏 3" för 3 mått)
     - [x] 34.3 Tooltip/popup som visar måtten vid hovring över ikonen
-35. [ ] Filtreringen av Tillverkare på /yxor ska använda hierarkisk indentering med L-tecken som på /tillverkare/ny|redigera och /yxor/ny|redigera
+35. [x] Filtreringen av Tillverkare på /yxor ska använda hierarkisk indentering med L-tecken som på /tillverkare/ny|redigera och /yxor/ny|redigera
 
 ## 4. Deployment och Docker
 
@@ -186,7 +186,7 @@ En checklista för vidareutveckling av AxeCollection. Bocka av med [x] när klar
     - [ ] 52.8 Stöd för olika auktionsformat och språk (svenska/engelska)
     - [ ] 52.9 Förhandsvisning av extraherad data innan sparning
     - [ ] 52.10 Möjlighet att redigera och justera automatiskt extraherad information
-53. [ ] Fixa problem med att ändra tillverkare på en yxa - formuläret fungerar inte korrekt
+53. [x] Fixa problem med att ändra tillverkare på en yxa - formuläret fungerar inte korrekt
 
 ## 6. Transaktions- och måtthantering
 

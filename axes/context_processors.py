@@ -2,6 +2,7 @@ from .models import Settings
 from datetime import datetime
 import subprocess
 import os
+from django.conf import settings as django_settings
 
 def get_git_version():
     """Hämta Git version/commit hash"""
@@ -56,6 +57,8 @@ def settings_processor(request):
             'current_year': datetime.now().year,
             'build_date': get_build_date(),
             'app_version': get_git_version(),
+            # Demo mode
+            'demo_mode': getattr(django_settings, 'DEMO_MODE', False),
         }
     except Exception as e:
         # Fallback om Settings-modellen inte finns ännu
@@ -80,4 +83,6 @@ def settings_processor(request):
             'current_year': datetime.now().year,
             'build_date': datetime.now().strftime('%Y-%m-%d'),
             'app_version': 'v1.0.0',
+            # Demo mode (fallback)
+            'demo_mode': getattr(django_settings, 'DEMO_MODE', False),
         } 

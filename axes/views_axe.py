@@ -155,8 +155,34 @@ def axe_list(request):
     # Sortera efter ID (senaste först)
     axes = axes.order_by('-id')
     
-    # Hämta alla tillverkare för filter-dropdown
-    manufacturers = Manufacturer.objects.all().order_by('name')
+    # Hämta alla tillverkare för filter-dropdown med hierarkisk sortering
+    all_manufacturers = Manufacturer.objects.all().order_by('name')
+    
+    def _is_descendant(manufacturer, ancestor):
+        """Kontrollera om manufacturer är en efterkommande till ancestor"""
+        current = manufacturer
+        while current.parent:
+            if current.parent == ancestor:
+                return True
+            current = current.parent
+        return False
+    
+    def sort_hierarchically(manufacturers):
+        """Sorterar tillverkare hierarkiskt: huvudtillverkare först, sedan undertillverkare"""
+        main_manufacturers = [m for m in manufacturers if m.hierarchy_level == 0]
+        sorted_list = []
+        
+        for main in main_manufacturers:
+            sorted_list.append(main)
+            # Hitta alla undertillverkare för denna huvudtillverkare
+            subs = [m for m in manufacturers if m.hierarchy_level > 0 and _is_descendant(m, main)]
+            # Sortera undertillverkare efter hierarkinivå och namn
+            subs.sort(key=lambda x: (x.hierarchy_level, x.name))
+            sorted_list.extend(subs)
+        
+        return sorted_list
+    
+    manufacturers = sort_hierarchically(all_manufacturers)
     
     # Hämta alla plattformar för filter-dropdown
     platforms = Platform.objects.all().order_by('name')
@@ -504,7 +530,12 @@ def axe_edit(request, pk):
         if form.is_valid():
             axe = form.save(commit=False)
             axe.updated_by = request.user
+            # Debug: Skriv ut manufacturer-värdet
+            print(f"DEBUG: Manufacturer before save: {axe.manufacturer}")
             axe.save()
+            # Debug: Skriv ut manufacturer-värdet efter save
+            axe.refresh_from_db()
+            print(f"DEBUG: Manufacturer after save: {axe.manufacturer}")
 
             # Hantera borttagning av befintliga bilder
             if 'remove_images' in request.POST:

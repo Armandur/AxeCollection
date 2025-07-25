@@ -33,6 +33,9 @@ DEBUG = True
 
 ALLOWED_HOSTS = ['*']
 
+# Demo mode setting
+DEMO_MODE = True
+
 
 # Application definition
 

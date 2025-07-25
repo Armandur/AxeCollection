@@ -13,6 +13,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 
+# Demo mode setting (from environment variable)
+DEMO_MODE = os.environ.get('DEMO_MODE', 'false').lower() == 'true'
+
 # SECURITY WARNING: keep the secret key used in production secret!
 # SECRET_KEY is loaded from environment variable or separate file
 SECRET_KEY = os.environ.get('SECRET_KEY')
