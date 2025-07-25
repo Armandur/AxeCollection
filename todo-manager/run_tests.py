@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Enkel test runner för TODO Manager hierarkiska tester
+Enkel test runner för TODO Manager hierarkiska tester och show-funktion
 Kör testerna utan att kräva pytest installation
 """
 
@@ -182,10 +182,170 @@ Detta är test TODO-filen för hierarkiska tester.
         
         print("✅ Komplex omorganisering fungerar!")
 
+    def test_show_main_item(self):
+        """Testar show-funktionen för huvuduppgift"""
+        print("🧪 Testar show för huvuduppgift...")
+        
+        # Fånga stdout för att verifiera output
+        from io import StringIO
+        import sys
+        
+        old_stdout = sys.stdout
+        sys.stdout = StringIO()
+        
+        try:
+            result = self.manager.show_item("42")
+            output = sys.stdout.getvalue()
+            
+            self.assertTrue(result)
+            self.assertIn("📋 Uppgift 42:", output)
+            self.assertIn("Huvuduppgift Alpha", output)
+            self.assertIn("📁 Sektion: Test Sektion Alpha", output)
+            self.assertIn("42.1 Underuppgift Alpha 1", output)
+            self.assertIn("42.2 Underuppgift Alpha 2", output)
+            
+            print("✅ Show för huvuduppgift fungerar!")
+        finally:
+            sys.stdout = old_stdout
+
+    def test_show_sub_item(self):
+        """Testar show-funktionen för underuppgift"""
+        print("🧪 Testar show för underuppgift...")
+        
+        from io import StringIO
+        import sys
+        
+        old_stdout = sys.stdout
+        sys.stdout = StringIO()
+        
+        try:
+            result = self.manager.show_item("42.1")
+            output = sys.stdout.getvalue()
+            
+            self.assertTrue(result)
+            self.assertIn("📋 Underuppgift 42.1:", output)
+            self.assertIn("Underuppgift Alpha 1", output)
+            self.assertIn("📊 Nivå: 2", output)
+            self.assertIn("42.1.1 Djup nivå 3", output)
+            self.assertIn("42.1.2 Ytterligare nivå 3", output)
+            
+            print("✅ Show för underuppgift fungerar!")
+        finally:
+            sys.stdout = old_stdout
+
+    def test_show_deep_sub_item(self):
+        """Testar show-funktionen för djup underuppgift"""
+        print("🧪 Testar show för djup underuppgift...")
+        
+        from io import StringIO
+        import sys
+        
+        old_stdout = sys.stdout
+        sys.stdout = StringIO()
+        
+        try:
+            result = self.manager.show_item("42.1.1.1.1")
+            output = sys.stdout.getvalue()
+            
+            self.assertTrue(result)
+            self.assertIn("📋 Underuppgift 42.1.1.1.1:", output)
+            self.assertIn("Djup nivå 5 (max)", output)
+            self.assertIn("📊 Nivå: 5", output)
+            
+            print("✅ Show för djup underuppgift fungerar!")
+        finally:
+            sys.stdout = old_stdout
+
+    def test_show_nonexistent_item(self):
+        """Testar show-funktionen för icke-existerande huvuduppgift"""
+        print("🧪 Testar show för icke-existerande huvuduppgift...")
+        
+        from io import StringIO
+        import sys
+        
+        old_stdout = sys.stdout
+        sys.stdout = StringIO()
+        
+        try:
+            result = self.manager.show_item("999")
+            output = sys.stdout.getvalue()
+            
+            self.assertFalse(result)
+            self.assertIn("❌ Uppgift 999 finns inte!", output)
+            
+            print("✅ Show för icke-existerande huvuduppgift fungerar!")
+        finally:
+            sys.stdout = old_stdout
+
+    def test_show_nonexistent_sub_item(self):
+        """Testar show-funktionen för icke-existerande underuppgift"""
+        print("🧪 Testar show för icke-existerande underuppgift...")
+        
+        from io import StringIO
+        import sys
+        
+        old_stdout = sys.stdout
+        sys.stdout = StringIO()
+        
+        try:
+            result = self.manager.show_item("42.999")
+            output = sys.stdout.getvalue()
+            
+            self.assertFalse(result)
+            self.assertIn("❌ Underuppgift 42.999 finns inte!", output)
+            
+            print("✅ Show för icke-existerande underuppgift fungerar!")
+        finally:
+            sys.stdout = old_stdout
+
+    def test_show_item_with_invalid_number(self):
+        """Testar show-funktionen med ogiltigt nummer"""
+        print("🧪 Testar show med ogiltigt nummer...")
+        
+        from io import StringIO
+        import sys
+        
+        old_stdout = sys.stdout
+        sys.stdout = StringIO()
+        
+        try:
+            result = self.manager.show_item("invalid")
+            output = sys.stdout.getvalue()
+            
+            self.assertFalse(result)
+            self.assertIn("❌ Ogiltigt nummer: invalid", output)
+            
+            print("✅ Show med ogiltigt nummer fungerar!")
+        finally:
+            sys.stdout = old_stdout
+
+    def test_show_empty_item(self):
+        """Testar show-funktionen för tom uppgift"""
+        print("🧪 Testar show för tom uppgift...")
+        
+        from io import StringIO
+        import sys
+        
+        old_stdout = sys.stdout
+        sys.stdout = StringIO()
+        
+        try:
+            result = self.manager.show_item("45")
+            output = sys.stdout.getvalue()
+            
+            self.assertTrue(result)
+            self.assertIn("📋 Uppgift 45:", output)
+            self.assertIn("Huvuduppgift Delta (tom)", output)
+            self.assertIn("📝 Inga underuppgifter", output)
+            
+            print("✅ Show för tom uppgift fungerar!")
+        finally:
+            sys.stdout = old_stdout
+
 
 def run_tests():
     """Kör alla tester och visar resultat"""
-    print("🚀 Startar hierarkiska tester för TODO Manager...")
+    print("🚀 Startar hierarkiska tester och show-funktion för TODO Manager...")
     print("=" * 60)
     
     # Kör unittest
@@ -195,7 +355,7 @@ def run_tests():
     
     print("\n" + "=" * 60)
     if result.wasSuccessful():
-        print("🎉 Alla tester lyckades! Hierarkisk funktionalitet verifierad.")
+        print("🎉 Alla tester lyckades! Hierarkisk funktionalitet och show-funktion verifierad.")
         print(f"✅ {result.testsRun} tester körda utan fel")
     else:
         print("❌ Några tester misslyckades:")
@@ -207,8 +367,8 @@ def run_tests():
 
 
 if __name__ == "__main__":
-    print("📋 TODO Manager - Hierarkiska Tester")
-    print("Testar all ny funktionalitet för underuppgiftshantering\n")
+    print("📋 TODO Manager - Hierarkiska Tester och Show-funktion")
+    print("Testar all ny funktionalitet för underuppgiftshantering och visning\n")
     
     try:
         success = run_tests()

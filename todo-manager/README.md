@@ -32,17 +32,21 @@ python todo_manager.py all-incomplete
 # Lista alla uppgifter från alla sektioner (klara och oklara)
 python todo_manager.py all
 
+# Visa detaljerad information om en uppgift
+python todo_manager.py show 42
+
 # Lägg till ny uppgift
 python todo_manager.py add "Min nya uppgift" "Sektionsnamn"
 
 # Lägg till flera uppgifter samtidigt
 python todo_manager.py add-multiple "Uppgift 1" "Uppgift 2" "Uppgift 3" "Sektionsnamn"
 
-# Markera uppgift som klar
+# Markera uppgift som klar (fungerar med både vanliga och underuppgifter)
 python todo_manager.py complete 42
+python todo_manager.py complete 42.1
 
-# Markera flera uppgifter som klara
-python todo_manager.py complete-multiple 42 43 44
+# Markera flera uppgifter som klara (blandade typer)
+python todo_manager.py complete-multiple 42 42.1 42.2 43
 
 # Flytta uppgift till annan sektion
 python todo_manager.py move 42 "Ny sektion"
@@ -62,8 +66,12 @@ python todo_manager.py add "Uppgift" "Sektion" --completed
 
 ### `complete` / `uncomplete` - Ändra status
 ```bash
-# Markera som klar
-python todo_manager.py complete 42
+# Markera som klar (fungerar med både vanliga och underuppgifter)
+python todo_manager.py complete 42      # Vanlig uppgift
+python todo_manager.py complete 42.1    # Underuppgift
+
+# Markera flera som klara (blandade typer)
+python todo_manager.py complete-multiple 42 42.1 42.2 43
 
 # Markera som ej klar
 python todo_manager.py uncomplete 42
@@ -172,6 +180,34 @@ Visar:
 python todo_manager.py reorder
 ```
 Räknar om alla nummer automatiskt efter ändringar.
+
+### `show` - Visa detaljerad information
+```bash
+# Visa detaljerad information om en uppgift
+python todo_manager.py show 42
+
+# Visa detaljerad information om en underuppgift
+python todo_manager.py show 42.1
+```
+Visar:
+```
+📋 Uppgift 42: ⏳ Fixa omorganisering av yxbilder i produktion
+📁 Sektion: Deployment och Docker
+📝 Underuppgifter (4 st):
+  - ⏳ 42.1 Omorganisering av yxbilder fungerar inte på Unraid-produktionsservern
+  - ⏳ 42.2 Undersök skillnader mellan utvecklings- och produktionsmiljö
+  - ⏳ 42.3 Kontrollera filbehörigheter och sökvägar i produktion
+  - ⏳ 42.4 Testa drag & drop-funktionalitet i produktionsmiljö
+```
+
+För underuppgifter:
+```
+📋 Underuppgift 42.1: ⏳ Omorganisering av yxbilder fungerar inte på Unraid-produktionsservern
+📊 Nivå: 2
+📝 Underuppgifter (2 st):
+  - ⏳ 42.1.1 Djup nivå 3
+  - ⏳ 42.1.2 Ytterligare nivå 3
+```
 
 ### `stats` - Visa statistik
 ```bash

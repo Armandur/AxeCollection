@@ -62,6 +62,7 @@ Denna guide beskriver hur man deployar AxeCollection med en integrerad Docker-im
    - `SECRET_KEY` = `din_secret_key_här`
    - `ALLOWED_HOSTS` = `192.168.1.2,localhost,127.0.0.1` (anpassa efter din setup)
    - `CSRF_TRUSTED_ORIGINS` = `http://192.168.1.2:8082,https://din-domain.se` (anpassa efter din setup)
+   - `DEMO_MODE` = `false` (sätt till `true` för demo-läge med testdata)
 
 ### Via Docker Compose i Unraid
 
@@ -269,4 +270,101 @@ docker run -d \
 
 # Skapa testdata
 docker exec -it axecollection-demo python manage.py generate_test_data
+
+## Demo-läge
+
+AxeCollection stöder ett demo-läge som automatiskt genererar testdata för demonstration och utveckling.
+
+### Aktivera demo-läge
+
+#### Via Docker Compose
+Lägg till `DEMO_MODE=true` i din `.env`-fil eller sätt miljövariabeln direkt:
+
+```bash
+# I .env-filen
+DEMO_MODE=true
+
+# Eller direkt i docker-compose
+docker-compose -f docker-compose.unraid.yml up -d -e DEMO_MODE=true
+```
+
+#### Via Unraid Docker-appen
+Lägg till miljövariabel:
+- `DEMO_MODE` = `true`
+
+#### Via Docker run
+```bash
+docker run -d \
+  --name axecollection-demo \
+  -p 8092:80 \
+  -v "/path/to/demo/data:/app/data" \
+  -v "/path/to/demo/media:/app/media" \
+  -v "/path/to/demo/logs:/app/logs" \
+  -v "/path/to/demo/backups:/app/backups" \
+  -e DJANGO_SETTINGS_MODULE=AxeCollection.settings_production_http \
+  -e DEMO_MODE=true \
+  -e ALLOWED_HOSTS="192.168.1.2,localhost,127.0.0.1" \
+  -e CSRF_TRUSTED_ORIGINS="http://192.168.1.2:8092" \
+  armandur/axecollection:latest
+```
+
+### Vad händer i demo-läge
+
+När `DEMO_MODE=true`:
+
+1. **Automatisk testdata-generering**: Systemet kör `generate_test_data --clear` vid container-start
+2. **Ingen superuser-skapning**: Demo-läget skapar inte superuser automatiskt
+3. **Ingen CSV-import**: Befintlig CSV-data ignoreras
+4. **Regenerering vid omstart**: Testdata genereras om varje gång containern startas
+
+### Demo-data innehåller
+
+- **50 yxor** med realistisk data
+- **15 tillverkare** med hierarkisk struktur
+- **25 kontakter** med olika plattformar
+- **Transaktioner** med köp och försäljning
+- **Måttdata** för alla yxor
+- **Bilder** för yxor och tillverkare
+- **Demo-användare** för inloggning
+
+### Demo-användare
+
+Demo-läget skapar en användare med följande uppgifter:
+- **Användarnamn**: `demo`
+- **Lösenord**: `demo123`
+
+### Växla mellan demo och produktion
+
+För att växla från demo till produktion:
+
+1. **Stoppa containern**:
+   ```bash
+   docker-compose down
+   ```
+
+2. **Ta bort demo-data** (om du vill):
+   ```bash
+   rm -rf /path/to/data/*
+   ```
+
+3. **Sätt DEMO_MODE=false** eller ta bort miljövariabeln
+
+4. **Starta igen**:
+   ```bash
+   docker-compose up -d
+   ```
+
+### Användningsfall
+
+- **Demonstration**: Visa systemet för potentiella användare
+- **Utveckling**: Snabb testning av nya funktioner
+- **Utbildning**: Lära sig hur systemet fungerar
+- **Demo-server**: Permanent demo-installation
+
+### Säkerhet
+
+⚠️ **Viktigt**: Demo-läget är endast avsett för demonstration och utveckling. Använd inte `DEMO_MODE=true` i produktion eftersom det:
+- Rensar all befintlig data vid varje start
+- Skapar förutsägbara användaruppgifter
+- Inte är säkert för produktionsdata
 ``` 

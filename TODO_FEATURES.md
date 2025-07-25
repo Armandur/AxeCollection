@@ -374,19 +374,19 @@ En checklista för vidareutveckling av AxeCollection. Bocka av med [x] när klar
     - [x] 77.7 Testa alla funktioner med testdata (sökning, filtrering, statistik, etc.)
     - [ ] 77.8 Förbereda för publik demo-webbplats
     - [x] 77.9 Dokumentera hur man återställer till testdata
-78. [ ] todo_manager behöver kunna hantera underuppgifter som 58.4 (slutföra underuppgifter)
+78. [x] todo_manager behöver kunna hantera underuppgifter som 58.4 (slutföra underuppgifter)
 
 ## 11. Testdata och demo
 
 79. [x] Skapa fingerad testdata för demo och testning
-80. [ ] Docker demo-läge med miljövariabel
-    - [ ] 80.1 Lägg till miljövariabel DEMO_MODE för Docker-containern
-    - [ ] 80.2 Implementera logik som kontrollerar DEMO_MODE vid container-start
-    - [ ] 80.3 Automatisk körning av `generate_test_data --clear` när DEMO_MODE=true
-    - [ ] 80.4 Säkerställ att demo-läget endast körs vid container-start, inte vid reload
-    - [ ] 80.5 Dokumentera användning av demo-läge i deployment-guider
-    - [ ] 80.6 Testa demo-läge i olika Docker-miljöer (utveckling, produktion)
-81. [ ] Ordna demodata med hierarkiska tillverkare - Till exempel är smederna Johan Jonsson, Johan Skog och Willy Persson alla tre smeder hos Hjärtumssmedjan
+80. [x] Docker demo-läge med miljövariabel
+    - [x] 80.1 Lägg till miljövariabel DEMO_MODE för Docker-containern
+    - [x] 80.2 Implementera logik som kontrollerar DEMO_MODE vid container-start
+    - [x] 80.3 Automatisk körning av `generate_test_data --clear` när DEMO_MODE=true
+    - [x] 80.4 Säkerställ att demo-läget endast körs vid container-start, inte vid reload
+    - [x] 80.5 Dokumentera användning av demo-läge i deployment-guider
+    - [x] 80.6 Testa demo-läge i olika Docker-miljöer (utveckling, produktion)
+81. [x] Ordna demodata med hierarkiska tillverkare - Till exempel är smederna Johan Jonsson, Johan Skog och Willy Persson alla tre smeder hos Hjärtumssmedjan
 
 ## 12. Design och presentation
 

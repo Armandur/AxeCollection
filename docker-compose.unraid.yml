@@ -19,6 +19,7 @@ services:
     environment:
       - DJANGO_SETTINGS_MODULE=AxeCollection.settings_production
       - SECRET_KEY=${SECRET_KEY}
+      - DEMO_MODE=${DEMO_MODE:-false}
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost/health/"]

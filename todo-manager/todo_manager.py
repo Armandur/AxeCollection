@@ -304,6 +304,38 @@ class TodoManager:
             
         return search_recursive(root_item.sub_items)
         
+    def complete_any(self, number: str):
+        """Markerar en uppgift eller underuppgift som klar (smart funktion)"""
+        # Kontrollera om det är en underuppgift (innehåller punkt)
+        if '.' in number:
+            return self.complete_sub_item(number)
+        else:
+            # Försök som vanlig uppgift
+            try:
+                item_number = int(number)
+                return self.complete_item(item_number)
+            except ValueError:
+                print(f"❌ Ogiltigt nummer: {number}")
+                return False
+    
+    def complete_multiple_any(self, numbers: List[str]):
+        """Markerar flera uppgifter eller underuppgifter som klara (smart funktion)"""
+        success_count = 0
+        total_count = len(numbers)
+        
+        for number in numbers:
+            if self.complete_any(number):
+                success_count += 1
+        
+        if success_count == total_count:
+            print(f"✅ Markerade alla {total_count} uppgifter som klara")
+        elif success_count > 0:
+            print(f"✅ Markerade {success_count} av {total_count} uppgifter som klara")
+        else:
+            print(f"❌ Kunde inte markera några uppgifter som klara")
+        
+        return success_count > 0
+    
     def complete_item(self, item_number: int):
         """Markerar en uppgift som klar"""
         item = self.find_item(item_number)
@@ -916,6 +948,69 @@ class TodoManager:
             
         return added_items
 
+    def show_item(self, number: str):
+        """Visar detaljerad information om en uppgift eller underuppgift"""
+        # Kontrollera om det är en underuppgift (innehåller punkt)
+        if '.' in number:
+            return self.show_sub_item(number)
+        else:
+            # Försök som vanlig uppgift
+            try:
+                item_number = int(number)
+                return self.show_main_item(item_number)
+            except ValueError:
+                print(f"❌ Ogiltigt nummer: {number}")
+                return False
+    
+    def show_main_item(self, item_number: int):
+        """Visar detaljerad information om en huvuduppgift"""
+        item = self.find_item(item_number)
+        if not item:
+            print(f"❌ Uppgift {item_number} finns inte!")
+            return False
+        
+        status_icon = "✅" if item.completed else "⏳"
+        print(f"📋 Uppgift {item_number}: {status_icon} {item.text}")
+        print(f"📁 Sektion: {item.section}")
+        
+        if item.sub_items:
+            print(f"📝 Underuppgifter ({len(item.sub_items)} st):")
+            self._show_sub_items_recursive(item.sub_items, 2)
+        else:
+            print("📝 Inga underuppgifter")
+        
+        return True
+    
+    def show_sub_item(self, sub_number: str):
+        """Visar detaljerad information om en underuppgift"""
+        sub_item = self.find_sub_item(sub_number)
+        if not sub_item:
+            print(f"❌ Underuppgift {sub_number} finns inte!")
+            return False
+        
+        status_icon = "✅" if sub_item.completed else "⏳"
+        print(f"📋 Underuppgift {sub_number}: {status_icon} {sub_item.text}")
+        print(f"📊 Nivå: {sub_item.level}")
+        
+        if sub_item.sub_items:
+            print(f"📝 Underuppgifter ({len(sub_item.sub_items)} st):")
+            self._show_sub_items_recursive(sub_item.sub_items, sub_item.level + 1)
+        else:
+            print("📝 Inga underuppgifter")
+        
+        return True
+    
+    def _show_sub_items_recursive(self, sub_items: List[TodoSubItem], level: int):
+        """Rekursivt visar underuppgifter med korrekt indentering"""
+        for sub_item in sub_items:
+            indent = "  " * (level - 1)  # 2 spaces per nivå
+            status_icon = "✅" if sub_item.completed else "⏳"
+            print(f"{indent}- {status_icon} {sub_item.number} {sub_item.text}")
+            
+            # Rekursivt visa underuppgifter på nästa nivå
+            if sub_item.sub_items and level < 5:
+                self._show_sub_items_recursive(sub_item.sub_items, level + 1)
+    
     def stats(self):
         """Visar statistik över TODO-listan"""
         total_items = sum(len(section.items) for section in self.sections)
@@ -956,11 +1051,11 @@ def main():
     
     # Complete command
     complete_parser = subparsers.add_parser('complete', help='Markera uppgift som klar')
-    complete_parser.add_argument('number', type=int, help='Uppgiftsnummer')
+    complete_parser.add_argument('number', help='Uppgiftsnummer (t.ex. 80 eller 80.1)')
     
     # Complete multiple command  
     complete_multiple_parser = subparsers.add_parser('complete-multiple', help='Markera flera uppgifter som klara')
-    complete_multiple_parser.add_argument('numbers', nargs='+', type=int, help='Uppgiftsnummer (separerade med space)')
+    complete_multiple_parser.add_argument('numbers', nargs='+', help='Uppgiftsnummer (separerade med space, t.ex. 80 80.1 80.2)')
     
     # Uncomplete command
     uncomplete_parser = subparsers.add_parser('uncomplete', help='Markera uppgift som ej klar')
@@ -1046,6 +1141,10 @@ def main():
     # Reorder command
     subparsers.add_parser('reorder', help='Uppdatera numrering')
     
+    # Show command
+    show_parser = subparsers.add_parser('show', help='Visa detaljerad information om en uppgift')
+    show_parser.add_argument('number', help='Uppgiftsnummer (t.ex. 42 eller 42.1)')
+    
     # Stats command
     subparsers.add_parser('stats', help='Visa statistik')
     
@@ -1071,10 +1170,10 @@ def main():
         if result:
             manager.save()
     elif args.command == 'complete':
-        manager.complete_item(args.number)
-        manager.save()
+        if manager.complete_any(args.number):
+            manager.save()
     elif args.command == 'complete-multiple':
-        if manager.complete_multiple_items(args.numbers):
+        if manager.complete_multiple_any(args.numbers):
             manager.save()
     elif args.command == 'uncomplete':
         manager.uncomplete_item(args.number)
@@ -1131,6 +1230,8 @@ def main():
         manager.list_all()
     elif args.command == 'reorder':
         manager.save()  # Save automatiskt uppdaterar numrering
+    elif args.command == 'show':
+        manager.show_item(args.number)
     elif args.command == 'stats':
         manager.stats()
 

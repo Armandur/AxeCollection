@@ -32,18 +32,25 @@ if [ ! -f "/app/data/db.sqlite3" ]; then
     cd /app
     python manage.py migrate
     
-    # Create superuser if environment variables are set
-    if [ ! -z "$DJANGO_SUPERUSER_USERNAME" ] && [ ! -z "$DJANGO_SUPERUSER_EMAIL" ] && [ ! -z "$DJANGO_SUPERUSER_PASSWORD" ]; then
-        echo "👤 Creating superuser..."
-        python manage.py createsuperuser --noinput
+    # Check if DEMO_MODE is enabled
+    if [ "$DEMO_MODE" = "true" ]; then
+        echo "🎭 DEMO_MODE enabled - Generating test data..."
+        python manage.py generate_test_data --clear
+        echo "✅ Demo data generated successfully!"
     else
-        echo "⚠️  No superuser created. Set DJANGO_SUPERUSER_* environment variables to create one automatically."
-    fi
-    
-    # Import CSV data if available
-    if [ -f "/app/axes/management/csv_data/Yxa.csv" ]; then
-        echo "📥 Importing CSV data..."
-        python manage.py import_csv
+        # Create superuser if environment variables are set
+        if [ ! -z "$DJANGO_SUPERUSER_USERNAME" ] && [ ! -z "$DJANGO_SUPERUSER_EMAIL" ] && [ ! -z "$DJANGO_SUPERUSER_PASSWORD" ]; then
+            echo "👤 Creating superuser..."
+            python manage.py createsuperuser --noinput
+        else
+            echo "⚠️  No superuser created. Set DJANGO_SUPERUSER_* environment variables to create one automatically."
+        fi
+        
+        # Import CSV data if available
+        if [ -f "/app/axes/management/csv_data/Yxa.csv" ]; then
+            echo "📥 Importing CSV data..."
+            python manage.py import_csv
+        fi
     fi
     
     echo "✅ Database initialized successfully!"
@@ -54,6 +61,14 @@ else
         echo "🔄 Running pending migrations..."
         python manage.py migrate
     }
+    
+    # Check if DEMO_MODE is enabled for existing database
+    if [ "$DEMO_MODE" = "true" ]; then
+        echo "🎭 DEMO_MODE enabled - Regenerating test data..."
+        python manage.py generate_test_data --clear
+        echo "✅ Demo data regenerated successfully!"
+    fi
+    
     echo "✅ Database ready!"
 fi
 
