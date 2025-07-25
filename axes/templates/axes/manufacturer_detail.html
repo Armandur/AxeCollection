@@ -169,6 +169,8 @@
 
 {% block content %}
 
+{% include 'axes/_breadcrumbs.html' with breadcrumbs=breadcrumbs %}
+
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h1 id="manufacturer-name-heading">
         <span id="manufacturer-name-text" style="display:inline;">{{ manufacturer.name }}</span>
@@ -188,12 +190,78 @@
     
     {% if user.is_authenticated %}
     <div class="d-flex gap-2">
+        <a href="{% url 'manufacturer_edit' manufacturer.id %}" class="btn btn-outline-primary btn-sm" title="Redigera tillverkare">
+            <i class="bi bi-pencil"></i> Redigera tillverkare
+        </a>
         <button class="btn btn-outline-danger btn-sm" onclick="showDeleteManufacturerModal()" title="Ta bort tillverkare">
             <i class="bi bi-trash"></i> Ta bort tillverkare
         </button>
     </div>
     {% endif %}
 </div>
+
+<!-- Hierarki -->
+{% if manufacturer.parent or sub_tillverkare or sub_smeder %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-sitemap me-2"></i>Organisation
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if manufacturer.parent %}
+                <div class="mb-3">
+                    <strong>
+                        {% if manufacturer.manufacturer_type == 'SMED' %}
+                            Smed vid 
+                        {% else %}
+                            Undertillverkare till 
+                        {% endif %}
+                    </strong>
+                    <a href="{% url 'manufacturer_detail' manufacturer.parent.id %}" class="text-decoration-none">
+                        {% if manufacturer.parent.manufacturer_type == 'SMED' %}
+                            <i class="fas fa-user text-primary me-1"></i>{{ manufacturer.parent.name }}
+                        {% else %}
+                            <i class="fas fa-industry text-primary me-1"></i>{{ manufacturer.parent.name }}
+                        {% endif %}
+                    </a>
+                </div>
+                {% endif %}
+                
+                {% if sub_tillverkare or sub_smeder %}
+                    {% if sub_tillverkare %}
+                    <div class="mb-3">
+                        <strong>Undertillverkare:</strong>
+                        <div class="mt-2">
+                            {% for sub_manufacturer in sub_tillverkare %}
+                            <a href="{% url 'manufacturer_detail' sub_manufacturer.id %}" class="text-decoration-none me-3">
+                                <i class="fas fa-industry text-body-secondary me-1"></i>{{ sub_manufacturer.name }}
+                            </a>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if sub_smeder %}
+                    <div>
+                        <strong>Smeder:</strong>
+                        <div class="mt-2">
+                            {% for sub_manufacturer in sub_smeder %}
+                            <a href="{% url 'manufacturer_detail' sub_manufacturer.id %}" class="text-decoration-none me-3">
+                                <i class="fas fa-user text-body-secondary me-1"></i>{{ sub_manufacturer.name }}
+                            </a>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
 
 <!-- Statistik -->
 <div class="row mb-4">

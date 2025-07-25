@@ -1,7 +1,7 @@
 {% extends 'axes/base.html' %}
 {% load axe_filters %}
 
-{% block title %}Ny tillverkare - {{ block.super }}{% endblock %}
+{% block title %}{% if is_edit %}Redigera tillverkare{% else %}Ny tillverkare{% endif %} - {{ block.super }}{% endblock %}
 
 {% block extra_head %}
 <link rel="stylesheet" href="https://unpkg.com/easymde/dist/easymde.min.css">
@@ -80,10 +80,55 @@
         background-color: var(--bs-tertiary-bg);
     }
     
-    [data-bs-theme="dark"] .EasyMDEContainer .editor-preview {
-        background-color: var(--bs-body-bg);
-        color: var(--bs-body-color);
-    }
+         [data-bs-theme="dark"] .EasyMDEContainer .editor-preview {
+         background-color: var(--bs-body-bg);
+         color: var(--bs-body-color);
+     }
+     
+     /* Styling för tillverkartyp-val */
+     .manufacturer-type-options {
+         display: flex;
+         gap: 1rem;
+         margin-bottom: 0.5rem;
+     }
+     
+     .manufacturer-type-option {
+         flex: 1;
+         border: 2px solid var(--bs-border-color);
+         border-radius: 0.5rem;
+         padding: 1rem;
+         transition: all 0.2s ease;
+         cursor: pointer;
+     }
+     
+     .manufacturer-type-option:hover {
+         border-color: var(--bs-primary);
+         background-color: var(--bs-primary-bg-subtle);
+     }
+     
+     .manufacturer-type-option .form-check-input:checked + .form-check-label {
+         color: var(--bs-primary);
+     }
+     
+     .manufacturer-type-option .form-check-input:checked ~ .form-check-label {
+         color: var(--bs-primary);
+     }
+     
+     .manufacturer-type-option .form-check-input:checked {
+         background-color: var(--bs-primary);
+         border-color: var(--bs-primary);
+     }
+     
+     .manufacturer-type-option .form-check-input:checked + .form-check-label .manufacturer-type-option {
+         border-color: var(--bs-primary);
+         background-color: var(--bs-primary-bg-subtle);
+     }
+     
+     /* När radio-knappen är vald, markera hela rutan */
+     .manufacturer-type-option:has(.form-check-input:checked) {
+         border-color: var(--bs-primary);
+         background-color: var(--bs-primary-bg-subtle);
+     }
 </style>
 {% endblock %}
 
@@ -93,10 +138,10 @@
         <div class="col-12">
             <div class="d-flex justify-content-between align-items-center">
                 <h1 class="h3 mb-0">
-                    <i class="fas fa-plus me-2"></i>
-                    Ny tillverkare
+                    <i class="{% if is_edit %}fas fa-edit{% else %}fas fa-plus{% endif %} me-2"></i>
+                    {% if is_edit %}Redigera tillverkare{% else %}Ny tillverkare{% endif %}
                 </h1>
-                <a href="{% url 'manufacturer_list' %}" class="btn btn-outline-secondary btn-sm">
+                <a href="{% if is_edit %}{% url 'manufacturer_detail' manufacturer.id %}{% else %}{% url 'manufacturer_list' %}{% endif %}" class="btn btn-outline-secondary btn-sm">
                     <i class="fas fa-arrow-left me-1"></i>
                     Tillbaka till lista
                 </a>
@@ -163,6 +208,58 @@
                 </div>
                 
                 <div class="mb-3">
+                    <label for="parent" class="form-label">Överordnad tillverkare</label>
+                    <select class="form-select" id="parent" name="parent">
+                        <option value="">Ingen (huvudtillverkare)</option>
+                        {% for manufacturer in available_parents %}
+                        <option value="{{ manufacturer.id }}" {% if parent == manufacturer.id %}selected{% endif %}>
+                            {% if manufacturer.parent %}
+                                {% for i in manufacturer.hierarchy_level|add:"-1"|times %}&nbsp;&nbsp;&nbsp;&nbsp;{% endfor %}└─ {{ manufacturer.name }}
+                            {% else %}
+                                {{ manufacturer.name }}
+                            {% endif %}
+                        </option>
+                        {% endfor %}
+                    </select>
+                    <div class="help-text">
+                        Välj en överordnad tillverkare om detta är en undertillverkare eller smed. Lämna tomt för huvudtillverkare.
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label">Typ av tillverkare</label>
+                    <div class="manufacturer-type-options">
+                        <div class="form-check manufacturer-type-option">
+                            <input class="form-check-input" type="radio" name="manufacturer_type" id="type_tillverkare" value="TILLVERKARE" {% if manufacturer_type == 'TILLVERKARE' %}checked{% endif %}>
+                            <label class="form-check-label" for="type_tillverkare">
+                                <div class="d-flex align-items-center">
+                                    <i class="fas fa-industry text-primary me-3" style="font-size: 1.5rem;"></i>
+                                    <div>
+                                        <strong>Tillverkare</strong>
+                                        <div class="text-muted small">Fabrik, smedja, bruk eller annan tillverkare</div>
+                                    </div>
+                                </div>
+                            </label>
+                        </div>
+                        <div class="form-check manufacturer-type-option">
+                            <input class="form-check-input" type="radio" name="manufacturer_type" id="type_smed" value="SMED" {% if manufacturer_type == 'SMED' %}checked{% endif %}>
+                            <label class="form-check-label" for="type_smed">
+                                <div class="d-flex align-items-center">
+                                    <i class="fas fa-user text-primary me-3" style="font-size: 1.5rem;"></i>
+                                    <div>
+                                        <strong>Smed</strong>
+                                        <div class="text-muted small">Enskild smed eller hantverkare</div>
+                                    </div>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="help-text">
+                        Välj typ baserat på om detta är en större tillverkare eller en enskild smed.
+                    </div>
+                </div>
+                
+                <div class="mb-3">
                     <label for="information" class="form-label">Information</label>
                     <textarea id="information" 
                               name="information" 
@@ -193,13 +290,13 @@
             <!-- Åtgärder -->
             <div class="form-section">
                 <div class="d-flex justify-content-between align-items-center">
-                    <a href="{% url 'manufacturer_list' %}" class="btn btn-outline-secondary">
+                    <a href="{% if is_edit %}{% url 'manufacturer_detail' manufacturer.id %}{% else %}{% url 'manufacturer_list' %}{% endif %}" class="btn btn-outline-secondary">
                         <i class="fas fa-times me-1"></i>
                         Avbryt
                     </a>
                     <button type="submit" class="btn btn-primary">
                         <i class="fas fa-save me-1"></i>
-                        Skapa tillverkare
+                        {% if is_edit %}Spara ändringar{% else %}Skapa tillverkare{% endif %}
                     </button>
                 </div>
             </div>
@@ -316,6 +413,18 @@ document.addEventListener('DOMContentLoaded', function() {
             previewInformation.innerHTML = '<em class="text-muted">Ingen information tillagd ännu</em>';
         }
     });
+    
+         // Sätt standard manufacturer_type till 'SMED' när parent väljs (endast om ingen typ är vald)
+     const parentSelect = document.getElementById('parent');
+     const smedRadio = document.getElementById('type_smed');
+     const tillverkareRadio = document.getElementById('type_tillverkare');
+     
+     parentSelect.addEventListener('change', function() {
+         if (this.value && !smedRadio.checked && !tillverkareRadio.checked) {
+             // Om en parent är vald och ingen typ är vald ännu, sätt standard till SMED
+             smedRadio.checked = true;
+         }
+     });
     
     // Validering vid submit
     document.getElementById('manufacturerForm').addEventListener('submit', function(e) {

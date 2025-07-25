@@ -74,7 +74,28 @@
         <tbody>
             {% for manufacturer in manufacturers %}
             <tr data-href="{% url 'manufacturer_detail' manufacturer.id %}">
-                <td>{{ manufacturer.name }}</td>
+                <td>
+                    {% if manufacturer.is_sub_manufacturer %}
+                        <div class="d-flex align-items-center">
+                            {% for i in manufacturer.hierarchy_level|times %}&nbsp;&nbsp;&nbsp;&nbsp;{% endfor %}<span class="text-muted me-3" style="width: 20px;">└─</span>
+                            {% if manufacturer.manufacturer_type == 'SMED' %}
+                                <i class="fas fa-user text-primary me-2"></i>
+                                {{ manufacturer.name }}
+                            {% else %}
+                                <i class="fas fa-industry text-primary me-2"></i>
+                                {{ manufacturer.name }}
+                            {% endif %}
+                        </div>
+                    {% else %}
+                        {% if manufacturer.manufacturer_type == 'SMED' %}
+                            <i class="fas fa-user text-primary me-2"></i>
+                            <strong>{{ manufacturer.name }}</strong>
+                        {% else %}
+                            <i class="fas fa-industry text-primary me-2"></i>
+                            <strong>{{ manufacturer.name }}</strong>
+                        {% endif %}
+                    {% endif %}
+                </td>
                 <td>{{ manufacturer.information|strip_markdown_and_truncate:150 }}</td>
                 <td data-order="{{ manufacturer.axe_count }}">{{ manufacturer.axe_count }}</td>
                 <td>
@@ -147,7 +168,7 @@ $(document).ready(function() {
                 ]
             }
         },
-        order: [[3, 'desc']], // Sortera efter antal yxor som standard
+        order: [], // Ingen standardsortering - använd backend-ordning som respekterar hierarki
         initComplete: function() {
             console.log('DataTables initierad');
         }
