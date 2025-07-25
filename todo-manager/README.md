@@ -26,6 +26,12 @@ python todo_manager.py list "Sektionsnamn"
 # Lista bara ofinished uppgifter i en sektion
 python todo_manager.py list "Sektionsnamn" --incomplete
 
+# Lista alla oklarade uppgifter från alla sektioner
+python todo_manager.py all-incomplete
+
+# Lista alla uppgifter från alla sektioner (klara och oklara)
+python todo_manager.py all
+
 # Lägg till ny uppgift
 python todo_manager.py add "Min nya uppgift" "Sektionsnamn"
 
@@ -70,6 +76,54 @@ python todo_manager.py list "Bildhantering"
 
 # Lista bara ofinished uppgifter (men alla underuppgifter visas)
 python todo_manager.py list "Prestanda och kodkvalitet" --incomplete
+```
+
+### `all-incomplete` - Lista alla oklarade uppgifter
+```bash
+# Visa alla oklarade uppgifter från alla sektioner på en gång
+python todo_manager.py all-incomplete
+```
+Visar:
+```
+📋 Alla oklarade uppgifter:
+
+📁 Deployment och Docker:
+  38. ⏳ Fixa omorganisering av yxbilder i produktion
+
+📁 Yxhantering och arbetsflöden:
+  50. ⏳ Lägg till yxa via auktions-URL
+
+📁 Prestanda och kodkvalitet:
+  68. ⏳ Fler automatiska tester (unit/integration)
+  69. ⏳ CI/CD – Automatiska tester vid push
+  ...
+
+📊 Totalt: 21 oklarade uppgifter
+```
+
+### `all` - Lista alla uppgifter
+```bash
+# Visa alla uppgifter från alla sektioner (både klara och oklara)
+python todo_manager.py all
+```
+Visar:
+```
+📋 Alla uppgifter:
+
+📁 Bildhantering:
+  1. ✅ Bildkomprimering/optimering vid uppladdning
+  2. ✅ Stöd för flera bildformat (t.ex. webp)
+  3. ⏳ Förbättrad lightbox-funktionalitet
+  ...
+  📊 16 uppgifter i denna sektion
+
+📁 Användarupplevelse och interface:
+  17. ✅ Förbättrad responsivitet
+  18. ✅ Touchvänliga knappar även på desktop
+  ...
+  📊 8 uppgifter i denna sektion
+
+📊 Totalt: 93 uppgifter
 ```
 
 ### `complete-multiple` - Slutför flera uppgifter

@@ -9,6 +9,10 @@ Usage:
     python todo_manager.py complete 42
     python todo_manager.py remove 42
     
+    # Visa uppgifter
+    python todo_manager.py list "Sektionsnamn" --incomplete
+    python todo_manager.py all-incomplete  # Alla oklarade från alla sektioner
+    
     # Hierarkiska underuppgifter (5 nivåer: 1 huvud + 4 under)
     python todo_manager.py add-sub 42 "Ny underuppgift"
     python todo_manager.py add-sub 42.1 "Underuppgift till 42.1"
@@ -799,6 +803,70 @@ class TodoManager:
             # Rekursivt visa underuppgifter på nästa nivå
             if sub_item.sub_items and level < 5:
                 self._list_sub_items_recursive(sub_item.sub_items, level + 1, only_incomplete)
+                
+    def list_all_incomplete(self):
+        """Listar alla oklarade uppgifter från alla sektioner"""
+        print("📋 Alla oklarade uppgifter:")
+        
+        total_incomplete = 0
+        
+        for section in self.sections:
+            incomplete_in_section = []
+            
+            # Samla alla oklarade uppgifter i denna sektion
+            for item in section.items:
+                if not item.completed:
+                    incomplete_in_section.append(item)
+                # Kontrollera även underuppgifter
+                for sub_item in item.sub_items:
+                    if not sub_item.completed:
+                        incomplete_in_section.append(sub_item)
+            
+            # Visa sektionen bara om det finns oklarade uppgifter
+            if incomplete_in_section:
+                print(f"\n📁 {section.name}:")
+                section_count = 0
+                
+                for item in section.items:
+                    if not item.completed:
+                        print(f"  {item.number}. ⏳ {item.text}")
+                        section_count += 1
+                        
+                        # Visa oklarade underuppgifter för denna huvuduppgift
+                        self._list_sub_items_recursive(item.sub_items, 2, only_incomplete=True)
+                
+                total_incomplete += section_count
+                
+        if total_incomplete == 0:
+            print("  🎉 Inga oklarade uppgifter - bra jobbat!")
+        else:
+            print(f"\n📊 Totalt: {total_incomplete} oklarade uppgifter")
+            
+        return True
+        
+    def list_all(self):
+        """Listar alla uppgifter från alla sektioner (både klara och oklara)"""
+        print("📋 Alla uppgifter:")
+        
+        total_items = 0
+        
+        for section in self.sections:
+            print(f"\n📁 {section.name}:")
+            section_count = 0
+            
+            for item in section.items:
+                status = "✅" if item.completed else "⏳"
+                print(f"  {item.number}. {status} {item.text}")
+                section_count += 1
+                
+                # Visa alla underuppgifter för denna huvuduppgift
+                self._list_sub_items_recursive(item.sub_items, 2, only_incomplete=False)
+            
+            total_items += section_count
+            print(f"  📊 {section_count} uppgifter i denna sektion")
+                
+        print(f"\n📊 Totalt: {total_items} uppgifter")
+        return True
         
     def complete_multiple_items(self, item_numbers: List[int]):
         """Markerar flera uppgifter som klara"""
@@ -968,6 +1036,12 @@ def main():
     list_parser.add_argument('section', help='Sektionsnamn')
     list_parser.add_argument('--incomplete', action='store_true', help='Visa bara ej slutförda uppgifter')
     
+    # List all incomplete command
+    subparsers.add_parser('all-incomplete', help='Lista alla oklarade uppgifter från alla sektioner')
+    
+    # List all command
+    subparsers.add_parser('all', help='Lista alla uppgifter från alla sektioner (både klara och oklara)')
+    
     # Reorder command
     subparsers.add_parser('reorder', help='Uppdatera numrering')
     
@@ -1050,6 +1124,10 @@ def main():
         manager.list_sections()
     elif args.command == 'list':
         manager.list_items(args.section, args.incomplete)
+    elif args.command == 'all-incomplete':
+        manager.list_all_incomplete()
+    elif args.command == 'all':
+        manager.list_all()
     elif args.command == 'reorder':
         manager.save()  # Save automatiskt uppdaterar numrering
     elif args.command == 'stats':

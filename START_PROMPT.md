@@ -3,12 +3,19 @@
 ## Projektöversikt
 AxeCollection är ett Django-baserat system för att hantera och katalogisera yxsamlingar med avancerad bildhantering, måttregistrering och transaktionshantering. Projektet har både en publik del (för besökare) och en inloggad admin-del (för samlaren).
 
+## AI-assistent riktlinjer
+- **Använd verktyg aktivt**: Använd `codebase_search`, `read_file`, `grep_search` för att förstå kodstrukturen
+- **Filstruktur**: Använd `list_dir` för att utforska projektstrukturen innan du börjar arbeta
+- **Kodanalys**: Läs relevanta filer med `read_file` innan du föreslår ändringar
+- **Sökning**: Använd `grep_search` för att hitta specifika funktioner eller mönster
+- **Iterativ approach**: Testa dina förslag med användaren innan du implementerar fullständiga lösningar
+- **Dokumentation**: Uppdatera relevanta markdown-filer efter större ändringar
+
 ## Viktiga filer att läsa först
 1. **WORKFLOW_AND_COLLAB.md** - Detaljerad information om arbetsflöde, git-hantering och samarbetsprinciper
-2. **TODO_FEATURES.md** - Aktuell status och kommande funktioner
-3. **UX_DESIGN_DISCUSSION.md** - Designprinciper och UX-beslut
-4. **README.md** - Teknisk översikt och installation
-5. **todo-manager/README.md** - TODO Manager-verktyget för uppgiftshantering
+2. **UX_DESIGN_DISCUSSION.md** - Designprinciper och UX-beslut
+3. **README.md** - Teknisk översikt och installation
+4. **todo-manager/README.md** - TODO Manager-verktyget för uppgiftshantering
 
 ## Vårt arbetsflöde
 - **Iterativ utveckling**: Jag föreslår lösningar, du testar och ger feedback, vi förbättrar tills det fungerar bra
@@ -68,9 +75,11 @@ git push --force-with-lease   # Efter amend
 # TODO Manager (från todo-manager/ mapp)
 cd todo-manager
 python todo_manager.py stats                    # Visa projektstatistik
-python todo_manager.py sections                 # Lista alla sektioner
-python todo_manager.py add "Uppgift" "Sektion"  # Lägg till uppgift
-python todo_manager.py complete 42              # Markera uppgift som klar
+python todo_manager.py all                     # Visa alla uppgifter (klara och oklara)
+python todo_manager.py all-incomplete          # Visa alla ofinished uppgifter
+python todo_manager.py sections                # Lista alla sektioner
+python todo_manager.py add "Uppgift" "Sektion" # Lägg till uppgift
+python todo_manager.py complete 42             # Markera uppgift som klar
 python todo_manager.py list "Sektion" --incomplete  # Visa ofinished
 ```
 
@@ -94,14 +103,17 @@ python todo_manager.py list "Sektion" --incomplete  # Visa ofinished
 ### Grundläggande användning:
 ```bash
 cd todo-manager
-python todo_manager.py stats    # Kontrollera projektets framsteg (77.4% klart)
-python todo_manager.py sections # Se alla sektioner och antal uppgifter
+python todo_manager.py stats          # Kontrollera projektets framsteg (77.4% klart)
+python todo_manager.py all            # Visa alla uppgifter (klara och oklara)
+python todo_manager.py all-incomplete # Visa alla ofinished uppgifter
+python todo_manager.py sections       # Se alla sektioner och antal uppgifter
 ```
 
 ### Daglig användning:
 ```bash
 # Morgon - kolla status och planera
 python todo_manager.py stats
+python todo_manager.py all-incomplete  # Visa alla ofinished uppgifter
 python todo_manager.py list "Sektionsnamn" --incomplete
 
 # Under arbete - lägg till nya uppgifter som dyker upp
@@ -122,7 +134,8 @@ python todo_manager.py complete-multiple 42 43 44  # Flera samtidigt
 ### Exempel på arbetsflöde:
 ```bash
 # 1. Se vad som behöver göras
-python todo_manager.py list "Bildhantering" --incomplete
+python todo_manager.py all-incomplete  # Översikt över alla ofinished
+python todo_manager.py list "Bildhantering" --incomplete  # Specifik sektion
 
 # 2. Arbeta med uppgift X
 # 3. När klar - markera direkt
