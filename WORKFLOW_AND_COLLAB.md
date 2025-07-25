@@ -449,6 +449,58 @@
 
 ---
 
+## Tekniska lärdomar från utveckling -- Manuellt flyttat från TODO_FEATURES 2025-07-25
+
+### API och transaktionshantering (2025-07-21)
+- **API för borttagning av transaktioner**: Implementerat `/api/transaction/<id>/delete/` endpoint med säkerhet och felhantering
+- **Bootstrap-modal istället för alert**: Ersatt `confirm()` och `alert()` med snygga Bootstrap-modaler för bättre användarupplevelse
+- **Felhantering**: Separata modaler för bekräftelse och felmeddelanden med tydlig feedback
+- **Säkerhet**: `@login_required` decorator för att skydda API-endpoints från oauktoriserad åtkomst
+- **JavaScript-struktur**: Globala variabler för modal-instanser och funktioner för återanvändbar felhantering
+- **Tekniska lärdomar**:
+  - API-design: Använd RESTful endpoints med tydliga URL-mönster (`/api/transaction/<id>/delete/`)
+  - Modal-hantering: Bootstrap Modal API ger bättre kontroll än standard browser-dialoger
+  - Felhantering: Separera bekräftelse- och felmodaler för tydligare användarupplevelse
+  - CSRF-skydd: `@csrf_exempt` för API-endpoints som inte använder Django-forms
+  - JavaScript-organisering: Använd globala variabler för modal-instanser och återanvändbara funktioner
+
+### Django ORM och databasfält
+- **created_at vs id för sortering**: När `created_at`-fält saknas i modellen, använd `id` för att sortera efter skapandedatum (högre ID = nyare objekt)
+- **FieldError-hantering**: Validera att fältnamn finns i modellen innan användning i `order_by()` eller andra ORM-operationer
+
+### Datumformatering
+- **Konsekvent ISO-format**: Använd `Y-m-d` (ÅÅÅÅ-MM-DD) för konsekvent datumformatering i hela applikationen
+- **Django template filters**: `{{ date|date:"Y-m-d" }}` för ISO-formatering
+
+### Statistik och visualisering
+- **Chart.js för staplade diagram**: Använd `stacked: true` för att visa köp och sälj i samma stapel
+- **Färgkodning**: Röd för köp, blå för sälj, grön för köp-aktivitet, röd för sälj-aktivitet, blå för tillagda objekt
+- **Responsiv design**: Använd Bootstrap-kort med `h-100` för jämn höjd på olika skärmstorlekar
+
+### Användarupplevelse
+- **Senaste aktivitet**: Visa de 5 senaste aktiviteterna per kategori för snabb överblick
+- **Länkar till detaljsidor**: Alla transaktionslistor och topplistor ska länka till respektive yxas detaljsida
+- **Tydlig kategorisering**: Använd färgkodade headers och badges för enkel identifiering
+
+### Felhantering
+- **Django server errors**: Kontrollera terminalen för detaljerade felmeddelanden vid 500-fel
+- **Linter-fel**: Åtgärda syntaxfel och saknade imports innan testning
+- **Git återställning**: Använd `git restore .` för att snabbt återställa oönskade ändringar
+
+### Inline-redigering och formulärhantering (2025-01-15)
+- **Bekräfta/ångra-knappar**: Ersätter modaler med direkta knappar för bättre användarupplevelse och snabbare arbetsflöde
+- **"Övrigt"-alternativhantering**: Kombinerad dropdown + textinput med automatisk visning/dölj-logik för anpassade måttnamn
+- **Backend-kompatibilitet**: Separata fält (`name` vs `custom_name`) för standardmått och anpassade mått krävs korrekt hantering i frontend
+- **Duplikatsäkerhet**: `data-updating` attribut förhindrar dubbla API-anrop under pågående uppdateringar
+- **Användarfeedback**: Kombinera visuell feedback (spinner, inaktiverade knappar) med notifikationer för tydlig status
+- **Tekniska lärdomar**:
+  - Form-validering: Backend `MeasurementForm` förväntar sig specifika fältnamn - matcha exakt i frontend
+  - Event listeners: Använd delegering på document-nivå för dynamiskt skapade element
+  - State management: Spara ursprungliga värden i data-attribut för ångra-funktionalitet  
+  - DOM-hantering: Rensa och återställ DOM-element korrekt vid avbruten/slutförd redigering
+  - Error debugging: Console-loggar hjälper att identifiera backend-valideringsfel
+
+
 **För AI-assistenter:** Läs igenom denna fil noggrant innan du börjar arbeta med projektet. Den innehåller viktig kontext om arbetsflöden, beslut och riktlinjer som hjälper dig att fortsätta arbetet effektivt.
 
 *Senast uppdaterad: 2025-07-14* 

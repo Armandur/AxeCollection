@@ -121,6 +121,45 @@ docker-compose up -d
 
 Se `deploy/DEPLOYMENT.md` för detaljerade instruktioner.
 
+## Utvecklingsverktyg
+
+### TODO Manager
+Ett kraftfullt verktyg för att hantera projektets TODO_FEATURES.md med automatisk numrering och hierarkisk struktur.
+
+**Placering**: `todo-manager/` mappen innehåller alla relaterade filer och dokumentation.
+
+**Snabbstart**:
+```bash
+cd todo-manager
+python todo_manager.py stats          # Visa projektstatistik
+python todo_manager.py sections       # Lista alla sektioner
+python todo_manager.py list "Bildhantering" --incomplete  # Visa ofinished uppgifter
+```
+
+**Huvudfunktioner**:
+- Automatisk global numrering (1, 2, 3...)
+- Hierarkiska underuppgifter (5 nivåer: 42.1.2.3.4)
+- Case-insensitive sektionshantering
+- Batch-operationer (flera uppgifter samtidigt)
+- Intelligent flytt- och organisationsfunktioner
+
+**Viktiga kommandon**:
+```bash
+# Lägg till uppgifter
+python todo_manager.py add "Ny uppgift" "Sektionsnamn"
+python todo_manager.py add-multiple "Uppgift 1" "Uppgift 2" "Sektionsnamn"
+
+# Markera som klara
+python todo_manager.py complete 42
+python todo_manager.py complete-multiple 42 43 44
+
+# Organisera
+python todo_manager.py move 42 "Målsektion"
+python todo_manager.py new-section "Ny sektion"
+```
+
+Se `todo-manager/README.md` för fullständig dokumentation och `todo-manager/TODO_MANAGER_TESTING_README.md` för testinstruktioner.
+
 ## Utveckling
 
 - Kör tester: `python manage.py test`
