@@ -79,8 +79,13 @@ python todo_manager.py all                     # Visa alla uppgifter (klara och 
 python todo_manager.py all-incomplete          # Visa alla ofinished uppgifter
 python todo_manager.py sections                # Lista alla sektioner
 python todo_manager.py add "Uppgift" "Sektion" # Lägg till uppgift
-python todo_manager.py complete 42             # Markera uppgift som klar
+python todo_manager.py add-sub 42 "Underuppgift" # Lägg till underuppgift
+python todo_manager.py complete 42             # Markera uppgift som klar (fungerar med alla nivåer)
+python todo_manager.py complete-multiple 42 42.1 43 # Flera samtidigt (blandade typer)
 python todo_manager.py list "Sektion" --incomplete  # Visa ofinished
+python todo_manager.py show 42                 # Visa detaljerad information
+python todo_manager.py move 42 "Ny sektion"    # Flytta uppgift
+python todo_manager.py swap 42 43              # Byter plats på uppgifter
 ```
 
 ## Viktiga beslut och lärdomar
@@ -95,21 +100,61 @@ python todo_manager.py list "Sektion" --incomplete  # Visa ofinished
 - **Host-konfiguration**: Dynamisk via UI och miljövariabler för ALLOWED_HOSTS/CSRF_TRUSTED_ORIGINS
 - **Commit-meddelanden**: Använd svenska enligt användarens preferens
 - **TODO-lista**: Använd TODO Manager-verktyget för strukturerad hantering istället för manuell redigering
+- **Hierarkiska uppgifter**: TODO Manager stöder 5 nivåer av underuppgifter (42.1, 42.1.1, etc.)
+- **Smart complete**: `complete`-kommandot fungerar med både vanliga uppgifter och underuppgifter
+- **Blandade typer**: `complete-multiple` kan hantera blandade uppgiftstyper (42, 42.1, 43)
+- **Swap-funktion**: Använd `swap` för att byta plats på uppgifter istället för remove/add
 
 ## TODO Manager - Uppgiftshantering
 
 **VIKTIGT**: Använd TODO Manager-verktyget för alla TODO-operationer istället för manuell redigering.
 
-### Grundläggande användning:
+## Grundläggande användning:
 ```bash
 cd todo-manager
-python todo_manager.py stats          # Kontrollera projektets framsteg (77.4% klart)
-python todo_manager.py all            # Visa alla uppgifter (klara och oklara)
-python todo_manager.py all-incomplete # Visa alla ofinished uppgifter
-python todo_manager.py sections       # Se alla sektioner och antal uppgifter
+python todo_manager.py stats                    # Visa projektstatistik
+python todo_manager.py all                     # Visa alla uppgifter (klara och oklara)
+python todo_manager.py all-incomplete          # Visa alla ofinished uppgifter
+python todo_manager.py sections                # Lista alla sektioner
+python todo_manager.py add "Uppgift" "Sektion" # Lägg till uppgift
+python todo_manager.py complete 42             # Markera uppgift som klar
+python todo_manager.py list "Sektion" --incomplete  # Visa ofinished
 ```
 
-### Daglig användning:
+## Hierarkiska underuppgifter (5 nivåer):
+```bash
+# Lägg till underuppgift till huvuduppgift
+python todo_manager.py add-sub 42 "Ny underuppgift"
+
+# Lägg till underuppgift till underuppgift (nivå 3)
+python todo_manager.py add-sub 42.1 "Underuppgift till 42.1"
+
+# Markera underuppgifter som klara
+python todo_manager.py complete 42.1.2        # Smart funktion - fungerar med alla nivåer
+python todo_manager.py complete-multiple 42 42.1 42.2  # Blandade typer
+
+# Visa detaljerad information
+python todo_manager.py show 42                # Huvuduppgift med alla underuppgifter
+python todo_manager.py show 42.1.2            # Specifik underuppgift
+```
+
+## Organisering och flytt:
+```bash
+# Flytta uppgifter
+python todo_manager.py move 42 "Ny sektion"
+python todo_manager.py swap 42 43             # Byter plats på uppgifter
+python todo_manager.py move-sub 42.1.2 43     # Flytta underuppgift till ny förälder
+
+# Sektionshantering
+python todo_manager.py new-section "Ny sektion"
+python todo_manager.py merge "Sektion 1" "Sektion 2"
+
+# Ta bort
+python todo_manager.py remove 42              # Ta bort uppgift
+python todo_manager.py remove-multiple 42 43 44  # Ta bort flera
+```
+
+## Daglig användning:
 ```bash
 # Morgon - kolla status och planera
 python todo_manager.py stats
@@ -118,20 +163,22 @@ python todo_manager.py list "Sektionsnamn" --incomplete
 
 # Under arbete - lägg till nya uppgifter som dyker upp
 python todo_manager.py add "Ny uppgift upptäcktes" "Relevant sektion"
+python todo_manager.py add-multiple "Uppgift 1" "Uppgift 2" "Sektion"  # Flera samtidigt
 
 # Efter slutfört arbete - markera klart
-python todo_manager.py complete 42
-python todo_manager.py complete-multiple 42 43 44  # Flera samtidigt
+python todo_manager.py complete 42            # Fungerar med både vanliga och underuppgifter
+python todo_manager.py complete-multiple 42 42.1 43  # Blandade typer
 ```
 
-### När du arbetar med uppgifter:
+## När du arbetar med uppgifter:
 1. **Börja alltid med stats** för att se övergripande status
 2. **Lista relevanta sektioner** med `--incomplete` för fokus
 3. **Lägg till uppgifter direkt** när nya behov upptäcks
 4. **Markera som klara omedelbart** efter slutfört arbete
-5. **Organisera** med `move`, `new-section` och `merge` vid behov
+5. **Organisera** med `move`, `swap`, `new-section` och `merge` vid behov
+6. **Använd hierarkiska underuppgifter** för komplexa uppgifter
 
-### Exempel på arbetsflöde:
+## Exempel på arbetsflöde:
 ```bash
 # 1. Se vad som behöver göras
 python todo_manager.py all-incomplete  # Översikt över alla ofinished

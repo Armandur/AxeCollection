@@ -267,9 +267,10 @@ En checklista för vidareutveckling av AxeCollection. Bocka av med [x] när klar
     - [x] 58.8 Validering för att förhindra cirkulära referenser
     - [x] 58.9 Migration för att hantera befintliga tillverkare
     - [x] 58.10 Admin-gränssnitt med träd-struktur för enkel hantering
-59. [ ] Ekonomikolumnen för tillverkare ska summera de eventuella underliggande tillverkarna - både i tillverkarlistan och på tillverkaredetaljsidan. På detaljsidan ska det delas upp mellan yxor kopplade direkt till tillverkaren och yxor från underliggande tillverkare/smeder
-60. [ ] Indentering av tillverkare och underordnade smeder ska fungera även på skapa/redigera yxformuläret
-61. [ ] Breadcrumbs för tillverkare verkar inte hantera alla nivåer korrekt
+59. [x] Ekonomikolumnen för tillverkare ska summera de eventuella underliggande tillverkarna - både i tillverkarlistan och på tillverkaredetaljsidan. På detaljsidan ska det delas upp mellan yxor kopplade direkt till tillverkaren och yxor från underliggande tillverkare/smeder
+60. [x] Indentering av tillverkare och underordnade smeder ska fungera även på skapa/redigera yxformuläret
+61. [x] Organisationssektionen på tillverkarsidan ska visas för inloggade användare även när det inte finns undertillverkare, med "Lägg till undertillverkare"-knapp
+62. [x] Breadcrumbs för tillverkare verkar inte hantera alla nivåer korrekt
 
 ## 8. Admin och datahantering
 
@@ -372,7 +373,7 @@ En checklista för vidareutveckling av AxeCollection. Bocka av med [x] när klar
     - [x] 77.5 Generera kontakter från olika länder med flaggemoji
     - [x] 77.6 Skapa transaktioner med olika plattformar och priser
     - [x] 77.7 Testa alla funktioner med testdata (sökning, filtrering, statistik, etc.)
-    - [ ] 77.8 Förbereda för publik demo-webbplats
+    - [x] 77.8 Förbereda för publik demo-webbplats
     - [x] 77.9 Dokumentera hur man återställer till testdata
 78. [x] todo_manager behöver kunna hantera underuppgifter som 58.4 (slutföra underuppgifter)
 

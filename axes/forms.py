@@ -1,4 +1,5 @@
 from django import forms
+from django.utils.safestring import mark_safe
 from .models import Transaction, Contact, Platform, Measurement, MeasurementType, MeasurementTemplate, Axe, Manufacturer, Settings
 from django.utils import timezone
 
@@ -41,6 +42,8 @@ COUNTRIES = [
     ("AU", "🇦🇺 Australien"),
     ("NZ", "🇳🇿 Nya Zeeland"),
 ]
+
+
 
 class TransactionForm(forms.ModelForm):
     transaction_date = forms.DateField(
@@ -351,6 +354,74 @@ class MultipleFileField(forms.FileField):
         return result
 
 class AxeForm(forms.ModelForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        
+        # Sortera tillverkare hierarkiskt för dropdown-menyn
+        all_manufacturers = Manufacturer.objects.all().order_by('name')
+        
+        def _is_descendant(manufacturer, ancestor):
+            """Kontrollera om manufacturer är en efterkommande till ancestor"""
+            current = manufacturer
+            while current.parent:
+                if current.parent == ancestor:
+                    return True
+                current = current.parent
+            return False
+        
+        def sort_hierarchically(manufacturers):
+            """Sorterar tillverkare hierarkiskt: huvudtillverkare först, sedan undertillverkare"""
+            main_manufacturers = [m for m in manufacturers if m.hierarchy_level == 0]
+            sorted_list = []
+            
+            for main in main_manufacturers:
+                sorted_list.append(main)
+                # Hitta alla undertillverkare för denna huvudtillverkare
+                subs = [m for m in manufacturers if m.hierarchy_level > 0 and _is_descendant(m, main)]
+                # Sortera undertillverkare efter hierarkinivå och namn
+                subs.sort(key=lambda x: (x.hierarchy_level, x.name))
+                sorted_list.extend(subs)
+            
+            return sorted_list
+        
+        # Sortera tillverkare hierarkiskt
+        sorted_manufacturers = sort_hierarchically(all_manufacturers)
+        
+        # Skapa choices för dropdown-menyn med hierarkisk indentering
+        choices = [('', 'Välj tillverkare...')]
+        for m in sorted_manufacturers:
+            if m.parent:
+                # Skapa indentering baserat på hierarchy_level med non-breaking spaces
+                indent = "&nbsp;&nbsp;&nbsp;&nbsp;" * m.hierarchy_level  # 4 non-breaking spaces per nivå
+                choice_label = mark_safe(f"{indent}└─ {m.name}")
+            else:
+                # Huvudtillverkare - ingen indentering
+                choice_label = m.name
+            choices.append((m.id, choice_label))
+        
+        # Uppdatera manufacturer-fältet med sorterade choices
+        self.fields['manufacturer'] = forms.ChoiceField(
+            choices=choices,
+            required=True,
+            widget=forms.Select(attrs={'class': 'form-select'}),
+            label='Tillverkare',
+            help_text='Välj tillverkare av yxan'
+        )
+        
+        # Om detta är en redigering av befintlig yxa, sätt rätt tillverkare som vald
+        if self.instance and self.instance.pk and self.instance.manufacturer:
+            self.fields['manufacturer'].initial = self.instance.manufacturer.id
+    
+    def clean_manufacturer(self):
+        """Konvertera manufacturer ID till Manufacturer-objekt"""
+        manufacturer_id = self.cleaned_data.get('manufacturer')
+        if manufacturer_id:
+            try:
+                return Manufacturer.objects.get(id=manufacturer_id)
+            except Manufacturer.DoesNotExist:
+                raise forms.ValidationError('Vald tillverkare finns inte.')
+        return None
+    
     images = MultipleFileField(
         required=False,
         widget=MultipleFileInput(attrs={
@@ -574,15 +645,13 @@ class AxeForm(forms.ModelForm):
 
     class Meta:
         model = Axe
-        fields = ['manufacturer', 'model', 'comment', 'status']
+        fields = ['model', 'comment', 'status']  # manufacturer tas bort eftersom det definieras i __init__
         labels = {
-            'manufacturer': 'Tillverkare',
             'model': 'Modell',
             'comment': 'Kommentar',
             'status': 'Status',
         }
         widgets = {
-            'manufacturer': forms.Select(attrs={'class': 'form-select'}),
             'model': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ange modellnamn'}),
             'comment': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Lägg till kommentar om yxan...'}),
             'status': forms.Select(attrs={'class': 'form-select'}),

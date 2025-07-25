@@ -20,20 +20,46 @@ def get_available_parents(current_manufacturer=None):
     """
     if current_manufacturer is None:
         # För nya tillverkare, alla tillverkare är tillgängliga
-        return Manufacturer.objects.all().order_by('name')
+        all_manufacturers = Manufacturer.objects.all()
+    else:
+        # För befintliga tillverkare, exkludera sig själv och alla undertillverkare
+        excluded_ids = {current_manufacturer.id}
+        
+        # Rekursivt hitta alla undertillverkare
+        def get_all_sub_manufacturer_ids(manufacturer):
+            for sub in manufacturer.sub_manufacturers.all():
+                excluded_ids.add(sub.id)
+                get_all_sub_manufacturer_ids(sub)
+        
+        get_all_sub_manufacturer_ids(current_manufacturer)
+        all_manufacturers = Manufacturer.objects.exclude(id__in=excluded_ids)
     
-    # För befintliga tillverkare, exkludera sig själv och alla undertillverkare
-    excluded_ids = {current_manufacturer.id}
+    # Sortera hierarkiskt istället för alfabetiskt
+    def _is_descendant(manufacturer, ancestor):
+        """Kontrollera om manufacturer är en efterkommande till ancestor"""
+        current = manufacturer
+        while current.parent:
+            if current.parent == ancestor:
+                return True
+            current = current.parent
+        return False
     
-    # Rekursivt hitta alla undertillverkare
-    def get_all_sub_manufacturer_ids(manufacturer):
-        for sub in manufacturer.sub_manufacturers.all():
-            excluded_ids.add(sub.id)
-            get_all_sub_manufacturer_ids(sub)
+    def sort_hierarchically(manufacturers):
+        """Sorterar tillverkare hierarkiskt: huvudtillverkare först, sedan undertillverkare"""
+        main_manufacturers = [m for m in manufacturers if m.hierarchy_level == 0]
+        sorted_list = []
+        
+        for main in main_manufacturers:
+            sorted_list.append(main)
+            # Hitta alla undertillverkare för denna huvudtillverkare
+            subs = [m for m in manufacturers if m.hierarchy_level > 0 and _is_descendant(m, main)]
+            # Sortera undertillverkare efter hierarkinivå och namn
+            subs.sort(key=lambda x: (x.hierarchy_level, x.name))
+            sorted_list.extend(subs)
+        
+        return sorted_list
     
-    get_all_sub_manufacturer_ids(current_manufacturer)
-    
-    return Manufacturer.objects.exclude(id__in=excluded_ids).order_by('name')
+    return sort_hierarchically(all_manufacturers)
 
 
 
@@ -155,7 +181,19 @@ def manufacturer_create(request):
         messages.success(request, f'Tillverkaren "{manufacturer.name}" har skapats')
         return redirect('manufacturer_detail', pk=manufacturer.pk)
     
+    # Hämta parent från URL-parametern om den finns
+    parent_id = request.GET.get('parent', '')
+    
+    # Konvertera till heltal om det finns, annars None
+    parent_int = None
+    if parent_id:
+        try:
+            parent_int = int(parent_id)
+        except ValueError:
+            parent_int = None
+    
     return render(request, 'axes/manufacturer_form.html', {
+        'parent': parent_int,
         'available_parents': get_available_parents()
     })
 
@@ -753,7 +791,34 @@ def delete_manufacturer(request, pk):
 def get_manufacturers_for_dropdown(request):
     """Hämta tillverkare för dropdown-menyn (exkluderar den som ska tas bort)"""
     exclude_id = request.GET.get('exclude_id')
-    manufacturers = Manufacturer.objects.exclude(id=exclude_id).order_by('name')
+    all_manufacturers = Manufacturer.objects.exclude(id=exclude_id)
+    
+    # Sortera hierarkiskt istället för alfabetiskt
+    def _is_descendant(manufacturer, ancestor):
+        """Kontrollera om manufacturer är en efterkommande till ancestor"""
+        current = manufacturer
+        while current.parent:
+            if current.parent == ancestor:
+                return True
+            current = current.parent
+        return False
+    
+    def sort_hierarchically(manufacturers):
+        """Sorterar tillverkare hierarkiskt: huvudtillverkare först, sedan undertillverkare"""
+        main_manufacturers = [m for m in manufacturers if m.hierarchy_level == 0]
+        sorted_list = []
+        
+        for main in main_manufacturers:
+            sorted_list.append(main)
+            # Hitta alla undertillverkare för denna huvudtillverkare
+            subs = [m for m in manufacturers if m.hierarchy_level > 0 and _is_descendant(m, main)]
+            # Sortera undertillverkare efter hierarkinivå och namn
+            subs.sort(key=lambda x: (x.hierarchy_level, x.name))
+            sorted_list.extend(subs)
+        
+        return sorted_list
+    
+    manufacturers = sort_hierarchically(all_manufacturers)
     
     return JsonResponse({
         'manufacturers': [
