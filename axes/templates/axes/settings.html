@@ -860,7 +860,7 @@
                         <form id="createMeasurementTypeForm">
                             {% csrf_token %}
                             <div class="row">
-                                <div class="col-md-4">
+                                <div class="col-md-3">
                                     <div class="mb-3">
                                         <label for="measurement_type_name" class="form-label">
                                             <strong>Namn</strong>
@@ -869,16 +869,31 @@
                                         <div class="form-text">T.ex. "Bladlängd"</div>
                                     </div>
                                 </div>
-                                <div class="col-md-3">
+                                <div class="col-md-5">
                                     <div class="mb-3">
-                                        <label for="measurement_type_unit" class="form-label">
+                                        <label class="form-label">
                                             <strong>Enhet</strong>
                                         </label>
-                                        <input type="text" class="form-control" id="measurement_type_unit" name="measurement_type_unit" required>
-                                        <div class="form-text">T.ex. "mm", "gram"</div>
+                                        <div class="mb-2">
+                                            <div class="btn-group w-100" role="group" aria-label="Välj enhet">
+                                                <input type="radio" class="btn-check" name="unit_option" id="unit_mm" value="mm" autocomplete="off">
+                                                <label class="btn btn-outline-primary btn-sm" for="unit_mm">mm</label>
+                                                
+                                                <input type="radio" class="btn-check" name="unit_option" id="unit_gram" value="gram" autocomplete="off">
+                                                <label class="btn btn-outline-primary btn-sm" for="unit_gram">gram</label>
+                                                
+                                                <input type="radio" class="btn-check" name="unit_option" id="unit_grader" value="grader" autocomplete="off">
+                                                <label class="btn btn-outline-primary btn-sm" for="unit_grader">grader</label>
+                                                
+                                                <input type="radio" class="btn-check" name="unit_option" id="unit_ovrig" value="ovrig" autocomplete="off">
+                                                <label class="btn btn-outline-primary btn-sm" for="unit_ovrig">Övrig</label>
+                                            </div>
+                                        </div>
+                                        <input type="text" class="form-control form-control-sm" id="measurement_type_unit" name="measurement_type_unit" placeholder="Ange egen enhet..." style="display: none;">
+                                        <div class="form-text">Välj enhet eller skriv egen</div>
                                     </div>
                                 </div>
-                                <div class="col-md-3">
+                                <div class="col-md-2">
                                     <div class="mb-3">
                                         <label for="measurement_type_sort_order" class="form-label">
                                             <strong>Ordning</strong>
@@ -1222,6 +1237,26 @@ document.addEventListener('DOMContentLoaded', function() {
            const templateName = this.getAttribute('data-template-name');
            confirmDeleteMeasurementTemplate(templateId, templateName);
        });
+       
+       // Event listeners för enhetsknapparna
+       const unitOptions = document.querySelectorAll('input[name="unit_option"]');
+       const customUnitInput = document.getElementById('measurement_type_unit');
+       
+       unitOptions.forEach(option => {
+           option.addEventListener('change', function() {
+               if (this.value === 'ovrig') {
+                   // Visa textfältet för egen enhet
+                   customUnitInput.style.display = 'block';
+                   customUnitInput.required = true;
+                   customUnitInput.focus();
+               } else {
+                   // Dölj textfältet och sätt vald enhet
+                   customUnitInput.style.display = 'none';
+                   customUnitInput.required = false;
+                   customUnitInput.value = this.value;
+               }
+           });
+       });
       
       // Inline editing - event listeners handled directly in onclick attributes
  });
@@ -1500,6 +1535,22 @@ function loadMeasurementTypesList() {
 // Skapa ny måtttyp
 function createMeasurementType() {
     const form = document.getElementById('createMeasurementTypeForm');
+    
+    // Validera att en enhet är vald
+    const selectedUnit = document.querySelector('input[name="unit_option"]:checked');
+    const unitInput = document.getElementById('measurement_type_unit');
+    
+    if (!selectedUnit) {
+        showNotification('Välj en enhet för måtttypen', 'error');
+        return;
+    }
+    
+    if (selectedUnit.value === 'ovrig' && !unitInput.value.trim()) {
+        showNotification('Ange en egen enhet när "Övrig" är valt', 'error');
+        unitInput.focus();
+        return;
+    }
+    
     const formData = new FormData(form);
     
     const btn = document.getElementById('addMeasurementTypeBtn');
@@ -1517,6 +1568,9 @@ function createMeasurementType() {
     .then(data => {
         if (data.success) {
             form.reset();
+            // Återställ enhetsval
+            document.getElementById('measurement_type_unit').style.display = 'none';
+            document.getElementById('measurement_type_unit').required = false;
             loadMeasurementTypesList();
             loadMeasurementTypesSelection(); // Uppdatera även valet i mall-modalen
             showNotification('Måtttyp skapad!', 'success');
@@ -1693,15 +1747,96 @@ function startMeasurementTypeInlineEdit(typeId, name, unit, description, sortOrd
     nameCell.innerHTML = '';
     nameCell.appendChild(nameInput);
 
-    // Skapa input för enhet
+    // Skapa enhetsväljare med knappar (samma som för att skapa nya)
+    const unitContainer = document.createElement('div');
+    
+    // Skapa knappgrupp för enheter
+    const unitButtonGroup = document.createElement('div');
+    unitButtonGroup.className = 'btn-group w-100 mb-1';
+    unitButtonGroup.setAttribute('role', 'group');
+    
+    // Definiera de tre standardenheterna
+    const standardUnits = ['mm', 'gram', 'grader'];
+    let isCustomUnit = !standardUnits.includes(unit);
+    
+    // Skapa knappar för enheter
+    standardUnits.forEach(unitValue => {
+        const input = document.createElement('input');
+        input.type = 'radio';
+        input.className = 'btn-check';
+        input.name = `unit_option_edit_${typeId}`;
+        input.id = `edit_unit_${unitValue}_${typeId}`;
+        input.value = unitValue;
+        input.autocomplete = 'off';
+        if (unit === unitValue) input.checked = true;
+        
+        const label = document.createElement('label');
+        label.className = 'btn btn-outline-primary btn-sm';
+        label.setAttribute('for', input.id);
+        label.textContent = unitValue;
+        
+        unitButtonGroup.appendChild(input);
+        unitButtonGroup.appendChild(label);
+    });
+    
+    // Övrig-knapp
+    const customInput = document.createElement('input');
+    customInput.type = 'radio';
+    customInput.className = 'btn-check';
+    customInput.name = `unit_option_edit_${typeId}`;
+    customInput.id = `edit_unit_ovrig_${typeId}`;
+    customInput.value = 'ovrig';
+    customInput.autocomplete = 'off';
+    if (isCustomUnit) customInput.checked = true;
+    
+    const customLabel = document.createElement('label');
+    customLabel.className = 'btn btn-outline-primary btn-sm';
+    customLabel.setAttribute('for', customInput.id);
+    customLabel.textContent = 'Övrig';
+    
+    unitButtonGroup.appendChild(customInput);
+    unitButtonGroup.appendChild(customLabel);
+    
+    // Textfält för egen enhet
     const unitInput = document.createElement('input');
     unitInput.type = 'text';
     unitInput.className = 'form-control form-control-sm';
     unitInput.id = `edit-mt-unit-${typeId}`;
+    unitInput.placeholder = 'Ange egen enhet...';
     unitInput.value = unit;
     unitInput.required = true;
+    
+    // Visa/dölj textfältet baserat på om det är en anpassad enhet
+    if (isCustomUnit) {
+        unitInput.style.display = 'block';
+    } else {
+        unitInput.style.display = 'none';
+    }
+    
+    // Event listeners för enhetsknapparna
+    const unitRadios = unitButtonGroup.querySelectorAll('input[type="radio"]');
+    unitRadios.forEach(radio => {
+        radio.addEventListener('change', function() {
+            if (this.value === 'ovrig') {
+                unitInput.style.display = 'block';
+                unitInput.required = true;
+                unitInput.focus();
+                // Behåll befintligt värde om det är anpassat
+                if (!isCustomUnit) {
+                    unitInput.value = '';
+                }
+            } else {
+                unitInput.style.display = 'none';
+                unitInput.required = false;
+                unitInput.value = this.value;
+            }
+        });
+    });
+    
+    unitContainer.appendChild(unitButtonGroup);
+    unitContainer.appendChild(unitInput);
     unitCell.innerHTML = '';
-    unitCell.appendChild(unitInput);
+    unitCell.appendChild(unitContainer);
 
     // Skapa input för beskrivning
     const descriptionInput = document.createElement('input');
@@ -1774,13 +1909,62 @@ function confirmMeasurementTypeInlineEdit(typeId) {
     }
 
     const newName = nameInput.value.trim();
-    const newUnit = unitInput.value.trim();
+    
+    // Hämta enhetsvärde från radio buttons
+    const selectedUnitRadio = document.querySelector(`input[name="unit_option_edit_${typeId}"]:checked`);
+    let newUnit;
+    
+    if (selectedUnitRadio && selectedUnitRadio.value === 'ovrig') {
+        // Använd värdet från textfältet om "Övrig" är valt
+        newUnit = unitInput.value.trim();
+        if (!newUnit) {
+            showNotification('Ange en egen enhet när "Övrig" är valt', 'error');
+            unitInput.focus();
+            row.removeAttribute('data-updating');
+            if (confirmBtn) {
+                confirmBtn.disabled = false;
+                confirmBtn.innerHTML = '<i class="bi bi-check"></i>';
+            }
+            return;
+        }
+    } else if (selectedUnitRadio) {
+        // Använd värdet från den valda radio button
+        newUnit = selectedUnitRadio.value;
+    } else {
+        // Fallback till textfältets värde
+        newUnit = unitInput.value.trim();
+    }
+    
     const newDescription = descriptionInput.value.trim();
     const newSortOrder = sortOrderInput.value.trim();
 
     // Validera
-    if (!newName || !newUnit) {
-        showNotification('Namn och enhet måste fyllas i', 'error');
+    if (!newName) {
+        showNotification('Namn måste fyllas i', 'error');
+        nameInput.focus();
+        row.removeAttribute('data-updating');
+        if (confirmBtn) {
+            confirmBtn.disabled = false;
+            confirmBtn.innerHTML = '<i class="bi bi-check"></i>';
+        }
+        return;
+    }
+    
+    if (!selectedUnitRadio) {
+        showNotification('Välj en enhet för måtttypen', 'error');
+        row.removeAttribute('data-updating');
+        if (confirmBtn) {
+            confirmBtn.disabled = false;
+            confirmBtn.innerHTML = '<i class="bi bi-check"></i>';
+        }
+        return;
+    }
+    
+    if (!newUnit) {
+        showNotification('Enhet måste fyllas i', 'error');
+        if (selectedUnitRadio.value === 'ovrig') {
+            unitInput.focus();
+        }
         row.removeAttribute('data-updating');
         if (confirmBtn) {
             confirmBtn.disabled = false;

@@ -238,6 +238,11 @@ class MeasurementForm(forms.ModelForm):
             label='Måtttyp',
             help_text='Välj typ av mått'
         )
+        
+        # Skapa en mapping av måtttyper till enheter för JavaScript
+        self.measurement_types_data = {
+            mt.name: mt.unit for mt in measurement_types
+        }
     
     custom_name = forms.CharField(
         max_length=100,
@@ -265,28 +270,63 @@ class MeasurementForm(forms.ModelForm):
         help_text='Mätvärde'
     )
     
+    # Radio buttons för enhetsval
+    UNIT_CHOICES = [
+        ('mm', 'mm'),
+        ('gram', 'gram'),
+        ('grader', 'grader'),
+        ('ovrig', 'Övrig'),
+    ]
+    
+    unit_option = forms.ChoiceField(
+        choices=UNIT_CHOICES,
+        widget=forms.RadioSelect(attrs={
+            'class': 'unit-radio-group'
+        }),
+        required=False,
+        label='Enhet',
+        initial='mm'
+    )
+    
     unit = forms.CharField(
         max_length=50,
         required=True,  # Gör fältet obligatoriskt
         widget=forms.TextInput(attrs={
             'class': 'form-control',
             'id': 'measurement-unit',
-            'placeholder': 't.ex. mm, gram, cm'
+            'placeholder': 'Ange egen enhet...',
+            'style': 'display: none;'  # Dolt från början
         }),
-        label='Enhet',
-        help_text='Måttenhet'
+        label='Anpassad enhet',
+        help_text='Ange egen enhet när "Övrig" är valt'
     )
 
     def clean(self):
         cleaned_data = super().clean()
         name = cleaned_data.get('name')
         custom_name = cleaned_data.get('custom_name')
+        unit_option = cleaned_data.get('unit_option')
+        unit = cleaned_data.get('unit')
         
-        # Om "Övrigt" är valt, använd custom_name som name
+        # Om "Övrigt" är valt för namn, använd custom_name som name
         if name == 'Övrigt':
             if not custom_name:
                 raise forms.ValidationError('Du måste ange ett eget måttnamn när "Övrigt" är valt.')
             cleaned_data['name'] = custom_name
+        
+        # Hantera enhetsval
+        if unit_option == 'ovrig':
+            # Om "Övrig" är valt för enhet, använd det anpassade unit-fältet
+            if not unit:
+                raise forms.ValidationError('Du måste ange en egen enhet när "Övrig" är valt.')
+            # unit behålls som det är
+        elif unit_option:
+            # Om en standardenhet är vald, använd den
+            cleaned_data['unit'] = unit_option
+        else:
+            # Fallback till befintligt unit-fält om inget radio-val är gjort
+            if not unit:
+                raise forms.ValidationError('Du måste välja eller ange en enhet.')
         
         return cleaned_data
     

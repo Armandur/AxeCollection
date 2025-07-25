@@ -649,6 +649,7 @@ def axe_edit(request, pk):
         'measurements': measurements,
         'measurement_form': measurement_form,
         'measurement_templates': measurement_templates,
+        'measurement_types_data': measurement_form.measurement_types_data,
     }
     return render(request, 'axes/axe_form.html', context)
 
@@ -831,6 +832,7 @@ def receiving_workflow(request, pk):
         'axe': axe,
         'measurement_templates': measurement_templates,
         'measurement_form': measurement_form,
+        'measurement_types_data': measurement_form.measurement_types_data,
         'measurements': measurements,
         'images': images,
     })

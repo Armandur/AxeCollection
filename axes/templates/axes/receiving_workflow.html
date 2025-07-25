@@ -248,23 +248,38 @@
                             <form id="measurementForm" method="post" action="{% url 'add_measurement' axe.pk %}">
                                 {% csrf_token %}
                                 <div class="row">
-                                    <div class="col-md-4">
-                                        {{ measurement_form.name.label_tag }}
-                                        {{ measurement_form.name }}
-                                        <div class="custom-field" id="custom-name-field">
-                                            {{ measurement_form.custom_name.label_tag }}
-                                            {{ measurement_form.custom_name }}
+                                                                    <div class="col-md-3">
+                                    {{ measurement_form.name.label_tag }}
+                                    {{ measurement_form.name }}
+                                    <div class="custom-field" id="custom-name-field">
+                                        {{ measurement_form.custom_name.label_tag }}
+                                        {{ measurement_form.custom_name }}
+                                    </div>
+                                </div>
+                                <div class="col-md-2">
+                                    {{ measurement_form.value.label_tag }}
+                                    {{ measurement_form.value }}
+                                </div>
+                                <div class="col-md-5">
+                                    {{ measurement_form.unit_option.label_tag }}
+                                    <div class="mb-2">
+                                        <div class="btn-group w-100" role="group" aria-label="Välj enhet">
+                                            <input type="radio" class="btn-check" name="unit_option" id="unit_mm" value="mm" autocomplete="off">
+                                            <label class="btn btn-outline-primary btn-sm" for="unit_mm">mm</label>
+                                            
+                                            <input type="radio" class="btn-check" name="unit_option" id="unit_gram" value="gram" autocomplete="off">
+                                            <label class="btn btn-outline-primary btn-sm" for="unit_gram">gram</label>
+                                            
+                                            <input type="radio" class="btn-check" name="unit_option" id="unit_grader" value="grader" autocomplete="off">
+                                            <label class="btn btn-outline-primary btn-sm" for="unit_grader">grader</label>
+                                            
+                                            <input type="radio" class="btn-check" name="unit_option" id="unit_ovrig" value="ovrig" autocomplete="off">
+                                            <label class="btn btn-outline-primary btn-sm" for="unit_ovrig">Övrig</label>
                                         </div>
                                     </div>
-                                    <div class="col-md-3">
-                                        {{ measurement_form.value.label_tag }}
-                                        {{ measurement_form.value }}
-                                    </div>
-                                    <div class="col-md-3">
-                                        {{ measurement_form.unit.label_tag }}
-                                        {{ measurement_form.unit }}
-                                    </div>
-                                    <div class="col-md-2 d-flex align-items-end">
+                                    {{ measurement_form.unit }}
+                                </div>
+                                <div class="col-md-2 d-flex align-items-end">
                                         <button type="submit" class="btn btn-primary w-100">
                                             <i class="fas fa-plus me-1"></i>
                                             <span class="d-none d-md-inline">Lägg till</span>
@@ -485,6 +500,36 @@
                         </div>
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Bekräftelsemodal för borttagning av mått -->
+<div class="modal fade" id="deleteMeasurementModal" tabindex="-1" aria-labelledby="deleteMeasurementModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="deleteMeasurementModalLabel">
+                    <i class="fas fa-trash me-2"></i>Bekräfta borttagning av mått
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-warning">
+                    <h6><i class="fas fa-exclamation-triangle me-2"></i>Varning!</h6>
+                    <p class="mb-0">Detta kommer att ta bort måttet permanent.</p>
+                </div>
+                <p>Är du säker på att du vill ta bort detta mått?</p>
+                <p class="text-muted">Denna åtgärd går inte att ångra.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-2"></i>Avbryt
+                </button>
+                <button type="button" class="btn btn-danger" id="confirmDeleteMeasurementBtn">
+                    <i class="fas fa-trash me-2"></i>Ja, ta bort mått
+                </button>
             </div>
         </div>
     </div>
@@ -782,6 +827,212 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
     });
+    
+    // === ENHETSVÄLJARE FÖR MÅTT ===
+    const unitRadios = document.querySelectorAll('input[name="unit_option"]');
+    const customUnitInput = document.getElementById('measurement-unit');
+    
+    if (unitRadios.length > 0 && customUnitInput) {
+        unitRadios.forEach(radio => {
+            radio.addEventListener('change', function() {
+                if (this.value === 'ovrig') {
+                    // Visa textfältet för egen enhet
+                    customUnitInput.style.display = 'block';
+                    customUnitInput.required = true;
+                    customUnitInput.value = '';
+                    customUnitInput.focus();
+                } else {
+                    // Dölj textfältet och sätt vald enhet
+                    customUnitInput.style.display = 'none';
+                    customUnitInput.required = false;
+                    customUnitInput.value = this.value;
+                }
+            });
+        });
+        
+        // Sätt initial enhet baserat på default-värde (mm)
+        const mmRadio = document.getElementById('unit_mm');
+        if (mmRadio && !document.querySelector('input[name="unit_option"]:checked')) {
+            mmRadio.checked = true;
+            customUnitInput.value = 'mm';
+        }
+        
+        // Sätt initial enhet baserat på vald radio button
+        const selectedRadio = document.querySelector('input[name="unit_option"]:checked');
+        if (selectedRadio && selectedRadio.value !== 'ovrig') {
+            customUnitInput.value = selectedRadio.value;
+        }
+    }
+    
+    // === SMART ENHETS-IFYLLNING BASERAT PÅ MÅTTTYP ===
+    const measurementNameSelect = document.getElementById('measurement-name');
+    
+    // Måtttyper och deras enheter från servern
+    const measurementTypesData = {{ measurement_types_data|safe }};
+    
+    if (measurementNameSelect && measurementTypesData) {
+        measurementNameSelect.addEventListener('change', function() {
+            const selectedType = this.value;
+            
+            if (selectedType && selectedType !== 'Övrigt' && measurementTypesData[selectedType]) {
+                const recommendedUnit = measurementTypesData[selectedType];
+                
+                // Hitta motsvarande radio button
+                const matchingRadio = document.querySelector(`input[name="unit_option"][value="${recommendedUnit}"]`);
+                
+                if (matchingRadio) {
+                    // Välj motsvarande radio button
+                    matchingRadio.checked = true;
+                    matchingRadio.dispatchEvent(new Event('change'));
+                } else {
+                    // Om enheten inte finns bland radio buttons, välj "Övrig" och fyll i enheten
+                    const ovrigRadio = document.querySelector('input[name="unit_option"][value="ovrig"]');
+                    if (ovrigRadio) {
+                        ovrigRadio.checked = true;
+                        ovrigRadio.dispatchEvent(new Event('change'));
+                        customUnitInput.value = recommendedUnit;
+                    }
+                }
+            }
+        });
+    }
+    
+    // === MÅTT BORTTAGNING ===
+    
+    // Global funktion för att ta bort mått (anropad från onclick)
+    window.deleteMeasurement = function(measurementId) {
+        // Visa bekräftelsemodal
+        const modal = new bootstrap.Modal(document.getElementById('deleteMeasurementModal'));
+        const confirmBtn = document.getElementById('confirmDeleteMeasurementBtn');
+        
+        // Sätt upp bekräftelseknappen
+        confirmBtn.onclick = function() {
+            confirmDeleteMeasurement(measurementId);
+        };
+        
+        modal.show();
+    };
+    
+    // Bekräfta borttagning av mått
+    function confirmDeleteMeasurement(measurementId) {
+        const confirmBtn = document.getElementById('confirmDeleteMeasurementBtn');
+        const originalText = confirmBtn.innerHTML;
+        
+        // Visa laddning
+        confirmBtn.disabled = true;
+        confirmBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Tar bort...';
+        
+        fetch(`/yxor/${window.axeId}/matt/${measurementId}/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+            },
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Ta bort måttkortet från DOM
+                const measurementCard = document.querySelector(`[data-measurement-id="${measurementId}"]`);
+                if (measurementCard) {
+                    // Hitta hela kolumnen som innehåller kortet
+                    const column = measurementCard.closest('.col-md-6, .col-lg-4, .mb-3');
+                    if (column) {
+                        column.remove();
+                    } else {
+                        measurementCard.remove();
+                    }
+                }
+                
+                // Uppdatera måttantal
+                updateMeasurementCount();
+                
+                // Stäng modal
+                const modal = bootstrap.Modal.getInstance(document.getElementById('deleteMeasurementModal'));
+                modal.hide();
+                
+                // Visa framgångsmeddelande
+                showReceivingNotification('Mått borttaget!', 'success');
+            } else {
+                showReceivingNotification('Fel vid borttagning av mått: ' + (data.error || 'Okänt fel'), 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Fel:', error);
+            showReceivingNotification('Fel vid borttagning av mått', 'error');
+        })
+        .finally(() => {
+            // Återställ knapp
+            confirmBtn.disabled = false;
+            confirmBtn.innerHTML = originalText;
+        });
+    }
+    
+    // Uppdatera antalet mått
+    function updateMeasurementCount() {
+        const measurementCards = document.querySelectorAll('.measurement-card[data-measurement-id]');
+        const count = measurementCards.length;
+        
+        // Uppdatera räknaren
+        const countElements = document.querySelectorAll('.measurement-count');
+        countElements.forEach(element => {
+            element.textContent = count;
+        });
+        
+        // Kontrollera om vi ska visa tomma staten
+        const emptyState = document.querySelector('.measurement-empty-state');
+        const measurementList = document.getElementById('measurementsList');
+        
+        if (count === 0) {
+            // Visa tomma staten
+            if (emptyState) {
+                emptyState.style.display = 'block';
+            }
+            if (measurementList) {
+                measurementList.style.display = 'none';
+            }
+        } else {
+            // Dölj tomma staten
+            if (emptyState) {
+                emptyState.style.display = 'none';
+            }
+            if (measurementList) {
+                measurementList.style.display = 'block';
+            }
+        }
+    }
+    
+    // Förbättra showReceivingNotification funktionen
+    function showReceivingNotification(message, type) {
+        const notification = document.getElementById('notification');
+        const notificationMessage = document.getElementById('notification-message');
+        
+        if (notification && notificationMessage) {
+            // Rensa tidigare klasser
+            notification.className = 'alert';
+            
+            // Sätt rätt klass baserat på typ
+            if (type === 'success') {
+                notification.classList.add('alert-success');
+            } else if (type === 'error') {
+                notification.classList.add('alert-danger');
+            } else {
+                notification.classList.add('alert-info');
+            }
+            
+            // Sätt meddelandet och visa
+            notificationMessage.textContent = message;
+            notification.style.display = 'block';
+            
+            // Dölj efter 5 sekunder
+            setTimeout(() => {
+                notification.style.display = 'none';
+            }, 5000);
+        } else {
+            // Fallback till console
+            console.log(`[${type.toUpperCase()}] ${message}`);
+        }
+    }
+    
 });
 </script>
 {% endblock %} 
