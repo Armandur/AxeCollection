@@ -214,7 +214,7 @@
                         {% for manufacturer in available_parents %}
                         <option value="{{ manufacturer.id }}" {% if parent == manufacturer.id %}selected{% endif %}>
                             {% if manufacturer.parent %}
-                                {% for i in manufacturer.hierarchy_level|add:"-1"|times %}&nbsp;&nbsp;&nbsp;&nbsp;{% endfor %}└─ {{ manufacturer.name }}
+                                {{ manufacturer|hierarchy_prefix:manufacturers }}{{ manufacturer.name }}
                             {% else %}
                                 {{ manufacturer.name }}
                             {% endif %}

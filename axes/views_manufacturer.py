@@ -132,25 +132,29 @@ def manufacturer_create(request):
         
         if not name:
             messages.error(request, 'Tillverkarnamn är obligatoriskt')
+            available_parents = get_available_parents()
             return render(request, 'axes/manufacturer_form.html', {
                 'name': name,
                 'information': information,
                 'parent': parent_id,
                 'manufacturer_type': manufacturer_type,
-                'available_parents': get_available_parents()
+                'available_parents': available_parents,
+                'manufacturers': available_parents  # Lägg till för hierarchy_prefix filtren
             })
         
         # Kontrollera om tillverkaren redan finns
         existing_manufacturer = Manufacturer.objects.filter(name__iexact=name).first()
         if existing_manufacturer:
             messages.error(request, f'Tillverkaren "{name}" finns redan')
+            available_parents = get_available_parents()
             return render(request, 'axes/manufacturer_form.html', {
                 'name': name,
                 'information': information,
                 'parent': parent_id,
                 'manufacturer_type': manufacturer_type,
                 'existing_manufacturer': existing_manufacturer,
-                'available_parents': get_available_parents()
+                'available_parents': available_parents,
+                'manufacturers': available_parents  # Lägg till för hierarchy_prefix filtren
             })
         
         # Hämta parent om vald
@@ -160,12 +164,14 @@ def manufacturer_create(request):
                 parent = Manufacturer.objects.get(id=parent_id)
             except Manufacturer.DoesNotExist:
                 messages.error(request, 'Vald överordnad tillverkare finns inte')
+                available_parents = get_available_parents()
                 return render(request, 'axes/manufacturer_form.html', {
                     'name': name,
                     'information': information,
                     'parent': parent_id,
                     'manufacturer_type': manufacturer_type,
-                    'available_parents': get_available_parents()
+                    'available_parents': available_parents,
+                    'manufacturers': available_parents  # Lägg till för hierarchy_prefix filtren
                 })
         
         # Behåll användarens val av manufacturer_type, oavsett om det är en undertillverkare eller inte
@@ -192,9 +198,11 @@ def manufacturer_create(request):
         except ValueError:
             parent_int = None
     
+    available_parents = get_available_parents()
     return render(request, 'axes/manufacturer_form.html', {
         'parent': parent_int,
-        'available_parents': get_available_parents()
+        'available_parents': available_parents,
+        'manufacturers': available_parents  # Lägg till för hierarchy_prefix filtren
     })
 
 @login_required
@@ -210,13 +218,15 @@ def manufacturer_edit(request, pk):
         
         if not name:
             messages.error(request, 'Tillverkarnamn är obligatoriskt')
+            available_parents = get_available_parents(manufacturer)
             return render(request, 'axes/manufacturer_form.html', {
                 'manufacturer': manufacturer,
                 'name': name,
                 'information': information,
                 'parent': parent_id,
                 'manufacturer_type': manufacturer_type,
-                'available_parents': get_available_parents(manufacturer),
+                'available_parents': available_parents,
+                'manufacturers': available_parents,  # Lägg till för hierarchy_prefix filtren
                 'is_edit': True
             })
         
@@ -224,6 +234,7 @@ def manufacturer_edit(request, pk):
         existing_manufacturer = Manufacturer.objects.filter(name__iexact=name).exclude(id=manufacturer.id).first()
         if existing_manufacturer:
             messages.error(request, f'Tillverkaren "{name}" finns redan')
+            available_parents = get_available_parents(manufacturer)
             return render(request, 'axes/manufacturer_form.html', {
                 'manufacturer': manufacturer,
                 'name': name,
@@ -231,7 +242,8 @@ def manufacturer_edit(request, pk):
                 'parent': parent_id,
                 'manufacturer_type': manufacturer_type,
                 'existing_manufacturer': existing_manufacturer,
-                'available_parents': get_available_parents(manufacturer),
+                'available_parents': available_parents,
+                'manufacturers': available_parents,  # Lägg till för hierarchy_prefix filtren
                 'is_edit': True
             })
         
@@ -243,13 +255,15 @@ def manufacturer_edit(request, pk):
                 # Kontrollera att parent inte är denna tillverkare själv
                 if parent.id == manufacturer.id:
                     messages.error(request, 'En tillverkare kan inte vara sin egen överordnad tillverkare')
+                    available_parents = get_available_parents(manufacturer)
                     return render(request, 'axes/manufacturer_form.html', {
                         'manufacturer': manufacturer,
                         'name': name,
                         'information': information,
                         'parent': parent_id,
                         'manufacturer_type': manufacturer_type,
-                        'available_parents': get_available_parents(manufacturer),
+                        'available_parents': available_parents,
+                        'manufacturers': available_parents,  # Lägg till för hierarchy_prefix filtren
                         'is_edit': True
                     })
                 
@@ -263,25 +277,29 @@ def manufacturer_edit(request, pk):
                 
                 if check_circular_reference(parent, manufacturer.id):
                     messages.error(request, 'En tillverkare kan inte vara överordnad tillverkare till sin egen överordnad tillverkare')
+                    available_parents = get_available_parents(manufacturer)
                     return render(request, 'axes/manufacturer_form.html', {
                         'manufacturer': manufacturer,
                         'name': name,
                         'information': information,
                         'parent': parent_id,
                         'manufacturer_type': manufacturer_type,
-                        'available_parents': get_available_parents(manufacturer),
+                        'available_parents': available_parents,
+                        'manufacturers': available_parents,  # Lägg till för hierarchy_prefix filtren
                         'is_edit': True
                     })
                     
             except Manufacturer.DoesNotExist:
                 messages.error(request, 'Vald överordnad tillverkare finns inte')
+                available_parents = get_available_parents(manufacturer)
                 return render(request, 'axes/manufacturer_form.html', {
                     'manufacturer': manufacturer,
                     'name': name,
                     'information': information,
                     'parent': parent_id,
                     'manufacturer_type': manufacturer_type,
-                    'available_parents': get_available_parents(manufacturer),
+                    'available_parents': available_parents,
+                    'manufacturers': available_parents,  # Lägg till för hierarchy_prefix filtren
                     'is_edit': True
                 })
         
@@ -297,13 +315,15 @@ def manufacturer_edit(request, pk):
         messages.success(request, f'Tillverkaren "{manufacturer.name}" har uppdaterats')
         return redirect('manufacturer_detail', pk=manufacturer.pk)
     
+    available_parents = get_available_parents(manufacturer)
     return render(request, 'axes/manufacturer_form.html', {
         'manufacturer': manufacturer,
         'name': manufacturer.name,
         'information': manufacturer.information or '',
         'parent': manufacturer.parent.id if manufacturer.parent else '',
         'manufacturer_type': manufacturer.manufacturer_type,
-        'available_parents': get_available_parents(manufacturer),
+        'available_parents': available_parents,
+        'manufacturers': available_parents,  # Lägg till för hierarchy_prefix filtren
         'is_edit': True
     })
 

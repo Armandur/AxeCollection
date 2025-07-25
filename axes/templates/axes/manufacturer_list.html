@@ -77,7 +77,7 @@
                 <td>
                     {% if manufacturer.is_sub_manufacturer %}
                         <div class="d-flex align-items-center">
-                            {% for i in manufacturer.hierarchy_level|times %}&nbsp;&nbsp;&nbsp;&nbsp;{% endfor %}<span class="text-muted me-3" style="width: 20px;">└─</span>
+                            {{ manufacturer|hierarchy_prefix:manufacturers }}<span class="text-muted me-3" style="width: 20px;">{{ manufacturer.name }}</span>
                             {% if manufacturer.manufacturer_type == 'SMED' %}
                                 <i class="fas fa-user text-primary me-2"></i>
                                 {{ manufacturer.name }}

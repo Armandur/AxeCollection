@@ -251,6 +251,30 @@ def times(value):
         return range(0)
 
 @register.filter
+def hierarchy_prefix(manufacturer, manufacturers_list):
+    if not manufacturer.parent:
+        return ""
+    path = []
+    current = manufacturer
+    while current.parent:
+        path.append(current)
+        current = current.parent
+    path.reverse()
+    prefix = ""
+    for i, node in enumerate(path):
+        siblings = [m for m in manufacturers_list if m.parent == node.parent]
+        try:
+            position = siblings.index(node)
+            is_last = position == len(siblings) - 1
+        except ValueError:
+            is_last = True
+        if i == len(path) - 1:
+            prefix += "└─&nbsp;" if is_last else "├─&nbsp;"
+        else:
+            prefix += "│&nbsp;&nbsp;&nbsp;" if not is_last else "&nbsp;&nbsp;&nbsp;&nbsp;"
+    return mark_safe(prefix)
+
+@register.filter
 def basename(value):
     """Returnerar filnamnet utan sökväg."""
     return os.path.basename(value)

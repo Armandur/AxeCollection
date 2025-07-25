@@ -391,9 +391,9 @@ class AxeForm(forms.ModelForm):
         choices = [('', 'Välj tillverkare...')]
         for m in sorted_manufacturers:
             if m.parent:
-                # Skapa indentering baserat på hierarchy_level med non-breaking spaces
-                indent = "&nbsp;&nbsp;&nbsp;&nbsp;" * m.hierarchy_level  # 4 non-breaking spaces per nivå
-                choice_label = mark_safe(f"{indent}└─ {m.name}")
+                # Skapa hierarkisk prefix med box-drawing characters
+                prefix = self._get_hierarchy_prefix(m, sorted_manufacturers)
+                choice_label = mark_safe(f"{prefix}{m.name}")
             else:
                 # Huvudtillverkare - ingen indentering
                 choice_label = m.name
@@ -411,6 +411,66 @@ class AxeForm(forms.ModelForm):
         # Om detta är en redigering av befintlig yxa, sätt rätt tillverkare som vald
         if self.instance and self.instance.pk and self.instance.manufacturer:
             self.fields['manufacturer'].initial = self.instance.manufacturer.id
+    
+    def _get_hierarchy_prefix(self, manufacturer, manufacturers_list):
+        """
+        Skapar hierarkisk prefix med box-drawing characters för tillverkare.
+        Använder olika tecken beroende på position i hierarkin.
+        """
+        if not manufacturer.parent:
+            return ""
+        
+        # Hitta alla syskon (tillverkare med samma parent)
+        siblings = [m for m in manufacturers_list if m.parent == manufacturer.parent]
+        siblings.sort(key=lambda x: x.name)  # Sortera efter namn för konsistent ordning
+        
+        # Hitta positionen av denna tillverkare bland syskonen
+        try:
+            position = siblings.index(manufacturer)
+            is_last = position == len(siblings) - 1
+        except ValueError:
+            is_last = True
+        
+        # Skapa prefix baserat på hierarkinivå
+        prefix = ""
+        
+        # För första nivån (hierarchy_level == 1)
+        if manufacturer.hierarchy_level == 1:
+            if is_last:
+                prefix = "└─ "
+            else:
+                prefix = "├─ "
+        
+        # För andra nivån och högre
+        elif manufacturer.hierarchy_level > 1:
+            # Lägg till vertikala linjer för alla nivåer ovanför
+            for level in range(1, manufacturer.hierarchy_level):
+                # Kontrollera om det finns syskon på denna nivå som inte är sista
+                parent_at_level = manufacturer
+                for _ in range(manufacturer.hierarchy_level - level):
+                    parent_at_level = parent_at_level.parent
+                
+                siblings_at_level = [m for m in manufacturers_list if m.parent == parent_at_level.parent and m.hierarchy_level == level]
+                siblings_at_level.sort(key=lambda x: x.name)
+                
+                try:
+                    pos_at_level = siblings_at_level.index(parent_at_level)
+                    is_last_at_level = pos_at_level == len(siblings_at_level) - 1
+                except ValueError:
+                    is_last_at_level = True
+                
+                if is_last_at_level:
+                    prefix = "   " + prefix  # Inget vertikalt streck
+                else:
+                    prefix = "│  " + prefix  # Vertikalt streck
+            
+            # Lägg till den sista delen
+            if is_last:
+                prefix += "└─ "
+            else:
+                prefix += "├─ "
+        
+        return prefix
     
     def clean_manufacturer(self):
         """Konvertera manufacturer ID till Manufacturer-objekt"""
