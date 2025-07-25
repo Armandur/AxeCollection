@@ -167,23 +167,98 @@ class Command(BaseCommand):
                     )
 
     def create_manufacturers(self, count):
-        """Skapa tillverkare"""
-        manufacturer_names = [
-            'Billnäs bruk', 'Mariefors Bruk', 'Säters yxfabrik', 'Gränsfors bruk',
-            'Hults bruk', 'Jäders bruk', 'S. A. Wetterlings yxfabrik',
-            'Svenska Yxfabriken AB, Kristinehamn', 'August Hedvall', 'Johan Jonsson',
-            'Johan Skog', 'Willy Persson', 'Allan Nordlöw', 'Per Nordlöw',
-            'Edsbyn Industri Aktiebolag'
+        """Skapa tillverkare med hierarkisk struktur"""
+        # Definiera hierarkiska tillverkare
+        hierarchical_manufacturers = {
+            # Huvudtillverkare (fabriker/bruk)
+            'Hjärtumssmedjan': {
+                'type': 'TILLVERKARE',
+                'info': 'Traditionell smedja i Hjärtum, grundad 1850. Känd för handgjorda kvalitetsyxor.',
+                'sub_manufacturers': [
+                    {
+                        'name': 'Johan Jonsson',
+                        'type': 'SMED',
+                        'info': 'Mästersmed vid Hjärtumssmedjan. Specialiserar sig på slöjdyxor och huggyxor.'
+                    },
+                    {
+                        'name': 'Johan Skog',
+                        'type': 'SMED',
+                        'info': 'Erfaren smed vid Hjärtumssmedjan. Känd för sina fällyxor och timmerbilor.'
+                    },
+                    {
+                        'name': 'Willy Persson',
+                        'type': 'SMED',
+                        'info': 'Ung smed vid Hjärtumssmedjan. Specialiserar sig på handyxor och tapphålsyxor.'
+                    }
+                ]
+            },
+            'Billnäs bruk': {
+                'type': 'TILLVERKARE',
+                'info': 'Historiskt bruk grundat 1641. En av Sveriges äldsta yxtillverkare.',
+                'sub_manufacturers': []
+            },
+            'Gränsfors bruk': {
+                'type': 'TILLVERKARE',
+                'info': 'Modernt bruk grundat 1902. Känd för handgjorda kvalitetsyxor.',
+                'sub_manufacturers': []
+            },
+            'Hults bruk': {
+                'type': 'TILLVERKARE',
+                'info': 'Bruk grundat 1697. Traditionell tillverkning av handyxor.',
+                'sub_manufacturers': []
+            },
+            'S. A. Wetterlings yxfabrik': {
+                'type': 'TILLVERKARE',
+                'info': 'Yxfabrik grundad 1880. Känd för robusta huggyxor.',
+                'sub_manufacturers': []
+            }
+        }
+        
+        # Lägg till fler huvudtillverkare om count är större
+        additional_manufacturers = [
+            'Mariefors Bruk', 'Säters yxfabrik', 'Jäders bruk',
+            'Svenska Yxfabriken AB, Kristinehamn', 'Edsbyn Industri Aktiebolag'
         ]
         
         manufacturers = []
-        for i in range(min(count, len(manufacturer_names))):
-            name = manufacturer_names[i]
+        
+        # Skapa hierarkiska tillverkare först
+        for main_name, data in hierarchical_manufacturers.items():
+            if len(manufacturers) >= count:
+                break
+                
+            # Skapa huvudtillverkare
+            main_manufacturer = Manufacturer.objects.create(
+                name=main_name,
+                information=data['info'],
+                manufacturer_type=data['type']
+            )
+            manufacturers.append(main_manufacturer)
+            
+            # Skapa undertillverkare
+            for sub_data in data['sub_manufacturers']:
+                if len(manufacturers) >= count:
+                    break
+                    
+                sub_manufacturer = Manufacturer.objects.create(
+                    name=sub_data['name'],
+                    information=sub_data['info'],
+                    manufacturer_type=sub_data['type'],
+                    parent=main_manufacturer
+                )
+                manufacturers.append(sub_manufacturer)
+        
+        # Lägg till ytterligare huvudtillverkare om det behövs
+        for name in additional_manufacturers:
+            if len(manufacturers) >= count:
+                break
+                
             info = f"Svensk tillverkare av kvalitetsyxor. Grundad {random.randint(1800, 1950)}. Specialiserar sig på {random.choice(['handgjorda', 'industriella', 'traditionella', 'slöjdyxor', 'huggyxor'])} yxor."
             
             manufacturer = Manufacturer.objects.create(
                 name=name,
-                information=info
+                information=info,
+                manufacturer_type='TILLVERKARE'
             )
             manufacturers.append(manufacturer)
         
