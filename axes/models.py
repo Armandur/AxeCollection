@@ -123,33 +123,77 @@ class Manufacturer(models.Model):
         return self.axes.count()
 
     @property
+    def axe_count_including_sub_manufacturers(self):
+        """Antal yxor inklusive undertillverkare"""
+        return len(self.all_axes_including_sub_manufacturers)
+
+    @property
     def transactions(self):
         from axes.models import Transaction
         return Transaction.objects.filter(axe__manufacturer=self)
+
+    @property
+    def transactions_including_sub_manufacturers(self):
+        """Transaktioner inklusive undertillverkare"""
+        from axes.models import Transaction
+        all_axes = self.all_axes_including_sub_manufacturers
+        axe_ids = [axe.id for axe in all_axes]
+        return Transaction.objects.filter(axe_id__in=axe_ids)
 
     @property
     def buy_count(self):
         return self.transactions.filter(type='KÖP').count()
 
     @property
+    def buy_count_including_sub_manufacturers(self):
+        """Antal köp inklusive undertillverkare"""
+        return self.transactions_including_sub_manufacturers.filter(type='KÖP').count()
+
+    @property
     def sale_count(self):
         return self.transactions.filter(type='SÄLJ').count()
+
+    @property
+    def sale_count_including_sub_manufacturers(self):
+        """Antal försäljningar inklusive undertillverkare"""
+        return self.transactions_including_sub_manufacturers.filter(type='SÄLJ').count()
 
     @property
     def total_buy_value(self):
         return self.transactions.filter(type='KÖP').aggregate(total=Sum('price'))['total'] or 0
 
     @property
+    def total_buy_value_including_sub_manufacturers(self):
+        """Total köpvärde inklusive undertillverkare"""
+        return self.transactions_including_sub_manufacturers.filter(type='KÖP').aggregate(total=Sum('price'))['total'] or 0
+
+    @property
     def total_sale_value(self):
         return self.transactions.filter(type='SÄLJ').aggregate(total=Sum('price'))['total'] or 0
+
+    @property
+    def total_sale_value_including_sub_manufacturers(self):
+        """Total försäljningsvärde inklusive undertillverkare"""
+        return self.transactions_including_sub_manufacturers.filter(type='SÄLJ').aggregate(total=Sum('price'))['total'] or 0
 
     @property
     def net_value(self):
         return self.total_sale_value - self.total_buy_value
 
     @property
+    def net_value_including_sub_manufacturers(self):
+        """Netto-värde inklusive undertillverkare"""
+        return self.total_sale_value_including_sub_manufacturers - self.total_buy_value_including_sub_manufacturers
+
+    @property
     def average_profit_per_axe(self):
         return self.net_value / self.axe_count if self.axe_count > 0 else 0
+
+    @property
+    def average_profit_per_axe_including_sub_manufacturers(self):
+        """Genomsnittlig vinst per yxa inklusive undertillverkare"""
+        total_axes = self.axe_count_including_sub_manufacturers
+        return self.net_value_including_sub_manufacturers / total_axes if total_axes > 0 else 0
 
 class Axe(models.Model):
     STATUS_CHOICES = [

@@ -509,26 +509,54 @@
                 <h5 class="card-title mb-0">Ekonomisk översikt</h5>
             </div>
             <div class="card-body">
-                <div class="row text-center">
+                <!-- Direkt kopplade yxor -->
+                <h6 class="text-muted mb-3">Direkt kopplade yxor ({{ total_axes }} st)</h6>
+                <div class="row text-center mb-4">
                     <div class="col-md-3">
-                        <h6 class="text-muted">Total köpvärde</h6>
-                        <h4 class="text-danger">{{ total_buy_value|format_currency }}</h4>
+                        <h6 class="text-muted">Köpvärde</h6>
+                        <h5 class="text-danger">{{ total_buy_value|format_currency }}</h5>
                     </div>
                     <div class="col-md-3">
-                        <h6 class="text-muted">Total försäljningsvärde</h6>
-                        <h4 class="text-success">{{ total_sale_value|format_currency }}</h4>
+                        <h6 class="text-muted">Försäljningsvärde</h6>
+                        <h5 class="text-success">{{ total_sale_value|format_currency }}</h5>
                     </div>
                     <div class="col-md-3">
                         <h6 class="text-muted">Vinst/förlust</h6>
-                        <h4 class="{% if total_profit >= 0 %}profit-positive{% else %}profit-negative{% endif %}">
+                        <h5 class="{% if total_profit >= 0 %}profit-positive{% else %}profit-negative{% endif %}">
                             {{ total_profit|format_currency }}
+                        </h5>
+                    </div>
+                    <div class="col-md-3">
+                        <h6 class="text-muted">Genomsnitt per yxa</h6>
+                        <h5>{% if total_axes > 0 %}{{ average_profit_per_axe|floatformat:0 }}{% else %}0{% endif %} kr</h5>
+                    </div>
+                </div>
+                
+                {% if manufacturer.all_sub_manufacturers %}
+                <!-- Total inklusive undertillverkare -->
+                <hr>
+                <h6 class="text-muted mb-3">Total inklusive undertillverkare ({{ total_axes_including_sub }} st)</h6>
+                <div class="row text-center">
+                    <div class="col-md-3">
+                        <h6 class="text-muted">Total köpvärde</h6>
+                        <h4 class="text-danger">{{ total_buy_value_including_sub|format_currency }}</h4>
+                    </div>
+                    <div class="col-md-3">
+                        <h6 class="text-muted">Total försäljningsvärde</h6>
+                        <h4 class="text-success">{{ total_sale_value_including_sub|format_currency }}</h4>
+                    </div>
+                    <div class="col-md-3">
+                        <h6 class="text-muted">Total vinst/förlust</h6>
+                        <h4 class="{% if total_profit_including_sub >= 0 %}profit-positive{% else %}profit-negative{% endif %}">
+                            {{ total_profit_including_sub|format_currency }}
                         </h4>
                     </div>
                     <div class="col-md-3">
                         <h6 class="text-muted">Genomsnitt per yxa</h6>
-                        <h4>{% if total_axes > 0 %}{{ average_profit_per_axe|floatformat:0 }}{% else %}0{% endif %} kr</h4>
+                        <h4>{% if total_axes_including_sub > 0 %}{{ total_profit_including_sub|div:total_axes_including_sub|format_currency }}{% else %}0 kr{% endif %}</h4>
                     </div>
                 </div>
+                {% endif %}
             </div>
         </div>
     </div>
@@ -603,6 +631,79 @@
         </div>
     </div>
 </div>
+
+{% if sub_manufacturer_axes %}
+<!-- Yxor från undertillverkare -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Yxor från undertillverkare</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Tillverkare</th>
+                                <th>Modell</th>
+                                <th>Kommentar</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for axe in sub_manufacturer_axes %}
+                            <tr>
+                                <td>{{ axe.id }}</td>
+                                <td>
+                                    <a href="{% url 'manufacturer_detail' axe.sub_manufacturer_id %}" class="text-decoration-none">
+                                        {{ axe.sub_manufacturer_name }}
+                                    </a>
+                                </td>
+                                <td>
+                                    <a href="{% url 'axe_detail' axe.id %}" class="text-decoration-none axe-image-popover-link"
+                                       {% with images=axe.images.all %}
+                                       {% if images|length > 0 %}
+                                       tabindex="0" data-bs-toggle="popover" data-bs-html="true" data-bs-trigger="hover focus" data-bs-content='
+                                        <div id="carousel-{{ axe.id }}-{{ forloop.counter }}" class="carousel slide" data-bs-ride="carousel" data-bs-interval="800" style="width:140px;">
+                                            <div class="carousel-inner">
+                                                {% for img in images %}
+                                                <div class="carousel-item {% if forloop.first %}active{% endif %}">
+                                                    <img src="{{ img.webp_url|default:img.image.url }}" class="d-block w-100 img-thumbnail" style="max-width:130px;max-height:130px;" loading="lazy">
+                                                </div>
+                                                {% endfor %}
+                                            </div>
+                                        </div>'
+                                       {% endif %}
+                                       {% endwith %}
+                                    >
+                                        {% if axe.model %}
+                                            {{ axe.model }}
+                                        {% else %}
+                                            Yxa ID: {{ axe.id }}
+                                        {% endif %}
+                                        {% with images=axe.images.all %}
+                                        {% if images|length > 0 %}
+                                            <i class="bi bi-camera-fill ms-1"></i>
+                                        {% endif %}
+                                        {% endwith %}
+                                    </a>
+                                </td>
+                                <td>{{ axe.comment|default:"" }}</td>
+                                <td>
+                                    <span class="badge {{ axe.status_class }}">{{ axe.status }}</span>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
 
 <!-- Transaktioner -->
 <div class="row mb-4">

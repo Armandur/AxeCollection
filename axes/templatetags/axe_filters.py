@@ -263,6 +263,14 @@ def country_flag(country_code):
     return COUNTRY_FLAGS.get(country_code.upper(), "")
 
 @register.filter
+def div(value, arg):
+    """Dividera value med arg"""
+    try:
+        return float(value) / float(arg)
+    except (ValueError, TypeError, ZeroDivisionError):
+        return 0
+
+@register.filter
 def country_name(country_code):
     """Returnera landsnamn för landskod"""
     if not country_code:

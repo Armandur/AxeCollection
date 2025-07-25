@@ -97,18 +97,18 @@
                     {% endif %}
                 </td>
                 <td>{{ manufacturer.information|strip_markdown_and_truncate:150 }}</td>
-                <td data-order="{{ manufacturer.axe_count }}">{{ manufacturer.axe_count }}</td>
+                <td data-order="{{ manufacturer.axe_count_including_sub_manufacturers }}">{{ manufacturer.axe_count_including_sub_manufacturers }}</td>
                 <td>
-                    <span class="text-danger">{{ manufacturer.buy_count }}</span> / <span class="text-success">{{ manufacturer.sale_count }}</span>
+                    <span class="text-danger">{{ manufacturer.buy_count_including_sub_manufacturers }}</span> / <span class="text-success">{{ manufacturer.sale_count_including_sub_manufacturers }}</span>
                 </td>
                 {% if user.is_authenticated or public_settings.show_prices %}
                 <td>
-                    <span class="text-danger">{{ manufacturer.total_buy_value|format_currency }}</span>
+                    <span class="text-danger">{{ manufacturer.total_buy_value_including_sub_manufacturers|format_currency }}</span>
                     <br>
-                    <span class="text-success">{{ manufacturer.total_sale_value|format_currency }}</span>
+                    <span class="text-success">{{ manufacturer.total_sale_value_including_sub_manufacturers|format_currency }}</span>
                     <br>
-                    <span class="{% if manufacturer.net_value >= 0 %}profit-positive{% else %}profit-negative{% endif %} fw-bold">
-                        {{ manufacturer.net_value|format_currency }}
+                    <span class="{% if manufacturer.net_value_including_sub_manufacturers >= 0 %}profit-positive{% else %}profit-negative{% endif %} fw-bold">
+                        {{ manufacturer.net_value_including_sub_manufacturers|format_currency }}
                     </span>
                 </td>
                 {% endif %}

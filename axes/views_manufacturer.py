@@ -274,7 +274,40 @@ def manufacturer_detail(request, pk):
     axes = Axe.objects.filter(manufacturer=manufacturer).order_by('-id')
     images = ManufacturerImage.objects.filter(manufacturer=manufacturer).order_by('image_type', 'order')
     links = ManufacturerLink.objects.filter(manufacturer=manufacturer).order_by('link_type', 'order')
-    # Statistik
+    
+    # Hämta yxor från undertillverkare
+    sub_manufacturer_axes = []
+    for sub_manufacturer in manufacturer.all_sub_manufacturers:
+        sub_axes = Axe.objects.filter(manufacturer=sub_manufacturer).order_by('-id')
+        for axe in sub_axes:
+            axe.sub_manufacturer_name = sub_manufacturer.name
+            axe.sub_manufacturer_id = sub_manufacturer.id
+            # Beräkna status_class för undertillverkare också
+            if axe.status == 'MOTTAGEN':
+                axe.status_class = 'bg-success'
+            elif axe.status == 'KÖPT':
+                axe.status_class = 'bg-warning'
+            elif axe.status == 'SÅLD':
+                axe.status_class = 'bg-secondary'
+            else:
+                # Om statusfältet är tomt eller okänt, bestäm utifrån senaste transaktion
+                last_transaction = Transaction.objects.filter(axe=axe).order_by('-transaction_date').first()
+                if last_transaction:
+                    if last_transaction.type == 'SÄLJ':
+                        axe.status = 'SÅLD'
+                        axe.status_class = 'bg-secondary'
+                    elif last_transaction.type == 'KÖP':
+                        axe.status = 'KÖPT'
+                        axe.status_class = 'bg-warning'
+                    else:
+                        axe.status = 'OKÄND'
+                        axe.status_class = 'bg-light'
+                else:
+                    axe.status = 'OKÄND'
+                    axe.status_class = 'bg-light'
+        sub_manufacturer_axes.extend(sub_axes)
+    
+    # Statistik för direkt kopplade yxor
     total_axes = axes.count()
     transactions = Transaction.objects.filter(axe__manufacturer=manufacturer)
     total_transactions = transactions.count()
@@ -287,6 +320,14 @@ def manufacturer_detail(request, pk):
     # Köp/sälj-antal
     buy_count = buy_transactions.count()
     sale_count = sale_transactions.count()
+    
+    # Statistik inklusive undertillverkare
+    total_axes_including_sub = manufacturer.axe_count_including_sub_manufacturers
+    total_buy_value_including_sub = manufacturer.total_buy_value_including_sub_manufacturers
+    total_sale_value_including_sub = manufacturer.total_sale_value_including_sub_manufacturers
+    total_profit_including_sub = manufacturer.net_value_including_sub_manufacturers
+    buy_count_including_sub = manufacturer.buy_count_including_sub_manufacturers
+    sale_count_including_sub = manufacturer.sale_count_including_sub_manufacturers
     # Status för varje yxa
     for axe in axes:
         # Prioritera statusfältet
@@ -357,6 +398,7 @@ def manufacturer_detail(request, pk):
     context = {
         'manufacturer': manufacturer,
         'axes': axes,
+        'sub_manufacturer_axes': sub_manufacturer_axes,
         'images': images,
         'links': links,
         'images_by_type': images_by_type,
@@ -371,6 +413,12 @@ def manufacturer_detail(request, pk):
         'average_profit_per_axe': average_profit_per_axe,
         'buy_count': buy_count,
         'sale_count': sale_count,
+        'total_axes_including_sub': total_axes_including_sub,
+        'total_buy_value_including_sub': total_buy_value_including_sub,
+        'total_sale_value_including_sub': total_sale_value_including_sub,
+        'total_profit_including_sub': total_profit_including_sub,
+        'buy_count_including_sub': buy_count_including_sub,
+        'sale_count_including_sub': sale_count_including_sub,
         'breadcrumbs': breadcrumbs,
         'sub_tillverkare': sub_tillverkare,
         'sub_smeder': sub_smeder,
