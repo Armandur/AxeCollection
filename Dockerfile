@@ -68,6 +68,11 @@ RUN chmod -R 755 /var/log/nginx /var/cache/nginx /var/run
 RUN chown -R root:root /var/log/supervisor
 RUN chmod -R 755 /var/log/supervisor
 
+# Fix nginx body directory permissions for uploads
+RUN mkdir -p /var/lib/nginx/body
+RUN chown -R www-data:www-data /var/lib/nginx/body
+RUN chmod -R 700 /var/lib/nginx/body
+
 # Fix app directory permissions for nobody user
 RUN chown -R nobody:users /app/logs
 RUN chmod -R 755 /app/logs
