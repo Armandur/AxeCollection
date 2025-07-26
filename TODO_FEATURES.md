@@ -145,11 +145,11 @@ En checklista för vidareutveckling av AxeCollection. Bocka av med [x] när klar
     - [x] 41.11 Omorganisation av deployment-filer till deploy/-mapp
     - [x] 41.12 Uppdaterad dokumentation för ny struktur
     - [x] 41.13 Tydlig separation mellan utveckling och deployment
-42. [ ] Fixa omorganisering av yxbilder i produktion
-    - [ ] 42.1 Omorganisering av yxbilder fungerar inte på Unraid-produktionsservern
-    - [ ] 42.2 Undersök skillnader mellan utvecklings- och produktionsmiljö
-    - [ ] 42.3 Kontrollera filbehörigheter och sökvägar i produktion
-    - [ ] 42.4 Testa drag & drop-funktionalitet i produktionsmiljö
+42. [x] Fixa omorganisering av yxbilder i produktion
+    - [x] 42.1 Omorganisering av yxbilder fungerar inte på Unraid-produktionsservern
+    - [x] 42.2 Undersök skillnader mellan utvecklings- och produktionsmiljö
+    - [x] 42.3 Kontrollera filbehörigheter och sökvägar i produktion
+    - [x] 42.4 Testa drag & drop-funktionalitet i produktionsmiljö
 43. [x] Åtgärda nginx-behörigheter i Docker-setup för att förhindra uppladdningsfel. Nginx får 'Permission denied' när den försöker skapa filer i /var/lib/nginx/body/ för uppladdningar. Katalogen ägs av 'nobody:users' men nginx körs som 'www-data'
     - [x] 43.1 Lägg till chown-kommando i Dockerfile eller startup-script för att sätta rätt ägare på /var/lib/nginx/body/ innan nginx startas
     - [x] 43.2 Säkerställ att katalogen alltid ägs av rätt användare (www-data) i Docker-setup för att förhindra framtida behörighetsproblem
@@ -469,3 +469,4 @@ En checklista för vidareutveckling av AxeCollection. Bocka av med [x] när klar
 102. [ ] Automatisk bildrotation baserat på EXIF-data.
 103. [ ] Bulk-redigering av bilder (redigera flera bilder samtidigt).
 104. [ ] Bildkommentarer med @-mentions för att länka till tillverkare eller yxor.
+105. [ ] **📋 Detaljerad dokumentation:** Se [STAMP_REGISTER_FEATURE.md](STAMP_REGISTER_FEATURE.md) för fullständig beskrivning av funktionen, datamodeller, API-endpoints och implementation.

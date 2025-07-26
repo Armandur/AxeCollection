@@ -160,6 +160,21 @@ python todo_manager.py new-section "Ny sektion"
 
 Se `todo-manager/README.md` för fullständig dokumentation och `todo-manager/TODO_MANAGER_TESTING_README.md` för testinstruktioner.
 
+## Dokumentation
+
+### Funktioner och planering
+- **[TODO_FEATURES.md](TODO_FEATURES.md)** - Komplett lista över funktioner och förbättringsförslag
+- **[STAMP_REGISTER_FEATURE.md](STAMP_REGISTER_FEATURE.md)** - Detaljerad dokumentation för stämpelregister-funktionen
+
+### Deployment och konfiguration
+- **[DEPLOYMENT_INTEGRATED.md](DEPLOYMENT_INTEGRATED.md)** - Steg-för-steg deployment-guide
+- **[HOST_CONFIGURATION.md](HOST_CONFIGURATION.md)** - Konfiguration av externa hosts
+- **[MEDIA_FILES_PRODUCTION.md](MEDIA_FILES_PRODUCTION.md)** - Media-filhantering i produktion
+
+### Utveckling och testning
+- **[PROJECT_STRUCTURE.md](PROJECT_STRUCTURE.md)** - Projektstruktur och arkitektur
+- **[WORKFLOW_AND_COLLAB.md](WORKFLOW_AND_COLLAB.md)** - Utvecklingsarbetsflöde och samarbete
+
 ## Utveckling
 
 - Kör tester: `python manage.py test`
