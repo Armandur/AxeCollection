@@ -271,6 +271,7 @@ class AxeImage(models.Model):
     image = models.ImageField(upload_to='axe_images/') # Django hanterar filuppladdning
     description = models.CharField(max_length=255, blank=True, null=True)
     order = models.PositiveIntegerField(default=0) # Ordning för bilderna (a=1, b=2, c=3, etc.)
+    cache_busting_timestamp = models.DateTimeField(auto_now=True) # För att nollställa cachning när bildordning ändras
     
     class Meta:
         ordering = ['order']
@@ -281,7 +282,19 @@ class AxeImage(models.Model):
             webp_path = os.path.splitext(self.image.path)[0] + '.webp'
             if os.path.exists(webp_path):
                 rel_path = os.path.relpath(webp_path, settings.MEDIA_ROOT)
-                return settings.MEDIA_URL + rel_path.replace('\\', '/')
+                base_url = settings.MEDIA_URL + rel_path.replace('\\', '/')
+                # Lägg till cache-busting parameter
+                timestamp = int(self.cache_busting_timestamp.timestamp())
+                return f"{base_url}?v={timestamp}"
+        return None
+
+    @property
+    def image_url_with_cache_busting(self):
+        """Returnerar bildens URL med cache-busting parameter"""
+        if self.image and self.image.name:
+            base_url = self.image.url
+            timestamp = int(self.cache_busting_timestamp.timestamp())
+            return f"{base_url}?v={timestamp}"
         return None
 
     def save(self, *args, **kwargs):
@@ -326,6 +339,7 @@ class ManufacturerImage(models.Model):
     caption = models.CharField(max_length=255, blank=True, null=True) # Bildtext
     description = models.TextField(blank=True, null=True) # Mer detaljerad beskrivning
     order = models.PositiveIntegerField(default=0, help_text="Sorteringsordning inom samma typ")
+    cache_busting_timestamp = models.DateTimeField(auto_now=True) # För att nollställa cachning när bildordning ändras
     
     class Meta:
         ordering = ['image_type', 'order']
@@ -338,7 +352,19 @@ class ManufacturerImage(models.Model):
             webp_path = os.path.splitext(self.image.path)[0] + '.webp'
             if os.path.exists(webp_path):
                 rel_path = os.path.relpath(webp_path, settings.MEDIA_ROOT)
-                return settings.MEDIA_URL + rel_path.replace('\\', '/')
+                base_url = settings.MEDIA_URL + rel_path.replace('\\', '/')
+                # Lägg till cache-busting parameter
+                timestamp = int(self.cache_busting_timestamp.timestamp())
+                return f"{base_url}?v={timestamp}"
+        return None
+
+    @property
+    def image_url_with_cache_busting(self):
+        """Returnerar bildens URL med cache-busting parameter"""
+        if self.image and self.image.name:
+            base_url = self.image.url
+            timestamp = int(self.cache_busting_timestamp.timestamp())
+            return f"{base_url}?v={timestamp}"
         return None
 
     def save(self, *args, **kwargs):

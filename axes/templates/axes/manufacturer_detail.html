@@ -375,13 +375,13 @@
                                             {% if image.webp_url %}
                                                 <source srcset="{{ image.webp_url }}" type="image/webp">
                                             {% endif %}
-                                            <img src="{{ image.image.url }}" 
+                                            <img src="{{ image.image_url_with_cache_busting }}" 
                                                  class="card-img-top manufacturer-image" 
                                                  alt="{{ image.caption|default:'Bild' }}" 
                                                  style="max-height: 200px; object-fit: contain;" 
                                                  loading="lazy"
                                                  data-image-id="{{ image.id }}"
-                                                 data-image-url="{{ image.image.url }}"
+                                                 data-image-url="{{ image.image_url_with_cache_busting }}"
                                                  data-webp-url="{{ image.webp_url|default:'' }}"
                                                  data-caption="{{ image.caption|default:'' }}"
                                                  data-description="{{ image.description|default:'' }}"
@@ -605,7 +605,7 @@
                                                 <div class="carousel-inner">
                                                     {% for img in images %}
                                                     <div class="carousel-item {% if forloop.first %}active{% endif %}">
-                                                        <img src="{{ img.webp_url|default:img.image.url }}" class="d-block w-100 img-thumbnail" style="max-width:130px;max-height:130px;" loading="lazy">
+                                                        <img src="{{ img.webp_url|default:img.image_url_with_cache_busting }}" class="d-block w-100 img-thumbnail" style="max-width:130px;max-height:130px;" loading="lazy">
                                                     </div>
                                                     {% endfor %}
                                                 </div>
@@ -680,7 +680,7 @@
                                             <div class="carousel-inner">
                                                 {% for img in images %}
                                                 <div class="carousel-item {% if forloop.first %}active{% endif %}">
-                                                    <img src="{{ img.webp_url|default:img.image.url }}" class="d-block w-100 img-thumbnail" style="max-width:130px;max-height:130px;" loading="lazy">
+                                                    <img src="{{ img.webp_url|default:img.image_url_with_cache_busting }}" class="d-block w-100 img-thumbnail" style="max-width:130px;max-height:130px;" loading="lazy">
                                                 </div>
                                                 {% endfor %}
                                             </div>
@@ -763,7 +763,7 @@
                                                 <div class="carousel-inner">
                                                     {% for img in images %}
                                                     <div class="carousel-item {% if forloop.first %}active{% endif %}">
-                                                        <img src="{{ img.webp_url|default:img.image.url }}" class="d-block w-100 img-thumbnail" style="max-width:130px;max-height:130px;" loading="lazy">
+                                                        <img src="{{ img.webp_url|default:img.image_url_with_cache_busting }}" class="d-block w-100 img-thumbnail" style="max-width:130px;max-height:130px;" loading="lazy">
                                                     </div>
                                                     {% endfor %}
                                                 </div>

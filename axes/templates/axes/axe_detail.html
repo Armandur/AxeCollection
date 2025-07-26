@@ -208,8 +208,13 @@
                             <div class="carousel-inner">
                                 {% for image in axe.images.all %}
                                     <div class="carousel-item {% if forloop.first %}active{% endif %}">
-                                        <a href="{{ image.image.url }}" data-pswp-width="{{ image.image.width }}" data-pswp-height="{{ image.image.height }}">
-                                            <img src="{{ image.image.url }}" class="d-block w-100" alt="Yxa {{ forloop.counter }}" loading="lazy">
+                                        <a href="{{ image.image_url_with_cache_busting }}" data-pswp-width="{{ image.image.width }}" data-pswp-height="{{ image.image.height }}">
+                                            <picture>
+                                                {% if image.webp_url %}
+                                                    <source srcset="{{ image.webp_url }}" type="image/webp">
+                                                {% endif %}
+                                                <img src="{{ image.image_url_with_cache_busting }}" class="d-block w-100" alt="Yxa {{ forloop.counter }}" loading="lazy">
+                                            </picture>
                                         </a>
                                     </div>
                                 {% endfor %}

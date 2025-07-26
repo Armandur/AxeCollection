@@ -224,12 +224,12 @@
                     <div class="carousel-inner">
                         {% for image in current_axe.images.all %}
                         <div class="carousel-item {% if forloop.first %}active{% endif %}">
-                            <a href="{{ image.image.url }}" data-pswp-width="{{ image.image.width }}" data-pswp-height="{{ image.image.height }}">
+                            <a href="{{ image.image_url_with_cache_busting }}" data-pswp-width="{{ image.image.width }}" data-pswp-height="{{ image.image.height }}">
                                 <picture>
                                     {% if image.webp_url %}
                                         <source srcset="{{ image.webp_url }}" type="image/webp">
                                     {% endif %}
-                                    <img src="{{ image.image.url }}" class="d-block w-100 gallery-lightbox-img" alt="Yxa {{ current_axe.name }}" loading="lazy">
+                                    <img src="{{ image.image_url_with_cache_busting }}" class="d-block w-100 gallery-lightbox-img" alt="Yxa {{ current_axe.name }}" loading="lazy">
                                 </picture>
                             </a>
                         </div>
@@ -257,12 +257,12 @@
                     <div class="swiper-wrapper">
                         {% for image in current_axe.images.all %}
                         <div class="swiper-slide">
-                            <a href="{{ image.image.url }}" data-pswp-width="{{ image.image.width }}" data-pswp-height="{{ image.image.height }}">
+                            <a href="{{ image.image_url_with_cache_busting }}" data-pswp-width="{{ image.image.width }}" data-pswp-height="{{ image.image.height }}">
                                 <picture>
                                     {% if image.webp_url %}
                                         <source srcset="{{ image.webp_url }}" type="image/webp">
                                     {% endif %}
-                                    <img src="{{ image.image.url }}" alt="Yxa {{ current_axe.name }}" loading="lazy" class="gallery-lightbox-img">
+                                    <img src="{{ image.image_url_with_cache_busting }}" alt="Yxa {{ current_axe.name }}" loading="lazy" class="gallery-lightbox-img">
                                 </picture>
                             </a>
                         </div>

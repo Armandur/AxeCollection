@@ -323,7 +323,12 @@ tr.editing .form-control-sm {
                                     {% for image in axe.images.all %}
                                         <div class="col-6 col-md-3 mb-3 existing-image-item" data-image-id="{{ image.id }}" draggable="true">
                                             <div class="card position-relative">
-                                                <img src="{{ image.image.url }}" class="card-img-top" alt="Bild {{ forloop.counter }}" style="height: 150px; object-fit: cover;">
+                                                <picture>
+                                                    {% if image.webp_url %}
+                                                        <source srcset="{{ image.webp_url }}" type="image/webp">
+                                                    {% endif %}
+                                                    <img src="{{ image.image_url_with_cache_busting }}" class="card-img-top" alt="Bild {{ forloop.counter }}" style="height: 150px; object-fit: cover;">
+                                                </picture>
                                                 <div class="position-absolute" style="top: 5px; left: 5px; background: rgba(0,0,0,0.7); color: white; padding: 2px 6px; border-radius: 3px; font-size: 10px;">
                                                     {{ image.image.name|basename }}
                                                 </div>

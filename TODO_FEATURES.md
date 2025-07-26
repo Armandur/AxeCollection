@@ -35,435 +35,437 @@ En checklista för vidareutveckling av AxeCollection. Bocka av med [x] när klar
     - [x] 16.2 Visuell feedback under drag-operationer
     - [x] 16.3 Automatisk uppdatering av filnamn efter omordning
     - [x] 16.4 Testa funktionaliteten med demobilder
+17. [x] Nollställ cachning av bilder när ordning på yxbilder ändras för att undvika extra refresh på yxdetaljsidan
+18. [x] Undersök om problemet också är relaterat till optimeringen av .webp-bilder
 
 ## 2. Användarupplevelse och interface
 
-17. [x] Förbättrad responsivitet – Testa och förbättra för surfplattor och olika mobilstorlekar.
-18. [x] Touchvänliga knappar även på desktop – T.ex. piltangenter för bildbyte.
-19. [x] Mörkt läge (dark mode) för hela tjänsten – Respekterar operativsystemets tema automatiskt och har en sol/måne-knapp för manuell växling.
-20. [x] Notifikationssystem – Snygga notifikationer för användarfeedback vid alla operationer.
-21. [x] Laddningsindikatorer – Spinner och inaktiverade knappar under pågående operationer.
-22. [x] AJAX-animationer – Smooth övergångar och animationer för bättre användarupplevelse.
-23. [x] Fixa dark mode-konsistens
-    - [x] 23.1 Kontaktdetaljsida - vita bakgrunder på kontaktinformation, medlemskap och adress
-    - [x] 23.2 Systematisk genomgång av alla sidor för dark mode-konsistens
-24. [x] Lägg till footer
-    - [x] 24.1 Designa footer med relevant information (version, länkar, kontakt)
-    - [x] 24.2 Implementera footer på alla sidor
-    - [x] 24.3 Anpassa footer för både light och dark mode
-25. [x] I demo-mode ska det visas en hint på logga in med demo/demo123 som användaruppgifter
+19. [x] Förbättrad responsivitet – Testa och förbättra för surfplattor och olika mobilstorlekar.
+20. [x] Touchvänliga knappar även på desktop – T.ex. piltangenter för bildbyte.
+21. [x] Mörkt läge (dark mode) för hela tjänsten – Respekterar operativsystemets tema automatiskt och har en sol/måne-knapp för manuell växling.
+22. [x] Notifikationssystem – Snygga notifikationer för användarfeedback vid alla operationer.
+23. [x] Laddningsindikatorer – Spinner och inaktiverade knappar under pågående operationer.
+24. [x] AJAX-animationer – Smooth övergångar och animationer för bättre användarupplevelse.
+25. [x] Fixa dark mode-konsistens
+    - [x] 25.1 Kontaktdetaljsida - vita bakgrunder på kontaktinformation, medlemskap och adress
+    - [x] 25.2 Systematisk genomgång av alla sidor för dark mode-konsistens
+26. [x] Lägg till footer
+    - [x] 26.1 Designa footer med relevant information (version, länkar, kontakt)
+    - [x] 26.2 Implementera footer på alla sidor
+    - [x] 26.3 Anpassa footer för både light och dark mode
+27. [x] I demo-mode ska det visas en hint på logga in med demo/demo123 som användaruppgifter
 
 ## 3. Sök och filtrering
 
-26. [x] AJAX-sökning för kontakter – Realtidssökning med dropdown-resultat för befintliga kontakter.
-27. [x] AJAX-sökning för plattformar – Realtidssökning med dropdown-resultat för befintliga plattformar.
-28. [x] Flaggemoji för kontakter – Visar landskod som flaggemoji bredvid kontaktnamn på alla relevanta ställen.
-    - [x] 28.1 Lägg till country_code fält (ISO 3166-1 alpha-2) i Contact-modellen
-    - [x] 28.2 Uppdatera befintliga kontakter med landskod för Sverige och Finland
-    - [x] 28.3 Skapa country_flag template filter för att konvertera landskod till flaggemoji
-    - [x] 28.4 Uppdatera ContactForm med sökbart select-fält med flagg-emoji och landsnamn
-    - [x] 28.5 Lägg till flaggemoji på kontaktdetaljsidan (rubrik)
-    - [x] 28.6 Lägg till flaggemoji i transaktionshistoriken på yxdetaljsidan
-    - [x] 28.7 Lägg till flaggemoji i transaktioner på tillverkardetaljsidan
-    - [x] 28.8 Lägg till flaggemoji i kontakter som handlat med tillverkaren
-    - [x] 28.9 Lägg till flaggemoji i mest aktiva kontakter på statistik-sidan
-    - [x] 28.10 Visa flaggemoji bredvid kontaktnamn i yxformuläret
-    - [x] 28.11 Visa flaggemoji i kontaktlistan
-    - [x] 28.12 Visa flaggemoji i transaktionslistan
-29. [x] Global sökning i navbar – Sökfält i menyn som söker i yxor, kontakter, tillverkare och transaktioner med grupperade resultat.
-    - [x] 29.1 Sökfält i navbar med responsiv design
-    - [x] 29.2 Backend-endpoint för global sökning (/api/search/global/)
-    - [x] 29.3 Sökning i yxor (tillverkare, modell, kommentar, ID)
-    - [x] 29.4 Sökning i kontakter (namn, alias, e-post)
-    - [x] 29.5 Sökning i tillverkare (namn, information)
-    - [x] 29.6 Sökning i transaktioner (yxa, kontakt, plattform)
-    - [x] 29.7 Grupperade resultat med ikoner och antal
-    - [x] 29.8 Kortkommando Ctrl+K för att fokusera sökfältet
-    - [x] 29.9 Länkar till detaljsidor för varje resultat
-    - [x] 29.10 Flaggemoji för kontakter i sökresultaten
-30. [x] Moderniserad AJAX-sökning för kontakt och plattform i yxformuläret
-    - [x] 30.1 Återställt och moderniserat JavaScript för AJAX-sökning
-    - [x] 30.2 Lagt till saknade plattformsfält i forms.py (platform_name, platform_url, platform_comment)
-    - [x] 30.3 Uppdaterat axe_create i views_axe.py med komplett formulärhantering för kontakt, plattform och transaktion
-    - [x] 30.4 Lagt till dropdown-containers för sökresultat i axe_form.html
-    - [x] 30.5 Implementerat funktioner för att visa/dölja sektioner för nya kontakter och plattformar
-    - [x] 30.6 Lagt till next_id i context för att visa nästa yx-ID
-    - [x] 30.7 Förbättrat felhantering och användarupplevelse
-31. [x] Sökfunktion för yxor och tillverkare – Snabbt hitta yxor, tillverkare eller transaktioner.
-32. [x] Filtrering på t.ex. tillverkare, typ, årtal, mm.
-33. [x] Plattformsfilter och visning i yxlistan
-    - [x] 33.1 Möjliggör filtrering av yxor på plattform i yxlistan
-    - [x] 33.2 Visar alla plattformar för varje yxa direkt i tabellen
-    - [x] 33.3 Varje plattform får en unik färg för ökad överskådlighet
-    - [x] 33.4 Alla plattformsnamn visas med konsekvent fetstil för tydlighet
-    - [x] 33.5 Förbättrar användarupplevelsen vid sortering och översikt av yxor
-    - [x] 33.6 Fixat Django ORM-relationer med related_name='transactions'
-    - [x] 33.7 Förbättrad CSV-export med hantering av radbrytningar
-    - [x] 33.8 Fixat statistikkort som nu visar korrekt data för filtrerade yxor (tidigare visade alltid hela samlingen)
-34. [x] Måttkolumn och filtrering i yxlistan
-    - [x] 34.1 Lägg till "Mått"-kolumn i yxlistan med linjal-ikon för yxor med registrerade mått
-    - [x] 34.2 Visa antalet registrerade mått bredvid linjal-ikonen (t.ex. "📏 3" för 3 mått)
-    - [x] 34.3 Tooltip/popup som visar måtten vid hovring över ikonen
-35. [x] Filtreringen av Tillverkare på /yxor ska använda hierarkisk indentering med L-tecken som på /tillverkare/ny|redigera och /yxor/ny|redigera
+28. [x] AJAX-sökning för kontakter – Realtidssökning med dropdown-resultat för befintliga kontakter.
+29. [x] AJAX-sökning för plattformar – Realtidssökning med dropdown-resultat för befintliga plattformar.
+30. [x] Flaggemoji för kontakter – Visar landskod som flaggemoji bredvid kontaktnamn på alla relevanta ställen.
+    - [x] 30.1 Lägg till country_code fält (ISO 3166-1 alpha-2) i Contact-modellen
+    - [x] 30.2 Uppdatera befintliga kontakter med landskod för Sverige och Finland
+    - [x] 30.3 Skapa country_flag template filter för att konvertera landskod till flaggemoji
+    - [x] 30.4 Uppdatera ContactForm med sökbart select-fält med flagg-emoji och landsnamn
+    - [x] 30.5 Lägg till flaggemoji på kontaktdetaljsidan (rubrik)
+    - [x] 30.6 Lägg till flaggemoji i transaktionshistoriken på yxdetaljsidan
+    - [x] 30.7 Lägg till flaggemoji i transaktioner på tillverkardetaljsidan
+    - [x] 30.8 Lägg till flaggemoji i kontakter som handlat med tillverkaren
+    - [x] 30.9 Lägg till flaggemoji i mest aktiva kontakter på statistik-sidan
+    - [x] 30.10 Visa flaggemoji bredvid kontaktnamn i yxformuläret
+    - [x] 30.11 Visa flaggemoji i kontaktlistan
+    - [x] 30.12 Visa flaggemoji i transaktionslistan
+31. [x] Global sökning i navbar – Sökfält i menyn som söker i yxor, kontakter, tillverkare och transaktioner med grupperade resultat.
+    - [x] 31.1 Sökfält i navbar med responsiv design
+    - [x] 31.2 Backend-endpoint för global sökning (/api/search/global/)
+    - [x] 31.3 Sökning i yxor (tillverkare, modell, kommentar, ID)
+    - [x] 31.4 Sökning i kontakter (namn, alias, e-post)
+    - [x] 31.5 Sökning i tillverkare (namn, information)
+    - [x] 31.6 Sökning i transaktioner (yxa, kontakt, plattform)
+    - [x] 31.7 Grupperade resultat med ikoner och antal
+    - [x] 31.8 Kortkommando Ctrl+K för att fokusera sökfältet
+    - [x] 31.9 Länkar till detaljsidor för varje resultat
+    - [x] 31.10 Flaggemoji för kontakter i sökresultaten
+32. [x] Moderniserad AJAX-sökning för kontakt och plattform i yxformuläret
+    - [x] 32.1 Återställt och moderniserat JavaScript för AJAX-sökning
+    - [x] 32.2 Lagt till saknade plattformsfält i forms.py (platform_name, platform_url, platform_comment)
+    - [x] 32.3 Uppdaterat axe_create i views_axe.py med komplett formulärhantering för kontakt, plattform och transaktion
+    - [x] 32.4 Lagt till dropdown-containers för sökresultat i axe_form.html
+    - [x] 32.5 Implementerat funktioner för att visa/dölja sektioner för nya kontakter och plattformar
+    - [x] 32.6 Lagt till next_id i context för att visa nästa yx-ID
+    - [x] 32.7 Förbättrat felhantering och användarupplevelse
+33. [x] Sökfunktion för yxor och tillverkare – Snabbt hitta yxor, tillverkare eller transaktioner.
+34. [x] Filtrering på t.ex. tillverkare, typ, årtal, mm.
+35. [x] Plattformsfilter och visning i yxlistan
+    - [x] 35.1 Möjliggör filtrering av yxor på plattform i yxlistan
+    - [x] 35.2 Visar alla plattformar för varje yxa direkt i tabellen
+    - [x] 35.3 Varje plattform får en unik färg för ökad överskådlighet
+    - [x] 35.4 Alla plattformsnamn visas med konsekvent fetstil för tydlighet
+    - [x] 35.5 Förbättrar användarupplevelsen vid sortering och översikt av yxor
+    - [x] 35.6 Fixat Django ORM-relationer med related_name='transactions'
+    - [x] 35.7 Förbättrad CSV-export med hantering av radbrytningar
+    - [x] 35.8 Fixat statistikkort som nu visar korrekt data för filtrerade yxor (tidigare visade alltid hela samlingen)
+36. [x] Måttkolumn och filtrering i yxlistan
+    - [x] 36.1 Lägg till "Mått"-kolumn i yxlistan med linjal-ikon för yxor med registrerade mått
+    - [x] 36.2 Visa antalet registrerade mått bredvid linjal-ikonen (t.ex. "📏 3" för 3 mått)
+    - [x] 36.3 Tooltip/popup som visar måtten vid hovring över ikonen
+37. [x] Filtreringen av Tillverkare på /yxor ska använda hierarkisk indentering med L-tecken som på /tillverkare/ny|redigera och /yxor/ny|redigera
 
 ## 4. Deployment och Docker
 
-36. [x] Fixa Docker startup-problem
-    - [x] 36.1 "exec /app/start.sh: no such file or directory" - fixade line endings och behörigheter
-    - [x] 36.2 Nginx visar standard-sida istället för Django - korrekt Nginx-konfiguration inbyggd
-    - [x] 36.3 Windows line endings i start.sh - automatisk konvertering i Dockerfile
-    - [x] 36.4 Behörigheter för Unraid (nobody:users) - korrekt UID/GID-hantering
-    - [x] 36.5 CSRF-fel vid inloggning - dynamisk host-konfiguration via UI och miljövariabler
-    - [x] 36.6 Demo-installationer - stöd för flera instanser med olika host-konfigurationer
-    - [x] 36.7 Databasbehörigheter på Unraid - automatisk fix av readonly database
-    - [x] 36.8 Robust startup-process - automatisk skapande av kataloger och behörigheter
-37. [x] Automatisk hantering av sökvägar för olika miljöer
-    - [x] 37.1 Skapa script för att fixa bildsökvägar vid deployment (Windows backslashes → Linux forward slashes)
-    - [x] 37.2 Automatisk konvertering av `/app/media/` prefix för Docker-miljöer
-    - [x] 37.3 Hantera sökvägar för både utvecklingsmiljö (Windows) och produktionsmiljö (Linux)
-    - [x] 37.4 Integrera sökvägsfix i deployment-processen
-    - [x] 37.5 Testa och verifiera att bilder fungerar i både test- och produktionsmiljö
-38. [x] Media-filhantering i produktionsmiljö
-    - [x] 38.1 Konfigurera Nginx för att servera media-filer i produktion
-    - [x] 38.2 Eller implementera CDN-lösning för media-filer
-    - [x] 38.3 Eller konfigurera Django för att servera media-filer i produktion (inte rekommenderat för hög belastning)
-    - [x] 38.4 Testa och verifiera att alla bilder fungerar korrekt i produktionsmiljö
-    - [x] 38.5 Dokumentera lösningen för framtida deployment
-39. [x] Deployment-konfiguration för produktion med SQLite
-    - [x] 39.1 Produktionssettings-fil med säkerhetskonfiguration
-    - [x] 39.2 Dockerfile med Gunicorn för produktion
-    - [x] 39.3 Docker Compose-konfiguration med volymer
-    - [x] 39.4 Deployment-guide med steg-för-steg instruktioner
-    - [x] 39.5 Backup-script för automatisk säkerhetskopiering
-    - [x] 39.6 Miljövariabler och konfigurationsmallar
-    - [x] 39.7 Nginx-konfiguration för webbserver
-    - [x] 39.8 SSL/HTTPS-konfiguration
-    - [x] 39.9 Logging och övervakning
-    - [x] 39.10 Säkerhetsinställningar för produktion
-    - [x] 39.11 Omorganisation av deployment-filer till deploy/-mapp
-    - [x] 39.12 Uppdaterad dokumentation för ny struktur
-    - [x] 39.13 Tydlig separation mellan utveckling och deployment
-40. [ ] Fixa omorganisering av yxbilder i produktion
-    - [ ] 40.1 Omorganisering av yxbilder fungerar inte på Unraid-produktionsservern
-    - [ ] 40.2 Undersök skillnader mellan utvecklings- och produktionsmiljö
-    - [ ] 40.3 Kontrollera filbehörigheter och sökvägar i produktion
-    - [ ] 40.4 Testa drag & drop-funktionalitet i produktionsmiljö
-41. [x] Åtgärda nginx-behörigheter i Docker-setup för att förhindra uppladdningsfel. Nginx får 'Permission denied' när den försöker skapa filer i /var/lib/nginx/body/ för uppladdningar. Katalogen ägs av 'nobody:users' men nginx körs som 'www-data'
-    - [x] 41.1 Lägg till chown-kommando i Dockerfile eller startup-script för att sätta rätt ägare på /var/lib/nginx/body/ innan nginx startas
-    - [x] 41.2 Säkerställ att katalogen alltid ägs av rätt användare (www-data) i Docker-setup för att förhindra framtida behörighetsproblem
+38. [x] Fixa Docker startup-problem
+    - [x] 38.1 "exec /app/start.sh: no such file or directory" - fixade line endings och behörigheter
+    - [x] 38.2 Nginx visar standard-sida istället för Django - korrekt Nginx-konfiguration inbyggd
+    - [x] 38.3 Windows line endings i start.sh - automatisk konvertering i Dockerfile
+    - [x] 38.4 Behörigheter för Unraid (nobody:users) - korrekt UID/GID-hantering
+    - [x] 38.5 CSRF-fel vid inloggning - dynamisk host-konfiguration via UI och miljövariabler
+    - [x] 38.6 Demo-installationer - stöd för flera instanser med olika host-konfigurationer
+    - [x] 38.7 Databasbehörigheter på Unraid - automatisk fix av readonly database
+    - [x] 38.8 Robust startup-process - automatisk skapande av kataloger och behörigheter
+39. [x] Automatisk hantering av sökvägar för olika miljöer
+    - [x] 39.1 Skapa script för att fixa bildsökvägar vid deployment (Windows backslashes → Linux forward slashes)
+    - [x] 39.2 Automatisk konvertering av `/app/media/` prefix för Docker-miljöer
+    - [x] 39.3 Hantera sökvägar för både utvecklingsmiljö (Windows) och produktionsmiljö (Linux)
+    - [x] 39.4 Integrera sökvägsfix i deployment-processen
+    - [x] 39.5 Testa och verifiera att bilder fungerar i både test- och produktionsmiljö
+40. [x] Media-filhantering i produktionsmiljö
+    - [x] 40.1 Konfigurera Nginx för att servera media-filer i produktion
+    - [x] 40.2 Eller implementera CDN-lösning för media-filer
+    - [x] 40.3 Eller konfigurera Django för att servera media-filer i produktion (inte rekommenderat för hög belastning)
+    - [x] 40.4 Testa och verifiera att alla bilder fungerar korrekt i produktionsmiljö
+    - [x] 40.5 Dokumentera lösningen för framtida deployment
+41. [x] Deployment-konfiguration för produktion med SQLite
+    - [x] 41.1 Produktionssettings-fil med säkerhetskonfiguration
+    - [x] 41.2 Dockerfile med Gunicorn för produktion
+    - [x] 41.3 Docker Compose-konfiguration med volymer
+    - [x] 41.4 Deployment-guide med steg-för-steg instruktioner
+    - [x] 41.5 Backup-script för automatisk säkerhetskopiering
+    - [x] 41.6 Miljövariabler och konfigurationsmallar
+    - [x] 41.7 Nginx-konfiguration för webbserver
+    - [x] 41.8 SSL/HTTPS-konfiguration
+    - [x] 41.9 Logging och övervakning
+    - [x] 41.10 Säkerhetsinställningar för produktion
+    - [x] 41.11 Omorganisation av deployment-filer till deploy/-mapp
+    - [x] 41.12 Uppdaterad dokumentation för ny struktur
+    - [x] 41.13 Tydlig separation mellan utveckling och deployment
+42. [ ] Fixa omorganisering av yxbilder i produktion
+    - [ ] 42.1 Omorganisering av yxbilder fungerar inte på Unraid-produktionsservern
+    - [ ] 42.2 Undersök skillnader mellan utvecklings- och produktionsmiljö
+    - [ ] 42.3 Kontrollera filbehörigheter och sökvägar i produktion
+    - [ ] 42.4 Testa drag & drop-funktionalitet i produktionsmiljö
+43. [x] Åtgärda nginx-behörigheter i Docker-setup för att förhindra uppladdningsfel. Nginx får 'Permission denied' när den försöker skapa filer i /var/lib/nginx/body/ för uppladdningar. Katalogen ägs av 'nobody:users' men nginx körs som 'www-data'
+    - [x] 43.1 Lägg till chown-kommando i Dockerfile eller startup-script för att sätta rätt ägare på /var/lib/nginx/body/ innan nginx startas
+    - [x] 43.2 Säkerställ att katalogen alltid ägs av rätt användare (www-data) i Docker-setup för att förhindra framtida behörighetsproblem
 
 ## 5. Yxhantering och arbetsflöden
 
-42. [x] Redigera transaktion, plattform och kontakt för en yxa via detaljvyn
-    - [x] 42.1 Visa "Lägg till transaktion"-knapp om ingen transaktion finns
-    - [x] 42.2 Visa "Redigera transaktioner"-knapp om en eller flera transaktioner finns
-    - [x] 42.3 Bygg formulär för att lägga till/redigera transaktion (pris, frakt, kontakt, plattform, kommentar, datum)
-    - [x] 42.4 Implementera AJAX-sökning för kontakt och plattform i formuläret
-    - [x] 42.5 Möjlighet att skapa ny kontakt/plattform direkt i formuläret
-    - [x] 42.6 Möjlighet att ta bort transaktion
-43. [x] UI för att skapa nya yxor i samlingen – Användarvänligt formulär för att lägga till yxor.
-44. [x] UI för att redigera befintliga yxor – Möjlighet att uppdatera information efter mottagning.
-45. [x] Status-fält och filter – Status "Köpt" vs "Mottagen/Ägd" med filter och snabbåtgärder (markera som mottagen) i yxlistan.
-46. [x] Arbetsflöde för inköp: 
-47. [x] Arbetsflöde för mottagning:
-    - [x] 47.1 Lägg till fler bilder av mottagen yxa (via befintlig redigeringsfunktionalitet)
-    - [x] 47.2 Mät och registrera mått (nytt måttinmatningsformulär med mallar)
-    - [x] 47.3 Uppdatera eventuell felaktig information (via befintlig redigeringsfunktionalitet)
-    - [x] 47.4 Dedikerat mottagningsarbetsflöde med steg-för-steg process
-    - [x] 47.5 Måttmallar för olika yxtyper (standard, fällkniv, köksyxa)
-    - [x] 47.6 AJAX-hantering för måttinmatning och borttagning
-    - [x] 47.7 Länkar till mottagningsarbetsflödet från yxlistan och yxdetail
-48. [x] Snabbval av tillverkare – Dropdown för att välja tillverkare.
-49. [x] Kontakthantering – Skapa nya kontakter direkt från yxformuläret med smart matchning.
-50. [x] Plattformshantering – Skapa nya plattformar direkt från yxformuläret med smart matchning.
-51. [x] Automatisk transaktionstypbestämning – Baserat på pris (negativ = köp, positiv = sälj).
-52. [x] Separata formulär för skapande vs redigering – Olika fält visas beroende på om yxa skapas eller redigeras.
-53. [ ] Lägg till yxa via auktions-URL – Möjlighet att lägga till yxa genom att ange URL till vunnen Tradera- eller eBay-auktion.
-    - [ ] 53.1 Implementera URL-parser för Tradera-auktioner som extraherar titel, beskrivning, bilder och slutpris
-    - [ ] 53.2 Implementera URL-parser för eBay-auktioner med motsvarande funktionalitet
-    - [ ] 53.3 Automatisk förfyllning av yxformulär baserat på extraherad auktionsdata
-    - [ ] 53.4 Automatisk nedladdning och lagring av auktionsbilder
-    - [ ] 53.5 Intelligent kategorisering och tillverkargissning baserat på auktionsbeskrivning
-    - [ ] 53.6 Automatisk skapande av transaktion med slutpris som köpvärde
-    - [ ] 53.7 Felhantering för ogiltiga URL:er eller auktioner som inte kan parsas
-    - [ ] 53.8 Stöd för olika auktionsformat och språk (svenska/engelska)
-    - [ ] 53.9 Förhandsvisning av extraherad data innan sparning
-    - [ ] 53.10 Möjlighet att redigera och justera automatiskt extraherad information
-54. [x] Fixa problem med att ändra tillverkare på en yxa - formuläret fungerar inte korrekt
+44. [x] Redigera transaktion, plattform och kontakt för en yxa via detaljvyn
+    - [x] 44.1 Visa "Lägg till transaktion"-knapp om ingen transaktion finns
+    - [x] 44.2 Visa "Redigera transaktioner"-knapp om en eller flera transaktioner finns
+    - [x] 44.3 Bygg formulär för att lägga till/redigera transaktion (pris, frakt, kontakt, plattform, kommentar, datum)
+    - [x] 44.4 Implementera AJAX-sökning för kontakt och plattform i formuläret
+    - [x] 44.5 Möjlighet att skapa ny kontakt/plattform direkt i formuläret
+    - [x] 44.6 Möjlighet att ta bort transaktion
+45. [x] UI för att skapa nya yxor i samlingen – Användarvänligt formulär för att lägga till yxor.
+46. [x] UI för att redigera befintliga yxor – Möjlighet att uppdatera information efter mottagning.
+47. [x] Status-fält och filter – Status "Köpt" vs "Mottagen/Ägd" med filter och snabbåtgärder (markera som mottagen) i yxlistan.
+48. [x] Arbetsflöde för inköp: 
+49. [x] Arbetsflöde för mottagning:
+    - [x] 49.1 Lägg till fler bilder av mottagen yxa (via befintlig redigeringsfunktionalitet)
+    - [x] 49.2 Mät och registrera mått (nytt måttinmatningsformulär med mallar)
+    - [x] 49.3 Uppdatera eventuell felaktig information (via befintlig redigeringsfunktionalitet)
+    - [x] 49.4 Dedikerat mottagningsarbetsflöde med steg-för-steg process
+    - [x] 49.5 Måttmallar för olika yxtyper (standard, fällkniv, köksyxa)
+    - [x] 49.6 AJAX-hantering för måttinmatning och borttagning
+    - [x] 49.7 Länkar till mottagningsarbetsflödet från yxlistan och yxdetail
+50. [x] Snabbval av tillverkare – Dropdown för att välja tillverkare.
+51. [x] Kontakthantering – Skapa nya kontakter direkt från yxformuläret med smart matchning.
+52. [x] Plattformshantering – Skapa nya plattformar direkt från yxformuläret med smart matchning.
+53. [x] Automatisk transaktionstypbestämning – Baserat på pris (negativ = köp, positiv = sälj).
+54. [x] Separata formulär för skapande vs redigering – Olika fält visas beroende på om yxa skapas eller redigeras.
+55. [ ] Lägg till yxa via auktions-URL – Möjlighet att lägga till yxa genom att ange URL till vunnen Tradera- eller eBay-auktion.
+    - [ ] 55.1 Implementera URL-parser för Tradera-auktioner som extraherar titel, beskrivning, bilder och slutpris
+    - [ ] 55.2 Implementera URL-parser för eBay-auktioner med motsvarande funktionalitet
+    - [ ] 55.3 Automatisk förfyllning av yxformulär baserat på extraherad auktionsdata
+    - [ ] 55.4 Automatisk nedladdning och lagring av auktionsbilder
+    - [ ] 55.5 Intelligent kategorisering och tillverkargissning baserat på auktionsbeskrivning
+    - [ ] 55.6 Automatisk skapande av transaktion med slutpris som köpvärde
+    - [ ] 55.7 Felhantering för ogiltiga URL:er eller auktioner som inte kan parsas
+    - [ ] 55.8 Stöd för olika auktionsformat och språk (svenska/engelska)
+    - [ ] 55.9 Förhandsvisning av extraherad data innan sparning
+    - [ ] 55.10 Möjlighet att redigera och justera automatiskt extraherad information
+56. [x] Fixa problem med att ändra tillverkare på en yxa - formuläret fungerar inte korrekt
 
 ## 6. Transaktions- och måtthantering
 
-55. [x] Transaktionshantering – Koppla yxor till köp/försäljning med pris, frakt och datum.
-56. [x] Förbättrad mått-UX i redigeringsvyn:
-    - [x] 56.1 Batch-läggning av mått med tydlig info och notifikation
-    - [x] 56.2 Inline-redigering av mått (värde och enhet) via AJAX
-    - [x] 56.3 Borttagning av mått med snygg animation (utan sidladdning)
-    - [x] 56.4 Visuell feedback vid alla måttoperationer (notifikationer, laddningsindikatorer)
-    - [x] 56.5 Förbättrad felhantering och återställning av UI
-    - [x] 56.6 Fördröjd sidladdning för att visa notifikationer
-    - [x] 56.7 Möjlighet att ta bort enskilda rader från batch-måttformuläret (soptunne-ikon per rad)
-    - [x] 56.8 Förbättrad DRY-princip med återanvändbar JavaScript-kod
-    - [x] 56.9 Automatisk UI-uppdatering vid borttagning av mått (tomt tillstånd, räknare)
-    - [x] 56.10 Event listener-baserad hantering istället för inline onclick
-    - [x] 56.11 Korrekt omindexering av batch-formulärrader vid borttagning
-    - [x] 56.12 Bekräfta/ångra-knappar för inline-redigering istället för modaler
-    - [x] 56.13 Fullständig hantering av "Övrigt"-alternativet med textinput för anpassat måttnamn
-    - [x] 56.14 Bootstrap modal för borttagningsbekräftelse istället för alert()
-    - [x] 56.15 Korrekt skickande av data till backend (standardmått vs anpassade mått)
-    - [x] 56.16 Förhindring av dubbla anrop med spärr under uppdatering
-    - [x] 56.17 Automatisk enhetsfyllning när standardmåtttyper väljs
-    - [x] 56.18 Visuell feedback med spinner och inaktiverade knappar under uppdatering
-57. [x] Fixa enskilda mått
-    - [x] 57.1 Ensamma mått kan inte läggas till, bara via batch-inlägg
-    - [x] 57.2 Implementera funktionalitet för att lägga till enskilda mått
-    - [x] 57.3 Testa att både enskilda och batch-mått fungerar korrekt
-58. [x] Måttfiltrering i yxlistan – Filter för att visa endast yxor med eller utan mått
-    - [x] 58.1 Filter för att visa endast yxor med/utan mått
-    - [x] 58.2 Responsiv design för måttkolumnen på olika skärmstorlekar
-59. [x] Måttmallshantering i inställningsmenyn – Möjlighet att skapa, redigera och hantera måttmallar direkt från systeminställningarna.
-    - [x] 59.1 Lägg till sektion för måttmallshantering i inställningsmenyn
-    - [x] 59.2 Formulär för att skapa nya måttmallar med namn och beskrivning
-    - [x] 59.3 Drag & drop-gränssnitt för att lägga till/ta bort måtttyper i mallar
-    - [x] 59.4 Redigering av befintliga måttmallar (namn, beskrivning, måtttyper)
-    - [x] 59.5 Borttagning av måttmallar med varning om konsekvenser
-    - [x] 59.6 Förhandsvisning av måttmallar med lista över inkluderade måtttyper
-    - [x] 59.7 Validering för att säkerställa att mallar har minst ett mått
-    - [x] 59.8 AJAX-hantering för snabb uppdatering utan sidladdning
-    - [x] 59.9 Enhethantering - Möjlighet att definiera/ändra måttenheter och välja enhet för måttmallar (gram, mm, grader °)
+57. [x] Transaktionshantering – Koppla yxor till köp/försäljning med pris, frakt och datum.
+58. [x] Förbättrad mått-UX i redigeringsvyn:
+    - [x] 58.1 Batch-läggning av mått med tydlig info och notifikation
+    - [x] 58.2 Inline-redigering av mått (värde och enhet) via AJAX
+    - [x] 58.3 Borttagning av mått med snygg animation (utan sidladdning)
+    - [x] 58.4 Visuell feedback vid alla måttoperationer (notifikationer, laddningsindikatorer)
+    - [x] 58.5 Förbättrad felhantering och återställning av UI
+    - [x] 58.6 Fördröjd sidladdning för att visa notifikationer
+    - [x] 58.7 Möjlighet att ta bort enskilda rader från batch-måttformuläret (soptunne-ikon per rad)
+    - [x] 58.8 Förbättrad DRY-princip med återanvändbar JavaScript-kod
+    - [x] 58.9 Automatisk UI-uppdatering vid borttagning av mått (tomt tillstånd, räknare)
+    - [x] 58.10 Event listener-baserad hantering istället för inline onclick
+    - [x] 58.11 Korrekt omindexering av batch-formulärrader vid borttagning
+    - [x] 58.12 Bekräfta/ångra-knappar för inline-redigering istället för modaler
+    - [x] 58.13 Fullständig hantering av "Övrigt"-alternativet med textinput för anpassat måttnamn
+    - [x] 58.14 Bootstrap modal för borttagningsbekräftelse istället för alert()
+    - [x] 58.15 Korrekt skickande av data till backend (standardmått vs anpassade mått)
+    - [x] 58.16 Förhindring av dubbla anrop med spärr under uppdatering
+    - [x] 58.17 Automatisk enhetsfyllning när standardmåtttyper väljs
+    - [x] 58.18 Visuell feedback med spinner och inaktiverade knappar under uppdatering
+59. [x] Fixa enskilda mått
+    - [x] 59.1 Ensamma mått kan inte läggas till, bara via batch-inlägg
+    - [x] 59.2 Implementera funktionalitet för att lägga till enskilda mått
+    - [x] 59.3 Testa att både enskilda och batch-mått fungerar korrekt
+60. [x] Måttfiltrering i yxlistan – Filter för att visa endast yxor med eller utan mått
+    - [x] 60.1 Filter för att visa endast yxor med/utan mått
+    - [x] 60.2 Responsiv design för måttkolumnen på olika skärmstorlekar
+61. [x] Måttmallshantering i inställningsmenyn – Möjlighet att skapa, redigera och hantera måttmallar direkt från systeminställningarna.
+    - [x] 61.1 Lägg till sektion för måttmallshantering i inställningsmenyn
+    - [x] 61.2 Formulär för att skapa nya måttmallar med namn och beskrivning
+    - [x] 61.3 Drag & drop-gränssnitt för att lägga till/ta bort måtttyper i mallar
+    - [x] 61.4 Redigering av befintliga måttmallar (namn, beskrivning, måtttyper)
+    - [x] 61.5 Borttagning av måttmallar med varning om konsekvenser
+    - [x] 61.6 Förhandsvisning av måttmallar med lista över inkluderade måtttyper
+    - [x] 61.7 Validering för att säkerställa att mallar har minst ett mått
+    - [x] 61.8 AJAX-hantering för snabb uppdatering utan sidladdning
+    - [x] 61.9 Enhethantering - Möjlighet att definiera/ändra måttenheter och välja enhet för måttmallar (gram, mm, grader °)
 
 ## 7. Tillverkarhantering
 
-60. [x] Formulär för tillverkarlänkar
-    - [x] 60.1 Skapa formulär för att lägga till länkar och resurser på tillverkare
-    - [x] 60.2 Implementera i tillverkardetaljsidan (för närvarande bara via Django admin)
-    - [x] 60.3 Lägg till funktionalitet för att redigera och ta bort länkar
-    - [x] 60.4 Säkerställ att order-fältet fungerar för sortering av länkar
-61. [x] Eget administratörsgränssnitt för tillverkare
-    - [x] 61.1 Redigera tillverkare-knapp kvar på nuvarande plats (endast namnändring)
-    - [x] 61.2 Ny redigera-knapp i Informations-gruppen för att redigera information
-    - [x] 61.3 Flytta "Lägg till bild"-knapp till Bildgalleri-gruppen
-    - [x] 61.4 Flytta "Lägg till länk"-knapp till Länkar-gruppen
-    - [x] 61.5 Implementera formulär för redigering av tillverkarnamn
-    - [x] 61.6 Implementera formulär för redigering av information
-    - [x] 61.7 WYSIWYG markdown-redigerare för informationsfält (EasyMDE)
-    - [x] 61.8 AJAX-hantering för snabb redigering utan sidladdning
-    - [x] 61.9 Validering och felhantering för alla formulär
-    - [x] 61.10 Notifikationer för framgångsrika redigeringar
-    - [x] 61.11 Döpa om fält från "comment" till "information"
-    - [x] 61.12 Inline-redigering av tillverkarnamn med AJAX
-    - [x] 61.13 Markdown-stöd för bildbeskrivningar med EasyMDE
-    - [x] 61.14 Lightbox med redigeringsmöjligheter för tillverkarbilder
-    - [x] 61.15 Drag & drop-funktionalitet för bildordning
-    - [x] 61.16 Navigationsknappar i lightbox för att bläddra mellan bilder i samma grupp
-    - [x] 61.17 Semi-bold styling för bildtext för bättre läsbarhet
-    - [x] 61.18 Vänsterställd text i lightbox för bättre läsbarhet av längre beskrivningar
-    - [x] 61.19 Inline-redigering, borttagning och drag & drop-sortering för tillverkarlänkar
-    - [x] 61.20 Klickbara kort för bilder (öppnar lightbox) och aktiva länkar (öppnar i ny flik)
-    - [x] 61.21 Visuell hantering för inaktiva länkar (gråtonad styling, URL som text, "Inaktiv"-badge)
-    - [x] 61.22 Hover-effekter på bild- och länkkort för bättre användarupplevelse
-    - [x] 61.23 Template filter för att visa information i tillverkarlistan (strippa markdown, begränsa längd)
-62. [x] Hierarkiskt tillverkarsystem med undertillverkare/smeder
-    - [x] 62.1 Lägg till parent_manufacturer ForeignKey-fält i Manufacturer-modellen
-    - [x] 62.2 Uppdatera tillverkarformuläret med dropdown för överordnad tillverkare
-    - [x] 62.3 Visa undertillverkare/smeder som underavdelning på tillverkardetaljsidan (t.ex. "Smeder på Gränsfors Bruk")
-    - [x] 62.4 Implementera träd-visning i tillverkarlistan med indenterade undertillverkare
-    - [x] 62.5 Möjlighet att filtrera yxor på både huvud- och undertillverkare
-    - [x] 62.6 Statistik för undertillverkare som summeras till huvudtillverkaren
-    - [x] 62.7 Breadcrumbs som visar hierarki
-    - [x] 62.8 Validering för att förhindra cirkulära referenser
-    - [x] 62.9 Migration för att hantera befintliga tillverkare
-    - [x] 62.10 Admin-gränssnitt med träd-struktur för enkel hantering
-63. [x] Ekonomikolumnen för tillverkare ska summera de eventuella underliggande tillverkarna - både i tillverkarlistan och på tillverkaredetaljsidan. På detaljsidan ska det delas upp mellan yxor kopplade direkt till tillverkaren och yxor från underliggande tillverkare/smeder
-64. [x] Indentering av tillverkare och underordnade smeder ska fungera även på skapa/redigera yxformuläret
-65. [x] Organisationssektionen på tillverkarsidan ska visas för inloggade användare även när det inte finns undertillverkare, med "Lägg till undertillverkare"-knapp
-66. [x] Breadcrumbs för tillverkare verkar inte hantera alla nivåer korrekt
+62. [x] Formulär för tillverkarlänkar
+    - [x] 62.1 Skapa formulär för att lägga till länkar och resurser på tillverkare
+    - [x] 62.2 Implementera i tillverkardetaljsidan (för närvarande bara via Django admin)
+    - [x] 62.3 Lägg till funktionalitet för att redigera och ta bort länkar
+    - [x] 62.4 Säkerställ att order-fältet fungerar för sortering av länkar
+63. [x] Eget administratörsgränssnitt för tillverkare
+    - [x] 63.1 Redigera tillverkare-knapp kvar på nuvarande plats (endast namnändring)
+    - [x] 63.2 Ny redigera-knapp i Informations-gruppen för att redigera information
+    - [x] 63.3 Flytta "Lägg till bild"-knapp till Bildgalleri-gruppen
+    - [x] 63.4 Flytta "Lägg till länk"-knapp till Länkar-gruppen
+    - [x] 63.5 Implementera formulär för redigering av tillverkarnamn
+    - [x] 63.6 Implementera formulär för redigering av information
+    - [x] 63.7 WYSIWYG markdown-redigerare för informationsfält (EasyMDE)
+    - [x] 63.8 AJAX-hantering för snabb redigering utan sidladdning
+    - [x] 63.9 Validering och felhantering för alla formulär
+    - [x] 63.10 Notifikationer för framgångsrika redigeringar
+    - [x] 63.11 Döpa om fält från "comment" till "information"
+    - [x] 63.12 Inline-redigering av tillverkarnamn med AJAX
+    - [x] 63.13 Markdown-stöd för bildbeskrivningar med EasyMDE
+    - [x] 63.14 Lightbox med redigeringsmöjligheter för tillverkarbilder
+    - [x] 63.15 Drag & drop-funktionalitet för bildordning
+    - [x] 63.16 Navigationsknappar i lightbox för att bläddra mellan bilder i samma grupp
+    - [x] 63.17 Semi-bold styling för bildtext för bättre läsbarhet
+    - [x] 63.18 Vänsterställd text i lightbox för bättre läsbarhet av längre beskrivningar
+    - [x] 63.19 Inline-redigering, borttagning och drag & drop-sortering för tillverkarlänkar
+    - [x] 63.20 Klickbara kort för bilder (öppnar lightbox) och aktiva länkar (öppnar i ny flik)
+    - [x] 63.21 Visuell hantering för inaktiva länkar (gråtonad styling, URL som text, "Inaktiv"-badge)
+    - [x] 63.22 Hover-effekter på bild- och länkkort för bättre användarupplevelse
+    - [x] 63.23 Template filter för att visa information i tillverkarlistan (strippa markdown, begränsa längd)
+64. [x] Hierarkiskt tillverkarsystem med undertillverkare/smeder
+    - [x] 64.1 Lägg till parent_manufacturer ForeignKey-fält i Manufacturer-modellen
+    - [x] 64.2 Uppdatera tillverkarformuläret med dropdown för överordnad tillverkare
+    - [x] 64.3 Visa undertillverkare/smeder som underavdelning på tillverkardetaljsidan (t.ex. "Smeder på Gränsfors Bruk")
+    - [x] 64.4 Implementera träd-visning i tillverkarlistan med indenterade undertillverkare
+    - [x] 64.5 Möjlighet att filtrera yxor på både huvud- och undertillverkare
+    - [x] 64.6 Statistik för undertillverkare som summeras till huvudtillverkaren
+    - [x] 64.7 Breadcrumbs som visar hierarki
+    - [x] 64.8 Validering för att förhindra cirkulära referenser
+    - [x] 64.9 Migration för att hantera befintliga tillverkare
+    - [x] 64.10 Admin-gränssnitt med träd-struktur för enkel hantering
+65. [x] Ekonomikolumnen för tillverkare ska summera de eventuella underliggande tillverkarna - både i tillverkarlistan och på tillverkaredetaljsidan. På detaljsidan ska det delas upp mellan yxor kopplade direkt till tillverkaren och yxor från underliggande tillverkare/smeder
+66. [x] Indentering av tillverkare och underordnade smeder ska fungera även på skapa/redigera yxformuläret
+67. [x] Organisationssektionen på tillverkarsidan ska visas för inloggade användare även när det inte finns undertillverkare, med "Lägg till undertillverkare"-knapp
+68. [x] Breadcrumbs för tillverkare verkar inte hantera alla nivåer korrekt
 
 ## 8. Admin och datahantering
 
-67. [x] Förbättrad admin-raderingsvy för yxor – Tydlig lista över vad som tas bort, bockruta för bildradering.
-68. [ ] Batchuppladdning av yxor – Möjlighet att ladda upp flera yxor samtidigt. **(Pausad – kräver vidare diskussion och behovsanalys innan implementation)**
-69. [x] Export/import av data (CSV, Excel) direkt från admin.
-70. [x] Automatiska backuper av databasen.
-    - [x] 70.1 Backup-funktionalitet flyttad från admin till systeminställningsvyn
-    - [x] 70.2 Integrerad backup-hantering i settings.html med modern UI
-    - [x] 70.3 Skapa, ta bort och återställ backuper direkt från inställningssidan
-    - [x] 70.4 Statistik-visning för varje backup (antal yxor, kontakter, transaktioner)
-    - [x] 70.5 Varningar för återställning med bekräftelsedialoger
-    - [x] 70.6 Stöd för komprimerade backuper och media-filer
-    - [x] 70.7 Automatisk rensning av gamla backuper (30 dagar)
-    - [ ] 70.8 Backup-uppladdning via webbgränssnitt - Lösa problem med stora filer (>100MB) och nginx-konfiguration
-        - [ ] 70.8.1 Fixa nginx client_max_body_size för stora backupfiler (2GB+)
-        - [ ] 70.8.2 Förbättra JavaScript AJAX-uppladdning för stora filer
-        - [ ] 70.8.3 Lägg till progress-indikator för stora filer
-        - [ ] 70.8.4 Testa och verifiera att uppladdning fungerar för filer >100MB
-        - [ ] 70.8.5 Dokumentera lösningen för framtida deployment
-71. [x] Förbättrad navigering på systeminställningssidan.
-    - [x] 71.1 Bootstrap navbar för in-page navigering mellan sektioner
-    - [x] 71.2 Smooth scrolling med scroll-margin-top för att visa headers
-    - [x] 71.3 Aktiv länk-markering baserat på scroll-position
-    - [x] 71.4 Responsiv design för navigeringsmenyn
-    - [x] 71.5 Korrekt styling med ljus bakgrund och mörk text
-72. [x] Vy för okopplade bilder – Rutnätsvy med funktioner för att ta bort och ladda ner bilder som flyttats från borttagna yxor.
-    - [x] 72.1 Rutnätsvy med bildkort som visar filnamn, storlek och timestamp
-    - [x] 72.2 Gruppering av bilder efter timestamp (när yxan togs bort)
-    - [x] 72.3 Soptunne-ikon för att ta bort enskilda bilder
-    - [x] 72.4 Ladda ner-ikon för att spara ner enskilda bilder
-    - [x] 72.5 Massåtgärder med checkboxar för att välja flera bilder
-    - [x] 72.6 "Ladda ner valda"-knapp som skapar ZIP-fil med valda bilder
-    - [x] 72.7 Statistik-kort som visar totalt antal bilder, storlek och antal grupper
-    - [x] 72.8 Responsiv design som fungerar på mobil och desktop
-    - [x] 72.9 AJAX-hantering för borttagning utan sidladdning
-    - [x] 72.10 Hover-effekter och animationer för bättre användarupplevelse
-    - [x] 72.11 .webp-optimering: visar .webp-versioner för snabbare laddning men laddar ner originalfiler
-    - [x] 72.12 Korrekt svenska grammatik med plural-former för "antal bilder" och "antal grupper"
-    - [x] 72.13 Lägg till länk till vyn i admin-navigation (kommer att implementeras när inloggning/adminvy införs)
-    - [x] 72.14 Implementera motsvarande hantering för borttagning av tillverkare och deras bilder (flytt till okopplade bilder)
-        - [x] 72.14.1 Analysera vad som ska hända med yxor som tillhör tillverkaren (behåll som "okänd tillverkare" vs förhindra borttagning)
-        - [x] 72.14.2 Utvärdera om funktionen ens behövs eller om tillverkare ska vara permanent
+69. [x] Förbättrad admin-raderingsvy för yxor – Tydlig lista över vad som tas bort, bockruta för bildradering.
+70. [ ] Batchuppladdning av yxor – Möjlighet att ladda upp flera yxor samtidigt. **(Pausad – kräver vidare diskussion och behovsanalys innan implementation)**
+71. [x] Export/import av data (CSV, Excel) direkt från admin.
+72. [x] Automatiska backuper av databasen.
+    - [x] 72.1 Backup-funktionalitet flyttad från admin till systeminställningsvyn
+    - [x] 72.2 Integrerad backup-hantering i settings.html med modern UI
+    - [x] 72.3 Skapa, ta bort och återställ backuper direkt från inställningssidan
+    - [x] 72.4 Statistik-visning för varje backup (antal yxor, kontakter, transaktioner)
+    - [x] 72.5 Varningar för återställning med bekräftelsedialoger
+    - [x] 72.6 Stöd för komprimerade backuper och media-filer
+    - [x] 72.7 Automatisk rensning av gamla backuper (30 dagar)
+    - [ ] 72.8 Backup-uppladdning via webbgränssnitt - Lösa problem med stora filer (>100MB) och nginx-konfiguration
+        - [ ] 72.8.1 Fixa nginx client_max_body_size för stora backupfiler (2GB+)
+        - [ ] 72.8.2 Förbättra JavaScript AJAX-uppladdning för stora filer
+        - [ ] 72.8.3 Lägg till progress-indikator för stora filer
+        - [ ] 72.8.4 Testa och verifiera att uppladdning fungerar för filer >100MB
+        - [ ] 72.8.5 Dokumentera lösningen för framtida deployment
+73. [x] Förbättrad navigering på systeminställningssidan.
+    - [x] 73.1 Bootstrap navbar för in-page navigering mellan sektioner
+    - [x] 73.2 Smooth scrolling med scroll-margin-top för att visa headers
+    - [x] 73.3 Aktiv länk-markering baserat på scroll-position
+    - [x] 73.4 Responsiv design för navigeringsmenyn
+    - [x] 73.5 Korrekt styling med ljus bakgrund och mörk text
+74. [x] Vy för okopplade bilder – Rutnätsvy med funktioner för att ta bort och ladda ner bilder som flyttats från borttagna yxor.
+    - [x] 74.1 Rutnätsvy med bildkort som visar filnamn, storlek och timestamp
+    - [x] 74.2 Gruppering av bilder efter timestamp (när yxan togs bort)
+    - [x] 74.3 Soptunne-ikon för att ta bort enskilda bilder
+    - [x] 74.4 Ladda ner-ikon för att spara ner enskilda bilder
+    - [x] 74.5 Massåtgärder med checkboxar för att välja flera bilder
+    - [x] 74.6 "Ladda ner valda"-knapp som skapar ZIP-fil med valda bilder
+    - [x] 74.7 Statistik-kort som visar totalt antal bilder, storlek och antal grupper
+    - [x] 74.8 Responsiv design som fungerar på mobil och desktop
+    - [x] 74.9 AJAX-hantering för borttagning utan sidladdning
+    - [x] 74.10 Hover-effekter och animationer för bättre användarupplevelse
+    - [x] 74.11 .webp-optimering: visar .webp-versioner för snabbare laddning men laddar ner originalfiler
+    - [x] 74.12 Korrekt svenska grammatik med plural-former för "antal bilder" och "antal grupper"
+    - [x] 74.13 Lägg till länk till vyn i admin-navigation (kommer att implementeras när inloggning/adminvy införs)
+    - [x] 74.14 Implementera motsvarande hantering för borttagning av tillverkare och deras bilder (flytt till okopplade bilder)
+        - [x] 74.14.1 Analysera vad som ska hända med yxor som tillhör tillverkaren (behåll som "okänd tillverkare" vs förhindra borttagning)
+        - [x] 74.14.2 Utvärdera om funktionen ens behövs eller om tillverkare ska vara permanent
 
 ## 9. Säkerhet och användare
 
-73. [x] Inloggning/behörighet – Privata delar eller flera användare.
-    - [x] 73.1 Django Auth-system implementerat med anpassade templates
-    - [x] 73.2 Långa sessioner (30 dagar) för bättre användarupplevelse
-    - [x] 73.3 Starka lösenord (minst 12 tecken) med Django's validering
-    - [x] 73.4 Login/logout-funktionalitet med redirect till rätt sida
-    - [x] 73.5 Användardropdown i navigationen med inställningar och logout
-    - [x] 73.6 Responsiv login-modal i navigationen för snabb inloggning
-    - [x] 73.7 Tydlig visuell feedback för inloggade vs icke-inloggade användare
-74. [ ] Loggning av ändringar (audit trail).
-75. [x] Inför inloggning/adminvy så att endast inloggade kan redigera, och visa en publik vy där känsliga uppgifter (t.ex. kontaktnamn, personuppgifter och ev. priser) maskeras eller döljs.
-    - [x] 75.1 Settings-modell med konfigurerbara publika inställningar
-    - [x] 75.2 Context processor som gör publika inställningar tillgängliga i alla templates
-    - [x] 75.3 Automatisk filtrering av känslig data för icke-inloggade användare
-    - [x] 75.4 Kontroll av användarstatus i alla vyer som visar känslig information
-    - [x] 75.5 Fallback-hantering om Settings-modellen inte finns ännu
-    - [x] 75.6 Dedikerad inställningssida för administratörer
-    - [x] 75.7 Switches för alla publika inställningar med tydliga beskrivningar
-    - [x] 75.8 Sajtinställningar för titel och beskrivning
-    - [x] 75.9 Endast inloggade användare kan komma åt inställningarna
-    - [x] 75.10 Global sökning respekterar publika inställningar
-    - [x] 75.11 Kontaktsökning döljs för icke-inloggade användare om inställt
-    - [x] 75.12 Plattformssökning kan konfigureras för publik/privat visning
-    - [x] 75.13 Intelligent filtrering baserat på användarstatus
-    - [x] 75.14 Yxlistan filtreras automatiskt för icke-inloggade användare
-    - [x] 75.15 Transaktionsdata döljs eller visas baserat på inställningar
-    - [x] 75.16 Kontaktinformation maskeras för publika användare
-    - [x] 75.17 Prisinformation kan döljas för publika användare
-    - [x] 75.18 Konsekvent navigation som anpassas efter användarstatus
-    - [x] 75.19 Snygga ikoner och styling för användargränssnittet
-    - [x] 75.20 Fixa yxdetaljsidan: Pris- och fraktkolumner visas fortfarande för publika användare trots att de ska döljas
-    - [x] 75.21 Fixa ekonomiska statistikkort på /yxor: Kronor-relaterade kort (vinst/förlust, totala värden) visas fortfarande för publika användare, ska döljas helt
+75. [x] Inloggning/behörighet – Privata delar eller flera användare.
+    - [x] 75.1 Django Auth-system implementerat med anpassade templates
+    - [x] 75.2 Långa sessioner (30 dagar) för bättre användarupplevelse
+    - [x] 75.3 Starka lösenord (minst 12 tecken) med Django's validering
+    - [x] 75.4 Login/logout-funktionalitet med redirect till rätt sida
+    - [x] 75.5 Användardropdown i navigationen med inställningar och logout
+    - [x] 75.6 Responsiv login-modal i navigationen för snabb inloggning
+    - [x] 75.7 Tydlig visuell feedback för inloggade vs icke-inloggade användare
+76. [ ] Loggning av ändringar (audit trail).
+77. [x] Inför inloggning/adminvy så att endast inloggade kan redigera, och visa en publik vy där känsliga uppgifter (t.ex. kontaktnamn, personuppgifter och ev. priser) maskeras eller döljs.
+    - [x] 77.1 Settings-modell med konfigurerbara publika inställningar
+    - [x] 77.2 Context processor som gör publika inställningar tillgängliga i alla templates
+    - [x] 77.3 Automatisk filtrering av känslig data för icke-inloggade användare
+    - [x] 77.4 Kontroll av användarstatus i alla vyer som visar känslig information
+    - [x] 77.5 Fallback-hantering om Settings-modellen inte finns ännu
+    - [x] 77.6 Dedikerad inställningssida för administratörer
+    - [x] 77.7 Switches för alla publika inställningar med tydliga beskrivningar
+    - [x] 77.8 Sajtinställningar för titel och beskrivning
+    - [x] 77.9 Endast inloggade användare kan komma åt inställningarna
+    - [x] 77.10 Global sökning respekterar publika inställningar
+    - [x] 77.11 Kontaktsökning döljs för icke-inloggade användare om inställt
+    - [x] 77.12 Plattformssökning kan konfigureras för publik/privat visning
+    - [x] 77.13 Intelligent filtrering baserat på användarstatus
+    - [x] 77.14 Yxlistan filtreras automatiskt för icke-inloggade användare
+    - [x] 77.15 Transaktionsdata döljs eller visas baserat på inställningar
+    - [x] 77.16 Kontaktinformation maskeras för publika användare
+    - [x] 77.17 Prisinformation kan döljas för publika användare
+    - [x] 77.18 Konsekvent navigation som anpassas efter användarstatus
+    - [x] 77.19 Snygga ikoner och styling för användargränssnittet
+    - [x] 77.20 Fixa yxdetaljsidan: Pris- och fraktkolumner visas fortfarande för publika användare trots att de ska döljas
+    - [x] 77.21 Fixa ekonomiska statistikkort på /yxor: Kronor-relaterade kort (vinst/förlust, totala värden) visas fortfarande för publika användare, ska döljas helt
 
 ## 10. Prestanda och kodkvalitet
 
-76. [ ] Fler automatiska tester (unit/integration).
-77. [ ] CI/CD – Automatiska tester vid push (GitHub Actions).
-78. [ ] Kodgranskning – Linting och kodstil (t.ex. black, flake8).
-79. [x] Periodvis kodgranskning: Gå igenom och granska koden stegvis för att identifiera behov av övergripande refaktorering, buggfixar och tillsnyggning. Gör detta processvis så att varje steg kan testas innan nästa påbörjas.
-    - [x] 79.1 Refaktorera vyer till mindre filer (views_axe.py, views_contact.py, views_manufacturer.py, views_transaction.py)
-    - [x] 79.2 Flytta statistik- och ekonomi-beräkning från vyer till model-properties
-    - [x] 79.3 Skapa återanvändbara template-includes för statistik-kort (_stat_card.html, _axe_stats_cards.html, _contact_stats_cards.html, _transaction_stats_cards.html)
-    - [x] 79.4 Uppdatera templates för att använda nya includes och model-properties
-    - [x] 79.5 Förenkla fler templates med includes och templatetags (t.ex. transaktionsrader, status-badges, breadcrumbs)
-    - [x] 79.6 Refaktorera formulär med återanvändbara komponenter
-    - [ ] 79.7 Lägg till tester för vyer, modeller och templatetags
-    - [ ] 79.8 Prestandaoptimering (caching, lazy loading, etc.)
-80. [x] Dokumentation av förbättringar - Uppdatera markdown-filer med genomförda förbättringar och lärdomar
-81. [ ] Implementera Django REST Framework och ViewSets
-82. [x] Skapa fingerad testdata för demo och testning
-    - [x] 82.1 Exportera nuvarande databas-struktur för att förstå datamodellen
-    - [x] 82.2 Skapa script för att generera realistisk testdata (yxor, tillverkare, kontakter, transaktioner)
-    - [x] 82.3 Inkludera olika typer av yxor med varierande mått, bilder och transaktioner
-    - [x] 82.4 Skapa tillverkare med olika antal bilder och länkar
-    - [x] 82.5 Generera kontakter från olika länder med flaggemoji
-    - [x] 82.6 Skapa transaktioner med olika plattformar och priser
-    - [x] 82.7 Testa alla funktioner med testdata (sökning, filtrering, statistik, etc.)
-    - [x] 82.8 Förbereda för publik demo-webbplats
-    - [x] 82.9 Dokumentera hur man återställer till testdata
-83. [x] todo_manager behöver kunna hantera underuppgifter som 58.4 (slutföra underuppgifter)
+78. [ ] Fler automatiska tester (unit/integration).
+79. [ ] CI/CD – Automatiska tester vid push (GitHub Actions).
+80. [ ] Kodgranskning – Linting och kodstil (t.ex. black, flake8).
+81. [x] Periodvis kodgranskning: Gå igenom och granska koden stegvis för att identifiera behov av övergripande refaktorering, buggfixar och tillsnyggning. Gör detta processvis så att varje steg kan testas innan nästa påbörjas.
+    - [x] 81.1 Refaktorera vyer till mindre filer (views_axe.py, views_contact.py, views_manufacturer.py, views_transaction.py)
+    - [x] 81.2 Flytta statistik- och ekonomi-beräkning från vyer till model-properties
+    - [x] 81.3 Skapa återanvändbara template-includes för statistik-kort (_stat_card.html, _axe_stats_cards.html, _contact_stats_cards.html, _transaction_stats_cards.html)
+    - [x] 81.4 Uppdatera templates för att använda nya includes och model-properties
+    - [x] 81.5 Förenkla fler templates med includes och templatetags (t.ex. transaktionsrader, status-badges, breadcrumbs)
+    - [x] 81.6 Refaktorera formulär med återanvändbara komponenter
+    - [ ] 81.7 Lägg till tester för vyer, modeller och templatetags
+    - [ ] 81.8 Prestandaoptimering (caching, lazy loading, etc.)
+82. [x] Dokumentation av förbättringar - Uppdatera markdown-filer med genomförda förbättringar och lärdomar
+83. [ ] Implementera Django REST Framework och ViewSets
+84. [x] Skapa fingerad testdata för demo och testning
+    - [x] 84.1 Exportera nuvarande databas-struktur för att förstå datamodellen
+    - [x] 84.2 Skapa script för att generera realistisk testdata (yxor, tillverkare, kontakter, transaktioner)
+    - [x] 84.3 Inkludera olika typer av yxor med varierande mått, bilder och transaktioner
+    - [x] 84.4 Skapa tillverkare med olika antal bilder och länkar
+    - [x] 84.5 Generera kontakter från olika länder med flaggemoji
+    - [x] 84.6 Skapa transaktioner med olika plattformar och priser
+    - [x] 84.7 Testa alla funktioner med testdata (sökning, filtrering, statistik, etc.)
+    - [x] 84.8 Förbereda för publik demo-webbplats
+    - [x] 84.9 Dokumentera hur man återställer till testdata
+85. [x] todo_manager behöver kunna hantera underuppgifter som 58.4 (slutföra underuppgifter)
 
 ## 11. Testdata och demo
 
-84. [x] Skapa fingerad testdata för demo och testning
-85. [x] Docker demo-läge med miljövariabel
-    - [x] 85.1 Lägg till miljövariabel DEMO_MODE för Docker-containern
-    - [x] 85.2 Implementera logik som kontrollerar DEMO_MODE vid container-start
-    - [x] 85.3 Automatisk körning av `generate_test_data --clear` när DEMO_MODE=true
-    - [x] 85.4 Säkerställ att demo-läget endast körs vid container-start, inte vid reload
-    - [x] 85.5 Dokumentera användning av demo-läge i deployment-guider
-    - [x] 85.6 Testa demo-läge i olika Docker-miljöer (utveckling, produktion)
-86. [x] Ordna demodata med hierarkiska tillverkare - Till exempel är smederna Johan Jonsson, Johan Skog och Willy Persson alla tre smeder hos Hjärtumssmedjan
+86. [x] Skapa fingerad testdata för demo och testning
+87. [x] Docker demo-läge med miljövariabel
+    - [x] 87.1 Lägg till miljövariabel DEMO_MODE för Docker-containern
+    - [x] 87.2 Implementera logik som kontrollerar DEMO_MODE vid container-start
+    - [x] 87.3 Automatisk körning av `generate_test_data --clear` när DEMO_MODE=true
+    - [x] 87.4 Säkerställ att demo-läget endast körs vid container-start, inte vid reload
+    - [x] 87.5 Dokumentera användning av demo-läge i deployment-guider
+    - [x] 87.6 Testa demo-läge i olika Docker-miljöer (utveckling, produktion)
+88. [x] Ordna demodata med hierarkiska tillverkare - Till exempel är smederna Johan Jonsson, Johan Skog och Willy Persson alla tre smeder hos Hjärtumssmedjan
 
 ## 12. Design och presentation
 
-87. [x] Bättre visuell presentation av galleriet, t.ex. lightbox för bilder.
-88. [x] Förbättrad UI med badges och ikoner – Tydligare visning av transaktionstyper med ikoner.
-89. [x] Förbättrad tillverkarsida – ID som badge, kommentar som egen sektion, hela bredden för korten.
-90. [x] Visa statistik (t.ex. antal yxor, mest populära tillverkare, dyraste köp).
-    - [x] 90.1 Dedikerad statistik-dashboard med samlingsöversikt
-    - [x] 90.2 Topplistor för mest aktiva tillverkare, plattformar och kontakter
-    - [x] 90.3 Ekonomisk översikt med totala köp- och försäljningsvärden
-    - [x] 90.4 Realtidsstatistik som uppdateras baserat på aktiva filter
-    - [x] 90.5 Fixat Django ORM-problem med annotate och properties
-    - [x] 90.6 Visa antal yxor i samlingen över tid (linje- eller stapeldiagram)
-        - [x] 90.6.1 Kombinerad tidslinje med "Yxor köpta (total)" och "Yxor i samlingen"
-        - [x] 90.6.2 Grupperad per månad baserat på transaktionsdatum
-        - [x] 90.6.3 Visar tydligt skillnaden mellan köpta och kvarvarande yxor
-        - [x] 90.6.4 Chart.js-implementation med två färgkodade linjer
-    - [x] 90.7 Visa totala inköpskostnader och försäljningsintäkter över tid (diagram)
-        - [x] 90.7.1 Stapeldiagram med transaktionsvärden per månad
-        - [x] 90.7.2 Röda staplar för köpvärde, gröna för försäljningsvärde
-        - [x] 90.7.3 Visar aktivitet över tid istället för kumulativa värden
-        - [x] 90.7.4 Svensk formatering av belopp i tooltips och axlar
-    - [x] 90.8 Visa dyraste och billigaste köp/sälj i topplistan, med länk till respektive yxa
-        - [x] 90.8.1 Länkar till yxorna från alla transaktionslistor
-        - [x] 90.8.2 Förbättrad layout med radbrytning för långa yxnamn
-        - [x] 90.8.3 Flexbox-layout för bättre "tabb-avstånd" och läsbarhet
-        - [x] 90.8.4 Billigaste köp och försäljningar tillagda
-    - [x] 90.9 Visa mest aktiva månader (när köps/säljs flest yxor)
-        - [x] 90.9.1 Staplat stapeldiagram som visar antal köp/sälj per månad
-        - [x] 90.9.2 Färgkodning: röd för köp, blå för sälj
-        - [x] 90.9.3 Tooltip med exakt antal transaktioner per typ
-        - [x] 90.9.4 Placerat efter ekonomiska diagrammen på statistiksidan
-    - [x] 90.10 Visa senaste aktivitet (senaste köp, sälj, tillagd yxa)
-        - [x] 90.10.1 Tre kort för senaste köp, försäljningar och tillagda yxor
-        - [x] 90.10.2 Visar de 5 senaste aktiviteterna per kategori
-        - [x] 90.10.3 Länkar till respektive yxas detaljsida
-        - [x] 90.10.4 Färgkodning: grön för köp, röd för sälj, blå för tillagda yxor
-        - [x] 90.10.5 Visar datum och pris/tillverkare för varje aktivitet
-91. [ ] QR-kod för att snabbt visa en yxa på mobilen. **(Pausad – kräver vidare diskussion och behovsanalys innan implementation)**
+89. [x] Bättre visuell presentation av galleriet, t.ex. lightbox för bilder.
+90. [x] Förbättrad UI med badges och ikoner – Tydligare visning av transaktionstyper med ikoner.
+91. [x] Förbättrad tillverkarsida – ID som badge, kommentar som egen sektion, hela bredden för korten.
+92. [x] Visa statistik (t.ex. antal yxor, mest populära tillverkare, dyraste köp).
+    - [x] 92.1 Dedikerad statistik-dashboard med samlingsöversikt
+    - [x] 92.2 Topplistor för mest aktiva tillverkare, plattformar och kontakter
+    - [x] 92.3 Ekonomisk översikt med totala köp- och försäljningsvärden
+    - [x] 92.4 Realtidsstatistik som uppdateras baserat på aktiva filter
+    - [x] 92.5 Fixat Django ORM-problem med annotate och properties
+    - [x] 92.6 Visa antal yxor i samlingen över tid (linje- eller stapeldiagram)
+        - [x] 92.6.1 Kombinerad tidslinje med "Yxor köpta (total)" och "Yxor i samlingen"
+        - [x] 92.6.2 Grupperad per månad baserat på transaktionsdatum
+        - [x] 92.6.3 Visar tydligt skillnaden mellan köpta och kvarvarande yxor
+        - [x] 92.6.4 Chart.js-implementation med två färgkodade linjer
+    - [x] 92.7 Visa totala inköpskostnader och försäljningsintäkter över tid (diagram)
+        - [x] 92.7.1 Stapeldiagram med transaktionsvärden per månad
+        - [x] 92.7.2 Röda staplar för köpvärde, gröna för försäljningsvärde
+        - [x] 92.7.3 Visar aktivitet över tid istället för kumulativa värden
+        - [x] 92.7.4 Svensk formatering av belopp i tooltips och axlar
+    - [x] 92.8 Visa dyraste och billigaste köp/sälj i topplistan, med länk till respektive yxa
+        - [x] 92.8.1 Länkar till yxorna från alla transaktionslistor
+        - [x] 92.8.2 Förbättrad layout med radbrytning för långa yxnamn
+        - [x] 92.8.3 Flexbox-layout för bättre "tabb-avstånd" och läsbarhet
+        - [x] 92.8.4 Billigaste köp och försäljningar tillagda
+    - [x] 92.9 Visa mest aktiva månader (när köps/säljs flest yxor)
+        - [x] 92.9.1 Staplat stapeldiagram som visar antal köp/sälj per månad
+        - [x] 92.9.2 Färgkodning: röd för köp, blå för sälj
+        - [x] 92.9.3 Tooltip med exakt antal transaktioner per typ
+        - [x] 92.9.4 Placerat efter ekonomiska diagrammen på statistiksidan
+    - [x] 92.10 Visa senaste aktivitet (senaste köp, sälj, tillagd yxa)
+        - [x] 92.10.1 Tre kort för senaste köp, försäljningar och tillagda yxor
+        - [x] 92.10.2 Visar de 5 senaste aktiviteterna per kategori
+        - [x] 92.10.3 Länkar till respektive yxas detaljsida
+        - [x] 92.10.4 Färgkodning: grön för köp, röd för sälj, blå för tillagda yxor
+        - [x] 92.10.5 Visar datum och pris/tillverkare för varje aktivitet
+93. [ ] QR-kod för att snabbt visa en yxa på mobilen. **(Pausad – kräver vidare diskussion och behovsanalys innan implementation)**
 
 ## 13. Framtida förbättringar
 
-92. [x] Fixa JavaScript-fel och landsfält-problem
-    - [x] 92.1 Fixa SyntaxError på yxformuläret (`window.axeId = ;` när axe.pk inte finns)
-    - [x] 92.2 Ersätt komplex sökbar select med enkel dropdown för landsfält på kontaktformuläret
-    - [x] 92.3 Ta bort all debug-kod (console.log) från båda formulären
-    - [x] 92.4 Förbättra felhantering för Django-template-syntax i JavaScript
-    - [x] 92.5 Implementera konsekvent landsfält med flagg-emoji och landsnamn
-    - [x] 92.6 Stöd för redigering av befintliga kontakter med landskod
-    - [x] 92.7 Rensa kod från onödiga CSS-regler och JavaScript-funktioner
-    - [x] 92.8 Förbättra användarupplevelse med enkel och pålitlig dropdown-lista
-93. [x] Fixa duplicerad "Detaljer"-knapp på /galleri-sidan
-    - [x] 93.1 Fixa SyntaxError på yxformuläret (`window.axeId = ;` när axe.pk inte finns)
-    - [x] 93.2 Ersätt komplex sökbar select med enkel dropdown för landsfält på kontaktformuläret
-    - [x] 93.3 Ta bort all debug-kod (console.log) från båda formulären
-    - [x] 93.4 Förbättra felhantering för Django-template-syntax i JavaScript
-    - [x] 93.5 Implementera konsekvent landsfält med flagg-emoji och landsnamn
-    - [x] 93.6 Stöd för redigering av befintliga kontakter med landskod
-    - [x] 93.7 Rensa kod från onödiga CSS-regler och JavaScript-funktioner
-    - [x] 93.8 Förbättra användarupplevelse med enkel och pålitlig dropdown-lista
-94. [ ] Kommentarsystem (framtida funktion)
-    - [ ] 94.1 Möjlighet att kommentera yxor
-    - [ ] 94.2 Möjlighet att kommentera tillverkare
-    - [ ] 94.3 Moderationssystem för kommentarer
-    - [ ] 94.4 Användarhantering för kommentarer
-95. [ ] Förbättrad felhantering och validering i formulär.
-96. [ ] Snabbare AJAX-sökningar med caching.
-97. [ ] Tangentbordsnavigering i lightbox (piltangenter för att bläddra mellan bilder).
-98. [ ] Touch-gester för mobil navigering i lightbox (swipe för att bläddra).
-99. [ ] Zoom-funktionalitet i lightbox för att se bilder i full storlek.
-100. [ ] Automatisk bildrotation baserat på EXIF-data.
-101. [ ] Bulk-redigering av bilder (redigera flera bilder samtidigt).
-102. [ ] Bildkommentarer med @-mentions för att länka till tillverkare eller yxor.
+94. [x] Fixa JavaScript-fel och landsfält-problem
+    - [x] 94.1 Fixa SyntaxError på yxformuläret (`window.axeId = ;` när axe.pk inte finns)
+    - [x] 94.2 Ersätt komplex sökbar select med enkel dropdown för landsfält på kontaktformuläret
+    - [x] 94.3 Ta bort all debug-kod (console.log) från båda formulären
+    - [x] 94.4 Förbättra felhantering för Django-template-syntax i JavaScript
+    - [x] 94.5 Implementera konsekvent landsfält med flagg-emoji och landsnamn
+    - [x] 94.6 Stöd för redigering av befintliga kontakter med landskod
+    - [x] 94.7 Rensa kod från onödiga CSS-regler och JavaScript-funktioner
+    - [x] 94.8 Förbättra användarupplevelse med enkel och pålitlig dropdown-lista
+95. [x] Fixa duplicerad "Detaljer"-knapp på /galleri-sidan
+    - [x] 95.1 Fixa SyntaxError på yxformuläret (`window.axeId = ;` när axe.pk inte finns)
+    - [x] 95.2 Ersätt komplex sökbar select med enkel dropdown för landsfält på kontaktformuläret
+    - [x] 95.3 Ta bort all debug-kod (console.log) från båda formulären
+    - [x] 95.4 Förbättra felhantering för Django-template-syntax i JavaScript
+    - [x] 95.5 Implementera konsekvent landsfält med flagg-emoji och landsnamn
+    - [x] 95.6 Stöd för redigering av befintliga kontakter med landskod
+    - [x] 95.7 Rensa kod från onödiga CSS-regler och JavaScript-funktioner
+    - [x] 95.8 Förbättra användarupplevelse med enkel och pålitlig dropdown-lista
+96. [ ] Kommentarsystem (framtida funktion)
+    - [ ] 96.1 Möjlighet att kommentera yxor
+    - [ ] 96.2 Möjlighet att kommentera tillverkare
+    - [ ] 96.3 Moderationssystem för kommentarer
+    - [ ] 96.4 Användarhantering för kommentarer
+97. [ ] Förbättrad felhantering och validering i formulär.
+98. [ ] Snabbare AJAX-sökningar med caching.
+99. [ ] Tangentbordsnavigering i lightbox (piltangenter för att bläddra mellan bilder).
+100. [ ] Touch-gester för mobil navigering i lightbox (swipe för att bläddra).
+101. [ ] Zoom-funktionalitet i lightbox för att se bilder i full storlek.
+102. [ ] Automatisk bildrotation baserat på EXIF-data.
+103. [ ] Bulk-redigering av bilder (redigera flera bilder samtidigt).
+104. [ ] Bildkommentarer med @-mentions för att länka till tillverkare eller yxor.
