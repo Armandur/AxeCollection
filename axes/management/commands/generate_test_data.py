@@ -5,7 +5,6 @@ from django.contrib.auth.models import User
 from decimal import Decimal
 import random
 from datetime import timedelta
-import os
 from PIL import Image, ImageDraw, ImageFont
 import io
 
@@ -549,10 +548,10 @@ class Command(BaseCommand):
             # Försök hitta en font som fungerar på Windows
             font_size = min(width, height) // 10
             font = ImageFont.truetype("arial.ttf", font_size)
-        except:
+        except Exception:
             try:
                 font = ImageFont.truetype("DejaVuSans.ttf", font_size)
-            except:
+            except Exception:
                 font = ImageFont.load_default()
 
         # Beräkna textposition för centrering

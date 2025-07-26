@@ -246,7 +246,6 @@ class Command(BaseCommand):
                 date_str = row[3] if len(row) > 3 else ""
                 price_str = row[4] if len(row) > 4 else "0"
                 shipping_str = row[5] if len(row) > 5 else "0"
-                total_str = row[6] if len(row) > 6 else "0"
                 comment = row[7].strip('"') if len(row) > 7 and row[7] else ""
                 platform_id = int(row[8]) if len(row) > 8 and row[8] else None
                 transaction_type = (

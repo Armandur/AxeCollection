@@ -2,8 +2,15 @@ from decimal import Decimal
 from django.test import TestCase
 from django.core.management import call_command
 from axes.models import (
-    Manufacturer, Axe, NextAxeID, Contact, Platform, Settings,
-    MeasurementType, MeasurementTemplate, Measurement
+    Manufacturer,
+    Axe,
+    NextAxeID,
+    Contact,
+    Platform,
+    Settings,
+    MeasurementType,
+    MeasurementTemplate,
+    Measurement,
 )
 
 
@@ -12,7 +19,16 @@ class ManufacturerModelTest(TestCase):
 
     def setUp(self):
         """Skapa testdata för varje test"""
-        call_command('generate_test_data', '--clear', '--manufacturers', '5', '--axes', '10', '--contacts', '5')
+        call_command(
+            "generate_test_data",
+            "--clear",
+            "--manufacturers",
+            "5",
+            "--axes",
+            "10",
+            "--contacts",
+            "5",
+        )
 
     def test_manufacturer_creation(self):
         """Test att skapa en tillverkare"""
@@ -60,7 +76,16 @@ class AxeModelTest(TestCase):
 
     def setUp(self):
         """Skapa testdata för varje test"""
-        call_command('generate_test_data', '--clear', '--manufacturers', '5', '--axes', '10', '--contacts', '5')
+        call_command(
+            "generate_test_data",
+            "--clear",
+            "--manufacturers",
+            "5",
+            "--axes",
+            "10",
+            "--contacts",
+            "5",
+        )
 
     def test_axe_creation(self):
         """Test att skapa en yxa"""
@@ -104,7 +129,16 @@ class NextAxeIDModelTest(TestCase):
 
     def setUp(self):
         """Skapa testdata för varje test"""
-        call_command('generate_test_data', '--clear', '--manufacturers', '5', '--axes', '10', '--contacts', '5')
+        call_command(
+            "generate_test_data",
+            "--clear",
+            "--manufacturers",
+            "5",
+            "--axes",
+            "10",
+            "--contacts",
+            "5",
+        )
 
     def test_get_next_id(self):
         """Test att hämta nästa ID"""
@@ -140,7 +174,16 @@ class ContactModelTest(TestCase):
 
     def setUp(self):
         """Skapa testdata för varje test"""
-        call_command('generate_test_data', '--clear', '--manufacturers', '5', '--axes', '10', '--contacts', '5')
+        call_command(
+            "generate_test_data",
+            "--clear",
+            "--manufacturers",
+            "5",
+            "--axes",
+            "10",
+            "--contacts",
+            "5",
+        )
 
     def test_contact_creation(self):
         """Test att skapa en kontakt"""
@@ -172,7 +215,16 @@ class PlatformModelTest(TestCase):
 
     def setUp(self):
         """Skapa testdata för varje test"""
-        call_command('generate_test_data', '--clear', '--manufacturers', '5', '--axes', '10', '--contacts', '5')
+        call_command(
+            "generate_test_data",
+            "--clear",
+            "--manufacturers",
+            "5",
+            "--axes",
+            "10",
+            "--contacts",
+            "5",
+        )
 
     def test_platform_creation(self):
         """Test att skapa en plattform"""
@@ -204,7 +256,16 @@ class SettingsModelTest(TestCase):
 
     def setUp(self):
         """Skapa testdata för varje test"""
-        call_command('generate_test_data', '--clear', '--manufacturers', '5', '--axes', '10', '--contacts', '5')
+        call_command(
+            "generate_test_data",
+            "--clear",
+            "--manufacturers",
+            "5",
+            "--axes",
+            "10",
+            "--contacts",
+            "5",
+        )
 
     def test_settings_creation(self):
         """Test att skapa inställningar"""
@@ -238,7 +299,16 @@ class MeasurementTypeModelTest(TestCase):
 
     def setUp(self):
         """Skapa testdata för varje test"""
-        call_command('generate_test_data', '--clear', '--manufacturers', '5', '--axes', '10', '--contacts', '5')
+        call_command(
+            "generate_test_data",
+            "--clear",
+            "--manufacturers",
+            "5",
+            "--axes",
+            "10",
+            "--contacts",
+            "5",
+        )
 
     def test_measurement_type_creation(self):
         """Test att skapa en måtttyp"""
@@ -250,9 +320,7 @@ class MeasurementTypeModelTest(TestCase):
         else:
             # Om inga måtttyper finns, skapa en
             measurement_type = MeasurementType.objects.create(
-                name="Test Måtttyp",
-                unit="gram",
-                description="Test beskrivning"
+                name="Test Måtttyp", unit="gram", description="Test beskrivning"
             )
             self.assertIsNotNone(measurement_type.id)
 
@@ -261,9 +329,7 @@ class MeasurementTypeModelTest(TestCase):
         measurement_type = MeasurementType.objects.first()
         if not measurement_type:
             measurement_type = MeasurementType.objects.create(
-                name="Test Måtttyp",
-                unit="gram",
-                description="Test beskrivning"
+                name="Test Måtttyp", unit="gram", description="Test beskrivning"
             )
         expected = f"{measurement_type.name} ({measurement_type.unit})"
         self.assertEqual(str(measurement_type), expected)
@@ -274,7 +340,16 @@ class MeasurementTemplateModelTest(TestCase):
 
     def setUp(self):
         """Skapa testdata för varje test"""
-        call_command('generate_test_data', '--clear', '--manufacturers', '5', '--axes', '10', '--contacts', '5')
+        call_command(
+            "generate_test_data",
+            "--clear",
+            "--manufacturers",
+            "5",
+            "--axes",
+            "10",
+            "--contacts",
+            "5",
+        )
 
     def test_measurement_template_creation(self):
         """Test att skapa en måttmall"""
@@ -285,8 +360,7 @@ class MeasurementTemplateModelTest(TestCase):
         else:
             # Om inga mallar finns, skapa en
             template = MeasurementTemplate.objects.create(
-                name="Test Mall",
-                description="Test beskrivning"
+                name="Test Mall", description="Test beskrivning"
             )
             self.assertIsNotNone(template.id)
 
@@ -295,8 +369,7 @@ class MeasurementTemplateModelTest(TestCase):
         template = MeasurementTemplate.objects.first()
         if not template:
             template = MeasurementTemplate.objects.create(
-                name="Test Mall",
-                description="Test beskrivning"
+                name="Test Mall", description="Test beskrivning"
             )
         self.assertEqual(str(template), template.name)
 
@@ -306,7 +379,16 @@ class MeasurementModelTest(TestCase):
 
     def setUp(self):
         """Skapa testdata för varje test"""
-        call_command('generate_test_data', '--clear', '--manufacturers', '5', '--axes', '10', '--contacts', '5')
+        call_command(
+            "generate_test_data",
+            "--clear",
+            "--manufacturers",
+            "5",
+            "--axes",
+            "10",
+            "--contacts",
+            "5",
+        )
 
     def test_measurement_creation(self):
         """Test att skapa ett mått"""
@@ -321,10 +403,7 @@ class MeasurementModelTest(TestCase):
             axe = Axe.objects.first()
             if axe:
                 measurement = Measurement.objects.create(
-                    axe=axe,
-                    name="Test Mått",
-                    value=Decimal('100.50'),
-                    unit="mm"
+                    axe=axe, name="Test Mått", value=Decimal("100.50"), unit="mm"
                 )
                 self.assertIsNotNone(measurement.id)
 
@@ -335,10 +414,7 @@ class MeasurementModelTest(TestCase):
             axe = Axe.objects.first()
             if axe:
                 measurement = Measurement.objects.create(
-                    axe=axe,
-                    name="Test Mått",
-                    value=Decimal('100.50'),
-                    unit="mm"
+                    axe=axe, name="Test Mått", value=Decimal("100.50"), unit="mm"
                 )
         if measurement:
             expected = f"{measurement.axe}: {measurement.name} är {measurement.value} {measurement.unit}"

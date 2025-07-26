@@ -32,7 +32,7 @@ Usage:
 
 import re
 import argparse
-from typing import List, Dict, Tuple, Optional
+from typing import List, Optional
 from dataclasses import dataclass
 
 @dataclass
@@ -255,7 +255,7 @@ class TodoManager:
         parent_parts = parent_number.split('.')
         
         if len(parent_parts) >= 5:
-            print(f"❌ Kan inte lägga till fler undernivåer! Max 5 nivåer totalt.")
+            print("❌ Kan inte lägga till fler undernivåer! Max 5 nivåer totalt.")
             return False
             
         # Hitta föräldrauppgiften
@@ -332,7 +332,7 @@ class TodoManager:
         elif success_count > 0:
             print(f"✅ Markerade {success_count} av {total_count} uppgifter som klara")
         else:
-            print(f"❌ Kunde inte markera några uppgifter som klara")
+            print("❌ Kunde inte markera några uppgifter som klara")
         
         return success_count > 0
     
@@ -551,7 +551,6 @@ class TodoManager:
         
     def _update_sub_item_hierarchy(self, sub_item: TodoSubItem, new_number: str, new_level: int):
         """Uppdaterar numrering och nivå för underuppgift och alla dess barn"""
-        old_number = sub_item.number
         sub_item.number = new_number
         sub_item.level = new_level
         
@@ -577,7 +576,7 @@ class TodoManager:
         parent2_container = self._find_parent_container(sub2_number)
         
         if not parent1_container or not parent2_container:
-            print(f"❌ Kunde inte hitta föräldracontainers!")
+            print("❌ Kunde inte hitta föräldracontainers!")
             return False
             
         # Hitta positioner
@@ -585,7 +584,7 @@ class TodoManager:
         pos2 = next((i for i, item in enumerate(parent2_container) if item.number == sub2_number), None)
         
         if pos1 is None or pos2 is None:
-            print(f"❌ Kunde inte hitta positioner för underuppgifterna!")
+            print("❌ Kunde inte hitta positioner för underuppgifterna!")
             return False
         
         # Byt plats
@@ -1017,7 +1016,7 @@ class TodoManager:
         completed_items = sum(sum(1 for item in section.items if item.completed) 
                             for section in self.sections)
         
-        print(f"📊 TODO-statistik:")
+        print("📊 TODO-statistik:")
         print(f"  📝 Totalt: {total_items} uppgifter")
         print(f"  ✅ Klara: {completed_items} uppgifter")
         print(f"  ⏳ Kvar: {total_items - completed_items} uppgifter")

@@ -3,43 +3,35 @@
 ## 📊 Aktuell Status
 
 ### ✅ Implementerat
-- **Pytest**: 28 modelltester som alla passerar
-- **Coverage**: 15% kodtäckning (modeller)
-- **Flake8**: Konfigurerat (152 linting-problem identifierade)
+- **Pytest**: 51 tester som alla passerar ✅
+- **Coverage**: 36% kodtäckning (modeller + views)
+- **Flake8**: Konfigurerat (42 linting-problem kvar)
 - **Black**: Kodformatering konfigurerad
 - **WAL-mode**: Aktiverat för SQLite i alla miljöer
 - **CI/CD**: GitHub Actions pipeline konfigurerad
 
 ### 🔧 Nästa Steg
 
-#### 1. Linting-problem (152 st)
+#### 1. Linting-problem (24 st)
 Prioriterade problem att åtgärda:
-- **F401**: Oanvända imports (73 st) - Hög prioritet
-- **F841**: Oanvända variabler (24 st) - Hög prioritet  
-- **F811**: Redefinition av variabler (16 st) - Hög prioritet
 - **C901**: För komplexa funktioner (24 st) - Medel prioritet
-- **E722**: Bara `except` utan specifik exception (11 st) - Medel prioritet
-- **F541**: F-string utan placeholders (4 st) - Låg prioritet
+  - Mest komplexa: `axe_create` (37), `axe_edit` (36), `global_search` (20)
+  - Kräver refaktorering av stora funktioner till mindre delar
 
 #### 2. Utöka testtäckning
-Mål: Öka från 15% till minst 70%
+Mål: Öka från 36% till minst 70%
 
 **Prioriterade tester att implementera:**
-1. **Views-tester** (530 rader kod, 0% täckning)
-   - Formulärhantering
-   - Autentisering
-   - API-endpoints
-   
-2. **Forms-tester** (203 rader kod, 0% täckning)
+1. **Forms-tester** (202 rader kod, 40% täckning)
    - Validering
    - Rendering
    
-3. **Management Commands** (1 000+ rader kod, 0% täckning)
+2. **Management Commands** (1 000+ rader kod, 0% täckning)
    - Backup/restore
    - Import/export
    - Testdata-generering
 
-4. **Integrationstester**
+3. **Integrationstester**
    - Fullständiga arbetsflöden
    - Databasoperationer
 
@@ -81,7 +73,7 @@ start htmlcov/index.html
 axes/tests/
 ├── __init__.py
 ├── test_models.py          # ✅ 28 tester (modeller)
-├── test_views.py           # 🔄 Planerat
+├── test_views.py           # ✅ 23 tester (views)
 ├── test_forms.py           # 🔄 Planerat
 ├── test_management.py      # 🔄 Planerat
 └── test_integration.py     # 🔄 Planerat
@@ -90,13 +82,13 @@ axes/tests/
 ## 🎯 Mål och KPI:er
 
 ### Kodtäckning
-- **Nuvarande**: 15% (endast modeller)
+- **Nuvarande**: 36% (modeller + views)
 - **Mål**: 70% (alla kritiska komponenter)
 - **Deadline**: Iterativt under utveckling
 
 ### Linting
-- **Nuvarande**: 152 problem
-- **Mål**: 0 kritiska problem (F401, F841, F811)
+- **Nuvarande**: 24 problem (endast C901 - komplexa funktioner)
+- **Mål**: 0 kritiska problem (F401, F841, F811) ✅ UPPNÅTT
 - **Deadline**: Innan nästa release
 
 ### Testprestanda
@@ -171,9 +163,9 @@ python -m pytest axes/tests/test_models.py::ManufacturerModelTest::test_manufact
 
 ## 🚀 Nästa Aktioner
 
-1. **Omedelbart**: Fixa kritiska linting-problem (F401, F841, F811)
-2. **Kort sikt**: Implementera views-tester
-3. **Medel sikt**: Utöka till forms och management commands
+1. **Omedelbart**: Refaktorera komplexa funktioner (C901) eller öka komplexitetsgränsen
+2. **Kort sikt**: Implementera forms-tester
+3. **Medel sikt**: Utöka till management commands
 4. **Lång sikt**: Integrationstester och prestandaoptimering
 
 ---

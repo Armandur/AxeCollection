@@ -1,8 +1,13 @@
 from django import forms
 from django.utils.safestring import mark_safe
 from .models import (
-    Manufacturer, Axe, Contact, Platform, Transaction,
-    MeasurementType, Measurement
+    Manufacturer,
+    Axe,
+    Contact,
+    Platform,
+    Transaction,
+    MeasurementType,
+    Measurement,
 )
 from django.utils import timezone
 
@@ -411,14 +416,8 @@ class AxeForm(forms.ModelForm):
 
             for main in main_manufacturers:
                 sorted_list.append(main)
-                # Hitta alla undertillverkare för denna huvudtillverkare
-                subs = [
-                    m
-                    for m in manufacturers
-                    if m.hierarchy_level > 0 and _is_descendant(m, main)
-                ]
-
                 # Sortera undertillverkare hierarkiskt
+
                 def sort_children_recursive(parent=None):
                     """Sorterar barn rekursivt under en förälder"""
                     children = [m for m in manufacturers if m.parent == parent]

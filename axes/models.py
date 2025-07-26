@@ -361,7 +361,7 @@ class AxeImage(models.Model):
             try:
                 img = Image.open(img_path)
                 img.save(webp_path, "WEBP", quality=85)
-            except Exception as e:
+            except Exception:
                 pass  # Kan logga fel om så önskas
 
     def delete(self, *args, **kwargs):
@@ -371,7 +371,7 @@ class AxeImage(models.Model):
             if os.path.exists(self.image.path):
                 try:
                     os.remove(self.image.path)
-                except Exception as e:
+                except Exception:
                     pass  # Kan logga fel om så önskas
 
             # Ta bort .webp-filen om den finns
@@ -379,7 +379,7 @@ class AxeImage(models.Model):
             if os.path.exists(webp_path):
                 try:
                     os.remove(webp_path)
-                except Exception as e:
+                except Exception:
                     pass  # Kan logga fel om så önskas
         super().delete(*args, **kwargs)
 
@@ -442,7 +442,7 @@ class ManufacturerImage(models.Model):
             try:
                 img = Image.open(img_path)
                 img.save(webp_path, "WEBP", quality=85)
-            except Exception as e:
+            except Exception:
                 pass  # Kan logga fel om så önskas
 
     def __str__(self):

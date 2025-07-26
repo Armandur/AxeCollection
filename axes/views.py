@@ -4,44 +4,16 @@ from .models import (
     Transaction,
     Contact,
     Manufacturer,
-    ManufacturerImage,
-    ManufacturerLink,
-    NextAxeID,
-    AxeImage,
     Platform,
-    Measurement,
     MeasurementType,
 )
-from django.db.models import Sum, Q, Max, Count, Avg
-from django.http import JsonResponse, Http404
-from django.views.decorators.http import require_POST
+from django.db.models import Sum, Q, Count
+from django.http import JsonResponse
 from django import forms
 from django.utils import timezone
-import requests
-from django.core.files.base import ContentFile
-from urllib.parse import urlparse
-import uuid
-import os
-from django.core.files.storage import default_storage
-from django.conf import settings
-from .forms import TransactionForm, MeasurementForm
-from django.views.decorators.csrf import csrf_exempt
+
 from django.views.decorators.http import require_http_methods
 from .models import MeasurementTemplate
-from .views_axe import (
-    axe_list,
-    axe_detail,
-    axe_create,
-    axe_edit,
-    axe_gallery,
-    receiving_workflow,
-    add_measurement,
-    add_measurements_from_template,
-    delete_measurement,
-    update_measurement,
-)
-from .views_contact import contact_list, contact_detail
-from .views_manufacturer import manufacturer_list, manufacturer_detail
 from django.contrib.auth.decorators import login_required
 
 # Create your views here.
@@ -102,7 +74,7 @@ def global_search(request):
             settings = Settings.get_settings()
             if settings.show_only_received_axes_public:
                 text_query &= Q(status="MOTTAGEN")
-        except:
+        except Exception:
             # Fallback om Settings-modellen inte finns ännu
             pass
 
@@ -139,9 +111,9 @@ def global_search(request):
 
         for contact in contacts:
             flag_emoji = (
-                f"🇸🇪"
+                "🇸🇪"
                 if contact.country_code == "SE"
-                else f"🇫🇮" if contact.country_code == "FI" else ""
+                else "🇫🇮" if contact.country_code == "FI" else ""
             )
             results["contacts"].append(
                 {
@@ -490,7 +462,7 @@ def axe_list(request):
             settings = Settings.get_settings()
             if settings.show_only_received_axes_public:
                 axes = axes.filter(status="MOTTAGEN")
-        except:
+        except Exception:
             # Fallback om Settings-modellen inte finns ännu
             pass
 
@@ -697,10 +669,6 @@ def settings_view(request):
         return redirect("login")
 
     from .models import Settings
-    import os
-    import json
-    import zipfile
-    import subprocess
     from django.contrib import messages
     from django.conf import settings as django_settings
 
@@ -841,7 +809,7 @@ def handle_backup_upload(request):
             try:
                 os.chown(file_path, 99, 100)  # nobody:users
                 os.chmod(file_path, 0o644)
-            except:
+            except Exception:
                 pass  # Ignorera om behörigheter inte kan sättas
 
             # Kontrollera om det är en AJAX-request
@@ -875,7 +843,6 @@ def handle_backup_upload(request):
 def get_backup_info(base_dir):
     """Hämta information om befintliga backuper"""
     import os
-    from django.conf import settings
 
     backup_dir = os.path.join(base_dir, "backups")
     backups = []
@@ -922,7 +889,7 @@ def get_backup_stats(backup_path):
             if os.path.exists(stats_path):
                 with open(stats_path, "r", encoding="utf-8") as f:
                     return json.load(f)
-    except Exception as e:
+    except Exception:
         # Returnera None om statistik inte kan läsas
         pass
     return None
@@ -1118,7 +1085,7 @@ def api_create_measurement_template(request):
 
         try:
             measurement_type_ids = json.loads(measurement_types_json)
-        except:
+        except Exception:
             return JsonResponse(
                 {"success": False, "error": "Ogiltiga måtttyper"}, status=400
             )
@@ -1345,7 +1312,7 @@ def api_update_measurement_template(request, template_id):
 
         try:
             measurement_type_ids = json.loads(measurement_types_json)
-        except:
+        except Exception:
             return JsonResponse({"success": False, "error": "Ogiltiga måtttyper"})
 
         if not measurement_type_ids:

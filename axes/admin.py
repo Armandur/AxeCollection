@@ -1,8 +1,17 @@
 from django.contrib import admin
 from .models import (
-    Manufacturer, Axe, Contact, Platform, Transaction,
-    MeasurementType, MeasurementTemplate, MeasurementTemplateItem, Measurement, Settings,
-    ManufacturerImage, ManufacturerLink, AxeImage
+    Manufacturer,
+    Axe,
+    Contact,
+    Platform,
+    Transaction,
+    MeasurementType,
+    MeasurementTemplate,
+    MeasurementTemplateItem,
+    Measurement,
+    ManufacturerImage,
+    ManufacturerLink,
+    AxeImage,
 )
 from django import forms
 from django.utils.translation import gettext_lazy as _

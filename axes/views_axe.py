@@ -1,6 +1,5 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
-from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from .models import (
     Axe,
     AxeImage,
@@ -13,21 +12,17 @@ from .models import (
     Manufacturer,
 )
 from .forms import AxeForm, MeasurementForm, TransactionForm
-from django.db.models import Sum, Q, Max, Count
-from django.db.models.functions import TruncMonth, TruncYear
-from datetime import datetime, timedelta
-from django.http import JsonResponse, Http404
-from django.views.decorators.http import require_POST
+from django.db.models import Sum, Count, Max
 from django.utils import timezone
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
 from django.conf import settings
+from django.http import JsonResponse
+from django.views.decorators.http import require_POST, require_http_methods
 import requests
 import uuid
 import os
 import shutil
-from django.views.decorators.csrf import csrf_exempt
-from django.views.decorators.http import require_http_methods
 from urllib.parse import urlparse
 from django.contrib import messages
 
@@ -53,7 +48,7 @@ def move_images_to_unlinked_folder(axe_images, delete_images=False):
             try:
                 image.delete()
                 deleted_count += 1
-            except Exception as e:
+            except Exception:
                 pass
         return {"moved": 0, "deleted": deleted_count, "errors": 0}
 
@@ -79,19 +74,12 @@ def move_images_to_unlinked_folder(axe_images, delete_images=False):
         for index, axe_image in enumerate(images):
             try:
                 if axe_image.image and axe_image.image.name:
-                    # Bestäm filnamn (a, b, c, etc.)
-                    letter = chr(97 + index)  # 97 = 'a' i ASCII
-
-                    # Hämta filändelse från originalfilen
+                    letter = chr(97 + index)
                     original_ext = os.path.splitext(axe_image.image.name)[1]
                     new_filename = f"yxa-{axe_id}-{timestamp}-{letter}{original_ext}"
                     new_path = os.path.join(unlinked_folder, new_filename)
-
-                    # Kopiera filen
                     if os.path.exists(axe_image.image.path):
                         shutil.copy2(axe_image.image.path, new_path)
-
-                        # Kopiera även .webp-filen om den finns
                         webp_path = os.path.splitext(axe_image.image.path)[0] + ".webp"
                         if os.path.exists(webp_path):
                             webp_new_path = os.path.join(
@@ -99,15 +87,10 @@ def move_images_to_unlinked_folder(axe_images, delete_images=False):
                                 f"yxa-{axe_id}-{timestamp}-{letter}.webp",
                             )
                             shutil.copy2(webp_path, webp_new_path)
-
                         moved_count += 1
-
-                    # Ta bort originalbilden från databasen och filsystemet
                     axe_image.delete()
-
-            except Exception as e:
+            except Exception:
                 error_count += 1
-                # Logga felet om så önskas
                 pass
 
     return {
@@ -144,7 +127,7 @@ def axe_list(request):
             settings = Settings.get_settings()
             if settings.show_only_received_axes_public:
                 axes = axes.filter(status="MOTTAGEN")
-        except:
+        except Exception:
             # Fallback om Settings-modellen inte finns ännu
             pass
 
@@ -197,14 +180,8 @@ def axe_list(request):
 
         for main in main_manufacturers:
             sorted_list.append(main)
-            # Hitta alla undertillverkare för denna huvudtillverkare
-            subs = [
-                m
-                for m in manufacturers
-                if m.hierarchy_level > 0 and _is_descendant(m, main)
-            ]
-
             # Sortera undertillverkare hierarkiskt
+
             def sort_children_recursive(parent=None):
                 """Sorterar barn rekursivt under en förälder"""
                 children = [m for m in manufacturers if m.parent == parent]
@@ -426,7 +403,7 @@ def axe_create(request):
                     try:
                         axe_image = AxeImage(axe=axe, image=image_file)
                         axe_image.save()
-                    except Exception as e:
+                    except Exception:
                         pass
 
             # Hantera URL-bilder
@@ -448,14 +425,13 @@ def axe_create(request):
                                 )
                                 axe_image = AxeImage(axe=axe, image=image_file)
                                 axe_image.save()
-                        except Exception as e:
+                        except Exception:
                             pass
 
             # Omnumrera och döp om alla bilder enligt standard efter uppladdning (endast om det finns bilder)
             remaining_images = list(axe.images.all().order_by("order", "id"))
             if remaining_images:
                 from django.core.files.storage import default_storage
-                from django.conf import settings
 
                 temp_paths = []
                 temp_webps = []
@@ -563,8 +539,6 @@ def axe_create(request):
             # Hantera plattform
             platform = None
             platform_name = form.cleaned_data.get("platform_name", "").strip()
-            platform_url = form.cleaned_data.get("platform_url", "").strip()
-            platform_comment = form.cleaned_data.get("platform_comment", "").strip()
             platform_search = form.cleaned_data.get("platform_search", "").strip()
             if platform_name:
                 # Skapa ny plattform med endast namn (url och comment finns ej i modellen)
@@ -667,7 +641,7 @@ def axe_edit(request, pk):
                             axe=axe, image=image_file, order=max_order + i
                         )
                         axe_image.save()
-                    except Exception as e:
+                    except Exception:
                         pass
 
             # Hantera URL-bilder
@@ -692,7 +666,7 @@ def axe_edit(request, pk):
                                     axe=axe, image=image_file, order=max_order + i
                                 )
                                 axe_image.save()
-                        except Exception as e:
+                        except Exception:
                             pass
 
             # Hantera bildordning från drag & drop (före omnumrering)
@@ -737,7 +711,6 @@ def axe_edit(request, pk):
             # Omnumrera och döp om alla bilder endast om det behövs
             if needs_renaming:
                 from django.core.files.storage import default_storage
-                from django.conf import settings
 
                 remaining_images = list(axe.images.all().order_by("order"))
                 temp_paths = []
@@ -839,7 +812,7 @@ def axe_gallery(request, pk=None):
             settings = Settings.get_settings()
             if settings.show_only_received_axes_public:
                 all_axes = all_axes.filter(status="MOTTAGEN")
-        except:
+        except Exception:
             # Fallback om Settings-modellen inte finns ännu
             pass
     if pk:
@@ -955,7 +928,7 @@ def receiving_workflow(request, pk):
                             axe=axe, image=image_file, order=max_order + i
                         )
                         axe_image.save()
-                    except Exception as e:
+                    except Exception:
                         pass
 
             # Hantera URL-bilder
@@ -980,7 +953,7 @@ def receiving_workflow(request, pk):
                                     axe=axe, image=image_file, order=max_order + i
                                 )
                                 axe_image.save()
-                        except Exception as e:
+                        except Exception:
                             pass
 
             # Omdöpning av bilder (samma logik som i axe_edit)
@@ -1582,7 +1555,7 @@ def delete_latest_axe(request):
             # Återställ transaktionerna (de togs bort med yxan)
             # Detta är komplex, så vi varnar användaren
             messages.warning(
-                request, f"Transaktioner togs bort med yxan. Detta kan inte ångras."
+                request, "Transaktioner togs bort med yxan. Detta kan inte ångras."
             )
 
         # Ta bort kontakter om valt

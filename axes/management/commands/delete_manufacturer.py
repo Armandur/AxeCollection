@@ -1,10 +1,9 @@
 import os
 import shutil
-from datetime import datetime
 from django.core.management.base import BaseCommand, CommandError
 from django.conf import settings
 from django.utils import timezone
-from axes.models import Manufacturer, Axe
+from axes.models import Manufacturer
 
 
 class Command(BaseCommand):
@@ -95,7 +94,7 @@ class Command(BaseCommand):
                     )
             else:
                 confirm = input(
-                    f"Är du säker på att du vill ta bort tillverkaren? (ja/nej): "
+                    "Är du säker på att du vill ta bort tillverkaren? (ja/nej): "
                 )
 
             if confirm.lower() not in ["ja", "yes", "y"]:

@@ -2,7 +2,6 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.csrf import csrf_exempt
-from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.contrib.auth.decorators import login_required
 from django.utils import timezone
 from django.contrib import messages
@@ -52,14 +51,8 @@ def get_available_parents(current_manufacturer=None):
 
         for main in main_manufacturers:
             sorted_list.append(main)
-            # Hitta alla undertillverkare för denna huvudtillverkare
-            subs = [
-                m
-                for m in manufacturers
-                if m.hierarchy_level > 0 and _is_descendant(m, main)
-            ]
-
             # Sortera undertillverkare hierarkiskt
+
             def sort_children_recursive(parent=None):
                 """Sorterar barn rekursivt under en förälder"""
                 children = [m for m in manufacturers if m.parent == parent]
@@ -102,7 +95,7 @@ def manufacturer_list(request):
         for main in main_manufacturers:
             sorted_list.append(main)
             # Hitta alla undertillverkare för denna huvudtillverkare
-            subs = [
+            [
                 m
                 for m in manufacturers
                 if m.hierarchy_level > 0 and _is_descendant(m, main)
@@ -928,7 +921,7 @@ def get_manufacturers_for_dropdown(request):
         for main in main_manufacturers:
             sorted_list.append(main)
             # Hitta alla undertillverkare för denna huvudtillverkare
-            subs = [
+            [
                 m
                 for m in manufacturers
                 if m.hierarchy_level > 0 and _is_descendant(m, main)
@@ -1036,7 +1029,7 @@ def move_manufacturer_images_to_unlinked(manufacturer):
                 # Ta bort originalbilden från databasen och filsystemet
                 manufacturer_image.delete()
 
-        except Exception as e:
+        except Exception:
             error_count += 1
             # Logga felet om så önskas
             pass

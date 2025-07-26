@@ -1,7 +1,6 @@
 from .models import Settings
 from datetime import datetime
 import subprocess
-import os
 from django.conf import settings as django_settings
 
 
@@ -27,7 +26,7 @@ def get_git_version():
         )
         if result.returncode == 0:
             return f"commit-{result.stdout.strip()}"
-    except:
+    except Exception:
         pass
     return "v1.0.0"
 
@@ -43,7 +42,7 @@ def get_build_date():
         )
         if result.returncode == 0:
             return result.stdout.strip()
-    except:
+    except Exception:
         pass
     return datetime.now().strftime("%Y-%m-%d")
 

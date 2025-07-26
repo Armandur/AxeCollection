@@ -5,7 +5,6 @@ import json
 from datetime import datetime
 from django.core.management.base import BaseCommand
 from django.conf import settings
-from django.db import connection
 
 
 class Command(BaseCommand):

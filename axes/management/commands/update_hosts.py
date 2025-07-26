@@ -1,6 +1,5 @@
 from django.core.management.base import BaseCommand
 from axes.models import Settings
-from django.conf import settings as django_settings
 import os
 
 
