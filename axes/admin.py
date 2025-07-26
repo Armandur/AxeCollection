@@ -1,20 +1,9 @@
 from django.contrib import admin
 from .models import (
-    Manufacturer,
-    Axe,
-    AxeImage,
-    ManufacturerImage,
-    ManufacturerLink,
-    Measurement,
-    Contact,
-    Platform,
-    Transaction,
-    NextAxeID,
-    MeasurementType,
-    MeasurementTemplate,
-    MeasurementTemplateItem,
+    Manufacturer, Axe, Contact, Platform, Transaction,
+    MeasurementType, MeasurementTemplate, MeasurementTemplateItem, Measurement, Settings,
+    ManufacturerImage, ManufacturerLink, AxeImage
 )
-from django.utils.safestring import mark_safe
 from django import forms
 from django.utils.translation import gettext_lazy as _
 import os

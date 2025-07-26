@@ -1,15 +1,8 @@
 from django import forms
 from django.utils.safestring import mark_safe
 from .models import (
-    Transaction,
-    Contact,
-    Platform,
-    Measurement,
-    MeasurementType,
-    MeasurementTemplate,
-    Axe,
-    Manufacturer,
-    Settings,
+    Manufacturer, Axe, Contact, Platform, Transaction,
+    MeasurementType, Measurement
 )
 from django.utils import timezone
 
