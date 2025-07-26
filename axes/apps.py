@@ -7,5 +7,12 @@ class AxesConfig(AppConfig):
 
     def ready(self):
         """Run when the app is ready"""
-        # No automatic image path fixing - only done during backup restore
-        pass
+        # Aktivera WAL-mode för SQLite
+        from django.db import connection
+        if connection.vendor == 'sqlite':
+            try:
+                with connection.cursor() as cursor:
+                    cursor.execute('PRAGMA journal_mode=WAL;')
+            except Exception:
+                # Logga eller ignorera om det inte går (t.ex. under migrationer)
+                pass

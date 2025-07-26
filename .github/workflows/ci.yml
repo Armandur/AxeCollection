@@ -10,20 +10,6 @@ jobs:
   test:
     runs-on: ubuntu-latest
     
-    services:
-      postgres:
-        image: postgres:13
-        env:
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: test_db
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        ports:
-          - 5432:5432
-
     steps:
     - uses: actions/checkout@v4
     
@@ -47,21 +33,20 @@ jobs:
     
     - name: Run linting
       run: |
-        flake8 axes/ --count --select=E9,F63,F7,F82 --show-source --statistics
-        flake8 axes/ --count --exit-zero --max-complexity=10 --max-line-length=88 --statistics
+        python -m flake8 axes/ --count --select=E9,F63,F7,F82 --show-source --statistics
+        python -m flake8 axes/ --count --exit-zero --max-complexity=10 --max-line-length=88 --statistics
     
     - name: Run code formatting check
       run: |
-        black --check axes/
+        python -m black --check axes/
     
     - name: Run tests
       env:
-        DATABASE_URL: postgres://postgres:postgres@localhost:5432/test_db
         DJANGO_SETTINGS_MODULE: AxeCollection.settings
       run: |
         python manage.py collectstatic --noinput
         python manage.py migrate
-        pytest --cov=axes --cov-report=xml --cov-report=html
+        python -m pytest --cov=axes --cov-report=xml --cov-report=html
     
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v3
@@ -131,4 +116,6 @@ jobs:
     - name: Push Docker image
       run: |
         docker tag axecollection:latest ${{ secrets.DOCKER_USERNAME }}/axecollection:latest
-        docker push ${{ secrets.DOCKER_USERNAME }}/axecollection:latest 
+        docker tag axecollection:latest ${{ secrets.DOCKER_USERNAME }}/axecollection:unraid
+        docker push ${{ secrets.DOCKER_USERNAME }}/axecollection:latest
+        docker push ${{ secrets.DOCKER_USERNAME }}/axecollection:unraid 

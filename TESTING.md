@@ -1,258 +1,181 @@
-# Testning och Kodkvalitet för AxeCollection
+# Testning och Kodkvalitet
 
-## 🧪 Automatiska Tester
+## 📊 Aktuell Status
 
-### Kör tester lokalt
+### ✅ Implementerat
+- **Pytest**: 28 modelltester som alla passerar
+- **Coverage**: 15% kodtäckning (modeller)
+- **Flake8**: Konfigurerat (152 linting-problem identifierade)
+- **Black**: Kodformatering konfigurerad
+- **WAL-mode**: Aktiverat för SQLite i alla miljöer
+- **CI/CD**: GitHub Actions pipeline konfigurerad
 
+### 🔧 Nästa Steg
+
+#### 1. Linting-problem (152 st)
+Prioriterade problem att åtgärda:
+- **F401**: Oanvända imports (73 st) - Hög prioritet
+- **F841**: Oanvända variabler (24 st) - Hög prioritet  
+- **F811**: Redefinition av variabler (16 st) - Hög prioritet
+- **C901**: För komplexa funktioner (24 st) - Medel prioritet
+- **E722**: Bara `except` utan specifik exception (11 st) - Medel prioritet
+- **F541**: F-string utan placeholders (4 st) - Låg prioritet
+
+#### 2. Utöka testtäckning
+Mål: Öka från 15% till minst 70%
+
+**Prioriterade tester att implementera:**
+1. **Views-tester** (530 rader kod, 0% täckning)
+   - Formulärhantering
+   - Autentisering
+   - API-endpoints
+   
+2. **Forms-tester** (203 rader kod, 0% täckning)
+   - Validering
+   - Rendering
+   
+3. **Management Commands** (1 000+ rader kod, 0% täckning)
+   - Backup/restore
+   - Import/export
+   - Testdata-generering
+
+4. **Integrationstester**
+   - Fullständiga arbetsflöden
+   - Databasoperationer
+
+## 🛠️ Verktyg och Konfiguration
+
+### Pytest
 ```bash
-# Installera test-beroenden
-pip install -r requirements.txt
-
 # Kör alla tester
-pytest
+python -m pytest
 
-# Kör tester med coverage
-pytest --cov=axes --cov-report=html
+# Kör med coverage
+python -m pytest --cov=axes --cov-report=term-missing
 
 # Kör specifika tester
-pytest axes/tests/test_models.py
-pytest axes/tests/test_models.py::ManufacturerModelTest
-
-# Kör tester med markörer
-pytest -m "not slow"  # Exkludera långsamma tester
-pytest -m unit        # Kör endast unit-tester
-pytest -m integration # Kör endast integration-tester
+python -m pytest axes/tests/test_models.py -v
 ```
 
-### Teststruktur
+### Linting
+```bash
+# Kör flake8
+python -m flake8 axes/ --count --exit-zero --max-complexity=10 --max-line-length=88 --statistics
+
+# Kör black (formatering)
+python -m black --check axes/
+```
+
+### Coverage
+```bash
+# Generera HTML-rapport
+python -m pytest --cov=axes --cov-report=html
+
+# Öppna rapporten
+start htmlcov/index.html
+```
+
+## 📁 Teststruktur
 
 ```
 axes/tests/
 ├── __init__.py
-├── factories.py          # Testdata-factories
-├── test_models.py        # Modelltester
-├── test_views.py         # Vytester (framtida)
-├── test_forms.py         # Formulärtester (framtida)
-└── conftest.py           # Pytest-konfiguration (framtida)
+├── test_models.py          # ✅ 28 tester (modeller)
+├── test_views.py           # 🔄 Planerat
+├── test_forms.py           # 🔄 Planerat
+├── test_management.py      # 🔄 Planerat
+└── test_integration.py     # 🔄 Planerat
 ```
 
-### Testdata med Factories
+## 🎯 Mål och KPI:er
 
-Vi använder `factory-boy` för att skapa testdata:
+### Kodtäckning
+- **Nuvarande**: 15% (endast modeller)
+- **Mål**: 70% (alla kritiska komponenter)
+- **Deadline**: Iterativt under utveckling
 
-```python
-from axes.tests.factories import ManufacturerFactory, AxeFactory
+### Linting
+- **Nuvarande**: 152 problem
+- **Mål**: 0 kritiska problem (F401, F841, F811)
+- **Deadline**: Innan nästa release
 
-# Skapa en tillverkare
-manufacturer = ManufacturerFactory(name="Test Tillverkare")
+### Testprestanda
+- **Nuvarande**: 28 tester på ~30 sekunder
+- **Mål**: <60 sekunder för alla tester
+- **Deadline**: Kontinuerligt
 
-# Skapa en yxa kopplad till tillverkaren
-axe = AxeFactory(manufacturer=manufacturer)
-```
-
-## 🔍 Linting och Kodkvalitet
-
-### Flake8 (Kodkvalitet)
-
-```bash
-# Kör flake8
-flake8 axes/
-
-# Kör med specifika regler
-flake8 axes/ --count --select=E9,F63,F7,F82 --show-source --statistics
-```
-
-**Regler som används:**
-- `E9`: Syntax-fel
-- `F63`: Felaktig användning av `is`/`is not`
-- `F7`: Odefinierade variabler
-- `F82`: Odefinierade namn
-
-### Black (Kodformatering)
-
-```bash
-# Kontrollera formatering
-black --check axes/
-
-# Formatera kod automatiskt
-black axes/
-```
-
-**Inställningar:**
-- Radlängd: 88 tecken
-- Python 3.9+ kompatibilitet
-- Exkluderar migrations, media, etc.
-
-### Pylint (Avancerad kodanalys)
-
-```bash
-# Kör pylint
-pylint axes/
-
-# Kör med specifik konfiguration
-pylint --rcfile=.pylintrc axes/
-```
-
-## 📊 Coverage
-
-### Coverage-rapporter
-
-```bash
-# Generera HTML-rapport
-pytest --cov=axes --cov-report=html
-
-# Generera XML-rapport (för CI/CD)
-pytest --cov=axes --cov-report=xml
-
-# Visa saknade rader
-pytest --cov=axes --cov-report=term-missing
-```
-
-### Coverage-krav
-
-- **Minimum**: 70% kodtäckning
-- **Mål**: 80% kodtäckning
-- **Exkluderade filer**: migrations, settings, manage.py
-
-## 🚀 CI/CD Pipeline
+## 🔄 CI/CD Pipeline
 
 ### GitHub Actions
-
-Vår CI/CD pipeline körs automatiskt vid:
-- Push till `main`, `develop`, eller `feature/*` branches
-- Pull requests till `main` eller `develop`
-
-### Pipeline-steg
-
-1. **Test**: Kör tester, linting och formatering
-2. **Security**: Säkerhetskontroller med bandit och safety
-3. **Build**: Bygger Docker-image (endast på main)
+```yaml
+# .github/workflows/ci.yml
+jobs:
+  test:
+    - Linting (flake8)
+    - Formatering (black)
+    - Tester (pytest)
+    - Coverage-rapport
+    - Docker build
+```
 
 ### Lokal CI-simulation
-
 ```bash
 # Kör alla CI-steg lokalt
-flake8 axes/
-black --check axes/
-pytest --cov=axes --cov-report=xml
+python -m flake8 axes/
+python -m black --check axes/
+python -m pytest --cov=axes --cov-report=xml
 ```
 
-## 🛠️ Utvecklingsverktyg
+## 📝 Testdata-hantering
 
-### Pre-commit Hooks (Rekommenderat)
-
-Skapa `.pre-commit-config.yaml`:
-
-```yaml
-repos:
-  - repo: https://github.com/psf/black
-    rev: 24.1.1
-    hooks:
-      - id: black
-        language_version: python3.11
-
-  - repo: https://github.com/pycqa/flake8
-    rev: 7.0.0
-    hooks:
-      - id: flake8
-        args: [--max-line-length=88]
-
-  - repo: local
-    hooks:
-      - id: pytest
-        name: pytest
-        entry: pytest
-        language: system
-        pass_filenames: false
-        always_run: true
-```
-
-Installera:
-```bash
-pip install pre-commit
-pre-commit install
-```
-
-### VS Code-inställningar
-
-Lägg till i `.vscode/settings.json`:
-
-```json
-{
-    "python.linting.enabled": true,
-    "python.linting.flake8Enabled": true,
-    "python.formatting.provider": "black",
-    "python.testing.pytestEnabled": true,
-    "python.testing.unittestEnabled": false,
-    "python.testing.pytestArgs": [
-        "axes/tests"
-    ]
-}
-```
-
-## 📝 Teststrategi
-
-### Testpyramiden
-
-1. **Unit-tester** (70%): Testa enskilda funktioner och metoder
-2. **Integration-tester** (20%): Testa interaktion mellan komponenter
-3. **End-to-end-tester** (10%): Testa hela användarflöden
-
-### Testprioritering
-
-1. **Kritiska funktioner**: Transaktioner, beräkningar, datavalidering
-2. **Modeller**: Alla Django-modeller och deras properties
-3. **Vyer**: Användarinteraktioner och formulärhantering
-4. **API**: REST-endpoints (framtida)
-
-### Testdata-hantering
-
-- Använd factories för konsistent testdata
+- Använd `generate_test_data` för realistisk testdata
 - Undvik hårdkodade värden
-- Använd faker för realistisk data
-- Rensa testdata efter varje test
+- Använd befintlig data från management command
+- Rensa testdata efter varje test med `--clear` flaggan
 
 ## 🔧 Felsökning
 
 ### Vanliga problem
+1. **Django settings inte konfigurerade**
+   ```bash
+   export DJANGO_SETTINGS_MODULE=AxeCollection.settings
+   ```
 
-**ImportError: No module named 'axes'**
-```bash
-# Säkerställ att du är i rätt mapp
-cd /path/to/AxeCollection
-export PYTHONPATH=$PYTHONPATH:$(pwd)
-```
+2. **Databasproblem**
+   ```bash
+   python manage.py migrate
+   python manage.py collectstatic
+   ```
 
-**Database errors**
-```bash
-# Skapa test-databas
-python manage.py migrate --settings=AxeCollection.settings
-```
-
-**Coverage saknas**
-```bash
-# Kontrollera .coveragerc
-# Säkerställ att rätt filer inkluderas
-```
+3. **Import-problem**
+   ```bash
+   python -m pytest --import-mode=importlib
+   ```
 
 ### Debugging
-
 ```bash
-# Kör tester med debug-utskrift
-pytest -s -v
+# Kör tester med debug-output
+python -m pytest -v -s
 
 # Kör specifikt test med debug
-pytest axes/tests/test_models.py::ManufacturerModelTest::test_manufacturer_creation -s -v
-
-# Använd pdb för debugging
-pytest --pdb
+python -m pytest axes/tests/test_models.py::ManufacturerModelTest::test_manufacturer_creation -v -s
 ```
 
 ## 📚 Resurser
 
 - [Django Testing](https://docs.djangoproject.com/en/stable/topics/testing/)
 - [Pytest Documentation](https://docs.pytest.org/)
-- [Factory Boy](https://factoryboy.readthedocs.io/)
 - [Flake8](https://flake8.pycqa.org/)
 - [Black](https://black.readthedocs.io/)
-- [Coverage.py](https://coverage.readthedocs.io/) 
+- [Coverage.py](https://coverage.readthedocs.io/)
+
+## 🚀 Nästa Aktioner
+
+1. **Omedelbart**: Fixa kritiska linting-problem (F401, F841, F811)
+2. **Kort sikt**: Implementera views-tester
+3. **Medel sikt**: Utöka till forms och management commands
+4. **Lång sikt**: Integrationstester och prestandaoptimering
+
+---
+
+*Senast uppdaterad: 2025-01-27* 
