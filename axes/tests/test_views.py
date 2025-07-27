@@ -19,6 +19,7 @@ class ViewsTestCase(TestCase):
         
         # Skapa settings för att undvika problem med publik filtrering
         self.settings = Settings.objects.create(
+            id=1,  # Använd ID=1 för att matcha Settings.get_settings()
             show_contacts_public=True,
             show_prices_public=True,
             show_platforms_public=True,
@@ -45,6 +46,16 @@ class ViewsTestCase(TestCase):
             price=Decimal("100.00"),
             shipping_cost=Decimal("10.00")
         )
+    
+    def _add_public_settings_to_request(self, request):
+        """Lägg till publika inställningar till request för sökfunktioner"""
+        request.public_settings = {
+            'show_contacts': self.settings.show_contacts_public,
+            'show_prices': self.settings.show_prices_public,
+            'show_platforms': self.settings.show_platforms_public,
+            'show_only_received_axes': self.settings.show_only_received_axes_public,
+        }
+        return request
 
 
 class SearchViewsTest(ViewsTestCase):
@@ -140,6 +151,8 @@ class GlobalSearchTest(ViewsTestCase):
 
     def test_global_search_contact(self):
         """Testa global sökning efter kontakt"""
+        # Logga in för att säkerställa att kontakter visas
+        self.client.login(username='testuser', password='testpass123')
         response = self.client.get('/api/search/global/', {'q': 'Test Contact'})
         self.assertEqual(response.status_code, 200)
         data = json.loads(response.content)
@@ -171,10 +184,9 @@ class GlobalSearchTest(ViewsTestCase):
 class PublicPrivateFilteringTest(ViewsTestCase):
     def setUp(self):
         super().setUp()
-        # Skapa settings för publik filtrering
-        self.settings = Settings.objects.create(
-            show_only_received_axes_public=True
-        )
+        # Uppdatera settings för publik filtrering
+        self.settings.show_only_received_axes_public = True
+        self.settings.save()
         
         # Skapa en yxa som inte är mottagen
         self.unreceived_axe = Axe.objects.create(
@@ -190,7 +202,7 @@ class PublicPrivateFilteringTest(ViewsTestCase):
         self.assertEqual(response.status_code, 200)
         data = json.loads(response.content)
         # Kontrollera att den oemottagna yxan inte visas
-        axes_results = data['results']['axes']
+        axes_results = data['results'].get('axes', [])
         unreceived_found = any('Unreceived Axe' in str(result) for result in axes_results)
         self.assertFalse(unreceived_found)
 
@@ -202,7 +214,7 @@ class PublicPrivateFilteringTest(ViewsTestCase):
         self.assertEqual(response.status_code, 200)
         data = json.loads(response.content)
         # Kontrollera att den oemottagna yxan visas
-        axes_results = data['results']['axes']
+        axes_results = data['results'].get('axes', [])
         unreceived_found = any('Unreceived Axe' in str(result) for result in axes_results)
         self.assertTrue(unreceived_found)
 

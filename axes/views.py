@@ -224,15 +224,26 @@ def _search_transactions(query, request):
 def global_search(request):
     """AJAX-endpoint för global sökning i yxor, kontakter, tillverkare och transaktioner"""
     query = request.GET.get("q", "").strip()
-    if len(query) < 2:
+    
+    # Tillåt numeriska queries (som ID:n) oavsett längd
+    is_numeric = query.isdigit()
+    
+    if len(query) < 2 and not is_numeric:
         return JsonResponse({"results": {}})
 
+    axes_results = _search_axes(query, request)
+    contacts_results = _search_contacts(query, request)
+    manufacturers_results = _search_manufacturers(query)
+    transactions_results = _search_transactions(query, request)
+
     results = {
-        "axes": _search_axes(query, request),
-        "contacts": _search_contacts(query, request),
-        "manufacturers": _search_manufacturers(query),
-        "transactions": _search_transactions(query, request),
+        "axes": axes_results,
+        "contacts": contacts_results,
+        "manufacturers": manufacturers_results,
+        "transactions": transactions_results,
     }
+
+
 
     return JsonResponse({"results": results})
 
