@@ -388,206 +388,239 @@ def axe_detail(request, pk):
     return render(request, "axes/axe_detail.html", context)
 
 
+def _create_axe_from_form(form, user):
+    """Skapa yxa från formulärdata"""
+    axe = form.save(commit=False)
+    axe.created_by = user
+    axe.save()
+    return axe
+
+
+def _handle_uploaded_images(axe, request):
+    """Hantera uppladdade bilder från formulär"""
+    if "images" in request.FILES:
+        for image_file in request.FILES.getlist("images"):
+            try:
+                axe_image = AxeImage(axe=axe, image=image_file)
+                axe_image.save()
+            except Exception:
+                pass
+
+
+def _handle_url_images(axe, request):
+    """Hantera bilder från URL:er"""
+    if "image_urls" in request.POST:
+        for image_url in request.POST.getlist("image_urls"):
+            if image_url and image_url.startswith("http"):
+                try:
+                    response = requests.get(image_url, timeout=10)
+                    if response.status_code == 200:
+                        file_extension = (
+                            os.path.splitext(urlparse(image_url).path)[1]
+                            or ".jpg"
+                        )
+                        filename = (
+                            f"{axe.id}_{uuid.uuid4().hex[:8]}{file_extension}"
+                        )
+                        image_file = ContentFile(
+                            response.content, name=filename
+                        )
+                        axe_image = AxeImage(axe=axe, image=image_file)
+                        axe_image.save()
+                except Exception:
+                    pass
+
+
+def _rename_axe_images(axe):
+    """Omnumrera och döp om alla bilder enligt standard"""
+    remaining_images = list(axe.images.all().order_by("order", "id"))
+    if not remaining_images:
+        return
+    
+    from django.core.files.storage import default_storage
+
+    temp_paths = []
+    temp_webps = []
+    
+    # Steg 1: Döp om till temporära namn
+    for idx, image in enumerate(remaining_images, 1):
+        old_path = image.image.name
+        file_ext = os.path.splitext(old_path)[1]
+        temp_filename = f"{axe.id}_tmp_{idx}{file_ext}"
+        temp_path = f"axe_images/{temp_filename}"
+        # Temporärt namn för .webp
+        old_webp = os.path.splitext(old_path)[0] + ".webp"
+        temp_webp = f"axe_images/{axe.id}_tmp_{idx}.webp"
+        # Döp om originalfilen
+        if old_path != temp_path and default_storage.exists(old_path):
+            with default_storage.open(old_path, "rb") as old_file:
+                default_storage.save(temp_path, old_file)
+            default_storage.delete(old_path)
+        temp_paths.append((image, temp_path, file_ext))
+        # Döp om .webp om den finns
+        if default_storage.exists(old_webp):
+            try:
+                with default_storage.open(old_webp, "rb") as old_webp_file:
+                    default_storage.save(temp_webp, old_webp_file)
+                default_storage.delete(old_webp)
+            except Exception:
+                pass
+        temp_webps.append(temp_webp)
+    
+    # Steg 2: Döp om till slutgiltiga namn
+    for idx, (image, temp_path, file_ext) in enumerate(temp_paths, 1):
+        final_filename = f"{axe.id}{chr(96 + idx)}{file_ext}"
+        final_path = f"axe_images/{final_filename}"
+        # Döp om originalfilen
+        if temp_path != final_path and default_storage.exists(temp_path):
+            with default_storage.open(temp_path, "rb") as temp_file:
+                default_storage.save(final_path, temp_file)
+            default_storage.delete(temp_path)
+        # Döp om .webp om den finns
+        temp_webp = temp_webps[idx - 1]
+        final_webp = f"axe_images/{axe.id}{chr(96 + idx)}.webp"
+        if default_storage.exists(temp_webp):
+            try:
+                with default_storage.open(
+                    temp_webp, "rb"
+                ) as temp_webp_file:
+                    default_storage.save(final_webp, temp_webp_file)
+                default_storage.delete(temp_webp)
+            except Exception:
+                pass
+        # Uppdatera databasen
+        image.image = final_path
+        image.order = idx
+        image.description = f"Bild {chr(96 + idx).upper()} av {axe.manufacturer.name} {axe.model}"
+        image.save()
+
+
+def _handle_contact_creation(axe, form):
+    """Hantera kontakt-skapande/sökning"""
+    contact = None
+    contact_search = form.cleaned_data.get("contact_search", "").strip()
+    if not contact_search:
+        return contact
+    
+    # Försök hitta befintlig kontakt
+    try:
+        contact = Contact.objects.get(name__iexact=contact_search)
+    except Contact.DoesNotExist:
+        # Skapa ny kontakt
+        contact_name = form.cleaned_data.get("contact_name", "").strip()
+        if contact_name:
+            contact, created = Contact.objects.get_or_create(
+                name=contact_name,
+                defaults={
+                    "alias": form.cleaned_data.get("contact_alias", ""),
+                    "email": form.cleaned_data.get("contact_email", ""),
+                    "phone": form.cleaned_data.get("contact_phone", ""),
+                    "street": form.cleaned_data.get("contact_street", ""),
+                    "postal_code": form.cleaned_data.get(
+                        "contact_postal_code", ""
+                    ),
+                    "city": form.cleaned_data.get("contact_city", ""),
+                    "country": form.cleaned_data.get("contact_country", ""),
+                    "comment": form.cleaned_data.get("contact_comment", ""),
+                    "is_naj_member": form.cleaned_data.get(
+                        "is_naj_member", False
+                    ),
+                },
+            )
+        else:
+            # Använd sökvärdet som namn
+            contact, created = Contact.objects.get_or_create(
+                name=contact_search,
+                defaults={
+                    "alias": form.cleaned_data.get("contact_alias", ""),
+                    "email": form.cleaned_data.get("contact_email", ""),
+                    "phone": form.cleaned_data.get("contact_phone", ""),
+                    "street": form.cleaned_data.get("contact_street", ""),
+                    "postal_code": form.cleaned_data.get(
+                        "contact_postal_code", ""
+                    ),
+                    "city": form.cleaned_data.get("contact_city", ""),
+                    "country": form.cleaned_data.get("contact_country", ""),
+                    "comment": form.cleaned_data.get("contact_comment", ""),
+                    "is_naj_member": form.cleaned_data.get(
+                        "is_naj_member", False
+                    ),
+                },
+            )
+    return contact
+
+
+def _handle_platform_creation(axe, form):
+    """Hantera plattform-skapande/sökning"""
+    platform = None
+    platform_name = form.cleaned_data.get("platform_name", "").strip()
+    platform_search = form.cleaned_data.get("platform_search", "").strip()
+    
+    if platform_name:
+        # Skapa ny plattform med endast namn (url och comment finns ej i modellen)
+        platform, created = Platform.objects.get_or_create(name=platform_name)
+    elif platform_search:
+        try:
+            platform = Platform.objects.get(name=platform_search)
+        except Platform.DoesNotExist:
+            platform = None
+    
+    return platform
+
+
+def _handle_transaction_creation(axe, form, contact, platform):
+    """Hantera transaktionsskapande"""
+    transaction_price = form.cleaned_data.get("transaction_price")
+    transaction_shipping = form.cleaned_data.get("transaction_shipping")
+    transaction_date = form.cleaned_data.get("transaction_date")
+    transaction_comment = form.cleaned_data.get("transaction_comment", "")
+
+    if (
+        transaction_price is not None
+        or transaction_shipping is not None
+        or transaction_date
+    ):
+        # Skapa transaktion
+        if transaction_price is None:
+            transaction_price = 0
+        if transaction_shipping is None:
+            transaction_shipping = 0
+        if not transaction_date:
+            transaction_date = timezone.now().date()
+
+        # Bestäm transaktionstyp baserat på tecken
+        if transaction_price < 0 or transaction_shipping < 0:
+            transaction_type = "KÖP"
+            transaction_price = abs(transaction_price)
+            transaction_shipping = abs(transaction_shipping)
+        else:
+            transaction_type = "SÄLJ"
+            transaction_shipping = abs(transaction_shipping)
+
+        Transaction.objects.create(
+            axe=axe,
+            contact=contact,
+            platform=platform,
+            transaction_date=transaction_date,
+            type=transaction_type,
+            price=transaction_price,
+            shipping_cost=transaction_shipping,
+            comment=transaction_comment,
+        )
+
+
 @login_required
 def axe_create(request):
     if request.method == "POST":
         form = AxeForm(request.POST, request.FILES)
         if form.is_valid():
-            axe = form.save(commit=False)
-            axe.created_by = request.user
-            axe.save()
-
-            # Hantera nya bilder
-            if "images" in request.FILES:
-                for image_file in request.FILES.getlist("images"):
-                    try:
-                        axe_image = AxeImage(axe=axe, image=image_file)
-                        axe_image.save()
-                    except Exception:
-                        pass
-
-            # Hantera URL-bilder
-            if "image_urls" in request.POST:
-                for image_url in request.POST.getlist("image_urls"):
-                    if image_url and image_url.startswith("http"):
-                        try:
-                            response = requests.get(image_url, timeout=10)
-                            if response.status_code == 200:
-                                file_extension = (
-                                    os.path.splitext(urlparse(image_url).path)[1]
-                                    or ".jpg"
-                                )
-                                filename = (
-                                    f"{axe.id}_{uuid.uuid4().hex[:8]}{file_extension}"
-                                )
-                                image_file = ContentFile(
-                                    response.content, name=filename
-                                )
-                                axe_image = AxeImage(axe=axe, image=image_file)
-                                axe_image.save()
-                        except Exception:
-                            pass
-
-            # Omnumrera och döp om alla bilder enligt standard efter uppladdning (endast om det finns bilder)
-            remaining_images = list(axe.images.all().order_by("order", "id"))
-            if remaining_images:
-                from django.core.files.storage import default_storage
-
-                temp_paths = []
-                temp_webps = []
-                # Steg 1: Döp om till temporära namn
-                for idx, image in enumerate(remaining_images, 1):
-                    old_path = image.image.name
-                    file_ext = os.path.splitext(old_path)[1]
-                    temp_filename = f"{axe.id}_tmp_{idx}{file_ext}"
-                    temp_path = f"axe_images/{temp_filename}"
-                    # Temporärt namn för .webp
-                    old_webp = os.path.splitext(old_path)[0] + ".webp"
-                    temp_webp = f"axe_images/{axe.id}_tmp_{idx}.webp"
-                    # Döp om originalfilen
-                    if old_path != temp_path and default_storage.exists(old_path):
-                        with default_storage.open(old_path, "rb") as old_file:
-                            default_storage.save(temp_path, old_file)
-                        default_storage.delete(old_path)
-                    temp_paths.append((image, temp_path, file_ext))
-                    # Döp om .webp om den finns
-                    if default_storage.exists(old_webp):
-                        try:
-                            with default_storage.open(old_webp, "rb") as old_webp_file:
-                                default_storage.save(temp_webp, old_webp_file)
-                            default_storage.delete(old_webp)
-                        except Exception:
-                            pass
-                    temp_webps.append(temp_webp)
-                # Steg 2: Döp om till slutgiltiga namn
-                for idx, (image, temp_path, file_ext) in enumerate(temp_paths, 1):
-                    final_filename = f"{axe.id}{chr(96 + idx)}{file_ext}"
-                    final_path = f"axe_images/{final_filename}"
-                    # Döp om originalfilen
-                    if temp_path != final_path and default_storage.exists(temp_path):
-                        with default_storage.open(temp_path, "rb") as temp_file:
-                            default_storage.save(final_path, temp_file)
-                        default_storage.delete(temp_path)
-                    # Döp om .webp om den finns
-                    temp_webp = temp_webps[idx - 1]
-                    final_webp = f"axe_images/{axe.id}{chr(96 + idx)}.webp"
-                    if default_storage.exists(temp_webp):
-                        try:
-                            with default_storage.open(
-                                temp_webp, "rb"
-                            ) as temp_webp_file:
-                                default_storage.save(final_webp, temp_webp_file)
-                            default_storage.delete(temp_webp)
-                        except Exception:
-                            pass
-                    # Uppdatera databasen
-                    image.image = final_path
-                    image.order = idx
-                    image.description = f"Bild {chr(96 + idx).upper()} av {axe.manufacturer.name} {axe.model}"
-                    image.save()
-
-            # Hantera kontakt
-            contact = None
-            contact_search = form.cleaned_data.get("contact_search", "").strip()
-            if contact_search:
-                # Försök hitta befintlig kontakt
-                try:
-                    contact = Contact.objects.get(name__iexact=contact_search)
-                except Contact.DoesNotExist:
-                    # Skapa ny kontakt
-                    contact_name = form.cleaned_data.get("contact_name", "").strip()
-                    if contact_name:
-                        contact, created = Contact.objects.get_or_create(
-                            name=contact_name,
-                            defaults={
-                                "alias": form.cleaned_data.get("contact_alias", ""),
-                                "email": form.cleaned_data.get("contact_email", ""),
-                                "phone": form.cleaned_data.get("contact_phone", ""),
-                                "street": form.cleaned_data.get("contact_street", ""),
-                                "postal_code": form.cleaned_data.get(
-                                    "contact_postal_code", ""
-                                ),
-                                "city": form.cleaned_data.get("contact_city", ""),
-                                "country": form.cleaned_data.get("contact_country", ""),
-                                "comment": form.cleaned_data.get("contact_comment", ""),
-                                "is_naj_member": form.cleaned_data.get(
-                                    "is_naj_member", False
-                                ),
-                            },
-                        )
-                    else:
-                        # Använd sökvärdet som namn
-                        contact, created = Contact.objects.get_or_create(
-                            name=contact_search,
-                            defaults={
-                                "alias": form.cleaned_data.get("contact_alias", ""),
-                                "email": form.cleaned_data.get("contact_email", ""),
-                                "phone": form.cleaned_data.get("contact_phone", ""),
-                                "street": form.cleaned_data.get("contact_street", ""),
-                                "postal_code": form.cleaned_data.get(
-                                    "contact_postal_code", ""
-                                ),
-                                "city": form.cleaned_data.get("contact_city", ""),
-                                "country": form.cleaned_data.get("contact_country", ""),
-                                "comment": form.cleaned_data.get("contact_comment", ""),
-                                "is_naj_member": form.cleaned_data.get(
-                                    "is_naj_member", False
-                                ),
-                            },
-                        )
-
-            # Hantera plattform
-            platform = None
-            platform_name = form.cleaned_data.get("platform_name", "").strip()
-            platform_search = form.cleaned_data.get("platform_search", "").strip()
-            if platform_name:
-                # Skapa ny plattform med endast namn (url och comment finns ej i modellen)
-                platform, created = Platform.objects.get_or_create(name=platform_name)
-            elif platform_search:
-                try:
-                    platform = Platform.objects.get(name=platform_search)
-                except Platform.DoesNotExist:
-                    platform = None
-
-            # Hantera transaktion
-            transaction_price = form.cleaned_data.get("transaction_price")
-            transaction_shipping = form.cleaned_data.get("transaction_shipping")
-            transaction_date = form.cleaned_data.get("transaction_date")
-            transaction_comment = form.cleaned_data.get("transaction_comment", "")
-
-            if (
-                transaction_price is not None
-                or transaction_shipping is not None
-                or transaction_date
-            ):
-                # Skapa transaktion
-                if transaction_price is None:
-                    transaction_price = 0
-                if transaction_shipping is None:
-                    transaction_shipping = 0
-                if not transaction_date:
-                    transaction_date = timezone.now().date()
-
-                # Bestäm transaktionstyp baserat på tecken
-                if transaction_price < 0 or transaction_shipping < 0:
-                    transaction_type = "KÖP"
-                    transaction_price = abs(transaction_price)
-                    transaction_shipping = abs(transaction_shipping)
-                else:
-                    transaction_type = "SÄLJ"
-                    transaction_shipping = abs(transaction_shipping)
-
-                Transaction.objects.create(
-                    axe=axe,
-                    contact=contact,
-                    platform=platform,
-                    transaction_date=transaction_date,
-                    type=transaction_type,
-                    price=transaction_price,
-                    shipping_cost=transaction_shipping,
-                    comment=transaction_comment,
-                )
-
+            axe = _create_axe_from_form(form, request.user)
+            _handle_uploaded_images(axe, request)
+            _handle_url_images(axe, request)
+            _rename_axe_images(axe)
+            contact = _handle_contact_creation(axe, form)
+            platform = _handle_platform_creation(axe, form)
+            _handle_transaction_creation(axe, form, contact, platform)
             return redirect("axe_detail", pk=axe.pk)
     else:
         form = AxeForm()
@@ -608,189 +641,211 @@ def axe_create(request):
     return render(request, "axes/axe_form.html", context)
 
 
+def _update_axe_from_form(axe, form, user):
+    """Uppdatera yxa från formulärdata"""
+    axe = form.save(commit=False)
+    axe.updated_by = user
+    # Debug: Skriv ut manufacturer-värdet
+    print(f"DEBUG: Manufacturer before save: {axe.manufacturer}")
+    axe.save()
+    # Debug: Skriv ut manufacturer-värdet efter save
+    axe.refresh_from_db()
+    print(f"DEBUG: Manufacturer after save: {axe.manufacturer}")
+    return axe
+
+
+def _handle_image_removal(axe, request):
+    """Hantera borttagning av befintliga bilder"""
+    if "remove_images" in request.POST:
+        for image_id in request.POST.getlist("remove_images"):
+            try:
+                image = AxeImage.objects.get(id=image_id, axe=axe)
+                image.delete()
+            except AxeImage.DoesNotExist:
+                pass
+
+
+def _handle_new_images_for_edit(axe, request):
+    """Hantera nya bilder för redigering"""
+    if "images" in request.FILES:
+        max_order = axe.images.aggregate(Max("order"))["order__max"] or 0
+        for i, image_file in enumerate(request.FILES.getlist("images"), 1):
+            try:
+                axe_image = AxeImage(
+                    axe=axe, image=image_file, order=max_order + i
+                )
+                axe_image.save()
+            except Exception:
+                pass
+
+
+def _handle_url_images_for_edit(axe, request):
+    """Hantera URL-bilder för redigering"""
+    if "image_urls" in request.POST:
+        max_order = axe.images.aggregate(Max("order"))["order__max"] or 0
+        for i, image_url in enumerate(request.POST.getlist("image_urls"), 1):
+            if image_url and image_url.startswith("http"):
+                try:
+                    response = requests.get(image_url, timeout=10)
+                    if response.status_code == 200:
+                        file_extension = (
+                            os.path.splitext(urlparse(image_url).path)[1]
+                            or ".jpg"
+                        )
+                        filename = (
+                            f"{axe.id}_{uuid.uuid4().hex[:8]}{file_extension}"
+                        )
+                        image_file = ContentFile(
+                            response.content, name=filename
+                        )
+                        axe_image = AxeImage(
+                            axe=axe, image=image_file, order=max_order + i
+                        )
+                        axe_image.save()
+                except Exception:
+                    pass
+
+
+def _handle_image_order_changes(axe, request):
+    """Hantera bildordning från drag & drop"""
+    image_orders = request.POST.getlist("image_order")
+    if image_orders:
+        for order_data in image_orders:
+            if ":" in order_data:
+                image_id, new_order = order_data.split(":", 1)
+                try:
+                    image = AxeImage.objects.get(id=image_id, axe=axe)
+                    image.order = int(new_order)
+                    image.save()
+                except (AxeImage.DoesNotExist, ValueError):
+                    pass
+    return bool(image_orders)
+
+
+def _should_rename_images(request, has_order_changes, axe):
+    """Bestäm om bilder ska omdöpas"""
+    has_new_images = "images" in request.FILES or "image_urls" in request.POST
+    has_removals = "remove_images" in request.POST
+
+    # Om det finns borttagningar, kontrollera om den sista bilden tas bort
+    skip_renaming_for_removals = False
+    if has_removals:
+        remaining_count = axe.images.count() - len(
+            request.POST.getlist("remove_images")
+        )
+        if remaining_count == 0:
+            # Alla bilder tas bort, ingen omdöpning behövs
+            skip_renaming_for_removals = True
+
+    return (
+        has_new_images
+        or has_order_changes
+        or (has_removals and not skip_renaming_for_removals)
+    )
+
+
+def _rename_axe_images_for_edit(axe):
+    """Omnumrera och döp om alla bilder för redigering"""
+    from django.core.files.storage import default_storage
+
+    remaining_images = list(axe.images.all().order_by("order"))
+    temp_paths = []
+    temp_webps = []
+    
+    # Steg 1: Döp om till temporära namn
+    for idx, image in enumerate(remaining_images, 1):
+        old_path = image.image.name
+        file_ext = os.path.splitext(old_path)[1]
+        temp_filename = f"{axe.id}_tmp_{idx}{file_ext}"
+        temp_path = f"axe_images/{temp_filename}"
+        # Temporärt namn för .webp
+        old_webp = os.path.splitext(old_path)[0] + ".webp"
+        temp_webp = f"axe_images/{axe.id}_tmp_{idx}.webp"
+        # Döp om originalfilen
+        if old_path != temp_path and default_storage.exists(old_path):
+            with default_storage.open(old_path, "rb") as old_file:
+                default_storage.save(temp_path, old_file)
+            default_storage.delete(old_path)
+        temp_paths.append((image, temp_path, file_ext))
+        # Döp om .webp om den finns
+        if default_storage.exists(old_webp):
+            try:
+                with default_storage.open(old_webp, "rb") as old_webp_file:
+                    default_storage.save(temp_webp, old_webp_file)
+                default_storage.delete(old_webp)
+            except Exception:
+                pass
+        temp_webps.append(temp_webp)
+    
+    # Steg 2: Döp om till slutgiltiga namn baserat på den nya ordningen
+    for idx, (image, temp_path, file_ext) in enumerate(temp_paths, 1):
+        final_filename = f"{axe.id}{chr(96 + idx)}{file_ext}"
+        final_path = f"axe_images/{final_filename}"
+        # Döp om originalfilen
+        if temp_path != final_path and default_storage.exists(temp_path):
+            with default_storage.open(temp_path, "rb") as temp_file:
+                default_storage.save(final_path, temp_file)
+            default_storage.delete(temp_path)
+        # Döp om .webp om den finns
+        temp_webp = temp_webps[idx - 1]
+        final_webp = f"axe_images/{axe.id}{chr(96 + idx)}.webp"
+        if default_storage.exists(temp_webp):
+            try:
+                with default_storage.open(
+                    temp_webp, "rb"
+                ) as temp_webp_file:
+                    default_storage.save(final_webp, temp_webp_file)
+                default_storage.delete(temp_webp)
+            except Exception:
+                pass
+        # Uppdatera databasen med den nya ordningen
+        image.image = final_path
+        image.order = idx
+        image.description = f"Bild {chr(96 + idx).upper()} av {axe.manufacturer.name} {axe.model}"
+        image.save()
+
+
 @login_required
 def axe_edit(request, pk):
     axe = get_object_or_404(Axe, pk=pk)
     if request.method == "POST":
         form = AxeForm(request.POST, request.FILES, instance=axe)
         if form.is_valid():
-            axe = form.save(commit=False)
-            axe.updated_by = request.user
-            # Debug: Skriv ut manufacturer-värdet
-            print(f"DEBUG: Manufacturer before save: {axe.manufacturer}")
-            axe.save()
-            # Debug: Skriv ut manufacturer-värdet efter save
-            axe.refresh_from_db()
-            print(f"DEBUG: Manufacturer after save: {axe.manufacturer}")
-
-            # Hantera borttagning av befintliga bilder
-            if "remove_images" in request.POST:
-                for image_id in request.POST.getlist("remove_images"):
-                    try:
-                        image = AxeImage.objects.get(id=image_id, axe=axe)
-                        image.delete()
-                    except AxeImage.DoesNotExist:
-                        pass
-
-            # Hantera nya bilder
-            if "images" in request.FILES:
-                max_order = axe.images.aggregate(Max("order"))["order__max"] or 0
-                for i, image_file in enumerate(request.FILES.getlist("images"), 1):
-                    try:
-                        axe_image = AxeImage(
-                            axe=axe, image=image_file, order=max_order + i
-                        )
-                        axe_image.save()
-                    except Exception:
-                        pass
-
-            # Hantera URL-bilder
-            if "image_urls" in request.POST:
-                max_order = axe.images.aggregate(Max("order"))["order__max"] or 0
-                for i, image_url in enumerate(request.POST.getlist("image_urls"), 1):
-                    if image_url and image_url.startswith("http"):
-                        try:
-                            response = requests.get(image_url, timeout=10)
-                            if response.status_code == 200:
-                                file_extension = (
-                                    os.path.splitext(urlparse(image_url).path)[1]
-                                    or ".jpg"
-                                )
-                                filename = (
-                                    f"{axe.id}_{uuid.uuid4().hex[:8]}{file_extension}"
-                                )
-                                image_file = ContentFile(
-                                    response.content, name=filename
-                                )
-                                axe_image = AxeImage(
-                                    axe=axe, image=image_file, order=max_order + i
-                                )
-                                axe_image.save()
-                        except Exception:
-                            pass
-
-            # Hantera bildordning från drag & drop (före omnumrering)
-            image_orders = request.POST.getlist("image_order")
-            if image_orders:
-                for order_data in image_orders:
-                    if ":" in order_data:
-                        image_id, new_order = order_data.split(":", 1)
-                        try:
-                            image = AxeImage.objects.get(id=image_id, axe=axe)
-                            image.order = int(new_order)
-                            image.save()
-                        except (AxeImage.DoesNotExist, ValueError):
-                            pass
-
+            axe = _update_axe_from_form(axe, form, request.user)
+            _handle_image_removal(axe, request)
+            _handle_new_images_for_edit(axe, request)
+            _handle_url_images_for_edit(axe, request)
+            has_order_changes = _handle_image_order_changes(axe, request)
+            
             # Kontrollera om omdöpning behövs
-            # Omdöpning behövs när:
-            # 1. Nya bilder laddas upp
-            # 2. Nya URL:er laddas ner
-            # 3. Bildordning ändras via drag & drop
-            # 4. Bilder tas bort (men inte om den sista bilden tas bort)
-            has_new_images = "images" in request.FILES or "image_urls" in request.POST
-            has_order_changes = bool(image_orders)
-            has_removals = "remove_images" in request.POST
-
-            # Om det finns borttagningar, kontrollera om den sista bilden tas bort
-            skip_renaming_for_removals = False
-            if has_removals:
-                remaining_count = axe.images.count() - len(
-                    request.POST.getlist("remove_images")
-                )
-                if remaining_count == 0:
-                    # Alla bilder tas bort, ingen omdöpning behövs
-                    skip_renaming_for_removals = True
-
-            needs_renaming = (
-                has_new_images
-                or has_order_changes
-                or (has_removals and not skip_renaming_for_removals)
-            )
-
+            needs_renaming = _should_rename_images(request, has_order_changes, axe)
+            
             # Omnumrera och döp om alla bilder endast om det behövs
             if needs_renaming:
-                from django.core.files.storage import default_storage
-
-                remaining_images = list(axe.images.all().order_by("order"))
-                temp_paths = []
-                temp_webps = []
-                # Steg 1: Döp om till temporära namn
-                for idx, image in enumerate(remaining_images, 1):
-                    old_path = image.image.name
-                    file_ext = os.path.splitext(old_path)[1]
-                    temp_filename = f"{axe.id}_tmp_{idx}{file_ext}"
-                    temp_path = f"axe_images/{temp_filename}"
-                    # Temporärt namn för .webp
-                    old_webp = os.path.splitext(old_path)[0] + ".webp"
-                    temp_webp = f"axe_images/{axe.id}_tmp_{idx}.webp"
-                    # Döp om originalfilen
-                    if old_path != temp_path and default_storage.exists(old_path):
-                        with default_storage.open(old_path, "rb") as old_file:
-                            default_storage.save(temp_path, old_file)
-                        default_storage.delete(old_path)
-                    temp_paths.append((image, temp_path, file_ext))
-                    # Döp om .webp om den finns
-                    if default_storage.exists(old_webp):
-                        try:
-                            with default_storage.open(old_webp, "rb") as old_webp_file:
-                                default_storage.save(temp_webp, old_webp_file)
-                            default_storage.delete(old_webp)
-                        except Exception:
-                            pass
-                    temp_webps.append(temp_webp)
-                # Steg 2: Döp om till slutgiltiga namn baserat på den nya ordningen
-                for idx, (image, temp_path, file_ext) in enumerate(temp_paths, 1):
-                    final_filename = f"{axe.id}{chr(96 + idx)}{file_ext}"
-                    final_path = f"axe_images/{final_filename}"
-                    # Döp om originalfilen
-                    if temp_path != final_path and default_storage.exists(temp_path):
-                        with default_storage.open(temp_path, "rb") as temp_file:
-                            default_storage.save(final_path, temp_file)
-                        default_storage.delete(temp_path)
-                    # Döp om .webp om den finns
-                    temp_webp = temp_webps[idx - 1]
-                    final_webp = f"axe_images/{axe.id}{chr(96 + idx)}.webp"
-                    if default_storage.exists(temp_webp):
-                        try:
-                            with default_storage.open(
-                                temp_webp, "rb"
-                            ) as temp_webp_file:
-                                default_storage.save(final_webp, temp_webp_file)
-                            default_storage.delete(temp_webp)
-                        except Exception:
-                            pass
-                    # Uppdatera databasen med den nya ordningen
-                    image.image = final_path
-                    image.order = idx
-                    image.description = f"Bild {chr(96 + idx).upper()} av {axe.manufacturer.name} {axe.model}"
-                    image.save()
+                _rename_axe_images_for_edit(axe)
 
             return redirect("axe_detail", pk=axe.pk)
     else:
         form = AxeForm(instance=axe)
-    # Hämta måttdata för templaten
-    measurements = (
-        axe.measurements.all().order_by("name") if hasattr(axe, "measurements") else []
-    )
-    measurement_form = MeasurementForm()
+
+    # Hämta mått och mallar för formuläret
+    measurements = axe.measurements.all().order_by("measurement_type__order", "measurement_type__name")
     measurement_templates = {}
-    templates = MeasurementTemplate.objects.filter(is_active=True).prefetch_related(
-        "items__measurement_type"
-    )
-    for template in templates:
-        measurement_templates[template.name] = [
-            {"name": item.measurement_type.name, "unit": item.measurement_type.unit}
-            for item in template.items.all()
-        ]
+    
+    # Gruppera mått efter mall
+    for measurement in measurements:
+        template_name = measurement.measurement_type.name
+        if template_name not in measurement_templates:
+            measurement_templates[template_name] = []
+        measurement_templates[template_name].append(measurement)
+
     context = {
         "form": form,
         "axe": axe,
         "is_edit": True,
         "measurements": measurements,
-        "measurement_form": measurement_form,
+        "measurement_form": MeasurementForm(),
         "measurement_templates": measurement_templates,
-        "measurement_types_data": measurement_form.measurement_types_data,
     }
     return render(request, "axes/axe_form.html", context)
 

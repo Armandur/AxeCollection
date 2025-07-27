@@ -51,15 +51,10 @@ def search_platforms(request):
     return JsonResponse({"results": results})
 
 
-def global_search(request):
-    """AJAX-endpoint för global sökning i yxor, kontakter, tillverkare och transaktioner"""
-    query = request.GET.get("q", "").strip()
-    if len(query) < 2:
-        return JsonResponse({"results": {}})
-
-    results = {"axes": [], "contacts": [], "manufacturers": [], "transactions": []}
-
-    # Sök i yxor (respektera "endast mottagna yxor" inställning)
+def _search_axes(query, request):
+    """Sök i yxor med publik/privat filtrering"""
+    from .models import Axe, Settings
+    
     text_query = (
         Q(manufacturer__name__icontains=query)
         | Q(model__icontains=query)
@@ -68,8 +63,6 @@ def global_search(request):
 
     # Applicera publik filtrering om användaren inte är inloggad
     if not request.user.is_authenticated:
-        from .models import Settings
-
         try:
             settings = Settings.get_settings()
             if settings.show_only_received_axes_public:
@@ -88,8 +81,9 @@ def global_search(request):
         # Om query inte är ett nummer, sök bara i textfält
         axes = Axe.objects.filter(text_query).select_related("manufacturer")[:5]
 
+    results = []
     for axe in axes:
-        results["axes"].append(
+        results.append(
             {
                 "id": axe.id,
                 "title": f"{axe.manufacturer.name} - {axe.model}",
@@ -98,41 +92,56 @@ def global_search(request):
                 "type": "axe",
             }
         )
+    return results
 
-    # Sök i kontakter (endast om användaren är inloggad eller kontakter visas publikt)
-    if request.user.is_authenticated or getattr(request, "public_settings", {}).get(
+
+def _search_contacts(query, request):
+    """Sök i kontakter med publik/privat filtrering"""
+    from .models import Contact
+    
+    # Sök endast om användaren är inloggad eller kontakter visas publikt
+    if not (request.user.is_authenticated or getattr(request, "public_settings", {}).get(
         "show_contacts", False
-    ):
-        contacts = Contact.objects.filter(
-            Q(name__icontains=query)
-            | Q(alias__icontains=query)
-            | Q(email__icontains=query)
-        )[:5]
+    )):
+        return []
+    
+    contacts = Contact.objects.filter(
+        Q(name__icontains=query)
+        | Q(alias__icontains=query)
+        | Q(email__icontains=query)
+    )[:5]
 
-        for contact in contacts:
-            flag_emoji = (
-                "🇸🇪"
-                if contact.country_code == "SE"
-                else "🇫🇮" if contact.country_code == "FI" else ""
-            )
-            results["contacts"].append(
-                {
-                    "id": contact.id,
-                    "title": contact.name,
-                    "subtitle": f"{contact.alias or ''} {flag_emoji}".strip(),
-                    "url": f"/kontakter/{contact.id}/",
-                    "type": "contact",
-                }
-            )
+    results = []
+    for contact in contacts:
+        flag_emoji = (
+            "🇸🇪"
+            if contact.country_code == "SE"
+            else "🇫🇮" if contact.country_code == "FI" else ""
+        )
+        results.append(
+            {
+                "id": contact.id,
+                "title": contact.name,
+                "subtitle": f"{contact.alias or ''} {flag_emoji}".strip(),
+                "url": f"/kontakter/{contact.id}/",
+                "type": "contact",
+            }
+        )
+    return results
 
-    # Sök i tillverkare
+
+def _search_manufacturers(query):
+    """Sök i tillverkare"""
+    from .models import Manufacturer
+    
     manufacturers = Manufacturer.objects.filter(
         Q(name__icontains=query) | Q(information__icontains=query)
     )[:5]
 
+    results = []
     for manufacturer in manufacturers:
         axe_count = manufacturer.axes.count()
-        results["manufacturers"].append(
+        results.append(
             {
                 "id": manufacturer.id,
                 "title": manufacturer.name,
@@ -141,8 +150,13 @@ def global_search(request):
                 "type": "manufacturer",
             }
         )
+    return results
 
-    # Sök i transaktioner (respektera publika inställningar)
+
+def _search_transactions(query, request):
+    """Sök i transaktioner med publik/privat filtrering"""
+    from .models import Transaction
+    
     transaction_query = Q(axe__manufacturer__name__icontains=query) | Q(
         axe__model__icontains=query
     )
@@ -163,6 +177,7 @@ def global_search(request):
         "axe__manufacturer", "contact", "platform"
     )[:5]
 
+    results = []
     for transaction in transactions:
         axe_title = (
             f"{transaction.axe.manufacturer.name} - {transaction.axe.model}"
@@ -195,7 +210,7 @@ def global_search(request):
             if transaction.platform:
                 subtitle_parts.append(transaction.platform.name)
 
-        results["transactions"].append(
+        results.append(
             {
                 "id": transaction.id,
                 "title": f"{transaction.type} - {axe_title}",
@@ -204,6 +219,21 @@ def global_search(request):
                 "type": "transaction",
             }
         )
+    return results
+
+
+def global_search(request):
+    """AJAX-endpoint för global sökning i yxor, kontakter, tillverkare och transaktioner"""
+    query = request.GET.get("q", "").strip()
+    if len(query) < 2:
+        return JsonResponse({"results": {}})
+
+    results = {
+        "axes": _search_axes(query, request),
+        "contacts": _search_contacts(query, request),
+        "manufacturers": _search_manufacturers(query),
+        "transactions": _search_transactions(query, request)
+    }
 
     return JsonResponse({"results": results})
 
