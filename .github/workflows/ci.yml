@@ -105,7 +105,6 @@ jobs:
   build:
     runs-on: ubuntu-latest
     needs: [test, security]
-    if: github.ref == 'refs/heads/main'
     
     steps:
     - uses: actions/checkout@v4
@@ -113,9 +112,36 @@ jobs:
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
     
+    - name: Determine Docker tags
+      id: docker_tags
+      run: |
+        # Rensa branch-namn för Docker-taggar (ersätt / med -)
+        BRANCH_NAME=${GITHUB_REF#refs/heads/}
+        BRANCH_NAME_CLEAN=$(echo $BRANCH_NAME | sed 's/\//-/g')
+        SHORT_SHA=$(echo $GITHUB_SHA | cut -c1-7)
+        
+        # Bestäm taggar baserat på branch
+        if [[ "$GITHUB_REF" == "refs/heads/main" ]]; then
+          echo "tags=latest,main" >> $GITHUB_OUTPUT
+          echo "is_main=true" >> $GITHUB_OUTPUT
+        elif [[ "$GITHUB_REF" == "refs/heads/develop" ]]; then
+          echo "tags=dev,develop" >> $GITHUB_OUTPUT
+          echo "is_main=false" >> $GITHUB_OUTPUT
+        elif [[ "$GITHUB_REF" == refs/heads/feature/* ]]; then
+          echo "tags=feature-$BRANCH_NAME_CLEAN" >> $GITHUB_OUTPUT
+          echo "is_main=false" >> $GITHUB_OUTPUT
+        else
+          echo "tags=$BRANCH_NAME_CLEAN" >> $GITHUB_OUTPUT
+          echo "is_main=false" >> $GITHUB_OUTPUT
+        fi
+        
+        # Lägg till SHA-tag för alla builds
+        echo "sha_tag=$SHORT_SHA" >> $GITHUB_OUTPUT
+        echo "full_sha_tag=$GITHUB_SHA" >> $GITHUB_OUTPUT
+    
     - name: Build Docker image
       run: |
-        docker build -t axecollection:latest .
+        docker build -t axecollection:${{ steps.docker_tags.outputs.sha_tag }} .
     
     - name: Log in to Docker Hub
       uses: docker/login-action@v3
@@ -123,9 +149,18 @@ jobs:
         username: ${{ secrets.DOCKER_USERNAME }}
         password: ${{ secrets.DOCKER_PASSWORD }}
     
-    - name: Push Docker image
+    - name: Push Docker images
       run: |
-        docker tag axecollection:latest ${{ secrets.DOCKER_USERNAME }}/axecollection:latest
-        docker tag axecollection:latest ${{ secrets.DOCKER_USERNAME }}/axecollection:unraid
-        docker push ${{ secrets.DOCKER_USERNAME }}/axecollection:latest
-        docker push ${{ secrets.DOCKER_USERNAME }}/axecollection:unraid 
+        # Push SHA-tag först (alltid)
+        docker tag axecollection:${{ steps.docker_tags.outputs.sha_tag }} ${{ secrets.DOCKER_USERNAME }}/axecollection:${{ steps.docker_tags.outputs.sha_tag }}
+        docker push ${{ secrets.DOCKER_USERNAME }}/axecollection:${{ steps.docker_tags.outputs.sha_tag }}
+        
+        # Push branch-specifika taggar
+        IFS=',' read -ra TAGS <<< "${{ steps.docker_tags.outputs.tags }}"
+        for tag in "${TAGS[@]}"; do
+          echo "Tagging and pushing: $tag"
+          docker tag axecollection:${{ steps.docker_tags.outputs.sha_tag }} ${{ secrets.DOCKER_USERNAME }}/axecollection:$tag
+          docker push ${{ secrets.DOCKER_USERNAME }}/axecollection:$tag
+        done
+        
+
