@@ -125,26 +125,23 @@ class ManufacturerListViewTest(ViewsManufacturerTestCase):
         swedish_manufacturer = Manufacturer.objects.create(
             name="Svensk Tillverkare",
             country_code="SE",
-            manufacturer_type="TILLVERKARE"
+            manufacturer_type="TILLVERKARE",
         )
-        
+
         finnish_manufacturer = Manufacturer.objects.create(
-            name="Finsk Tillverkare", 
-            country_code="FI",
-            manufacturer_type="TILLVERKARE"
+            name="Finsk Tillverkare", country_code="FI", manufacturer_type="TILLVERKARE"
         )
-        
+
         # Skapa tillverkare utan landskod
         no_code_manufacturer = Manufacturer.objects.create(
-            name="Tillverkare Utan Kod",
-            manufacturer_type="TILLVERKARE"
+            name="Tillverkare Utan Kod", manufacturer_type="TILLVERKARE"
         )
 
         response = self.client.get("/tillverkare/")
         self.assertEqual(response.status_code, 200)
 
         # Kontrollera att tillverkarna finns i kontexten
-        manufacturers = response.context['manufacturers']
+        manufacturers = response.context["manufacturers"]
         self.assertIn(swedish_manufacturer, manufacturers)
         self.assertIn(finnish_manufacturer, manufacturers)
         self.assertIn(no_code_manufacturer, manufacturers)
@@ -324,62 +321,56 @@ class ManufacturerDeleteViewTest(ViewsManufacturerTestCase):
         """Testa att delete_manufacturer hanterar undertillverkare korrekt"""
         # Skapa en huvudtillverkare med undertillverkare
         main_manufacturer = Manufacturer.objects.create(
-            name="Huvudtillverkare",
-            manufacturer_type="TILLVERKARE"
+            name="Huvudtillverkare", manufacturer_type="TILLVERKARE"
         )
-        
+
         sub_manufacturer1 = Manufacturer.objects.create(
             name="Undertillverkare 1",
             manufacturer_type="SMED",
-            parent=main_manufacturer
+            parent=main_manufacturer,
         )
-        
+
         sub_manufacturer2 = Manufacturer.objects.create(
-            name="Undertillverkare 2", 
+            name="Undertillverkare 2",
             manufacturer_type="SMED",
-            parent=main_manufacturer
+            parent=main_manufacturer,
         )
-        
+
         # Skapa yxor för huvudtillverkaren och undertillverkarna
-        main_axe = Axe.objects.create(
-            manufacturer=main_manufacturer,
-            model="Huvudyxa"
-        )
-        
+        main_axe = Axe.objects.create(manufacturer=main_manufacturer, model="Huvudyxa")
+
         sub_axe1 = Axe.objects.create(
-            manufacturer=sub_manufacturer1,
-            model="Underyxa 1"
+            manufacturer=sub_manufacturer1, model="Underyxa 1"
         )
-        
+
         sub_axe2 = Axe.objects.create(
-            manufacturer=sub_manufacturer2,
-            model="Underyxa 2"
+            manufacturer=sub_manufacturer2, model="Underyxa 2"
         )
-        
+
         # Testa att ta bort huvudtillverkaren med undertillverkare
         self.client.force_login(self.user)
-        
+
         # Testa att flytta undertillverkare till huvudtillverkare
         response = self.client.post(
-            reverse('delete_manufacturer', kwargs={'pk': main_manufacturer.pk}),
+            reverse("delete_manufacturer", kwargs={"pk": main_manufacturer.pk}),
             {
-                'sub_manufacturer_action': 'move_to_parent',
-                'axe_action': 'move',
-                'delete_images': 'false'
-            }
+                "sub_manufacturer_action": "move_to_parent",
+                "axe_action": "move",
+                "delete_images": "false",
+            },
         )
-        
+
         self.assertEqual(response.status_code, 200)
         data = response.json()
-        self.assertTrue(data['success'])
-        self.assertEqual(data['sub_manufacturers_moved'], 2)
-        
+        self.assertTrue(data["success"])
+        self.assertEqual(data["sub_manufacturers_moved"], 2)
+
         # Verifiera att undertillverkarna nu är huvudtillverkare
         sub_manufacturer1.refresh_from_db()
         sub_manufacturer2.refresh_from_db()
         self.assertIsNone(sub_manufacturer1.parent)
         self.assertIsNone(sub_manufacturer2.parent)
-        
+
         # Verifiera att huvudtillverkaren är borttagen
         with self.assertRaises(Manufacturer.DoesNotExist):
             main_manufacturer.refresh_from_db()

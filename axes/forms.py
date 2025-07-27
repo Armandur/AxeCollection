@@ -446,7 +446,7 @@ class AxeForm(forms.ModelForm):
             flag_emoji = ""
             if m.country_code:
                 flag_emoji = f"{country_flag(m.country_code)} "
-            
+
             if m.parent:
                 # Skapa hierarkisk prefix med box-drawing characters
                 prefix = self._get_hierarchy_prefix(m, sorted_manufacturers)

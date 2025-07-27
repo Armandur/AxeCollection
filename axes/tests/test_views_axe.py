@@ -482,41 +482,33 @@ class AxeListViewTest(ViewsAxeTestCase):
         for axe in axes:
             self.assertEqual(axe.status, "MOTTAGEN")
 
-
-
     def test_axe_list_view_with_country_codes(self):
         """Testa att yxlistan visar landskoder korrekt"""
         # Skapa tillverkare med landskoder
         swedish_manufacturer = Manufacturer.objects.create(
             name="Svensk Tillverkare",
             country_code="SE",
-            manufacturer_type="TILLVERKARE"
+            manufacturer_type="TILLVERKARE",
         )
-        
+
         finnish_manufacturer = Manufacturer.objects.create(
-            name="Finsk Tillverkare", 
-            country_code="FI",
-            manufacturer_type="TILLVERKARE"
+            name="Finsk Tillverkare", country_code="FI", manufacturer_type="TILLVERKARE"
         )
-        
+
         # Skapa yxor med dessa tillverkare
         swedish_axe = Axe.objects.create(
-            manufacturer=swedish_manufacturer,
-            model="Svensk Yxa",
-            status="KÖPT"
+            manufacturer=swedish_manufacturer, model="Svensk Yxa", status="KÖPT"
         )
-        
+
         finnish_axe = Axe.objects.create(
-            manufacturer=finnish_manufacturer,
-            model="Finsk Yxa", 
-            status="KÖPT"
+            manufacturer=finnish_manufacturer, model="Finsk Yxa", status="KÖPT"
         )
 
         response = self.client.get("/yxor/")
         self.assertEqual(response.status_code, 200)
 
         # Kontrollera att yxorna finns i kontexten
-        axes = response.context['axes']
+        axes = response.context["axes"]
         self.assertIn(swedish_axe, axes)
         self.assertIn(finnish_axe, axes)
 

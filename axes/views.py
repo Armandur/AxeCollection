@@ -145,7 +145,7 @@ def _search_manufacturers(query):
         flag_emoji = ""
         if manufacturer.country_code:
             flag_emoji = f"{country_flag(manufacturer.country_code)} "
-        
+
         results.append(
             {
                 "id": manufacturer.id,

@@ -74,7 +74,7 @@ class ManufacturerAdmin(admin.ModelAdmin):
         flag_emoji = ""
         if obj.country_code:
             flag_emoji = f"{obj.country_code} "
-        
+
         if obj.parent:
             return f"└─ {flag_emoji}{obj.name}"
         return f"{flag_emoji}{obj.name}"

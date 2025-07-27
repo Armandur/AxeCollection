@@ -239,14 +239,46 @@ class Command(BaseCommand):
 
         # Lägg till fler huvudtillverkare om count är större
         additional_manufacturers = [
-            {"name": "Mariefors Bruk", "country_code": "FI", "info": "Finsk tillverkare av kvalitetsyxor. Grundad 1800-talet. Specialiserar sig på traditionella yxor."},
-            {"name": "Säters yxfabrik", "country_code": "SE", "info": "Svensk tillverkare av kvalitetsyxor. Grundad 1800-talet. Specialiserar sig på handgjorda yxor."},
-            {"name": "Jäders bruk", "country_code": "SE", "info": "Svensk tillverkare av kvalitetsyxor. Grundad 1800-talet. Specialiserar sig på industriella yxor."},
-            {"name": "Svenska Yxfabriken AB, Kristinehamn", "country_code": "SE", "info": "Svensk tillverkare av kvalitetsyxor. Grundad 1800-talet. Specialiserar sig på slöjdyxor."},
-            {"name": "Edsbyn Industri Aktiebolag", "country_code": "SE", "info": "Svensk tillverkare av kvalitetsyxor. Grundad 1800-talet. Specialiserar sig på huggyxor."},
-            {"name": "Dansk Stålindustri", "country_code": "DK", "info": "Dansk tillverkare av kvalitetsyxor. Grundad 1900-talet. Specialiserar sig på moderna yxor."},
-            {"name": "Mustad", "country_code": "NO", "info": "Norsk tillverkare av kvalitetsyxor. Grundad 1800-talet. Specialiserar sig på handgjorda yxor."},
-            {"name": "Øyo", "country_code": "NO", "info": "Norsk tillverkare av kvalitetsyxor. Grundad 1800-talet. Specialiserar sig på traditionella yxor."},
+            {
+                "name": "Mariefors Bruk",
+                "country_code": "FI",
+                "info": "Finsk tillverkare av kvalitetsyxor. Grundad 1800-talet. Specialiserar sig på traditionella yxor.",
+            },
+            {
+                "name": "Säters yxfabrik",
+                "country_code": "SE",
+                "info": "Svensk tillverkare av kvalitetsyxor. Grundad 1800-talet. Specialiserar sig på handgjorda yxor.",
+            },
+            {
+                "name": "Jäders bruk",
+                "country_code": "SE",
+                "info": "Svensk tillverkare av kvalitetsyxor. Grundad 1800-talet. Specialiserar sig på industriella yxor.",
+            },
+            {
+                "name": "Svenska Yxfabriken AB, Kristinehamn",
+                "country_code": "SE",
+                "info": "Svensk tillverkare av kvalitetsyxor. Grundad 1800-talet. Specialiserar sig på slöjdyxor.",
+            },
+            {
+                "name": "Edsbyn Industri Aktiebolag",
+                "country_code": "SE",
+                "info": "Svensk tillverkare av kvalitetsyxor. Grundad 1800-talet. Specialiserar sig på huggyxor.",
+            },
+            {
+                "name": "Dansk Stålindustri",
+                "country_code": "DK",
+                "info": "Dansk tillverkare av kvalitetsyxor. Grundad 1900-talet. Specialiserar sig på moderna yxor.",
+            },
+            {
+                "name": "Mustad",
+                "country_code": "NO",
+                "info": "Norsk tillverkare av kvalitetsyxor. Grundad 1800-talet. Specialiserar sig på handgjorda yxor.",
+            },
+            {
+                "name": "Øyo",
+                "country_code": "NO",
+                "info": "Norsk tillverkare av kvalitetsyxor. Grundad 1800-talet. Specialiserar sig på traditionella yxor.",
+            },
         ]
 
         manufacturers = []
@@ -258,10 +290,10 @@ class Command(BaseCommand):
 
             # Skapa huvudtillverkare
             main_manufacturer = Manufacturer.objects.create(
-                name=main_name, 
-                information=data["info"], 
+                name=main_name,
+                information=data["info"],
                 manufacturer_type=data["type"],
-                country_code=data["country_code"]
+                country_code=data["country_code"],
             )
             manufacturers.append(main_manufacturer)
 
@@ -275,7 +307,7 @@ class Command(BaseCommand):
                     information=sub_data["info"],
                     manufacturer_type=sub_data["type"],
                     parent=main_manufacturer,
-                    country_code=sub_data["country_code"]
+                    country_code=sub_data["country_code"],
                 )
                 manufacturers.append(sub_manufacturer)
 
@@ -285,10 +317,10 @@ class Command(BaseCommand):
                 break
 
             manufacturer = Manufacturer.objects.create(
-                name=manufacturer_data["name"], 
-                information=manufacturer_data["info"], 
+                name=manufacturer_data["name"],
+                information=manufacturer_data["info"],
                 manufacturer_type="TILLVERKARE",
-                country_code=manufacturer_data["country_code"]
+                country_code=manufacturer_data["country_code"],
             )
             manufacturers.append(manufacturer)
 

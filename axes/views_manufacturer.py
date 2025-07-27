@@ -848,8 +848,10 @@ def delete_manufacturer(request, pk):
         # Validering för undertillverkare
         if sub_manufacturer_action == "move_to_specific" and target_manufacturer_id:
             try:
-                target_manufacturer = Manufacturer.objects.get(id=target_manufacturer_id)
-                
+                target_manufacturer = Manufacturer.objects.get(
+                    id=target_manufacturer_id
+                )
+
                 # Kontrollera att mål-tillverkaren inte är samma som den som ska tas bort
                 if target_manufacturer.id == manufacturer.id:
                     return JsonResponse(
@@ -858,7 +860,7 @@ def delete_manufacturer(request, pk):
                             "error": "Kan inte flytta undertillverkare till samma tillverkare som ska tas bort",
                         }
                     )
-                
+
                 # Kontrollera att mål-tillverkaren inte är en undertillverkare till den som ska tas bort
                 def is_descendant(check_manufacturer, ancestor):
                     """Kontrollera om check_manufacturer är en efterkommande till ancestor"""
@@ -868,7 +870,7 @@ def delete_manufacturer(request, pk):
                             return True
                         current = current.parent
                     return False
-                
+
                 if is_descendant(target_manufacturer, manufacturer):
                     return JsonResponse(
                         {
@@ -876,7 +878,7 @@ def delete_manufacturer(request, pk):
                             "error": "Kan inte flytta undertillverkare till en undertillverkare (skapar cirkulär referens)",
                         }
                     )
-                    
+
             except Manufacturer.DoesNotExist:
                 return JsonResponse(
                     {
@@ -903,7 +905,10 @@ def delete_manufacturer(request, pk):
                             axe.delete()
                         else:
                             # Flytta yxor från undertillverkare till samma mål som huvudtillverkaren
-                            if axe_action == "move_to_specific" and target_manufacturer_id:
+                            if (
+                                axe_action == "move_to_specific"
+                                and target_manufacturer_id
+                            ):
                                 try:
                                     target_manufacturer = Manufacturer.objects.get(
                                         id=target_manufacturer_id
@@ -919,8 +924,10 @@ def delete_manufacturer(request, pk):
                                     )
                             else:
                                 # Flytta till "Okänd tillverkare"
-                                unknown_manufacturer, created = Manufacturer.objects.get_or_create(
-                                    name="Okänd tillverkare"
+                                unknown_manufacturer, created = (
+                                    Manufacturer.objects.get_or_create(
+                                        name="Okänd tillverkare"
+                                    )
                                 )
                                 axe.manufacturer = unknown_manufacturer
                                 axe.save()
@@ -932,7 +939,9 @@ def delete_manufacturer(request, pk):
                     sub_manufacturer.parent = None
                     sub_manufacturer.save()
                     sub_manufacturers_moved += 1
-            elif sub_manufacturer_action == "move_to_specific" and target_manufacturer_id:
+            elif (
+                sub_manufacturer_action == "move_to_specific" and target_manufacturer_id
+            ):
                 # Flytta undertillverkare till annan huvudtillverkare
                 try:
                     target_manufacturer = Manufacturer.objects.get(
@@ -1074,11 +1083,8 @@ def get_manufacturers_for_dropdown(request):
         flag_emoji = ""
         if m.country_code:
             flag_emoji = f"{country_flag(m.country_code)} "
-        
-        results.append({
-            "id": m.id, 
-            "name": f"{flag_emoji}{m.name}"
-        })
+
+        results.append({"id": m.id, "name": f"{flag_emoji}{m.name}"})
 
     return JsonResponse({"manufacturers": results})
 

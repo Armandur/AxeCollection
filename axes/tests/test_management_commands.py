@@ -1289,7 +1289,9 @@ class GenerateTestDataCommandTest(TestCase):
         self.assertGreater(manufacturers.count(), 0)
 
         # Kontrollera att minst några tillverkare har landskoder
-        manufacturers_with_country_codes = manufacturers.filter(country_code__isnull=False)
+        manufacturers_with_country_codes = manufacturers.filter(
+            country_code__isnull=False
+        )
         self.assertGreater(manufacturers_with_country_codes.count(), 0)
 
         # Kontrollera att landskoderna är giltiga (2 bokstäver)
@@ -1324,10 +1326,12 @@ class GenerateTestDataCommandTest(TestCase):
                 self.assertEqual(
                     manufacturer.country_code,
                     expected_country_code,
-                    f"Tillverkare {manufacturer_name} ska ha landskod {expected_country_code}"
+                    f"Tillverkare {manufacturer_name} ska ha landskod {expected_country_code}",
                 )
 
-    def test_generate_test_data_creates_hierarchical_manufacturers_with_country_codes(self):
+    def test_generate_test_data_creates_hierarchical_manufacturers_with_country_codes(
+        self,
+    ):
         """Test att hierarkiska tillverkare (med undertillverkare) skapas med landskoder"""
         call_command("generate_test_data")
 
@@ -1340,12 +1344,14 @@ class GenerateTestDataCommandTest(TestCase):
                 self.assertEqual(len(main_manufacturer.country_code), 2)
 
                 # Kontrollera att undertillverkarna har samma landskod
-                sub_manufacturers = Manufacturer.objects.filter(parent=main_manufacturer)
+                sub_manufacturers = Manufacturer.objects.filter(
+                    parent=main_manufacturer
+                )
                 for sub_manufacturer in sub_manufacturers:
                     self.assertEqual(
                         sub_manufacturer.country_code,
                         main_manufacturer.country_code,
-                        f"Undertillverkare {sub_manufacturer.name} ska ha samma landskod som huvudtillverkare {main_manufacturer.name}"
+                        f"Undertillverkare {sub_manufacturer.name} ska ha samma landskod som huvudtillverkare {main_manufacturer.name}",
                     )
 
     def test_generate_test_data_country_codes_are_consistent(self):
@@ -1353,7 +1359,9 @@ class GenerateTestDataCommandTest(TestCase):
         call_command("generate_test_data")
 
         # Kontrollera att alla tillverkare med landskoder har giltiga koder
-        manufacturers_with_codes = Manufacturer.objects.filter(country_code__isnull=False)
+        manufacturers_with_codes = Manufacturer.objects.filter(
+            country_code__isnull=False
+        )
 
         for manufacturer in manufacturers_with_codes:
             # Kontrollera format (2 bokstäver, versaler)
