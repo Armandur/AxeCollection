@@ -829,12 +829,12 @@ def axe_edit(request, pk):
         form = AxeForm(instance=axe)
 
     # Hämta mått och mallar för formuläret
-    measurements = axe.measurements.all().order_by("measurement_type__order", "measurement_type__name")
+    measurements = axe.measurements.all().order_by("name")
     measurement_templates = {}
     
-    # Gruppera mått efter mall
+    # Gruppera mått efter namn (eftersom Measurement inte har measurement_type)
     for measurement in measurements:
-        template_name = measurement.measurement_type.name
+        template_name = measurement.name
         if template_name not in measurement_templates:
             measurement_templates[template_name] = []
         measurement_templates[template_name].append(measurement)
