@@ -361,8 +361,12 @@ En checklista för vidareutveckling av AxeCollection. Bocka av med [x] när klar
 
 ## 10. Prestanda och kodkvalitet
 
-80. [ ] Fler automatiska tester (unit/integration).
+80. [x] Fler automatiska tester (unit/integration).
 81. [ ] CI/CD – Automatiska tester vid push (GitHub Actions).
+    - [x] 81.1 Skapa GitHub Actions workflow för automatisk testning
+    - [x] 81.2 Konfigurera Docker build och push i CI/CD
+    - [x] 81.3 Lägg till test coverage reporting i CI/CD
+    - [ ] 81.4 Konfigurera automatisk deployment till testmiljö
 82. [ ] Kodgranskning – Linting och kodstil (t.ex. black, flake8).
 83. [x] Periodvis kodgranskning: Gå igenom och granska koden stegvis för att identifiera behov av övergripande refaktorering, buggfixar och tillsnyggning. Gör detta processvis så att varje steg kan testas innan nästa påbörjas.
     - [x] 83.1 Refaktorera vyer till mindre filer (views_axe.py, views_contact.py, views_manufacturer.py, views_transaction.py)
