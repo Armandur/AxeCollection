@@ -251,11 +251,10 @@ class StatisticsDashboardViewTest(ViewsAxeTestCase):
 
 
 class UnlinkedImagesViewTest(ViewsAxeTestCase):
-    def test_unlinked_images_view_public(self):
-        """Testa att okopplade bilder-sidan är tillgänglig för alla"""
+    def test_unlinked_images_view_requires_login(self):
+        """Testa att okopplade bilder-sidan kräver inloggning"""
         response = self.client.get('/okopplade-bilder/')
-        self.assertEqual(response.status_code, 200)
-        self.assertTemplateUsed(response, 'axes/unlinked_images.html')
+        self.assertEqual(response.status_code, 302)  # Redirect till login
 
     def test_unlinked_images_view_with_login(self):
         """Testa okopplade bilder-sidan med inloggning"""
@@ -266,6 +265,7 @@ class UnlinkedImagesViewTest(ViewsAxeTestCase):
 
     def test_unlinked_images_view_contains_context(self):
         """Testa att okopplade bilder-sidan innehåller rätt context"""
+        self.client.login(username='testuser', password='testpass123')
         response = self.client.get('/okopplade-bilder/')
         self.assertIn('axe_groups', response.context)
         self.assertIn('manufacturer_groups', response.context)

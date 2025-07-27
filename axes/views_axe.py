@@ -1614,6 +1614,7 @@ def delete_latest_axe(request):
     return redirect("axe_list")
 
 
+@login_required
 def unlinked_images_view(request):
     """Visa och hantera okopplade bilder"""
     import glob
