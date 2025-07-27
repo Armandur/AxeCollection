@@ -634,12 +634,8 @@ def _update_axe_from_form(axe, form, user):
     """Uppdatera yxa från formulärdata"""
     axe = form.save(commit=False)
     axe.updated_by = user
-    # Debug: Skriv ut manufacturer-värdet
-    print(f"DEBUG: Manufacturer before save: {axe.manufacturer}")
     axe.save()
-    # Debug: Skriv ut manufacturer-värdet efter save
     axe.refresh_from_db()
-    print(f"DEBUG: Manufacturer after save: {axe.manufacturer}")
     return axe
 
 

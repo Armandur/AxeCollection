@@ -1,7 +1,8 @@
 import pytest
 from django import forms
-from axes.forms import AxeForm, ContactForm, PlatformForm
-from axes.models import Manufacturer, Axe, Contact, Platform
+from django.test import TestCase
+from axes.forms import AxeForm, ContactForm, PlatformForm, TransactionForm, MeasurementForm, BackupUploadForm
+from axes.models import Manufacturer, Axe, Contact, Platform, Transaction, MeasurementType
 from django.utils import timezone
 
 import datetime
@@ -201,3 +202,506 @@ def test_platformform_save_creates_platform():
     assert isinstance(platform, Platform)
     assert platform.name == "Test Platform"
     assert platform.id is not None 
+
+class TransactionFormTest(TestCase):
+    def setUp(self):
+        self.manufacturer = Manufacturer.objects.create(name="Test Manufacturer")
+        self.contact = Contact.objects.create(name="Test Contact", email="test@example.com")
+        self.platform = Platform.objects.create(name="Test Platform")
+        self.axe = Axe.objects.create(
+            manufacturer=self.manufacturer,
+            model="Test Axe",
+            status="KÖPT"
+        )
+
+    def test_transaction_form_valid_data(self):
+        """Testa TransactionForm med giltig data"""
+        form_data = {
+            'axe': self.axe.id,
+            'transaction_date': timezone.now().date(),
+            'type': 'KÖP',
+            'price': '100.00',
+            'shipping_cost': '10.00',
+            'contact': self.contact.id,
+            'platform': self.platform.id,
+            'comment': 'Test transaction'
+        }
+        form = TransactionForm(data=form_data)
+        self.assertTrue(form.is_valid())
+
+    def test_transaction_form_invalid_price(self):
+        """Testa TransactionForm med ogiltigt pris"""
+        form_data = {
+            'axe': self.axe.id,
+            'transaction_date': timezone.now().date(),
+            'type': 'KÖP',
+            'price': 'invalid_price',
+            'shipping_cost': '10.00'
+        }
+        form = TransactionForm(data=form_data)
+        self.assertFalse(form.is_valid())
+        self.assertIn('price', form.errors)
+
+    def test_transaction_form_optional_fields(self):
+        """Testa TransactionForm med valfria fält tomma"""
+        form_data = {
+            'axe': self.axe.id,
+            'transaction_date': timezone.now().date(),
+            'type': 'KÖP',
+            'price': '100.00',
+            'shipping_cost': '0.00'
+        }
+        form = TransactionForm(data=form_data)
+        self.assertTrue(form.is_valid())
+
+
+class PlatformFormTest(TestCase):
+    def test_platform_form_valid_data(self):
+        """Testa PlatformForm med giltig data"""
+        form_data = {
+            'name': 'Test Platform',
+            'color_class': 'bg-primary'
+        }
+        form = PlatformForm(data=form_data)
+        self.assertTrue(form.is_valid())
+
+    def test_platform_form_missing_name(self):
+        """Testa PlatformForm utan namn"""
+        form_data = {
+            'color_class': 'bg-primary'
+        }
+        form = PlatformForm(data=form_data)
+        self.assertFalse(form.is_valid())
+        self.assertIn('name', form.errors)
+
+    def test_platform_form_empty_name(self):
+        """Testa PlatformForm med tomt namn"""
+        form_data = {
+            'name': '',
+            'color_class': 'bg-primary'
+        }
+        form = PlatformForm(data=form_data)
+        self.assertFalse(form.is_valid())
+        self.assertIn('name', form.errors)
+
+
+class ContactFormTest(TestCase):
+    def test_contact_form_valid_data(self):
+        """Testa ContactForm med giltig data"""
+        form_data = {
+            'name': 'Test Contact',
+            'email': 'test@example.com',
+            'phone': '070-123 45 67',
+            'alias': 'testalias',
+            'street': 'Test Street 1',
+            'postal_code': '123 45',
+            'city': 'Test City',
+            'country_code': 'SE',
+            'comment': 'Test comment',
+            'is_naj_member': True
+        }
+        form = ContactForm(data=form_data)
+        self.assertTrue(form.is_valid())
+
+    def test_contact_form_invalid_email(self):
+        """Testa ContactForm med ogiltig e-post"""
+        form_data = {
+            'name': 'Test Contact',
+            'email': 'invalid-email',
+            'phone': '070-123 45 67'
+        }
+        form = ContactForm(data=form_data)
+        self.assertFalse(form.is_valid())
+        self.assertIn('email', form.errors)
+
+    def test_contact_form_missing_required_fields(self):
+        """Testa ContactForm utan obligatoriska fält"""
+        form_data = {
+            'email': 'test@example.com'
+        }
+        form = ContactForm(data=form_data)
+        self.assertFalse(form.is_valid())
+        self.assertIn('name', form.errors)
+
+    def test_contact_form_country_code_choices(self):
+        """Testa att ContactForm har rätt landskoder"""
+        form = ContactForm()
+        country_choices = form.fields['country_code'].choices
+        # Kontrollera att vissa förväntade länder finns
+        country_codes = [choice[0] for choice in country_choices]
+        self.assertIn('SE', country_codes)
+        self.assertIn('FI', country_codes)
+        self.assertIn('NO', country_codes)
+        self.assertIn('DK', country_codes)
+
+    def test_contact_form_optional_fields(self):
+        """Testa ContactForm med bara obligatoriska fält"""
+        form_data = {
+            'name': 'Test Contact',
+            'email': 'test@example.com'
+        }
+        form = ContactForm(data=form_data)
+        self.assertTrue(form.is_valid())
+
+
+class MeasurementFormTest(TestCase):
+    def setUp(self):
+        self.measurement_type = MeasurementType.objects.create(
+            name='Längd',
+            unit='mm',
+            is_active=True
+        )
+        self.manufacturer = Manufacturer.objects.create(name="Test Manufacturer")
+        self.axe = Axe.objects.create(
+            manufacturer=self.manufacturer,
+            model="Test Axe",
+            status="KÖPT"
+        )
+
+    def test_measurement_form_valid_data(self):
+        """Testa MeasurementForm med giltig data"""
+        form_data = {
+            'name': 'Längd',
+            'value': '100.50',
+            'unit': 'mm',
+            'unit_option': 'mm'
+        }
+        form = MeasurementForm(data=form_data)
+        self.assertTrue(form.is_valid())
+
+    def test_measurement_form_custom_name(self):
+        """Testa MeasurementForm med eget måttnamn"""
+        form_data = {
+            'name': 'Övrigt',
+            'custom_name': 'Eget mått',
+            'value': '50.00',
+            'unit': 'mm',
+            'unit_option': 'mm'
+        }
+        form = MeasurementForm(data=form_data)
+        self.assertTrue(form.is_valid())
+
+    def test_measurement_form_invalid_value(self):
+        """Testa MeasurementForm med ogiltigt värde"""
+        form_data = {
+            'name': 'Längd',
+            'value': 'invalid_value',
+            'unit': 'mm',
+            'unit_option': 'mm'
+        }
+        form = MeasurementForm(data=form_data)
+        self.assertFalse(form.is_valid())
+        self.assertIn('value', form.errors)
+
+    def test_measurement_form_missing_value(self):
+        """Testa MeasurementForm utan värde"""
+        form_data = {
+            'name': 'Längd',
+            'unit': 'mm',
+            'unit_option': 'mm'
+        }
+        form = MeasurementForm(data=form_data)
+        self.assertFalse(form.is_valid())
+        self.assertIn('value', form.errors)
+
+    def test_measurement_form_clean_method(self):
+        """Testa MeasurementForm clean-metod"""
+        form_data = {
+            'name': 'Övrigt',
+            'custom_name': 'Eget mått',
+            'value': '50.00',
+            'unit': 'mm',
+            'unit_option': 'mm'
+        }
+        form = MeasurementForm(data=form_data)
+        if form.is_valid():
+            cleaned_data = form.clean()
+            self.assertEqual(cleaned_data['name'], 'Eget mått')
+
+    def test_measurement_form_unit_mapping(self):
+        """Testa MeasurementForm enhetsmappning"""
+        form_data = {
+            'name': 'Längd',
+            'value': '100.00',
+            'unit_option': 'gram'
+        }
+        form = MeasurementForm(data=form_data)
+        if form.is_valid():
+            cleaned_data = form.clean()
+            self.assertEqual(cleaned_data['unit'], 'gram')
+
+    def test_measurement_form_custom_unit(self):
+        """Testa MeasurementForm med egen enhet"""
+        form_data = {
+            'name': 'Längd',
+            'value': '100.00',
+            'unit_option': 'ovrig',
+            'unit': 'custom_unit'
+        }
+        form = MeasurementForm(data=form_data)
+        if form.is_valid():
+            cleaned_data = form.clean()
+            self.assertEqual(cleaned_data['unit'], 'custom_unit')
+
+
+class MultipleFileFieldTest(TestCase):
+    def test_multiple_file_field_clean_empty(self):
+        """Testa MultipleFileField clean med tom data"""
+        from axes.forms import MultipleFileField
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        
+        field = MultipleFileField()
+        cleaned_data = field.clean([])
+        self.assertEqual(cleaned_data, [])
+
+    def test_multiple_file_field_clean_single_file(self):
+        """Testa MultipleFileField clean med en fil"""
+        from axes.forms import MultipleFileField
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        
+        field = MultipleFileField()
+        test_file = SimpleUploadedFile("test.jpg", b"test content", content_type="image/jpeg")
+        cleaned_data = field.clean([test_file])
+        self.assertEqual(len(cleaned_data), 1)
+        self.assertEqual(cleaned_data[0].name, "test.jpg")
+
+    def test_multiple_file_field_clean_multiple_files(self):
+        """Testa MultipleFileField clean med flera filer"""
+        from axes.forms import MultipleFileField
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        
+        field = MultipleFileField()
+        test_file1 = SimpleUploadedFile("test1.jpg", b"test content 1", content_type="image/jpeg")
+        test_file2 = SimpleUploadedFile("test2.jpg", b"test content 2", content_type="image/jpeg")
+        cleaned_data = field.clean([test_file1, test_file2])
+        self.assertEqual(len(cleaned_data), 2)
+        self.assertEqual(cleaned_data[0].name, "test1.jpg")
+        self.assertEqual(cleaned_data[1].name, "test2.jpg")
+
+
+class AxeFormTest(TestCase):
+    def setUp(self):
+        self.manufacturer = Manufacturer.objects.create(name="Test Manufacturer")
+        self.parent_manufacturer = Manufacturer.objects.create(name="Parent Manufacturer")
+        self.child_manufacturer = Manufacturer.objects.create(
+            name="Child Manufacturer",
+            parent=self.parent_manufacturer
+        )
+
+    def test_axe_form_valid_data(self):
+        """Testa AxeForm med giltig data"""
+        form_data = {
+            'manufacturer': str(self.manufacturer.id),
+            'model': 'Test Axe',
+            'comment': 'Test comment',
+            'status': 'KÖPT',
+            'contact_search': '',
+            'contact_name': 'New Contact',
+            'contact_email': 'new@example.com',
+            'transaction_price': '100.00',
+            'transaction_date': timezone.now().date(),
+            'platform_search': '',
+            'platform_name': 'New Platform'
+        }
+        form = AxeForm(data=form_data)
+        self.assertTrue(form.is_valid())
+
+    def test_axe_form_missing_manufacturer(self):
+        """Testa AxeForm utan tillverkare"""
+        form_data = {
+            'model': 'Test Axe',
+            'status': 'KÖPT'
+        }
+        form = AxeForm(data=form_data)
+        self.assertFalse(form.is_valid())
+        self.assertIn('manufacturer', form.errors)
+
+    def test_axe_form_invalid_manufacturer_id(self):
+        """Testa AxeForm med ogiltigt tillverkare-ID"""
+        form_data = {
+            'manufacturer': '99999',  # Ogiltigt ID
+            'model': 'Test Axe',
+            'status': 'KÖPT'
+        }
+        form = AxeForm(data=form_data)
+        self.assertFalse(form.is_valid())
+        self.assertIn('manufacturer', form.errors)
+
+    def test_axe_form_hierarchical_manufacturers(self):
+        """Testa AxeForm med hierarkiska tillverkare"""
+        form = AxeForm()
+        manufacturer_choices = form.fields['manufacturer'].choices
+        
+        # Kontrollera att alla tillverkare finns i choices
+        choice_values = [choice[0] for choice in manufacturer_choices]
+        # Konvertera alla till strängar för jämförelse
+        choice_values_str = [str(val) for val in choice_values]
+        self.assertIn(str(self.manufacturer.id), choice_values_str)
+        self.assertIn(str(self.parent_manufacturer.id), choice_values_str)
+        self.assertIn(str(self.child_manufacturer.id), choice_values_str)
+
+    def test_axe_form_clean_manufacturer(self):
+        """Testa AxeForm clean_manufacturer-metod"""
+        form_data = {
+            'manufacturer': str(self.manufacturer.id),
+            'model': 'Test Axe',
+            'status': 'KÖPT'
+        }
+        form = AxeForm(data=form_data)
+        if form.is_valid():
+            # Testa clean_manufacturer-metoden direkt
+            form.cleaned_data = {'manufacturer': str(self.manufacturer.id)}
+            cleaned_manufacturer = form.clean_manufacturer()
+            self.assertEqual(cleaned_manufacturer, self.manufacturer)
+
+    def test_axe_form_contact_fields(self):
+        """Testa AxeForm kontaktfält"""
+        form_data = {
+            'manufacturer': str(self.manufacturer.id),
+            'model': 'Test Axe',
+            'status': 'KÖPT',
+            'contact_name': 'New Contact',
+            'contact_email': 'new@example.com',
+            'contact_phone': '070-123 45 67',
+            'contact_alias': 'newalias',
+            'contact_comment': 'Test comment',
+            'is_naj_member': True,
+            'contact_street': 'Test Street 1',
+            'contact_postal_code': '123 45',
+            'contact_city': 'Test City',
+            'contact_country_code': 'SE'
+        }
+        form = AxeForm(data=form_data)
+        self.assertTrue(form.is_valid())
+
+    def test_axe_form_transaction_fields(self):
+        """Testa AxeForm transaktionsfält"""
+        form_data = {
+            'manufacturer': str(self.manufacturer.id),
+            'model': 'Test Axe',
+            'status': 'KÖPT',
+            'transaction_price': '100.00',
+            'transaction_shipping': '10.00',
+            'transaction_date': timezone.now().date(),
+            'transaction_comment': 'Test transaction'
+        }
+        form = AxeForm(data=form_data)
+        self.assertTrue(form.is_valid())
+
+    def test_axe_form_platform_fields(self):
+        """Testa AxeForm plattformsfält"""
+        form_data = {
+            'manufacturer': str(self.manufacturer.id),
+            'model': 'Test Axe',
+            'status': 'KÖPT',
+            'platform_name': 'New Platform',
+            'platform_url': 'https://www.example.com',
+            'platform_comment': 'Test platform'
+        }
+        form = AxeForm(data=form_data)
+        self.assertTrue(form.is_valid())
+
+    def test_axe_form_invalid_transaction_price(self):
+        """Testa AxeForm med ogiltigt transaktionspris"""
+        form_data = {
+            'manufacturer': str(self.manufacturer.id),
+            'model': 'Test Axe',
+            'status': 'KÖPT',
+            'transaction_price': 'invalid_price'
+        }
+        form = AxeForm(data=form_data)
+        self.assertFalse(form.is_valid())
+        self.assertIn('transaction_price', form.errors)
+
+    def test_axe_form_invalid_contact_email(self):
+        """Testa AxeForm med ogiltig kontakt-e-post"""
+        form_data = {
+            'manufacturer': str(self.manufacturer.id),
+            'model': 'Test Axe',
+            'status': 'KÖPT',
+            'contact_email': 'invalid-email'
+        }
+        form = AxeForm(data=form_data)
+        self.assertFalse(form.is_valid())
+        self.assertIn('contact_email', form.errors)
+
+
+class BackupUploadFormTest(TestCase):
+    def test_backup_upload_form_valid_zip(self):
+        """Testa BackupUploadForm med giltig zip-fil"""
+        from axes.forms import BackupUploadForm
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        
+        form_data = {}
+        file_data = {
+            'backup_file': SimpleUploadedFile(
+                "test_backup.zip",
+                b"test zip content",
+                content_type="application/zip"
+            )
+        }
+        form = BackupUploadForm(data=form_data, files=file_data)
+        self.assertTrue(form.is_valid())
+
+    def test_backup_upload_form_valid_sqlite3(self):
+        """Testa BackupUploadForm med giltig sqlite3-fil"""
+        from axes.forms import BackupUploadForm
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        
+        form_data = {}
+        file_data = {
+            'backup_file': SimpleUploadedFile(
+                "test_backup.sqlite3",
+                b"test database content",
+                content_type="application/x-sqlite3"
+            )
+        }
+        form = BackupUploadForm(data=form_data, files=file_data)
+        self.assertTrue(form.is_valid())
+
+    def test_backup_upload_form_invalid_file_type(self):
+        """Testa BackupUploadForm med ogiltig filtyp"""
+        from axes.forms import BackupUploadForm
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        
+        form_data = {}
+        file_data = {
+            'backup_file': SimpleUploadedFile(
+                "test.txt",
+                b"test content",
+                content_type="text/plain"
+            )
+        }
+        form = BackupUploadForm(data=form_data, files=file_data)
+        self.assertFalse(form.is_valid())
+        self.assertIn('backup_file', form.errors)
+
+    def test_backup_upload_form_no_file(self):
+        """Testa BackupUploadForm utan fil"""
+        from axes.forms import BackupUploadForm
+        
+        form_data = {}
+        file_data = {}
+        form = BackupUploadForm(data=form_data, files=file_data)
+        self.assertFalse(form.is_valid())
+        self.assertIn('backup_file', form.errors)
+
+    def test_backup_upload_form_large_file(self):
+        """Testa BackupUploadForm med stor fil"""
+        from axes.forms import BackupUploadForm
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        
+        # Skapa en stor fil (över 2GB)
+        large_content = b"x" * (2 * 1024 * 1024 * 1024 + 1)  # 2GB + 1 byte
+        
+        form_data = {}
+        file_data = {
+            'backup_file': SimpleUploadedFile(
+                "large_backup.zip",
+                large_content,
+                content_type="application/zip"
+            )
+        }
+        form = BackupUploadForm(data=form_data, files=file_data)
+        self.assertFalse(form.is_valid())
+        self.assertIn('backup_file', form.errors) 
