@@ -1,4 +1,5 @@
 {% extends 'axes/base.html' %}
+{% load axe_filters %}
 
 {% block title %}{{ page_title }}{% endblock %}
 
@@ -99,6 +100,9 @@
                                 </td>
                                 <td>
                                     <a href="{% url 'axe_detail' transaction.axe.pk %}" class="text-decoration-none">
+                                        {% if transaction.axe.manufacturer.country_code %}
+                                            <span class="me-1">{{ transaction.axe.manufacturer.country_code|country_flag }}</span>
+                                        {% endif %}
                                         {{ transaction.axe.manufacturer.name }} - {{ transaction.axe.model }}
                                     </a>
                                 </td>

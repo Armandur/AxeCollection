@@ -156,6 +156,7 @@ def manufacturer_create(request):
         information = request.POST.get("information", "").strip()
         parent_id = request.POST.get("parent", "").strip()
         manufacturer_type = request.POST.get("manufacturer_type", "TILLVERKARE")
+        country_code = request.POST.get("country_code", "").strip()
 
         if not name:
             messages.error(request, "Tillverkarnamn är obligatoriskt")
@@ -168,6 +169,7 @@ def manufacturer_create(request):
                     "information": information,
                     "parent": parent_id,
                     "manufacturer_type": manufacturer_type,
+                    "country_code": country_code,
                     "available_parents": available_parents,
                     "manufacturers": available_parents,  # Lägg till för hierarchy_prefix filtren
                 },
@@ -186,6 +188,7 @@ def manufacturer_create(request):
                     "information": information,
                     "parent": parent_id,
                     "manufacturer_type": manufacturer_type,
+                    "country_code": country_code,
                     "existing_manufacturer": existing_manufacturer,
                     "available_parents": available_parents,
                     "manufacturers": available_parents,  # Lägg till för hierarchy_prefix filtren
@@ -208,6 +211,7 @@ def manufacturer_create(request):
                         "information": information,
                         "parent": parent_id,
                         "manufacturer_type": manufacturer_type,
+                        "country_code": country_code,
                         "available_parents": available_parents,
                         "manufacturers": available_parents,  # Lägg till för hierarchy_prefix filtren
                     },
@@ -221,6 +225,7 @@ def manufacturer_create(request):
             information=information if information else None,
             parent=parent,
             manufacturer_type=manufacturer_type,
+            country_code=country_code if country_code else None,
         )
 
         messages.success(request, f'Tillverkaren "{manufacturer.name}" har skapats')
@@ -259,6 +264,7 @@ def manufacturer_edit(request, pk):
         information = request.POST.get("information", "").strip()
         parent_id = request.POST.get("parent", "").strip()
         manufacturer_type = request.POST.get("manufacturer_type", "TILLVERKARE")
+        country_code = request.POST.get("country_code", "").strip()
 
         if not name:
             messages.error(request, "Tillverkarnamn är obligatoriskt")
@@ -272,6 +278,7 @@ def manufacturer_edit(request, pk):
                     "information": information,
                     "parent": parent_id,
                     "manufacturer_type": manufacturer_type,
+                    "country_code": country_code,
                     "available_parents": available_parents,
                     "manufacturers": available_parents,  # Lägg till för hierarchy_prefix filtren
                     "is_edit": True,
@@ -296,6 +303,7 @@ def manufacturer_edit(request, pk):
                     "information": information,
                     "parent": parent_id,
                     "manufacturer_type": manufacturer_type,
+                    "country_code": country_code,
                     "existing_manufacturer": existing_manufacturer,
                     "available_parents": available_parents,
                     "manufacturers": available_parents,  # Lägg till för hierarchy_prefix filtren
@@ -324,6 +332,7 @@ def manufacturer_edit(request, pk):
                             "information": information,
                             "parent": parent_id,
                             "manufacturer_type": manufacturer_type,
+                            "country_code": country_code,
                             "available_parents": available_parents,
                             "manufacturers": available_parents,  # Lägg till för hierarchy_prefix filtren
                             "is_edit": True,
@@ -355,6 +364,7 @@ def manufacturer_edit(request, pk):
                             "information": information,
                             "parent": parent_id,
                             "manufacturer_type": manufacturer_type,
+                            "country_code": country_code,
                             "available_parents": available_parents,
                             "manufacturers": available_parents,  # Lägg till för hierarchy_prefix filtren
                             "is_edit": True,
@@ -373,6 +383,7 @@ def manufacturer_edit(request, pk):
                         "information": information,
                         "parent": parent_id,
                         "manufacturer_type": manufacturer_type,
+                        "country_code": country_code,
                         "available_parents": available_parents,
                         "manufacturers": available_parents,  # Lägg till för hierarchy_prefix filtren
                         "is_edit": True,
@@ -386,6 +397,7 @@ def manufacturer_edit(request, pk):
         manufacturer.information = information if information else None
         manufacturer.parent = parent
         manufacturer.manufacturer_type = manufacturer_type
+        manufacturer.country_code = country_code if country_code else None
         manufacturer.save()
 
         messages.success(request, f'Tillverkaren "{manufacturer.name}" har uppdaterats')
@@ -401,6 +413,7 @@ def manufacturer_edit(request, pk):
             "information": manufacturer.information or "",
             "parent": manufacturer.parent.id if manufacturer.parent else "",
             "manufacturer_type": manufacturer.manufacturer_type,
+            "country_code": manufacturer.country_code or "",
             "available_parents": available_parents,
             "manufacturers": available_parents,  # Lägg till för hierarchy_prefix filtren
             "is_edit": True,
@@ -825,17 +838,119 @@ def delete_manufacturer_link(request, link_id):
 @login_required
 @require_http_methods(["POST"])
 def delete_manufacturer(request, pk):
-    """Ta bort tillverkare och hantera deras bilder och yxor"""
+    """Ta bort tillverkare och hantera deras bilder, yxor och undertillverkare"""
     try:
         manufacturer = get_object_or_404(Manufacturer, pk=pk)
         axe_action = request.POST.get("axe_action", "move")
         target_manufacturer_id = request.POST.get("target_manufacturer_id")
+        sub_manufacturer_action = request.POST.get("sub_manufacturer_action", "delete")
+
+        # Validering för undertillverkare
+        if sub_manufacturer_action == "move_to_specific" and target_manufacturer_id:
+            try:
+                target_manufacturer = Manufacturer.objects.get(id=target_manufacturer_id)
+                
+                # Kontrollera att mål-tillverkaren inte är samma som den som ska tas bort
+                if target_manufacturer.id == manufacturer.id:
+                    return JsonResponse(
+                        {
+                            "success": False,
+                            "error": "Kan inte flytta undertillverkare till samma tillverkare som ska tas bort",
+                        }
+                    )
+                
+                # Kontrollera att mål-tillverkaren inte är en undertillverkare till den som ska tas bort
+                def is_descendant(check_manufacturer, ancestor):
+                    """Kontrollera om check_manufacturer är en efterkommande till ancestor"""
+                    current = check_manufacturer
+                    while current.parent:
+                        if current.parent == ancestor:
+                            return True
+                        current = current.parent
+                    return False
+                
+                if is_descendant(target_manufacturer, manufacturer):
+                    return JsonResponse(
+                        {
+                            "success": False,
+                            "error": "Kan inte flytta undertillverkare till en undertillverkare (skapar cirkulär referens)",
+                        }
+                    )
+                    
+            except Manufacturer.DoesNotExist:
+                return JsonResponse(
+                    {
+                        "success": False,
+                        "error": f"Tillverkare med ID {target_manufacturer_id} finns inte",
+                    }
+                )
 
         axe_count = manufacturer.axe_count
         image_count = manufacturer.images.count()
+        sub_manufacturer_count = manufacturer.sub_manufacturers.count()
         target_manufacturer_name = None  # Initiera variabeln
 
-        # Hantera yxor
+        # Hantera undertillverkare först
+        sub_manufacturers_moved = 0
+        sub_manufacturers_deleted = 0
+        if sub_manufacturer_count > 0:
+            if sub_manufacturer_action == "delete":
+                # Ta bort alla undertillverkare (och deras yxor flyttas automatiskt)
+                for sub_manufacturer in manufacturer.sub_manufacturers.all():
+                    # Hantera yxor för undertillverkare
+                    for axe in sub_manufacturer.axes:
+                        if axe_action == "delete":
+                            axe.delete()
+                        else:
+                            # Flytta yxor från undertillverkare till samma mål som huvudtillverkaren
+                            if axe_action == "move_to_specific" and target_manufacturer_id:
+                                try:
+                                    target_manufacturer = Manufacturer.objects.get(
+                                        id=target_manufacturer_id
+                                    )
+                                    axe.manufacturer = target_manufacturer
+                                    axe.save()
+                                except Manufacturer.DoesNotExist:
+                                    return JsonResponse(
+                                        {
+                                            "success": False,
+                                            "error": f"Tillverkare med ID {target_manufacturer_id} finns inte",
+                                        }
+                                    )
+                            else:
+                                # Flytta till "Okänd tillverkare"
+                                unknown_manufacturer, created = Manufacturer.objects.get_or_create(
+                                    name="Okänd tillverkare"
+                                )
+                                axe.manufacturer = unknown_manufacturer
+                                axe.save()
+                    sub_manufacturer.delete()
+                    sub_manufacturers_deleted += 1
+            elif sub_manufacturer_action == "move_to_parent":
+                # Flytta undertillverkare till att bli huvudtillverkare (ta bort parent-relation)
+                for sub_manufacturer in manufacturer.sub_manufacturers.all():
+                    sub_manufacturer.parent = None
+                    sub_manufacturer.save()
+                    sub_manufacturers_moved += 1
+            elif sub_manufacturer_action == "move_to_specific" and target_manufacturer_id:
+                # Flytta undertillverkare till annan huvudtillverkare
+                try:
+                    target_manufacturer = Manufacturer.objects.get(
+                        id=target_manufacturer_id
+                    )
+                    for sub_manufacturer in manufacturer.sub_manufacturers.all():
+                        sub_manufacturer.parent = target_manufacturer
+                        sub_manufacturer.save()
+                        sub_manufacturers_moved += 1
+                except Manufacturer.DoesNotExist:
+                    return JsonResponse(
+                        {
+                            "success": False,
+                            "error": f"Tillverkare med ID {target_manufacturer_id} finns inte",
+                        }
+                    )
+
+        # Hantera yxor för huvudtillverkaren
         if axe_count > 0:
             if axe_action == "delete":
                 # Ta bort alla yxor (och deras bilder flyttas automatiskt till unlinked_images)
@@ -890,6 +1005,8 @@ def delete_manufacturer(request, pk):
                 "axes_deleted": axe_count if axe_action == "delete" else 0,
                 "images_moved": images_moved if "images_moved" in locals() else 0,
                 "images_deleted": image_count if delete_images else 0,
+                "sub_manufacturers_moved": sub_manufacturers_moved,
+                "sub_manufacturers_deleted": sub_manufacturers_deleted,
                 "target_manufacturer_name": target_manufacturer_name,
             }
         )
@@ -948,9 +1065,22 @@ def get_manufacturers_for_dropdown(request):
 
     manufacturers = sort_hierarchically(all_manufacturers)
 
-    return JsonResponse(
-        {"manufacturers": [{"id": m.id, "name": m.name} for m in manufacturers]}
-    )
+    # Importera country_flag filtret
+    from .templatetags.axe_filters import country_flag
+
+    results = []
+    for m in manufacturers:
+        # Lägg till flaggemoji om country_code finns
+        flag_emoji = ""
+        if m.country_code:
+            flag_emoji = f"{country_flag(m.country_code)} "
+        
+        results.append({
+            "id": m.id, 
+            "name": f"{flag_emoji}{m.name}"
+        })
+
+    return JsonResponse({"manufacturers": results})
 
 
 @require_http_methods(["GET"])

@@ -46,9 +46,11 @@ class ManufacturerLinkAdmin(admin.ModelAdmin):
 
 
 class ManufacturerAdmin(admin.ModelAdmin):
-    list_display = ("name", "parent", "manufacturer_type", "information")
-    list_filter = ("manufacturer_type", "parent")
-    search_fields = ("name", "information")
+    list_display = ("hierarchical_name", "parent", "manufacturer_type", "country_code")
+    list_filter = ("manufacturer_type", "parent", "country_code")
+    search_fields = ("name", "information", "country_code")
+    fields = ("name", "parent", "manufacturer_type", "country_code", "information")
+    list_editable = ("country_code",)
     inlines = [ManufacturerImageInline, ManufacturerLinkInline]
 
     def get_queryset(self, request):
@@ -68,9 +70,14 @@ class ManufacturerAdmin(admin.ModelAdmin):
         return list_display
 
     def hierarchical_name(self, obj):
+        # Lägg till flaggemoji om country_code finns
+        flag_emoji = ""
+        if obj.country_code:
+            flag_emoji = f"{obj.country_code} "
+        
         if obj.parent:
-            return f"└─ {obj.name}"
-        return obj.name
+            return f"└─ {flag_emoji}{obj.name}"
+        return f"{flag_emoji}{obj.name}"
 
     hierarchical_name.short_description = "Namn"
     hierarchical_name.admin_order_field = "name"

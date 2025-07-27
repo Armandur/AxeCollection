@@ -110,6 +110,9 @@
                     <div class="col-md-6">
                         <p><strong>Tillverkare:</strong> 
                             <a href="{% url 'manufacturer_detail' axe.manufacturer.id %}" class="text-decoration-none">
+                                {% if axe.manufacturer.country_code %}
+                                    <span class="me-1">{{ axe.manufacturer.country_code|country_flag }}</span>
+                                {% endif %}
                                 {{ axe.manufacturer.name }}
                             </a>
                         </p>

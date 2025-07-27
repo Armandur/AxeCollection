@@ -80,18 +80,30 @@
                             <span class="text-muted me-2">{{ manufacturer|hierarchy_prefix:manufacturers }}</span>
                             {% if manufacturer.manufacturer_type == 'SMED' %}
                                 <i class="fas fa-user text-primary me-2"></i>
+                                {% if manufacturer.country_code %}
+                                    {{ manufacturer.country_code|country_flag }}
+                                {% endif %}
                                 {{ manufacturer.name }}
                             {% else %}
                                 <i class="fas fa-industry text-primary me-2"></i>
+                                {% if manufacturer.country_code %}
+                                    {{ manufacturer.country_code|country_flag }}
+                                {% endif %}
                                 {{ manufacturer.name }}
                             {% endif %}
                         </div>
                     {% else %}
                         {% if manufacturer.manufacturer_type == 'SMED' %}
                             <i class="fas fa-user text-primary me-2"></i>
+                            {% if manufacturer.country_code %}
+                                {{ manufacturer.country_code|country_flag }}
+                            {% endif %}
                             {{ manufacturer.name }}
                         {% else %}
                             <i class="fas fa-industry text-primary me-2"></i>
+                            {% if manufacturer.country_code %}
+                                {{ manufacturer.country_code|country_flag }}
+                            {% endif %}
                             {{ manufacturer.name }}
                         {% endif %}
                     {% endif %}

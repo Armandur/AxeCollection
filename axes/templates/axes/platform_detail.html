@@ -93,6 +93,9 @@
                         </td>
                         <td>
                             <a href="{% url 'axe_detail' transaction.axe.pk %}" class="text-decoration-none">
+                                {% if transaction.axe.manufacturer.country_code %}
+                                    <span class="me-1">{{ transaction.axe.manufacturer.country_code|country_flag }}</span>
+                                {% endif %}
                                 {{ transaction.axe.manufacturer.name }} - {{ transaction.axe.model }}
                             </a>
                         </td>
@@ -141,7 +144,12 @@
                 <div class="card border-0 bg-light">
                     <div class="card-body py-2">
                         <a href="{% url 'axe_detail' axe.axe__id %}" class="text-decoration-none">
-                            <strong>{{ axe.axe__manufacturer__name }}</strong> - {{ axe.axe__model }}
+                            <strong>
+                                {% if axe.axe__manufacturer__country_code %}
+                                    <span class="me-1">{{ axe.axe__manufacturer__country_code|country_flag }}</span>
+                                {% endif %}
+                                {{ axe.axe__manufacturer__name }}
+                            </strong> - {{ axe.axe__model }}
                         </a>
                     </div>
                 </div>

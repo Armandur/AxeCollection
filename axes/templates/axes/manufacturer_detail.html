@@ -173,6 +173,9 @@
 
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h1 id="manufacturer-name-heading">
+        {% if manufacturer.country_code %}
+            <span class="me-2">{{ manufacturer.country_code|country_flag }}</span>
+        {% endif %}
         <span id="manufacturer-name-text" style="display:inline;">{{ manufacturer.name }}</span>
         <input id="manufacturer-name-input" type="text" value="{{ manufacturer.name }}" class="form-control" style="width:auto; display:none; max-width:300px;" maxlength="200">
                         {% if user.is_authenticated %}
@@ -227,9 +230,17 @@
                     </strong>
                     <a href="{% url 'manufacturer_detail' manufacturer.parent.id %}" class="text-decoration-none">
                         {% if manufacturer.parent.manufacturer_type == 'SMED' %}
-                            <i class="fas fa-user text-primary me-1"></i>{{ manufacturer.parent.name }}
+                            <i class="fas fa-user text-primary me-1"></i>
+                            {% if manufacturer.parent.country_code %}
+                                {{ manufacturer.parent.country_code|country_flag }}
+                            {% endif %}
+                            {{ manufacturer.parent.name }}
                         {% else %}
-                            <i class="fas fa-industry text-primary me-1"></i>{{ manufacturer.parent.name }}
+                            <i class="fas fa-industry text-primary me-1"></i>
+                            {% if manufacturer.parent.country_code %}
+                                {{ manufacturer.parent.country_code|country_flag }}
+                            {% endif %}
+                            {{ manufacturer.parent.name }}
                         {% endif %}
                     </a>
                 </div>
@@ -242,7 +253,11 @@
                         <div class="mt-2">
                             {% for sub_manufacturer in sub_tillverkare %}
                             <a href="{% url 'manufacturer_detail' sub_manufacturer.id %}" class="text-decoration-none me-3">
-                                <i class="fas fa-industry text-body-secondary me-1"></i>{{ sub_manufacturer.name }}
+                                <i class="fas fa-industry text-body-secondary me-1"></i>
+                                {% if sub_manufacturer.country_code %}
+                                    {{ sub_manufacturer.country_code|country_flag }}
+                                {% endif %}
+                                {{ sub_manufacturer.name }}
                             </a>
                             {% endfor %}
                         </div>
@@ -255,7 +270,11 @@
                         <div class="mt-2">
                             {% for sub_manufacturer in sub_smeder %}
                             <a href="{% url 'manufacturer_detail' sub_manufacturer.id %}" class="text-decoration-none me-3">
-                                <i class="fas fa-user text-body-secondary me-1"></i>{{ sub_manufacturer.name }}
+                                <i class="fas fa-user text-body-secondary me-1"></i>
+                                {% if sub_manufacturer.country_code %}
+                                    {{ sub_manufacturer.country_code|country_flag }}
+                                {% endif %}
+                                {{ sub_manufacturer.name }}
                             </a>
                             {% endfor %}
                         </div>
@@ -2175,6 +2194,44 @@ function saveNewLink() {
                 <p><strong>Antal yxor:</strong> {{ total_axes }}</p>
                 <p><strong>Antal bilder:</strong> {{ manufacturer.images.count }}</p>
                 
+                {% if manufacturer.sub_manufacturers.count > 0 %}
+                <p><strong>Antal undertillverkare:</strong> {{ manufacturer.sub_manufacturers.count }}</p>
+                <div class="alert alert-warning">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    <strong>Varning:</strong> Denna tillverkare har {{ manufacturer.sub_manufacturers.count }} undertillverkare kopplade.
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label">Välj vad som ska hända med undertillverkarna:</label>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="subManufacturerAction" id="deleteSubManufacturers" value="delete" checked>
+                        <label class="form-check-label" for="deleteSubManufacturers">
+                            Ta bort alla undertillverkare (och deras yxor flyttas enligt yxvalet nedan)
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="subManufacturerAction" id="moveSubManufacturersToParent" value="move_to_parent">
+                        <label class="form-check-label" for="moveSubManufacturersToParent">
+                            Gör undertillverkare till huvudtillverkare (ta bort hierarki)
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="subManufacturerAction" id="moveSubManufacturersToSpecific" value="move_to_specific">
+                        <label class="form-check-label" for="moveSubManufacturersToSpecific">
+                            Flytta undertillverkare till annan huvudtillverkare
+                        </label>
+                    </div>
+                </div>
+                
+                <!-- Dropdown för undertillverkare (visas endast när "Flytta till annan tillverkare" är valt) -->
+                <div class="mb-3" id="subManufacturerDropdownContainer" style="display: none;">
+                    <label for="targetSubManufacturerSelect" class="form-label">Välj huvudtillverkare:</label>
+                    <select class="form-select" id="targetSubManufacturerSelect">
+                        <option value="">Laddar tillverkare...</option>
+                    </select>
+                </div>
+                {% endif %}
+                
                 {% if total_axes > 0 %}
                 <div class="alert alert-warning">
                     <i class="bi bi-exclamation-triangle"></i>
@@ -2225,10 +2282,18 @@ function saveNewLink() {
                     </div>
                 </div>
                 
-                <p class="text-danger">
+                <div class="alert alert-danger">
                     <i class="bi bi-exclamation-triangle"></i>
-                    <strong>Denna åtgärd kan inte ångras!</strong>
-                </p>
+                    <strong>Varning:</strong> Denna åtgärd kan inte ångras!
+                </div>
+                
+                {% if manufacturer.sub_manufacturers.count > 0 %}
+                <div class="alert alert-warning">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    <strong>Viktigt:</strong> Denna tillverkare har {{ manufacturer.sub_manufacturers.count }} undertillverkare. 
+                    Se till att välja rätt hantering för undertillverkarna ovan.
+                </div>
+                {% endif %}
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Avbryt</button>
@@ -2272,9 +2337,17 @@ function showDeleteManufacturerModal() {
     // Ladda tillverkare för dropdown
     loadManufacturersForDropdown();
     
+    // Ladda tillverkare för undertillverkare dropdown
+    loadManufacturersForSubDropdown();
+    
     // Lägg till event listeners för radio buttons
     document.querySelectorAll('input[name="axeAction"]').forEach(radio => {
         radio.addEventListener('change', handleAxeActionChange);
+    });
+    
+    // Lägg till event listeners för undertillverkare radio buttons
+    document.querySelectorAll('input[name="subManufacturerAction"]').forEach(radio => {
+        radio.addEventListener('change', handleSubManufacturerActionChange);
     });
 }
 
@@ -2286,6 +2359,18 @@ function handleAxeActionChange() {
     if (moveToSpecific.checked) {
         dropdownContainer.style.display = 'block';
     } else {
+        dropdownContainer.style.display = 'none';
+    }
+}
+
+// Hantera ändring av undertillverkare-åtgärd
+function handleSubManufacturerActionChange() {
+    const moveToSpecific = document.getElementById('moveSubManufacturersToSpecific');
+    const dropdownContainer = document.getElementById('subManufacturerDropdownContainer');
+    
+    if (moveToSpecific && moveToSpecific.checked) {
+        dropdownContainer.style.display = 'block';
+    } else if (dropdownContainer) {
         dropdownContainer.style.display = 'none';
     }
 }
@@ -2312,17 +2397,53 @@ function loadManufacturersForDropdown() {
         });
 }
 
+// Ladda tillverkare för undertillverkare dropdown
+function loadManufacturersForSubDropdown() {
+    const select = document.getElementById('targetSubManufacturerSelect');
+    if (!select) return; // Om elementet inte finns (ingen undertillverkare)
+    
+    const manufacturerId = {{ manufacturer.id }};
+    
+    fetch(`/tillverkare/dropdown/?exclude_id=${manufacturerId}`)
+        .then(response => response.json())
+        .then(data => {
+            select.innerHTML = '<option value="">Välj huvudtillverkare...</option>';
+            data.manufacturers.forEach(manufacturer => {
+                const option = document.createElement('option');
+                option.value = manufacturer.id;
+                option.textContent = manufacturer.name;
+                select.appendChild(option);
+            });
+        })
+        .catch(error => {
+            console.error('Error loading manufacturers for sub dropdown:', error);
+            select.innerHTML = '<option value="">Fel vid laddning av tillverkare</option>';
+        });
+}
+
 // Ta bort tillverkare
 function deleteManufacturer() {
     const axeAction = document.querySelector('input[name="axeAction"]:checked')?.value || 'move';
     const deleteImages = document.getElementById('deleteImages').checked;
     const manufacturerId = {{ manufacturer.id }};
     
+    // Hämta undertillverkare-åtgärd om den finns
+    const subManufacturerAction = document.querySelector('input[name="subManufacturerAction"]:checked')?.value || 'delete';
+    
     // Validera val
     if (axeAction === 'move_to_specific') {
         const targetManufacturerId = document.getElementById('targetManufacturerSelect').value;
         if (!targetManufacturerId) {
             showNotification('Välj en tillverkare att flytta yxor till', 'error');
+            return;
+        }
+    }
+    
+    // Validera undertillverkare-val
+    if (subManufacturerAction === 'move_to_specific') {
+        const targetSubManufacturerId = document.getElementById('targetSubManufacturerSelect')?.value;
+        if (!targetSubManufacturerId) {
+            showNotification('Välj en huvudtillverkare att flytta undertillverkare till', 'error');
             return;
         }
     }
@@ -2337,8 +2458,14 @@ function deleteManufacturer() {
     const formData = new FormData();
     formData.append('axe_action', axeAction);
     formData.append('delete_images', deleteImages);
+    formData.append('sub_manufacturer_action', subManufacturerAction);
+    
     if (axeAction === 'move_to_specific') {
         formData.append('target_manufacturer_id', document.getElementById('targetManufacturerSelect').value);
+    }
+    
+    if (subManufacturerAction === 'move_to_specific') {
+        formData.append('target_manufacturer_id', document.getElementById('targetSubManufacturerSelect').value);
     }
     
     // Skicka AJAX-förfrågan
@@ -2365,6 +2492,12 @@ function deleteManufacturer() {
                 } else {
                     message += `. ${data.axes_moved} yxor flyttades`;
                 }
+            }
+            if (data.sub_manufacturers_moved > 0) {
+                message += `. ${data.sub_manufacturers_moved} undertillverkare flyttades`;
+            }
+            if (data.sub_manufacturers_deleted > 0) {
+                message += `. ${data.sub_manufacturers_deleted} undertillverkare togs bort`;
             }
             if (data.images_moved > 0) {
                 message += `. ${data.images_moved} bilder flyttades till okopplade bilder`;

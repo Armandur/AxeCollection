@@ -10,6 +10,7 @@ from .models import (
     Measurement,
 )
 from django.utils import timezone
+from .templatetags.axe_filters import country_flag
 
 # Lista med länder (ISO 3166-1 alpha-2, namn, flagg-emoji)
 COUNTRIES = [
@@ -441,13 +442,18 @@ class AxeForm(forms.ModelForm):
         # Skapa choices för dropdown-menyn med hierarkisk indentering
         choices = [("", "Välj tillverkare...")]
         for m in sorted_manufacturers:
+            # Lägg till flaggemoji om country_code finns
+            flag_emoji = ""
+            if m.country_code:
+                flag_emoji = f"{country_flag(m.country_code)} "
+            
             if m.parent:
                 # Skapa hierarkisk prefix med box-drawing characters
                 prefix = self._get_hierarchy_prefix(m, sorted_manufacturers)
-                choice_label = mark_safe(f"{prefix}{m.name}")
+                choice_label = mark_safe(f"{prefix}{flag_emoji}{m.name}")
             else:
                 # Huvudtillverkare - ingen indentering
-                choice_label = m.name
+                choice_label = f"{flag_emoji}{m.name}"
             choices.append((m.id, choice_label))
 
         # Uppdatera manufacturer-fältet med sorterade choices

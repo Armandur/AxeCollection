@@ -260,6 +260,51 @@
                 </div>
                 
                 <div class="mb-3">
+                    <label for="country_code" class="form-label">Land</label>
+                    <select class="form-select" id="country_code" name="country_code">
+                        <option value="">Välj land...</option>
+                        <option value="SE" {% if country_code == 'SE' %}selected{% endif %}>🇸🇪 Sverige</option>
+                        <option value="FI" {% if country_code == 'FI' %}selected{% endif %}>🇫🇮 Finland</option>
+                        <option value="NO" {% if country_code == 'NO' %}selected{% endif %}>🇳🇴 Norge</option>
+                        <option value="DK" {% if country_code == 'DK' %}selected{% endif %}>🇩🇰 Danmark</option>
+                        <option value="DE" {% if country_code == 'DE' %}selected{% endif %}>🇩🇪 Tyskland</option>
+                        <option value="GB" {% if country_code == 'GB' %}selected{% endif %}>🇬🇧 Storbritannien</option>
+                        <option value="US" {% if country_code == 'US' %}selected{% endif %}>🇺🇸 USA</option>
+                        <option value="FR" {% if country_code == 'FR' %}selected{% endif %}>🇫🇷 Frankrike</option>
+                        <option value="IT" {% if country_code == 'IT' %}selected{% endif %}>🇮🇹 Italien</option>
+                        <option value="ES" {% if country_code == 'ES' %}selected{% endif %}>🇪🇸 Spanien</option>
+                        <option value="PL" {% if country_code == 'PL' %}selected{% endif %}>🇵🇱 Polen</option>
+                        <option value="EE" {% if country_code == 'EE' %}selected{% endif %}>🇪🇪 Estland</option>
+                        <option value="LV" {% if country_code == 'LV' %}selected{% endif %}>🇱🇻 Lettland</option>
+                        <option value="LT" {% if country_code == 'LT' %}selected{% endif %}>🇱🇹 Litauen</option>
+                        <option value="RU" {% if country_code == 'RU' %}selected{% endif %}>🇷🇺 Ryssland</option>
+                        <option value="NL" {% if country_code == 'NL' %}selected{% endif %}>🇳🇱 Nederländerna</option>
+                        <option value="BE" {% if country_code == 'BE' %}selected{% endif %}>🇧🇪 Belgien</option>
+                        <option value="CH" {% if country_code == 'CH' %}selected{% endif %}>🇨🇭 Schweiz</option>
+                        <option value="AT" {% if country_code == 'AT' %}selected{% endif %}>🇦🇹 Österrike</option>
+                        <option value="IE" {% if country_code == 'IE' %}selected{% endif %}>🇮🇪 Irland</option>
+                        <option value="IS" {% if country_code == 'IS' %}selected{% endif %}>🇮🇸 Island</option>
+                        <option value="CZ" {% if country_code == 'CZ' %}selected{% endif %}>🇨🇿 Tjeckien</option>
+                        <option value="SK" {% if country_code == 'SK' %}selected{% endif %}>🇸🇰 Slovakien</option>
+                        <option value="HU" {% if country_code == 'HU' %}selected{% endif %}>🇭🇺 Ungern</option>
+                        <option value="UA" {% if country_code == 'UA' %}selected{% endif %}>🇺🇦 Ukraina</option>
+                        <option value="RO" {% if country_code == 'RO' %}selected{% endif %}>🇷🇴 Rumänien</option>
+                        <option value="BG" {% if country_code == 'BG' %}selected{% endif %}>🇧🇬 Bulgarien</option>
+                        <option value="HR" {% if country_code == 'HR' %}selected{% endif %}>🇭🇷 Kroatien</option>
+                        <option value="SI" {% if country_code == 'SI' %}selected{% endif %}>🇸🇮 Slovenien</option>
+                        <option value="PT" {% if country_code == 'PT' %}selected{% endif %}>🇵🇹 Portugal</option>
+                        <option value="GR" {% if country_code == 'GR' %}selected{% endif %}>🇬🇷 Grekland</option>
+                        <option value="TR" {% if country_code == 'TR' %}selected{% endif %}>🇹🇷 Turkiet</option>
+                        <option value="CA" {% if country_code == 'CA' %}selected{% endif %}>🇨🇦 Kanada</option>
+                        <option value="AU" {% if country_code == 'AU' %}selected{% endif %}>🇦🇺 Australien</option>
+                        <option value="NZ" {% if country_code == 'NZ' %}selected{% endif %}>🇳🇿 Nya Zeeland</option>
+                    </select>
+                    <div class="help-text">
+                        Välj land för tillverkaren (med flagga).
+                    </div>
+                </div>
+                
+                <div class="mb-3">
                     <label for="information" class="form-label">Information</label>
                     <textarea id="information" 
                               name="information" 

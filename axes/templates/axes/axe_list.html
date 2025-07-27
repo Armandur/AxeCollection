@@ -321,7 +321,12 @@
             {% for axe in axes %}
             <tr class="{% if axe.id in sold_axe_ids %}sold-axe{% endif %}" data-href="{% url 'axe_detail' axe.id %}">
                 <td>{{ axe.display_id }}</td>
-                <td>{{ axe.manufacturer.name }}</td>
+                <td>
+                    {% if axe.manufacturer.country_code %}
+                        <span class="me-1">{{ axe.manufacturer.country_code|country_flag }}</span>
+                    {% endif %}
+                    {{ axe.manufacturer.name }}
+                </td>
                 <td>
                     {{ axe.model }}
                     {% if axe.id in sold_axe_ids %}

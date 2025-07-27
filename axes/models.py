@@ -65,6 +65,12 @@ class Manufacturer(models.Model):
         verbose_name="Överordnad tillverkare",
         help_text="Välj en överordnad tillverkare om detta är en undertillverkare/smed",
     )
+    country_code = models.CharField(
+        max_length=2,
+        blank=True,
+        null=True,
+        help_text="ISO 3166-1 alpha-2 landskod, t.ex. 'SE' för Sverige",
+    )
 
     def __str__(self):
         return self.name

@@ -132,6 +132,7 @@ def _search_contacts(query, request):
 def _search_manufacturers(query):
     """Sök i tillverkare"""
     from .models import Manufacturer
+    from .templatetags.axe_filters import country_flag
 
     manufacturers = Manufacturer.objects.filter(
         Q(name__icontains=query) | Q(information__icontains=query)
@@ -140,10 +141,15 @@ def _search_manufacturers(query):
     results = []
     for manufacturer in manufacturers:
         axe_count = manufacturer.axes.count()
+        # Lägg till flaggemoji om country_code finns
+        flag_emoji = ""
+        if manufacturer.country_code:
+            flag_emoji = f"{country_flag(manufacturer.country_code)} "
+        
         results.append(
             {
                 "id": manufacturer.id,
-                "title": manufacturer.name,
+                "title": f"{flag_emoji}{manufacturer.name}",
                 "subtitle": f"{axe_count} yxor",
                 "url": f"/tillverkare/{manufacturer.id}/",
                 "type": "manufacturer",

@@ -1279,3 +1279,88 @@ class GenerateTestDataCommandTest(TestCase):
         self.assertIn("kontakter", output)
         self.assertIn("yxor", output)
         self.assertIn("plattformar", output)
+
+    def test_generate_test_data_creates_manufacturers_with_country_codes(self):
+        """Test att kommandot skapar tillverkare med landskoder"""
+        call_command("generate_test_data")
+
+        # Kontrollera att tillverkare har skapats med landskoder
+        manufacturers = Manufacturer.objects.all()
+        self.assertGreater(manufacturers.count(), 0)
+
+        # Kontrollera att minst några tillverkare har landskoder
+        manufacturers_with_country_codes = manufacturers.filter(country_code__isnull=False)
+        self.assertGreater(manufacturers_with_country_codes.count(), 0)
+
+        # Kontrollera att landskoderna är giltiga (2 bokstäver)
+        for manufacturer in manufacturers_with_country_codes:
+            self.assertEqual(len(manufacturer.country_code), 2)
+            self.assertTrue(manufacturer.country_code.isalpha())
+
+    def test_generate_test_data_creates_specific_country_codes(self):
+        """Test att kommandot skapar förväntade landskoder för specifika tillverkare"""
+        call_command("generate_test_data")
+
+        # Kontrollera att specifika tillverkare har rätt landskoder
+        expected_country_codes = {
+            "Hjärtumssmedjan": "SE",
+            "Billnäs bruk": "FI",
+            "Gränsfors bruk": "SE",
+            "Hults bruk": "SE",
+            "S. A. Wetterlings yxfabrik": "SE",
+            "Mariefors Bruk": "FI",
+            "Säters yxfabrik": "SE",
+            "Jäders bruk": "SE",
+            "Svenska Yxfabriken AB, Kristinehamn": "SE",
+            "Edsbyn Industri Aktiebolag": "SE",
+            "Dansk Stålindustri": "DK",
+            "Mustad": "NO",
+            "Øyo": "NO",
+        }
+
+        for manufacturer_name, expected_country_code in expected_country_codes.items():
+            manufacturer = Manufacturer.objects.filter(name=manufacturer_name).first()
+            if manufacturer:
+                self.assertEqual(
+                    manufacturer.country_code,
+                    expected_country_code,
+                    f"Tillverkare {manufacturer_name} ska ha landskod {expected_country_code}"
+                )
+
+    def test_generate_test_data_creates_hierarchical_manufacturers_with_country_codes(self):
+        """Test att hierarkiska tillverkare (med undertillverkare) skapas med landskoder"""
+        call_command("generate_test_data")
+
+        # Hitta huvudtillverkare med undertillverkare
+        main_manufacturers = Manufacturer.objects.filter(parent__isnull=True)
+
+        for main_manufacturer in main_manufacturers:
+            # Kontrollera att huvudtillverkaren har landskod
+            if main_manufacturer.country_code:
+                self.assertEqual(len(main_manufacturer.country_code), 2)
+
+                # Kontrollera att undertillverkarna har samma landskod
+                sub_manufacturers = Manufacturer.objects.filter(parent=main_manufacturer)
+                for sub_manufacturer in sub_manufacturers:
+                    self.assertEqual(
+                        sub_manufacturer.country_code,
+                        main_manufacturer.country_code,
+                        f"Undertillverkare {sub_manufacturer.name} ska ha samma landskod som huvudtillverkare {main_manufacturer.name}"
+                    )
+
+    def test_generate_test_data_country_codes_are_consistent(self):
+        """Test att landskoder är konsistenta inom hierarkier"""
+        call_command("generate_test_data")
+
+        # Kontrollera att alla tillverkare med landskoder har giltiga koder
+        manufacturers_with_codes = Manufacturer.objects.filter(country_code__isnull=False)
+
+        for manufacturer in manufacturers_with_codes:
+            # Kontrollera format (2 bokstäver, versaler)
+            self.assertEqual(len(manufacturer.country_code), 2)
+            self.assertTrue(manufacturer.country_code.isalpha())
+            self.assertTrue(manufacturer.country_code.isupper())
+
+            # Kontrollera att koden är en av de förväntade
+            expected_codes = ["SE", "FI", "DK", "NO"]
+            self.assertIn(manufacturer.country_code, expected_codes)

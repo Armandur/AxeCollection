@@ -219,6 +219,9 @@
                     <div class="card-body">
                         <h6 class="card-title">
                             <a href="{% url 'axe_detail' axe.pk %}" class="axe-link">
+                                {% if axe.manufacturer.country_code %}
+                                    <span class="me-1">{{ axe.manufacturer.country_code|country_flag }}</span>
+                                {% endif %}
                                 {{ axe.manufacturer.name }} - {{ axe.model }}
                             </a>
                         </h6>
@@ -283,6 +286,9 @@
                                 </div>'
                                {% endif %}
                             >
+                                {% if transaction.axe.manufacturer.country_code %}
+                                    <span class="me-1">{{ transaction.axe.manufacturer.country_code|country_flag }}</span>
+                                {% endif %}
                                 {{ transaction.axe.manufacturer.name }} - {{ transaction.axe.model }}
                                 {% if images|length > 0 %}
                                     <i class="bi bi-camera-fill ms-1"></i>

@@ -324,24 +324,88 @@ class TemplateTagsIntegrationTest(TestCase):
         self.assertIn("<em>italic text</em>", result)
 
     def test_template_with_hierarchy(self):
-        """Test hierarchy_prefix i template med riktig data"""
-        # Skapa hierarkisk struktur
-        parent = Manufacturer.objects.create(name="Parent Manufacturer")
-        child = Manufacturer.objects.create(name="Child Manufacturer", parent=parent)
-
+        """Test hierarchy_prefix filter i template"""
+        # Skapa en hierarki av tillverkare
+        parent = Manufacturer.objects.create(
+            name="Parent Tillverkare",
+            manufacturer_type="TILLVERKARE"
+        )
+        child = Manufacturer.objects.create(
+            name="Child Tillverkare",
+            manufacturer_type="SMED",
+            parent=parent
+        )
+        
         template_string = """
         {% load axe_filters %}
-        <ul>
-        {% for manufacturer in manufacturers %}
-            <li>{{ manufacturer|hierarchy_prefix:manufacturers }} {{ manufacturer.name }}</li>
-        {% endfor %}
-        </ul>
+        <div>
+            <p>Parent prefix: "{{ parent|hierarchy_prefix:manufacturers }}"</p>
+            <p>Child prefix: "{{ child|hierarchy_prefix:manufacturers }}"</p>
+            <p>Basename: {{ "/path/to/file.txt"|basename }}</p>
+        </div>
         """
 
         template = Template(template_string)
-        context = Context({"manufacturers": [parent, child]})
+        context = Context({
+            'parent': parent,
+            'child': child,
+            'manufacturers': [parent, child]
+        })
         result = template.render(context)
 
-        # Verifiera att hierarkin renderas korrekt
-        self.assertIn("Parent Manufacturer", result)
-        self.assertIn("Child Manufacturer", result)
+        # Verifiera att resultatet innehåller förväntad HTML
+        self.assertIn("file.txt", result)  # basename
+        # Parent ska ha tom prefix, child ska ha prefix
+        self.assertIn('Parent prefix: ""', result)  # Parent ska ha tom prefix
+        self.assertIn('Child prefix: "└─&nbsp;"', result)  # Child ska ha prefix
+
+    def test_template_with_country_flags_and_manufacturers(self):
+        """Test att landskoder och flaggor fungerar med riktiga tillverkare"""
+        # Skapa en tillverkare med landskod
+        manufacturer = Manufacturer.objects.create(
+            name="Test Tillverkare", 
+            country_code="SE",
+            manufacturer_type="TILLVERKARE"
+        )
+        
+        # Skapa en tillverkare utan landskod
+        manufacturer_no_code = Manufacturer.objects.create(
+            name="Test Tillverkare Utan Kod", 
+            manufacturer_type="TILLVERKARE"
+        )
+
+        template_string = """
+        {% load axe_filters %}
+        <div>
+            <p>Tillverkare med kod: 
+                {% if manufacturer.country_code %}
+                    <span class="me-1">{{ manufacturer.country_code|country_flag }}</span>
+                {% endif %}
+                {{ manufacturer.name }}
+            </p>
+            <p>Tillverkare utan kod: 
+                {% if manufacturer_no_code.country_code %}
+                    <span class="me-1">{{ manufacturer_no_code.country_code|country_flag }}</span>
+                {% endif %}
+                {{ manufacturer_no_code.name }}
+            </p>
+        </div>
+        """
+
+        template = Template(template_string)
+        context = Context({
+            'manufacturer': manufacturer,
+            'manufacturer_no_code': manufacturer_no_code
+        })
+        result = template.render(context)
+
+        # Verifiera att flaggan visas för tillverkare med landskod
+        self.assertIn("🇸🇪", result)
+        self.assertIn("Test Tillverkare", result)
+        
+        # Verifiera att ingen flagga visas för tillverkare utan landskod
+        self.assertIn("Test Tillverkare Utan Kod", result)
+        self.assertNotIn("🇸🇪", result.replace("🇸🇪", ""))  # Ska bara finnas en gång
+        
+        # Verifiera att HTML-strukturen är korrekt
+        self.assertIn('class="me-1"', result)

@@ -280,17 +280,17 @@ En checklista för vidareutveckling av AxeCollection. Bocka av med [x] när klar
 67. [x] Organisationssektionen på tillverkarsidan ska visas för inloggade användare även när det inte finns undertillverkare, med "Lägg till undertillverkare"-knapp
 68. [x] Breadcrumbs för tillverkare verkar inte hantera alla nivåer korrekt
 69. [x] Behöver tänka på hur vi ska hantera borttag av tillverkare som har underliggande tillverkare/smeder
-70. [ ] Lägg till land på tillverkare och visa flaggemoji vid tillverkarnamnet/smednamnet precis som för kontakter
-71. [ ] Implementera förbättrad hantering av borttag av tillverkare med undertillverkare/smeder
-    - [ ] 71.1 Uppdatera delete-funktionen i views_manufacturer.py att hantera undertillverkare
-    - [ ] 71.2 Lägg till validering för undertillverkare i delete-funktionen
-    - [ ] 71.3 Uppdatera manufacturer_detail.html modal att visa undertillverkare
-    - [ ] 71.4 Lägg till alternativ för hantering av undertillverkare (ta bort/flytta/gör till huvudtillverkare)
-    - [ ] 71.5 Uppdatera JavaScript för att hantera nya val för undertillverkare
-    - [ ] 71.6 Lägg till varningar och bekräftelse för destruktiva operationer
-    - [ ] 71.7 Uppdatera AJAX-anrop att skicka data för undertillverkare-hantering
-    - [ ] 71.8 Testa funktionaliteten med hierarkiska tillverkare
-    - [ ] 71.9 Dokumentera den nya funktionaliteten
+70. [x] Lägg till land på tillverkare och visa flaggemoji vid tillverkarnamnet/smednamnet precis som för kontakter
+71. [x] Implementera förbättrad hantering av borttag av tillverkare med undertillverkare/smeder
+    - [x] 71.1 Uppdatera delete-funktionen i views_manufacturer.py att hantera undertillverkare
+    - [x] 71.2 Lägg till validering för undertillverkare i delete-funktionen
+    - [x] 71.3 Uppdatera manufacturer_detail.html modal att visa undertillverkare
+    - [x] 71.4 Lägg till alternativ för hantering av undertillverkare (ta bort/flytta/gör till huvudtillverkare)
+    - [x] 71.5 Uppdatera JavaScript för att hantera nya val för undertillverkare
+    - [x] 71.6 Lägg till varningar och bekräftelse för destruktiva operationer
+    - [x] 71.7 Uppdatera AJAX-anrop att skicka data för undertillverkare-hantering
+    - [x] 71.8 Testa funktionaliteten med hierarkiska tillverkare
+    - [x] 71.9 Dokumentera den nya funktionaliteten
 72. [x] Fixat Python-fel i delete_manufacturer - target_manufacturer_name variabeln var inte alltid definierad
 
 ## 8. Admin och datahantering

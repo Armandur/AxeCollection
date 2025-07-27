@@ -189,53 +189,64 @@ class Command(BaseCommand):
             "Hjärtumssmedjan": {
                 "type": "TILLVERKARE",
                 "info": "Traditionell smedja i Hjärtum, grundad 1850. Känd för handgjorda kvalitetsyxor.",
+                "country_code": "SE",
                 "sub_manufacturers": [
                     {
                         "name": "Johan Jonsson",
                         "type": "SMED",
                         "info": "Mästersmed vid Hjärtumssmedjan. Specialiserar sig på slöjdyxor och huggyxor.",
+                        "country_code": "SE",
                     },
                     {
                         "name": "Johan Skog",
                         "type": "SMED",
                         "info": "Erfaren smed vid Hjärtumssmedjan. Känd för sina fällyxor och timmerbilor.",
+                        "country_code": "SE",
                     },
                     {
                         "name": "Willy Persson",
                         "type": "SMED",
                         "info": "Ung smed vid Hjärtumssmedjan. Specialiserar sig på handyxor och tapphålsyxor.",
+                        "country_code": "SE",
                     },
                 ],
             },
             "Billnäs bruk": {
                 "type": "TILLVERKARE",
-                "info": "Historiskt bruk grundat 1641. En av Sveriges äldsta yxtillverkare.",
+                "info": "Historiskt bruk grundat 1641. En av Finlands äldsta yxtillverkare.",
+                "country_code": "FI",
                 "sub_manufacturers": [],
             },
             "Gränsfors bruk": {
                 "type": "TILLVERKARE",
                 "info": "Modernt bruk grundat 1902. Känd för handgjorda kvalitetsyxor.",
+                "country_code": "SE",
                 "sub_manufacturers": [],
             },
             "Hults bruk": {
                 "type": "TILLVERKARE",
                 "info": "Bruk grundat 1697. Traditionell tillverkning av handyxor.",
+                "country_code": "SE",
                 "sub_manufacturers": [],
             },
             "S. A. Wetterlings yxfabrik": {
                 "type": "TILLVERKARE",
                 "info": "Yxfabrik grundad 1880. Känd för robusta huggyxor.",
+                "country_code": "SE",
                 "sub_manufacturers": [],
             },
         }
 
         # Lägg till fler huvudtillverkare om count är större
         additional_manufacturers = [
-            "Mariefors Bruk",
-            "Säters yxfabrik",
-            "Jäders bruk",
-            "Svenska Yxfabriken AB, Kristinehamn",
-            "Edsbyn Industri Aktiebolag",
+            {"name": "Mariefors Bruk", "country_code": "FI", "info": "Finsk tillverkare av kvalitetsyxor. Grundad 1800-talet. Specialiserar sig på traditionella yxor."},
+            {"name": "Säters yxfabrik", "country_code": "SE", "info": "Svensk tillverkare av kvalitetsyxor. Grundad 1800-talet. Specialiserar sig på handgjorda yxor."},
+            {"name": "Jäders bruk", "country_code": "SE", "info": "Svensk tillverkare av kvalitetsyxor. Grundad 1800-talet. Specialiserar sig på industriella yxor."},
+            {"name": "Svenska Yxfabriken AB, Kristinehamn", "country_code": "SE", "info": "Svensk tillverkare av kvalitetsyxor. Grundad 1800-talet. Specialiserar sig på slöjdyxor."},
+            {"name": "Edsbyn Industri Aktiebolag", "country_code": "SE", "info": "Svensk tillverkare av kvalitetsyxor. Grundad 1800-talet. Specialiserar sig på huggyxor."},
+            {"name": "Dansk Stålindustri", "country_code": "DK", "info": "Dansk tillverkare av kvalitetsyxor. Grundad 1900-talet. Specialiserar sig på moderna yxor."},
+            {"name": "Mustad", "country_code": "NO", "info": "Norsk tillverkare av kvalitetsyxor. Grundad 1800-talet. Specialiserar sig på handgjorda yxor."},
+            {"name": "Øyo", "country_code": "NO", "info": "Norsk tillverkare av kvalitetsyxor. Grundad 1800-talet. Specialiserar sig på traditionella yxor."},
         ]
 
         manufacturers = []
@@ -247,7 +258,10 @@ class Command(BaseCommand):
 
             # Skapa huvudtillverkare
             main_manufacturer = Manufacturer.objects.create(
-                name=main_name, information=data["info"], manufacturer_type=data["type"]
+                name=main_name, 
+                information=data["info"], 
+                manufacturer_type=data["type"],
+                country_code=data["country_code"]
             )
             manufacturers.append(main_manufacturer)
 
@@ -261,18 +275,20 @@ class Command(BaseCommand):
                     information=sub_data["info"],
                     manufacturer_type=sub_data["type"],
                     parent=main_manufacturer,
+                    country_code=sub_data["country_code"]
                 )
                 manufacturers.append(sub_manufacturer)
 
         # Lägg till ytterligare huvudtillverkare om det behövs
-        for name in additional_manufacturers:
+        for manufacturer_data in additional_manufacturers:
             if len(manufacturers) >= count:
                 break
 
-            info = f"Svensk tillverkare av kvalitetsyxor. Grundad {random.randint(1800, 1950)}. Specialiserar sig på {random.choice(['handgjorda', 'industriella', 'traditionella', 'slöjdyxor', 'huggyxor'])} yxor."
-
             manufacturer = Manufacturer.objects.create(
-                name=name, information=info, manufacturer_type="TILLVERKARE"
+                name=manufacturer_data["name"], 
+                information=manufacturer_data["info"], 
+                manufacturer_type="TILLVERKARE",
+                country_code=manufacturer_data["country_code"]
             )
             manufacturers.append(manufacturer)
 

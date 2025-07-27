@@ -289,7 +289,12 @@
                             <h5 class="card-title">{{ current_axe.name }}</h5>
                             {% if current_axe.manufacturer %}
                             <p class="card-text"><strong>Tillverkare:</strong> 
-                                <a href="{% url 'manufacturer_detail' current_axe.manufacturer.pk %}">{{ current_axe.manufacturer.name }}</a>
+                                <a href="{% url 'manufacturer_detail' current_axe.manufacturer.pk %}">
+                                    {% if current_axe.manufacturer.country_code %}
+                                        <span class="me-1">{{ current_axe.manufacturer.country_code|country_flag }}</span>
+                                    {% endif %}
+                                    {{ current_axe.manufacturer.name }}
+                                </a>
                             </p>
                             {% endif %}
                             

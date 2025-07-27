@@ -392,7 +392,12 @@
                                 <div class="transaction-item">
                                     <div class="transaction-info">
                                         <div class="transaction-name">
-                                            <strong>{{ transaction.axe.manufacturer.name }} - {{ transaction.axe.model }}</strong>
+                                            <strong>
+                                                {% if transaction.axe.manufacturer.country_code %}
+                                                    <span class="me-1">{{ transaction.axe.manufacturer.country_code|country_flag }}</span>
+                                                {% endif %}
+                                                {{ transaction.axe.manufacturer.name }} - {{ transaction.axe.model }}
+                                            </strong>
                                         </div>
                                         <div class="transaction-date">
                                             {{ transaction.transaction_date|date:"Y-m-d" }}
@@ -443,7 +448,12 @@
                                 <div class="transaction-item">
                                     <div class="transaction-info">
                                         <div class="transaction-name">
-                                            <strong>{{ transaction.axe.manufacturer.name }} - {{ transaction.axe.model }}</strong>
+                                            <strong>
+                                                {% if transaction.axe.manufacturer.country_code %}
+                                                    <span class="me-1">{{ transaction.axe.manufacturer.country_code|country_flag }}</span>
+                                                {% endif %}
+                                                {{ transaction.axe.manufacturer.name }} - {{ transaction.axe.model }}
+                                            </strong>
                                         </div>
                                         <div class="transaction-date">
                                             {{ transaction.transaction_date|date:"Y-m-d" }}
@@ -491,7 +501,12 @@
                                 <div class="transaction-item">
                                     <div class="transaction-info">
                                         <div class="transaction-name">
-                                            <strong>{{ transaction.axe.manufacturer.name }} - {{ transaction.axe.model }}</strong>
+                                            <strong>
+                                                {% if transaction.axe.manufacturer.country_code %}
+                                                    <span class="me-1">{{ transaction.axe.manufacturer.country_code|country_flag }}</span>
+                                                {% endif %}
+                                                {{ transaction.axe.manufacturer.name }} - {{ transaction.axe.model }}
+                                            </strong>
                                         </div>
                                         <div class="transaction-date">
                                             {{ transaction.transaction_date|date:"Y-m-d" }}
