@@ -629,14 +629,16 @@ def axe_create(request):
     next_id = NextAxeID.peek_next_id()
 
     # Skicka samma context som i edit
+    measurement_form = MeasurementForm()
     context = {
         "form": form,
         "axe": None,
         "is_edit": False,
         "next_id": next_id,
         "measurements": [],
-        "measurement_form": MeasurementForm(),
+        "measurement_form": measurement_form,
         "measurement_templates": {},
+        "measurement_types_data": measurement_form.measurement_types_data,
     }
     return render(request, "axes/axe_form.html", context)
 
