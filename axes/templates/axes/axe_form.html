@@ -78,6 +78,77 @@ tr.editing .form-control-sm {
                     <form id="axeForm" method="post" enctype="multipart/form-data" autocomplete="off">
                         {% csrf_token %}
                         
+                        <!-- URL-parsning sektion (endast för nya yxor) -->
+                        {% if not is_edit %}
+                        <div class="card mb-4">
+                            <div class="card-header">
+                                <h6 class="mb-0">
+                                    <i class="fas fa-link me-2"></i>Hämta data från auktions-URL (valfritt)
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-8">
+                                        <div class="mb-3">
+                                            <label for="auction_url" class="form-label">Tradera-auktions-URL</label>
+                                            <input type="url" class="form-control" id="auction_url" name="auction_url" 
+                                                   placeholder="https://www.tradera.com/item/..." 
+                                                   title="Klistra in URL:en till den vunna Tradera-auktionen här">
+                                            <div class="form-text">
+                                                Klistra in URL:en till den vunna Tradera-auktionen för att automatiskt fylla i data.
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="mb-3">
+                                            <label class="form-label">&nbsp;</label>
+                                            <button type="button" id="parseUrlBtn" class="btn btn-info w-100">
+                                                <i class="fas fa-download me-2"></i>Hämta data
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Visning av extraherad data -->
+                                <div id="parsedDataSection" style="display: none;">
+                                    <hr class="my-3">
+                                    <div class="alert alert-success">
+                                        <h6 class="mb-2">
+                                            <i class="fas fa-check-circle me-2"></i>Auktionsdata extraherad
+                                        </h6>
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <small><strong>Titel:</strong> <span id="parsedTitle"></span></small><br>
+                                                <small><strong>Säljare:</strong> <span id="parsedSeller"></span></small><br>
+                                                <small><strong>Slutpris:</strong> <span id="parsedPrice"></span> kr</small>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <small><strong>Beskrivning:</strong></small><br>
+                                                <small id="parsedDescription" class="text-muted"></small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Laddningsindikator -->
+                                <div id="loadingIndicator" style="display: none;">
+                                    <div class="text-center">
+                                        <div class="spinner-border text-info" role="status">
+                                            <span class="visually-hidden">Laddar...</span>
+                                        </div>
+                                        <p class="mt-2 text-muted">Hämtar auktionsdata...</p>
+                                    </div>
+                                </div>
+                                
+                                <!-- Felmeddelande -->
+                                <div id="errorMessage" class="alert alert-danger" style="display: none;">
+                                    <i class="fas fa-exclamation-triangle me-2"></i>
+                                    <span id="errorText"></span>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                        
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="mb-3">
@@ -1357,6 +1428,247 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    // === URL-PARSNING ===
+    
+    // URL-parsning funktionalitet
+    const parseUrlBtn = document.getElementById('parseUrlBtn');
+    const auctionUrlInput = document.getElementById('auction_url');
+    const parsedDataSection = document.getElementById('parsedDataSection');
+    const loadingIndicator = document.getElementById('loadingIndicator');
+    const errorMessage = document.getElementById('errorMessage');
+    const parsedTitle = document.getElementById('parsedTitle');
+    const parsedSeller = document.getElementById('parsedSeller');
+    const parsedPrice = document.getElementById('parsedPrice');
+    const parsedDescription = document.getElementById('parsedDescription');
+    
+    if (parseUrlBtn && auctionUrlInput) {
+        parseUrlBtn.addEventListener('click', function() {
+            const url = auctionUrlInput.value.trim();
+            
+            if (!url) {
+                showError('Ange en Tradera-auktions-URL');
+                return;
+            }
+            
+            if (!url.includes('tradera.com')) {
+                showError('Endast Tradera-auktions-URL:er stöds för närvarande');
+                return;
+            }
+            
+            // Visa laddningsindikator
+            showLoading();
+            
+            // Skicka AJAX-förfrågan
+            fetch('{% url "axe_create" %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                },
+                body: new URLSearchParams({
+                    'auction_url': url,
+                    'parse_only': 'true'
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                hideLoading();
+                
+                if (data.success) {
+                    // Visa extraherad data
+                    parsedTitle.textContent = data.auction_data.title;
+                    parsedSeller.textContent = data.auction_data.seller_alias;
+                    parsedPrice.textContent = data.auction_data.prices.find(p => p.label === 'Slutpris')?.amount || 'N/A';
+                    parsedDescription.textContent = data.auction_data.description.substring(0, 100) + '...';
+                    
+                    // Fyll i formulärfält
+                    fillFormWithParsedData(data.auction_data);
+                    
+                    // Visa sektionen med extraherad data
+                    parsedDataSection.style.display = 'block';
+                    hideError();
+                } else {
+                    showError(data.error || 'Kunde inte hämta auktionsdata');
+                }
+            })
+            .catch(error => {
+                hideLoading();
+                showError('Ett fel uppstod vid hämtning av auktionsdata: ' + error.message);
+            });
+        });
+        
+        // Automatisk parsning när användaren klistrar in URL
+        auctionUrlInput.addEventListener('paste', function(e) {
+            setTimeout(() => {
+                const url = this.value.trim();
+                if (url && url.includes('tradera.com')) {
+                    parseUrlBtn.click();
+                }
+            }, 100);
+        });
+    }
+    
+    function showLoading() {
+        loadingIndicator.style.display = 'block';
+        parsedDataSection.style.display = 'none';
+        hideError();
+    }
+    
+    function hideLoading() {
+        loadingIndicator.style.display = 'none';
+    }
+    
+    function showError(message) {
+        errorMessage.style.display = 'block';
+        document.getElementById('errorText').textContent = message;
+        parsedDataSection.style.display = 'none';
+        hideLoading();
+    }
+    
+    function hideError() {
+        errorMessage.style.display = 'none';
+    }
+    
+    function fillFormWithParsedData(data) {
+        // Fyll i modellnamn
+        const modelInput = document.getElementById('{{ form.model.id_for_label }}');
+        if (modelInput && data.title) {
+            modelInput.value = data.title;
+        }
+        
+        // Fyll i kommentar/beskrivning
+        const commentInput = document.getElementById('{{ form.comment.id_for_label }}');
+        if (commentInput && data.description) {
+            commentInput.value = data.description;
+        }
+        
+        // Fyll i auktions-URL
+        const auctionUrlInput = document.getElementById('auction_url');
+        if (auctionUrlInput && data.url) {
+            auctionUrlInput.value = data.url;
+        }
+        
+        // Hantera kontaktinformation och matchning
+        const contactAliasInput = document.getElementById('{{ form.contact_alias.id_for_label }}');
+        const contactSearchInput = document.getElementById('{{ form.contact_search.id_for_label }}');
+        
+        if (data.seller_alias) {
+            // Sätt alias i kontaktfältet
+            if (contactAliasInput) {
+                contactAliasInput.value = data.seller_alias;
+            }
+            
+            // Om det finns matchande kontakter, hantera dem
+            if (data.matching_contacts && data.matching_contacts.length > 0) {
+                if (data.matching_contacts.length === 1) {
+                    // Om det finns exakt en matchning, sätt den i sökfältet
+                    const contact = data.matching_contacts[0];
+                    if (contactSearchInput) {
+                        contactSearchInput.value = contact.name;
+                    }
+                }
+                showMatchingContacts(data.matching_contacts, data.seller_alias);
+            } else {
+                // Om ingen matchning hittades, sätt säljarens namn i sökfältet
+                if (contactSearchInput) {
+                    contactSearchInput.value = data.seller_alias;
+                }
+                // Visa notis om att ingen kontakt matchades och visa kontaktformuläret
+                showNoContactMatch(data.seller_alias);
+            }
+        }
+        
+        // Sätt transaktionspris (negativt för köp)
+        const transactionPriceInput = document.getElementById('{{ form.transaction_price.id_for_label }}');
+        if (transactionPriceInput) {
+            const finalPrice = data.prices.find(p => p.label === 'Slutpris');
+            if (finalPrice) {
+                transactionPriceInput.value = -finalPrice.amount; // Negativt för köp
+                // Manuellt trigga badge-uppdatering
+                const event = new Event('input', { bubbles: true });
+                transactionPriceInput.dispatchEvent(event);
+            }
+        }
+        
+        // Sätt transaktionsdatum
+        const transactionDateInput = document.getElementById('{{ form.transaction_date.id_for_label }}');
+        if (transactionDateInput && data.auction_end_date) {
+            transactionDateInput.value = data.auction_end_date;
+        }
+        
+        // Sätt plattform till Tradera (använd platform_search istället för platform)
+        const platformSearchInput = document.getElementById('{{ form.platform_search.id_for_label }}');
+        if (platformSearchInput && data.platform_id) {
+            // Hitta Tradera-plattformen och sätt dess namn i sökfältet
+            platformSearchInput.value = 'Tradera';
+        }
+    }
+    
+    function showMatchingContacts(contacts, sellerAlias) {
+        // Skapa en notifikation om matchande kontakter
+        const notification = document.getElementById('notification');
+        const notificationMessage = document.getElementById('notification-message');
+        
+        if (notification && notificationMessage) {
+            if (contacts.length === 1) {
+                const contact = contacts[0];
+                notification.className = 'alert alert-info';
+                notificationMessage.innerHTML = `
+                    <i class="fas fa-info-circle me-2"></i>
+                    Hittade matchande kontakt: <strong>${contact.name}</strong> (${contact.alias})
+                    ${contact.city ? `från ${contact.city}` : ''}
+                    ${contact.country ? `, ${contact.country}` : ''}
+                `;
+            } else {
+                notification.className = 'alert alert-warning';
+                notificationMessage.innerHTML = `
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    Hittade ${contacts.length} matchande kontakter för "${sellerAlias}". 
+                    Välj rätt kontakt från listan eller skapa en ny.
+                `;
+                
+                // Visa kontaktformuläret för att skapa ny kontakt om det finns flera matchningar
+                const newContactSection = document.getElementById('newContactSection');
+                if (newContactSection) {
+                    newContactSection.style.display = 'block';
+                }
+            }
+            notification.style.display = 'block';
+            
+            // Dölj notifikationen efter 10 sekunder
+            setTimeout(() => {
+                notification.style.display = 'none';
+            }, 10000);
+        }
+    }
+    
+    function showNoContactMatch(sellerAlias) {
+        // Visa notis om att ingen kontakt matchades
+        const notification = document.getElementById('notification');
+        const notificationMessage = document.getElementById('notification-message');
+        
+        if (notification && notificationMessage) {
+            notification.className = 'alert alert-info';
+            notificationMessage.innerHTML = `
+                <i class="fas fa-info-circle me-2"></i>
+                Ingen befintlig kontakt matchades för "${sellerAlias}". 
+                Ett nytt kontaktformulär visas nedan för att skapa en ny kontakt.
+            `;
+            notification.style.display = 'block';
+            
+            // Dölj notifikationen efter 10 sekunder
+            setTimeout(() => {
+                notification.style.display = 'none';
+            }, 10000);
+        }
+        
+        // Visa hela kontaktformuläret direkt
+        const newContactSection = document.getElementById('newContactSection');
+        if (newContactSection) {
+            newContactSection.style.display = 'block';
+        }
+    }
+    
     // === MÅTT-HANTERING ===
     
     // === ENHETSVÄLJARE FÖR MÅTT ===
