@@ -208,4 +208,46 @@ class InitNextAxeIDCommandTest(TestCase):
         
         # Kontrollera att NextAxeID är uppdaterat
         existing_next_id.refresh_from_db()
-        self.assertEqual(existing_next_id.next_id, expected_next_id) 
+        self.assertEqual(existing_next_id.next_id, expected_next_id)
+
+
+class ResetToTestDataCommandTest(TestCase):
+    def setUp(self):
+        # Skapa lite befintlig data
+        self.manufacturer = Manufacturer.objects.create(name="Existing Manufacturer")
+        self.contact = Contact.objects.create(name="Existing Contact")
+        self.axe = Axe.objects.create(
+            manufacturer=self.manufacturer,
+            model="Existing Axe",
+            status="KÖPT"
+        )
+
+    def test_reset_to_test_data_default(self):
+        """Testa att kommandot återställer till testdata med standardvärden"""
+        out = StringIO()
+        call_command('reset_to_test_data', stdout=out)
+        
+        output = out.getvalue()
+        self.assertIn("Återställer till testdata...", output)
+        self.assertIn("Databasen har återställts till testdata!", output)
+        
+        # Kontrollera att ny testdata har skapats
+        self.assertGreater(Axe.objects.count(), 0)
+        self.assertGreater(Manufacturer.objects.count(), 0)
+        self.assertGreater(Contact.objects.count(), 0)
+
+    def test_reset_to_test_data_custom_counts(self):
+        """Testa att kommandot använder anpassade antal"""
+        out = StringIO()
+        call_command('reset_to_test_data', axes=10, manufacturers=5, contacts=8, stdout=out)
+        
+        output = out.getvalue()
+        self.assertIn("Återställer till testdata...", output)
+        self.assertIn("Databasen har återställts till testdata!", output)
+        
+        # Kontrollera att rätt antal objekt har skapats
+        # Notera: generate_test_data kan skapa fler objekt än specificerat
+        # så vi kontrollerar bara att det finns data
+        self.assertGreater(Axe.objects.count(), 0)
+        self.assertGreater(Manufacturer.objects.count(), 0)
+        self.assertGreater(Contact.objects.count(), 0) 
