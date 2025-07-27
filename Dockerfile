@@ -6,6 +6,7 @@ ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 ENV DJANGO_SETTINGS_MODULE=AxeCollection.settings_production
 ENV DEMO_MODE=false
+ENV SECRET_KEY=django-insecure-build-only-key-for-docker-build-process
 
 # Set work directory
 WORKDIR /app

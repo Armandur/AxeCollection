@@ -228,4 +228,4 @@ FILE_UPLOAD_TEMP_DIR = None  # Use system temp directory
 os.makedirs(BASE_DIR / 'data', exist_ok=True)
 os.makedirs(BASE_DIR / 'logs', exist_ok=True)
 os.makedirs(BASE_DIR / 'media', exist_ok=True)
-os.makedirs(BASE_DIR / 'staticfiles', exist_ok=True) 
+os.makedirs(BASE_DIR / 'staticfiles', exist_ok=True)

@@ -86,7 +86,7 @@ Ett Django-baserat system för att hantera och katalogisera yxsamlingar med avan
 - **Backend**: Django 4.x
 - **Frontend**: Bootstrap 5, JavaScript (ES6+)
 - **Bildhantering**: Pillow, django-imagekit
-- **Databas**: SQLite (utveckling), PostgreSQL (produktion)
+- **Databas**: SQLite (alla miljöer) med WAL-mode för bättre prestanda och samtidighet
 
 ## Installation
 
@@ -113,6 +113,11 @@ cp env.example .env
 # Redigera .env och sätt SECRET_KEY
 docker-compose up -d
 ```
+
+**Databas-konfiguration:**
+- SQLite med WAL-mode aktiverat automatiskt för bättre prestanda
+- Automatisk aktivering vid Django-start via `axes/apps.py`
+- Optimerad för samtidiga läs- och skrivoperationer
 
 **Media-filhantering:**
 - Nginx serverar media-filer direkt via `/media/` URL:er
