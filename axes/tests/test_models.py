@@ -444,18 +444,18 @@ class ModelPropertiesTest(TestCase):
         parent = Manufacturer.objects.create(name="Parent")
         child = Manufacturer.objects.create(name="Child", parent=parent)
         grandchild = Manufacturer.objects.create(name="Grandchild", parent=child)
-        
+
         # Test att hierarkin fungerar korrekt
         self.assertTrue(child.is_sub_manufacturer)
         self.assertFalse(child.is_main_manufacturer)
         self.assertTrue(parent.is_main_manufacturer)
         self.assertFalse(parent.is_sub_manufacturer)
-        
+
         # Test hierarkinivåer (hierarchy_level är 0-baserat)
         self.assertEqual(parent.hierarchy_level, 0)
         self.assertEqual(child.hierarchy_level, 1)
         self.assertEqual(grandchild.hierarchy_level, 2)
-        
+
         # Test fullständiga namn (full_name returnerar bara en nivå av hierarki)
         self.assertEqual(parent.full_name, "Parent")
         self.assertEqual(child.full_name, "Parent - Child")
@@ -465,15 +465,15 @@ class ModelPropertiesTest(TestCase):
         """Test räkning av yxor för tillverkare med hierarki"""
         parent = Manufacturer.objects.create(name="Parent")
         child = Manufacturer.objects.create(name="Child", parent=parent)
-        
+
         # Skapa yxor för båda tillverkarna
         parent_axe = Axe.objects.create(manufacturer=parent, model="Parent Axe")
         child_axe = Axe.objects.create(manufacturer=child, model="Child Axe")
-        
+
         # Test direkta räkningar
         self.assertEqual(parent.axe_count, 1)
         self.assertEqual(child.axe_count, 1)
-        
+
         # Test totala räkningar inklusive under-tillverkare
         self.assertEqual(parent.axe_count_including_sub_manufacturers, 2)
         self.assertEqual(child.axe_count_including_sub_manufacturers, 1)
@@ -484,7 +484,7 @@ class ModelPropertiesTest(TestCase):
         if not axe:
             manufacturer = Manufacturer.objects.first()
             axe = Axe.objects.create(manufacturer=manufacturer, model="Test Axe")
-        
+
         # Test att properties returnerar rätt typ
         self.assertIsInstance(axe.total_buy_value, Decimal)
         # total_sale_value kan vara 0 (int) om inga försäljningar finns
@@ -498,8 +498,10 @@ class ModelPropertiesTest(TestCase):
         """Test transaktionsrelaterade properties för kontakter"""
         contact = Contact.objects.first()
         if not contact:
-            contact = Contact.objects.create(name="Test Contact", email="test@example.com")
-        
+            contact = Contact.objects.create(
+                name="Test Contact", email="test@example.com"
+            )
+
         # Test att properties returnerar rätt typ
         self.assertIsInstance(contact.total_buy_value, Decimal)
         self.assertIsInstance(contact.total_sale_value, Decimal)
@@ -512,8 +514,10 @@ class ModelPropertiesTest(TestCase):
         """Test transaktionsrelaterade properties för plattformar"""
         platform = Platform.objects.first()
         if not platform:
-            platform = Platform.objects.create(name="Test Platform", url="https://example.com")
-        
+            platform = Platform.objects.create(
+                name="Test Platform", url="https://example.com"
+            )
+
         # Test att properties returnerar rätt typ
         # Platform har metoder, inte properties
         self.assertIsInstance(platform.get_total_buy_value(), Decimal)
@@ -526,40 +530,41 @@ class ModelPropertiesTest(TestCase):
         """Test att Settings fungerar som singleton"""
         # Ta bort alla befintliga inställningar
         Settings.objects.all().delete()
-        
+
         # Skapa första inställningen
         settings1 = Settings.get_settings()
         self.assertIsNotNone(settings1.id)
-        
+
         # Försök skapa en till - ska returnera samma instans
         settings2 = Settings.get_settings()
         self.assertEqual(settings1.id, settings2.id)
-        
+
         # Test att vi bara har en instans
         self.assertEqual(Settings.objects.count(), 1)
 
     def test_measurement_template_validation(self):
         """Test validering av måttmallar"""
         template = MeasurementTemplate.objects.create(name="Test Template")
-        
+
         # Test att mall utan måtttyper fungerar
         self.assertEqual(template.items.count(), 0)
-        
+
         # Lägg till måtttyper
         measurement_type = MeasurementType.objects.create(
             name="Test Type", unit="mm", description="Test"
         )
         # Skapa MeasurementTemplateItem för att koppla måtttypen till mallen
         from axes.models import MeasurementTemplateItem
+
         MeasurementTemplateItem.objects.create(
-            template=template,
-            measurement_type=measurement_type,
-            sort_order=1
+            template=template, measurement_type=measurement_type, sort_order=1
         )
-        
+
         # Test att måtttypen är kopplad
         self.assertEqual(template.items.count(), 1)
-        self.assertIn(measurement_type, [item.measurement_type for item in template.items.all()])
+        self.assertIn(
+            measurement_type, [item.measurement_type for item in template.items.all()]
+        )
 
     def test_measurement_value_validation(self):
         """Test validering av måttvärden"""
@@ -567,7 +572,7 @@ class ModelPropertiesTest(TestCase):
         if not axe:
             manufacturer = Manufacturer.objects.first()
             axe = Axe.objects.create(manufacturer=manufacturer, model="Test Axe")
-        
+
         # Test att skapa mått med olika datatyper
         measurement1 = Measurement.objects.create(
             axe=axe, name="Test Mått 1", value=Decimal("100.50"), unit="mm"
@@ -575,11 +580,11 @@ class ModelPropertiesTest(TestCase):
         measurement2 = Measurement.objects.create(
             axe=axe, name="Test Mått 2", value=Decimal("200"), unit="gram"
         )
-        
+
         # Test att värdena sparas korrekt
         self.assertEqual(measurement1.value, Decimal("100.50"))
         self.assertEqual(measurement2.value, Decimal("200"))
-        
+
         # Test att enheter sparas korrekt
         self.assertEqual(measurement1.unit, "mm")
         self.assertEqual(measurement2.unit, "gram")
@@ -605,20 +610,20 @@ class ModelRelationshipsTest(TestCase):
         """Test kaskadradering av tillverkare"""
         parent = Manufacturer.objects.create(name="Parent")
         child = Manufacturer.objects.create(name="Child", parent=parent)
-        
+
         # Skapa yxa för child
         axe = Axe.objects.create(manufacturer=child, model="Test Axe")
-        
+
         # Räkna objekt före radering
         initial_axe_count = Axe.objects.count()
-        
+
         # Radera parent (ska inte påverka child eller axe)
         parent.delete()
-        
+
         # Verifiera att child och axe fortfarande finns
         self.assertTrue(Manufacturer.objects.filter(name="Child").exists())
         self.assertTrue(Axe.objects.filter(model="Test Axe").exists())
-        
+
         # Verifiera att parent är borta
         self.assertFalse(Manufacturer.objects.filter(name="Parent").exists())
 
@@ -628,40 +633,45 @@ class ModelRelationshipsTest(TestCase):
         if not axe:
             manufacturer = Manufacturer.objects.first()
             axe = Axe.objects.create(manufacturer=manufacturer, model="Test Axe")
-        
+
         # Skapa mått för yxan
         measurement = Measurement.objects.create(
             axe=axe, name="Test Mått", value=Decimal("100"), unit="mm"
         )
-        
+
         # Skapa transaktion för yxan
         contact = Contact.objects.first()
         platform = Platform.objects.first()
         from datetime import date
+
         transaction = Transaction.objects.create(
-            axe=axe, contact=contact, platform=platform, price=Decimal("1000"),
-            transaction_date=date.today(), type="KÖP"
+            axe=axe,
+            contact=contact,
+            platform=platform,
+            price=Decimal("1000"),
+            transaction_date=date.today(),
+            type="KÖP",
         )
-        
+
         # Räkna objekt som tillhör denna specifika yxa före radering
         axe_measurements_count = Measurement.objects.filter(axe=axe).count()
         axe_transactions_count = Transaction.objects.filter(axe=axe).count()
-        
+
         # Spara axe ID innan radering
         axe_id = axe.id
-        
+
         # Radera yxan
         axe.delete()
-        
+
         # Verifiera att relaterade objekt också raderats
         # Räkna mått som inte tillhör den raderade yxan
         remaining_measurements = Measurement.objects.exclude(axe_id=axe_id)
         self.assertEqual(remaining_measurements.count(), Measurement.objects.count())
-        
+
         # Räkna transaktioner som inte tillhör den raderade yxan
         remaining_transactions = Transaction.objects.exclude(axe_id=axe_id)
         self.assertEqual(remaining_transactions.count(), Transaction.objects.count())
-        
+
         # Verifiera att alla mått och transaktioner för yxan är borta
         self.assertEqual(Measurement.objects.filter(axe_id=axe_id).count(), 0)
         self.assertEqual(Transaction.objects.filter(axe_id=axe_id).count(), 0)
@@ -670,26 +680,38 @@ class ModelRelationshipsTest(TestCase):
         """Test relation mellan kontakter och transaktioner"""
         contact = Contact.objects.first()
         if not contact:
-            contact = Contact.objects.create(name="Test Contact", email="test@example.com")
-        
+            contact = Contact.objects.create(
+                name="Test Contact", email="test@example.com"
+            )
+
         axe = Axe.objects.first()
         platform = Platform.objects.first()
-        
+
         # Skapa transaktioner
         transaction1 = Transaction.objects.create(
-            axe=axe, contact=contact, platform=platform, price=Decimal("1000"),
-            transaction_date=date.today(), type="KÖP"
+            axe=axe,
+            contact=contact,
+            platform=platform,
+            price=Decimal("1000"),
+            transaction_date=date.today(),
+            type="KÖP",
         )
         transaction2 = Transaction.objects.create(
-            axe=axe, contact=contact, platform=platform, price=Decimal("2000"),
-            transaction_date=date.today(), type="SÄLJ"
+            axe=axe,
+            contact=contact,
+            platform=platform,
+            price=Decimal("2000"),
+            transaction_date=date.today(),
+            type="SÄLJ",
         )
-        
+
         # Test att transaktioner är kopplade till kontakten
         self.assertIn(transaction1, contact.transactions.all())
         self.assertIn(transaction2, contact.transactions.all())
         # Räkna bara de nya transaktionerna vi skapade
-        new_transactions = contact.transactions.filter(id__in=[transaction1.id, transaction2.id])
+        new_transactions = contact.transactions.filter(
+            id__in=[transaction1.id, transaction2.id]
+        )
         self.assertEqual(new_transactions.count(), 2)
 
     def test_platform_transaction_relationship(self):
@@ -697,25 +719,35 @@ class ModelRelationshipsTest(TestCase):
         platform = Platform.objects.first()
         if not platform:
             platform = Platform.objects.create(name="Test Platform")
-        
+
         axe = Axe.objects.first()
         contact = Contact.objects.first()
-        
+
         # Skapa transaktioner
         transaction1 = Transaction.objects.create(
-            axe=axe, contact=contact, platform=platform, price=Decimal("1000"),
-            transaction_date=date.today(), type="KÖP"
+            axe=axe,
+            contact=contact,
+            platform=platform,
+            price=Decimal("1000"),
+            transaction_date=date.today(),
+            type="KÖP",
         )
         transaction2 = Transaction.objects.create(
-            axe=axe, contact=contact, platform=platform, price=Decimal("2000"),
-            transaction_date=date.today(), type="SÄLJ"
+            axe=axe,
+            contact=contact,
+            platform=platform,
+            price=Decimal("2000"),
+            transaction_date=date.today(),
+            type="SÄLJ",
         )
-        
+
         # Test att transaktioner är kopplade till plattformen
         self.assertIn(transaction1, platform.transaction_set.all())
         self.assertIn(transaction2, platform.transaction_set.all())
         # Räkna bara de nya transaktionerna vi skapade
-        new_transactions = platform.transaction_set.filter(id__in=[transaction1.id, transaction2.id])
+        new_transactions = platform.transaction_set.filter(
+            id__in=[transaction1.id, transaction2.id]
+        )
         self.assertEqual(new_transactions.count(), 2)
 
 
@@ -738,7 +770,7 @@ class ModelValidationTest(TestCase):
     def test_manufacturer_name_uniqueness(self):
         """Test att tillverkarnamn måste vara unika"""
         manufacturer1 = Manufacturer.objects.create(name="Unique Name")
-        
+
         # Försök skapa en till med samma namn
         # Notera: Tillverkarnamn behöver inte vara unika i denna implementation
         manufacturer2 = Manufacturer.objects.create(name="Unique Name")
@@ -748,31 +780,22 @@ class ModelValidationTest(TestCase):
     def test_contact_email_validation(self):
         """Test validering av kontakt-e-post"""
         # Test giltig e-post
-        contact1 = Contact.objects.create(
-            name="Test Contact", 
-            email="test@example.com"
-        )
+        contact1 = Contact.objects.create(name="Test Contact", email="test@example.com")
         self.assertIsNotNone(contact1.id)
-        
+
         # Test tom e-post (ska vara tillåtet)
-        contact2 = Contact.objects.create(
-            name="Test Contact 2", 
-            email=""
-        )
+        contact2 = Contact.objects.create(name="Test Contact 2", email="")
         self.assertIsNotNone(contact2.id)
 
     def test_platform_url_validation(self):
         """Test validering av plattforms-URL"""
         # Test giltig plattform
-        platform1 = Platform.objects.create(
-            name="Test Platform"
-        )
+        platform1 = Platform.objects.create(name="Test Platform")
         self.assertIsNotNone(platform1.id)
-        
+
         # Test plattform med färg
         platform2 = Platform.objects.create(
-            name="Test Platform 2",
-            color_class="bg-success"
+            name="Test Platform 2", color_class="bg-success"
         )
         self.assertIsNotNone(platform2.id)
 
@@ -782,22 +805,16 @@ class ModelValidationTest(TestCase):
         if not axe:
             manufacturer = Manufacturer.objects.first()
             axe = Axe.objects.create(manufacturer=manufacturer, model="Test Axe")
-        
+
         # Test negativt värde (ska vara tillåtet för vissa mått)
         measurement = Measurement.objects.create(
-            axe=axe,
-            name="Test Mått",
-            value=Decimal("-10.5"),
-            unit="mm"
+            axe=axe, name="Test Mått", value=Decimal("-10.5"), unit="mm"
         )
         self.assertIsNotNone(measurement.id)
-        
+
         # Test nollvärde
         measurement2 = Measurement.objects.create(
-            axe=axe,
-            name="Test Mått 2",
-            value=Decimal("0"),
-            unit="mm"
+            axe=axe, name="Test Mått 2", value=Decimal("0"), unit="mm"
         )
         self.assertIsNotNone(measurement2.id)
 
@@ -806,7 +823,7 @@ class ModelValidationTest(TestCase):
         axe = Axe.objects.first()
         contact = Contact.objects.first()
         platform = Platform.objects.first()
-        
+
         # Test negativt pris (ska vara tillåtet för köp)
         transaction1 = Transaction.objects.create(
             axe=axe,
@@ -814,10 +831,10 @@ class ModelValidationTest(TestCase):
             platform=platform,
             price=Decimal("-1000"),  # Köp
             transaction_date=date.today(),
-            type="KÖP"
+            type="KÖP",
         )
         self.assertIsNotNone(transaction1.id)
-        
+
         # Test positivt pris (ska vara tillåtet för försäljning)
         transaction2 = Transaction.objects.create(
             axe=axe,
@@ -825,10 +842,10 @@ class ModelValidationTest(TestCase):
             platform=platform,
             price=Decimal("1000"),  # Försäljning
             transaction_date=date.today(),
-            type="SÄLJ"
+            type="SÄLJ",
         )
         self.assertIsNotNone(transaction2.id)
-        
+
         # Test nollpris
         transaction3 = Transaction.objects.create(
             axe=axe,
@@ -836,6 +853,6 @@ class ModelValidationTest(TestCase):
             platform=platform,
             price=Decimal("0"),
             transaction_date=date.today(),
-            type="KÖP"
+            type="KÖP",
         )
         self.assertIsNotNone(transaction3.id)

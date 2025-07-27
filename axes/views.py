@@ -224,16 +224,17 @@ def _search_transactions(query, request):
 def global_search(request):
     """AJAX-endpoint för global sökning i yxor, kontakter, tillverkare och transaktioner"""
     query = request.GET.get("q", "").strip()
-    
+
     # Tillåt numeriska queries (som ID:n) oavsett längd
     is_numeric = query.isdigit()
-    
+
     if len(query) < 2 and not is_numeric:
         return JsonResponse({"results": {}})
 
     # Sätt public_settings på request för sökfunktionerna
     try:
         from .models import Settings
+
         settings = Settings.get_settings()
         request.public_settings = {
             "show_contacts": settings.show_contacts_public,

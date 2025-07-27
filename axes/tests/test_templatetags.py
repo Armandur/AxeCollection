@@ -28,6 +28,7 @@ class TemplateFiltersTest(TestCase):
     def setUp(self):
         """Skapa testdata för varje test"""
         from django.core.management import call_command
+
         call_command(
             "generate_test_data",
             "--clear",
@@ -44,14 +45,14 @@ class TemplateFiltersTest(TestCase):
         # Test heltal
         self.assertEqual(format_decimal(1000), mark_safe("1\u00A0000"))
         self.assertEqual(format_decimal(1234567), mark_safe("1\u00A0234\u00A0567"))
-        
+
         # Test decimaltal
         self.assertEqual(format_decimal(1000.50), mark_safe("1\u00A0000,50"))
         self.assertEqual(format_decimal(1234.56), mark_safe("1\u00A0234,56"))
-        
+
         # Test None
         self.assertEqual(format_decimal(None), "0")
-        
+
         # Test Decimal-objekt
         self.assertEqual(format_decimal(Decimal("1234.56")), mark_safe("1\u00A0234,56"))
 
@@ -60,13 +61,13 @@ class TemplateFiltersTest(TestCase):
         # Test med standardvaluta (kr)
         self.assertEqual(format_currency(1000), mark_safe("1\u00A0000\u00A0kr"))
         self.assertEqual(format_currency(1234.56), mark_safe("1\u00A0234,56\u00A0kr"))
-        
+
         # Test med annan valuta
         self.assertEqual(format_currency(1000, "€"), mark_safe("1\u00A0000\u00A0€"))
-        
+
         # Test None
         self.assertEqual(format_currency(None), "")
-        
+
         # Test tom sträng
         self.assertEqual(format_currency(""), "")
 
@@ -74,10 +75,10 @@ class TemplateFiltersTest(TestCase):
         """Test status_badge filter"""
         # Test köpt status (KÖPT mappas till bg-warning text-dark)
         self.assertEqual(status_badge("KÖPT"), "bg-warning text-dark")
-        
+
         # Test mottagen status (MOTTAGEN mappas till bg-success)
         self.assertEqual(status_badge("MOTTAGEN"), "bg-success")
-        
+
         # Test okänd status
         self.assertEqual(status_badge("Okänd"), "bg-secondary")
 
@@ -85,10 +86,10 @@ class TemplateFiltersTest(TestCase):
         """Test transaction_badge filter"""
         # Test köp
         self.assertEqual(transaction_badge("KÖP"), "bg-danger")
-        
+
         # Test försäljning
         self.assertEqual(transaction_badge("SÄLJ"), "bg-success")
-        
+
         # Test okänd typ
         self.assertEqual(transaction_badge("Okänd"), "bg-secondary")
 
@@ -96,10 +97,10 @@ class TemplateFiltersTest(TestCase):
         """Test transaction_icon filter"""
         # Test köp
         self.assertEqual(transaction_icon("KÖP"), "bi-arrow-down-circle")
-        
+
         # Test försäljning
         self.assertEqual(transaction_icon("SÄLJ"), "bi-arrow-up-circle")
-        
+
         # Test okänd typ
         self.assertEqual(transaction_icon("Okänd"), "bi-question-circle")
 
@@ -107,26 +108,30 @@ class TemplateFiltersTest(TestCase):
         """Test default_if_empty filter"""
         # Test med tom sträng
         self.assertEqual(default_if_empty("", "Standard"), "Standard")
-        
+
         # Test med None
         self.assertEqual(default_if_empty(None, "Standard"), "Standard")
-        
+
         # Test med värde
         self.assertEqual(default_if_empty("Värde", "Standard"), "Värde")
-        
+
         # Test med standardvärde
         self.assertEqual(default_if_empty("", "-"), "-")
 
     def test_breadcrumb_item(self):
         """Test breadcrumb_item template tag"""
         # Test aktiv länk
-        expected_active = '<li class="breadcrumb-item active" aria-current="page">Test</li>'
-        self.assertEqual(breadcrumb_item("Test", is_active=True), mark_safe(expected_active))
-        
+        expected_active = (
+            '<li class="breadcrumb-item active" aria-current="page">Test</li>'
+        )
+        self.assertEqual(
+            breadcrumb_item("Test", is_active=True), mark_safe(expected_active)
+        )
+
         # Test länk
         expected_link = '<li class="breadcrumb-item"><a href="/test/">Test</a></li>'
         self.assertEqual(breadcrumb_item("Test", "/test/"), mark_safe(expected_link))
-        
+
         # Test utan länk
         expected_no_link = '<li class="breadcrumb-item">Test</li>'
         self.assertEqual(breadcrumb_item("Test"), mark_safe(expected_no_link))
@@ -138,15 +143,15 @@ class TemplateFiltersTest(TestCase):
         result = markdown(markdown_text)
         self.assertIn("<strong>Bold text</strong>", result)
         self.assertIn("<em>italic text</em>", result)
-        
+
         # Test länkar
         link_text = "[Link text](https://example.com)"
         result = markdown(link_text)
         self.assertIn('<a href="https://example.com" target="_blank">', result)
-        
+
         # Test tom sträng
         self.assertEqual(markdown(""), "")
-        
+
         # Test None
         self.assertEqual(markdown(None), "")
 
@@ -158,7 +163,7 @@ class TemplateFiltersTest(TestCase):
         self.assertNotIn("**", result)
         self.assertNotIn("*", result)
         self.assertLessEqual(len(result), 20)
-        
+
         # Test med länk
         link_text = "[Link text](https://example.com) with description"
         result = strip_markdown_and_truncate(link_text, 30)
@@ -166,10 +171,10 @@ class TemplateFiltersTest(TestCase):
         self.assertNotIn("]", result)
         self.assertNotIn("(", result)
         self.assertNotIn(")", result)
-        
+
         # Test tom sträng
         self.assertEqual(strip_markdown_and_truncate("", 50), "")
-        
+
         # Test None
         self.assertEqual(strip_markdown_and_truncate(None, 50), "")
 
@@ -177,10 +182,10 @@ class TemplateFiltersTest(TestCase):
         """Test times filter"""
         # Test med heltal - times returnerar range
         self.assertEqual(list(times(3)), [0, 1, 2])
-        
+
         # Test med sträng
         self.assertEqual(list(times("5")), [0, 1, 2, 3, 4])
-        
+
         # Test med None
         self.assertEqual(list(times(None)), [])
 
@@ -189,13 +194,13 @@ class TemplateFiltersTest(TestCase):
         # Skapa hierarkisk struktur
         parent = Manufacturer.objects.create(name="Parent Manufacturer")
         child = Manufacturer.objects.create(name="Child Manufacturer", parent=parent)
-        
+
         manufacturers_list = [parent, child]
-        
+
         # Test för parent
         result = hierarchy_prefix(parent, manufacturers_list)
         self.assertEqual(result, "")
-        
+
         # Test för child
         result = hierarchy_prefix(child, manufacturers_list)
         self.assertIn("└─", result)  # Ska innehålla └─ för indentering
@@ -204,10 +209,10 @@ class TemplateFiltersTest(TestCase):
         """Test basename filter"""
         # Test med sökväg
         self.assertEqual(basename("/path/to/file.txt"), "file.txt")
-        
+
         # Test med filnamn
         self.assertEqual(basename("file.txt"), "file.txt")
-        
+
         # Test med tom sträng
         self.assertEqual(basename(""), "")
 
@@ -217,13 +222,13 @@ class TemplateFiltersTest(TestCase):
         self.assertEqual(country_flag("SE"), "🇸🇪")
         self.assertEqual(country_flag("FI"), "🇫🇮")
         self.assertEqual(country_flag("NO"), "🇳🇴")
-        
+
         # Test okänt land
         self.assertEqual(country_flag("XX"), "")
-        
+
         # Test None
         self.assertEqual(country_flag(None), "")
-        
+
         # Test tom sträng
         self.assertEqual(country_flag(""), "")
 
@@ -232,10 +237,10 @@ class TemplateFiltersTest(TestCase):
         # Test division
         self.assertEqual(div(10, 2), 5.0)
         self.assertEqual(div(15, 3), 5.0)
-        
+
         # Test med decimaler
-        self.assertEqual(div(10, 3), 10/3)
-        
+        self.assertEqual(div(10, 3), 10 / 3)
+
         # Test division med noll
         self.assertEqual(div(10, 0), 0)
 
@@ -245,13 +250,13 @@ class TemplateFiltersTest(TestCase):
         self.assertEqual(country_name("SE"), "Sverige")
         self.assertEqual(country_name("FI"), "Finland")
         self.assertEqual(country_name("NO"), "Norge")
-        
+
         # Test okänt land
         self.assertEqual(country_name("XX"), "XX")
-        
+
         # Test None
         self.assertEqual(country_name(None), "")
-        
+
         # Test tom sträng
         self.assertEqual(country_name(""), "")
 
@@ -262,6 +267,7 @@ class TemplateTagsIntegrationTest(TestCase):
     def setUp(self):
         """Skapa testdata för varje test"""
         from django.core.management import call_command
+
         call_command(
             "generate_test_data",
             "--clear",
@@ -285,14 +291,18 @@ class TemplateTagsIntegrationTest(TestCase):
             <p>Default: {{ ""|default_if_empty:"Inget värde" }}</p>
         </div>
         """
-        
+
         template = Template(template_string)
         context = Context({})
         result = template.render(context)
-        
+
         # Verifiera att resultatet innehåller förväntad HTML
-        self.assertIn("1 234,56 kr", result.replace('\xa0', ' '))  # Ersätt non-breaking spaces
-        self.assertIn("bg-warning text-dark", result)  # KÖPT mappas till bg-warning text-dark
+        self.assertIn(
+            "1 234,56 kr", result.replace("\xa0", " ")
+        )  # Ersätt non-breaking spaces
+        self.assertIn(
+            "bg-warning text-dark", result
+        )  # KÖPT mappas till bg-warning text-dark
         self.assertIn("🇸🇪", result)
         self.assertIn("Sverige", result)
         self.assertIn("Inget värde", result)
@@ -305,11 +315,11 @@ class TemplateTagsIntegrationTest(TestCase):
             {{ "**Bold text** and *italic text*"|markdown }}
         </div>
         """
-        
+
         template = Template(template_string)
         context = Context({})
         result = template.render(context)
-        
+
         self.assertIn("<strong>Bold text</strong>", result)
         self.assertIn("<em>italic text</em>", result)
 
@@ -318,7 +328,7 @@ class TemplateTagsIntegrationTest(TestCase):
         # Skapa hierarkisk struktur
         parent = Manufacturer.objects.create(name="Parent Manufacturer")
         child = Manufacturer.objects.create(name="Child Manufacturer", parent=parent)
-        
+
         template_string = """
         {% load axe_filters %}
         <ul>
@@ -327,13 +337,11 @@ class TemplateTagsIntegrationTest(TestCase):
         {% endfor %}
         </ul>
         """
-        
+
         template = Template(template_string)
-        context = Context({
-            'manufacturers': [parent, child]
-        })
+        context = Context({"manufacturers": [parent, child]})
         result = template.render(context)
-        
+
         # Verifiera att hierarkin renderas korrekt
         self.assertIn("Parent Manufacturer", result)
-        self.assertIn("Child Manufacturer", result) 
+        self.assertIn("Child Manufacturer", result)
