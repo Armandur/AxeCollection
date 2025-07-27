@@ -158,21 +158,21 @@ class SearchViewsTest(ViewsTestCase):
 class GlobalSearchTest(ViewsTestCase):
     def test_global_search_empty_query(self):
         """Testa global sökning med tom query"""
-        response = self.client.get('/api/global-search/', {'q': ''})
+        response = self.client.get('/api/search/global/', {'q': ''})
         self.assertEqual(response.status_code, 200)
         data = json.loads(response.content)
         self.assertEqual(data['results'], {})
 
     def test_global_search_short_query(self):
         """Testa global sökning med för kort query"""
-        response = self.client.get('/api/global-search/', {'q': 'a'})
+        response = self.client.get('/api/search/global/', {'q': 'a'})
         self.assertEqual(response.status_code, 200)
         data = json.loads(response.content)
         self.assertEqual(data['results'], {})
 
     def test_global_search_numeric_query(self):
         """Testa global sökning med numerisk query (ID)"""
-        response = self.client.get('/api/global-search/', {'q': str(self.axe.id)})
+        response = self.client.get('/api/search/global/', {'q': str(self.axe.id)})
         self.assertEqual(response.status_code, 200)
         data = json.loads(response.content)
         self.assertIn('axes', data['results'])
@@ -180,7 +180,7 @@ class GlobalSearchTest(ViewsTestCase):
 
     def test_global_search_axes(self):
         """Testa global sökning för yxor"""
-        response = self.client.get('/api/global-search/', {'q': 'Test Axe'})
+        response = self.client.get('/api/search/global/', {'q': 'Test Axe'})
         self.assertEqual(response.status_code, 200)
         data = json.loads(response.content)
         self.assertIn('axes', data['results'])
@@ -188,7 +188,7 @@ class GlobalSearchTest(ViewsTestCase):
 
     def test_global_search_manufacturer(self):
         """Testa global sökning för tillverkare"""
-        response = self.client.get('/api/global-search/', {'q': 'Test Manufacturer'})
+        response = self.client.get('/api/search/global/', {'q': 'Test Manufacturer'})
         self.assertEqual(response.status_code, 200)
         data = json.loads(response.content)
         self.assertIn('manufacturers', data['results'])
@@ -196,7 +196,7 @@ class GlobalSearchTest(ViewsTestCase):
 
     def test_global_search_contact(self):
         """Testa global sökning för kontakter"""
-        response = self.client.get('/api/global-search/', {'q': 'Test Contact'})
+        response = self.client.get('/api/search/global/', {'q': 'Test Contact'})
         self.assertEqual(response.status_code, 200)
         data = json.loads(response.content)
         self.assertIn('contacts', data['results'])
@@ -204,14 +204,14 @@ class GlobalSearchTest(ViewsTestCase):
 
     def test_global_search_transaction(self):
         """Testa global sökning för transaktioner"""
-        response = self.client.get('/api/global-search/', {'q': 'Test Axe'})
+        response = self.client.get('/api/search/global/', {'q': 'Test Axe'})
         self.assertEqual(response.status_code, 200)
         data = json.loads(response.content)
         self.assertIn('transactions', data['results'])
 
     def test_global_search_axe_id(self):
         """Testa global sökning med yx-ID"""
-        response = self.client.get('/api/global-search/', {'q': str(self.axe.id)})
+        response = self.client.get('/api/search/global/', {'q': str(self.axe.id)})
         self.assertEqual(response.status_code, 200)
         data = json.loads(response.content)
         self.assertIn('axes', data['results'])
@@ -225,7 +225,7 @@ class GlobalSearchTest(ViewsTestCase):
             email="swedish@example.com",
             country_code="SE"
         )
-        response = self.client.get('/api/global-search/', {'q': 'Swedish'})
+        response = self.client.get('/api/search/global/', {'q': 'Swedish'})
         self.assertEqual(response.status_code, 200)
         data = json.loads(response.content)
         self.assertIn('contacts', data['results'])
@@ -240,7 +240,7 @@ class GlobalSearchTest(ViewsTestCase):
             email="finnish@example.com",
             country_code="FI"
         )
-        response = self.client.get('/api/global-search/', {'q': 'Finnish'})
+        response = self.client.get('/api/search/global/', {'q': 'Finnish'})
         self.assertEqual(response.status_code, 200)
         data = json.loads(response.content)
         self.assertIn('contacts', data['results'])
@@ -249,7 +249,7 @@ class GlobalSearchTest(ViewsTestCase):
 
     def test_global_search_manufacturer_with_axe_count(self):
         """Testa global sökning för tillverkare med yxantal"""
-        response = self.client.get('/api/global-search/', {'q': 'Test Manufacturer'})
+        response = self.client.get('/api/search/global/', {'q': 'Test Manufacturer'})
         self.assertEqual(response.status_code, 200)
         data = json.loads(response.content)
         self.assertIn('manufacturers', data['results'])
@@ -273,7 +273,7 @@ class PublicPrivateFilteringTest(ViewsTestCase):
 
     def test_public_search_hides_unreceived_axes(self):
         """Testa att publik sökning döljer oemottagna yxor"""
-        response = self.client.get('/api/global-search/', {'q': 'Unreceived'})
+        response = self.client.get('/api/search/global/', {'q': 'Unreceived'})
         self.assertEqual(response.status_code, 200)
         data = json.loads(response.content)
         self.assertIn('axes', data['results'])
@@ -284,7 +284,7 @@ class PublicPrivateFilteringTest(ViewsTestCase):
     def test_private_search_shows_all_axes(self):
         """Testa att privat sökning visar alla yxor"""
         self.client.login(username='testuser', password='testpass123')
-        response = self.client.get('/api/global-search/', {'q': 'Unreceived'})
+        response = self.client.get('/api/search/global/', {'q': 'Unreceived'})
         self.assertEqual(response.status_code, 200)
         data = json.loads(response.content)
         self.assertIn('axes', data['results'])
@@ -297,7 +297,7 @@ class PublicPrivateFilteringTest(ViewsTestCase):
         self.settings.show_contacts_public = False
         self.settings.save()
         
-        response = self.client.get('/api/global-search/', {'q': 'Test Contact'})
+        response = self.client.get('/api/search/global/', {'q': 'Test Contact'})
         self.assertEqual(response.status_code, 200)
         data = json.loads(response.content)
         self.assertIn('contacts', data['results'])
@@ -308,7 +308,7 @@ class PublicPrivateFilteringTest(ViewsTestCase):
         self.settings.show_contacts_public = True
         self.settings.save()
         
-        response = self.client.get('/api/global-search/', {'q': 'Test Contact'})
+        response = self.client.get('/api/search/global/', {'q': 'Test Contact'})
         self.assertEqual(response.status_code, 200)
         data = json.loads(response.content)
         self.assertIn('contacts', data['results'])
@@ -319,7 +319,7 @@ class PublicPrivateFilteringTest(ViewsTestCase):
         self.settings.show_platforms_public = False
         self.settings.save()
         
-        response = self.client.get('/api/global-search/', {'q': 'Test Platform'})
+        response = self.client.get('/api/search/global/', {'q': 'Test Platform'})
         self.assertEqual(response.status_code, 200)
         data = json.loads(response.content)
         self.assertIn('transactions', data['results'])
@@ -332,7 +332,7 @@ class PublicPrivateFilteringTest(ViewsTestCase):
         self.settings.show_platforms_public = True
         self.settings.save()
         
-        response = self.client.get('/api/global-search/', {'q': 'Test Platform'})
+        response = self.client.get('/api/search/global/', {'q': 'Test Platform'})
         self.assertEqual(response.status_code, 200)
         data = json.loads(response.content)
         self.assertIn('transactions', data['results'])
@@ -470,11 +470,8 @@ class BackupViewsTest(ViewsTestCase):
         if os.path.exists(self.backup_dir):
             shutil.rmtree(self.backup_dir)
 
-    @patch('axes.views.settings.BASE_DIR')
-    def test_get_backup_info(self, mock_base_dir):
+    def test_get_backup_info(self):
         """Testa get_backup_info funktionen"""
-        mock_base_dir.__str__ = lambda x: self.backup_dir
-        
         from axes.views import get_backup_info
         backup_info = get_backup_info(self.backup_dir)
         
@@ -528,7 +525,7 @@ class BackupViewsTest(ViewsTestCase):
         stats = get_backup_stats(invalid_path)
         self.assertIsNone(stats)
 
-    @patch('axes.views.subprocess.run')
+    @patch('subprocess.run')
     def test_create_backup_success(self, mock_run):
         """Testa framgångsrik backup-skapning"""
         mock_run.return_value.returncode = 0
@@ -544,7 +541,7 @@ class BackupViewsTest(ViewsTestCase):
         self.assertEqual(response.status_code, 302)  # Redirect
         mock_run.assert_called_once()
 
-    @patch('axes.views.subprocess.run')
+    @patch('subprocess.run')
     def test_create_backup_failure(self, mock_run):
         """Testa misslyckad backup-skapning"""
         mock_run.return_value.returncode = 1
@@ -564,9 +561,8 @@ class BackupViewsTest(ViewsTestCase):
         with open(backup_file, 'w') as f:
             f.write('test content')
         
-        with patch('axes.views.settings.BASE_DIR') as mock_base_dir:
-            mock_base_dir.__str__ = lambda x: self.backup_dir
-            
+        # Mock settings.BASE_DIR för att peka på vår test-mapp
+        with patch('django.conf.settings.BASE_DIR', self.backup_dir):
             response = self.client.post('/installningar/', {
                 'action': 'backup',
                 'backup_action': 'delete_backup',
@@ -586,7 +582,7 @@ class BackupViewsTest(ViewsTestCase):
         
         self.assertEqual(response.status_code, 302)  # Redirect
 
-    @patch('axes.views.subprocess.run')
+    @patch('subprocess.run')
     def test_restore_backup_success(self, mock_run):
         """Testa framgångsrik backup-återställning"""
         mock_run.return_value.returncode = 0
@@ -597,9 +593,8 @@ class BackupViewsTest(ViewsTestCase):
         with open(backup_file, 'w') as f:
             f.write('test content')
         
-        with patch('axes.views.settings.BASE_DIR') as mock_base_dir:
-            mock_base_dir.__str__ = lambda x: self.backup_dir
-            
+        # Mock settings.BASE_DIR för att peka på vår test-mapp
+        with patch('django.conf.settings.BASE_DIR', self.backup_dir):
             response = self.client.post('/installningar/', {
                 'action': 'backup',
                 'backup_action': 'restore_backup',
@@ -638,9 +633,8 @@ class BackupViewsTest(ViewsTestCase):
             content_type='application/zip'
         )
         
-        with patch('axes.views.settings.BASE_DIR') as mock_base_dir:
-            mock_base_dir.__str__ = lambda x: self.backup_dir
-            
+        # Mock settings.BASE_DIR för att peka på vår test-mapp
+        with patch('django.conf.settings.BASE_DIR', self.backup_dir):
             response = self.client.post('/installningar/', {
                 'action': 'upload_backup',
                 'backup_file': backup_file
