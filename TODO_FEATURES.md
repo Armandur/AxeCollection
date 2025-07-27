@@ -279,200 +279,211 @@ En checklista för vidareutveckling av AxeCollection. Bocka av med [x] när klar
 66. [x] Indentering av tillverkare och underordnade smeder ska fungera även på skapa/redigera yxformuläret
 67. [x] Organisationssektionen på tillverkarsidan ska visas för inloggade användare även när det inte finns undertillverkare, med "Lägg till undertillverkare"-knapp
 68. [x] Breadcrumbs för tillverkare verkar inte hantera alla nivåer korrekt
-69. [ ] Behöver tänka på hur vi ska hantera borttag av tillverkare som har underliggande tillverkare/smeder
+69. [x] Behöver tänka på hur vi ska hantera borttag av tillverkare som har underliggande tillverkare/smeder
 70. [ ] Lägg till land på tillverkare och visa flaggemoji vid tillverkarnamnet/smednamnet precis som för kontakter
+71. [ ] Implementera förbättrad hantering av borttag av tillverkare med undertillverkare/smeder
+    - [ ] 71.1 Uppdatera delete-funktionen i views_manufacturer.py att hantera undertillverkare
+    - [ ] 71.2 Lägg till validering för undertillverkare i delete-funktionen
+    - [ ] 71.3 Uppdatera manufacturer_detail.html modal att visa undertillverkare
+    - [ ] 71.4 Lägg till alternativ för hantering av undertillverkare (ta bort/flytta/gör till huvudtillverkare)
+    - [ ] 71.5 Uppdatera JavaScript för att hantera nya val för undertillverkare
+    - [ ] 71.6 Lägg till varningar och bekräftelse för destruktiva operationer
+    - [ ] 71.7 Uppdatera AJAX-anrop att skicka data för undertillverkare-hantering
+    - [ ] 71.8 Testa funktionaliteten med hierarkiska tillverkare
+    - [ ] 71.9 Dokumentera den nya funktionaliteten
+72. [x] Fixat Python-fel i delete_manufacturer - target_manufacturer_name variabeln var inte alltid definierad
 
 ## 8. Admin och datahantering
 
-71. [x] Förbättrad admin-raderingsvy för yxor – Tydlig lista över vad som tas bort, bockruta för bildradering.
-72. [ ] Batchuppladdning av yxor – Möjlighet att ladda upp flera yxor samtidigt. **(Pausad – kräver vidare diskussion och behovsanalys innan implementation)**
-73. [x] Export/import av data (CSV, Excel) direkt från admin.
-74. [x] Automatiska backuper av databasen.
-    - [x] 74.1 Backup-funktionalitet flyttad från admin till systeminställningsvyn
-    - [x] 74.2 Integrerad backup-hantering i settings.html med modern UI
-    - [x] 74.3 Skapa, ta bort och återställ backuper direkt från inställningssidan
-    - [x] 74.4 Statistik-visning för varje backup (antal yxor, kontakter, transaktioner)
-    - [x] 74.5 Varningar för återställning med bekräftelsedialoger
-    - [x] 74.6 Stöd för komprimerade backuper och media-filer
-    - [x] 74.7 Automatisk rensning av gamla backuper (30 dagar)
-    - [ ] 74.8 Backup-uppladdning via webbgränssnitt - Lösa problem med stora filer (>100MB) och nginx-konfiguration
-        - [ ] 74.8.1 Fixa nginx client_max_body_size för stora backupfiler (2GB+)
-        - [ ] 74.8.2 Förbättra JavaScript AJAX-uppladdning för stora filer
-        - [ ] 74.8.3 Lägg till progress-indikator för stora filer
-        - [ ] 74.8.4 Testa och verifiera att uppladdning fungerar för filer >100MB
-        - [ ] 74.8.5 Dokumentera lösningen för framtida deployment
-75. [x] Förbättrad navigering på systeminställningssidan.
-    - [x] 75.1 Bootstrap navbar för in-page navigering mellan sektioner
-    - [x] 75.2 Smooth scrolling med scroll-margin-top för att visa headers
-    - [x] 75.3 Aktiv länk-markering baserat på scroll-position
-    - [x] 75.4 Responsiv design för navigeringsmenyn
-    - [x] 75.5 Korrekt styling med ljus bakgrund och mörk text
-76. [x] Vy för okopplade bilder – Rutnätsvy med funktioner för att ta bort och ladda ner bilder som flyttats från borttagna yxor.
-    - [x] 76.1 Rutnätsvy med bildkort som visar filnamn, storlek och timestamp
-    - [x] 76.2 Gruppering av bilder efter timestamp (när yxan togs bort)
-    - [x] 76.3 Soptunne-ikon för att ta bort enskilda bilder
-    - [x] 76.4 Ladda ner-ikon för att spara ner enskilda bilder
-    - [x] 76.5 Massåtgärder med checkboxar för att välja flera bilder
-    - [x] 76.6 "Ladda ner valda"-knapp som skapar ZIP-fil med valda bilder
-    - [x] 76.7 Statistik-kort som visar totalt antal bilder, storlek och antal grupper
-    - [x] 76.8 Responsiv design som fungerar på mobil och desktop
-    - [x] 76.9 AJAX-hantering för borttagning utan sidladdning
-    - [x] 76.10 Hover-effekter och animationer för bättre användarupplevelse
-    - [x] 76.11 .webp-optimering: visar .webp-versioner för snabbare laddning men laddar ner originalfiler
-    - [x] 76.12 Korrekt svenska grammatik med plural-former för "antal bilder" och "antal grupper"
-    - [x] 76.13 Lägg till länk till vyn i admin-navigation (kommer att implementeras när inloggning/adminvy införs)
-    - [x] 76.14 Implementera motsvarande hantering för borttagning av tillverkare och deras bilder (flytt till okopplade bilder)
-        - [x] 76.14.1 Analysera vad som ska hända med yxor som tillhör tillverkaren (behåll som "okänd tillverkare" vs förhindra borttagning)
-        - [x] 76.14.2 Utvärdera om funktionen ens behövs eller om tillverkare ska vara permanent
+73. [x] Förbättrad admin-raderingsvy för yxor – Tydlig lista över vad som tas bort, bockruta för bildradering.
+74. [ ] Batchuppladdning av yxor – Möjlighet att ladda upp flera yxor samtidigt. **(Pausad – kräver vidare diskussion och behovsanalys innan implementation)**
+75. [x] Export/import av data (CSV, Excel) direkt från admin.
+76. [x] Automatiska backuper av databasen.
+    - [x] 76.1 Backup-funktionalitet flyttad från admin till systeminställningsvyn
+    - [x] 76.2 Integrerad backup-hantering i settings.html med modern UI
+    - [x] 76.3 Skapa, ta bort och återställ backuper direkt från inställningssidan
+    - [x] 76.4 Statistik-visning för varje backup (antal yxor, kontakter, transaktioner)
+    - [x] 76.5 Varningar för återställning med bekräftelsedialoger
+    - [x] 76.6 Stöd för komprimerade backuper och media-filer
+    - [x] 76.7 Automatisk rensning av gamla backuper (30 dagar)
+    - [ ] 76.8 Backup-uppladdning via webbgränssnitt - Lösa problem med stora filer (>100MB) och nginx-konfiguration
+        - [ ] 76.8.1 Fixa nginx client_max_body_size för stora backupfiler (2GB+)
+        - [ ] 76.8.2 Förbättra JavaScript AJAX-uppladdning för stora filer
+        - [ ] 76.8.3 Lägg till progress-indikator för stora filer
+        - [ ] 76.8.4 Testa och verifiera att uppladdning fungerar för filer >100MB
+        - [ ] 76.8.5 Dokumentera lösningen för framtida deployment
+77. [x] Förbättrad navigering på systeminställningssidan.
+    - [x] 77.1 Bootstrap navbar för in-page navigering mellan sektioner
+    - [x] 77.2 Smooth scrolling med scroll-margin-top för att visa headers
+    - [x] 77.3 Aktiv länk-markering baserat på scroll-position
+    - [x] 77.4 Responsiv design för navigeringsmenyn
+    - [x] 77.5 Korrekt styling med ljus bakgrund och mörk text
+78. [x] Vy för okopplade bilder – Rutnätsvy med funktioner för att ta bort och ladda ner bilder som flyttats från borttagna yxor.
+    - [x] 78.1 Rutnätsvy med bildkort som visar filnamn, storlek och timestamp
+    - [x] 78.2 Gruppering av bilder efter timestamp (när yxan togs bort)
+    - [x] 78.3 Soptunne-ikon för att ta bort enskilda bilder
+    - [x] 78.4 Ladda ner-ikon för att spara ner enskilda bilder
+    - [x] 78.5 Massåtgärder med checkboxar för att välja flera bilder
+    - [x] 78.6 "Ladda ner valda"-knapp som skapar ZIP-fil med valda bilder
+    - [x] 78.7 Statistik-kort som visar totalt antal bilder, storlek och antal grupper
+    - [x] 78.8 Responsiv design som fungerar på mobil och desktop
+    - [x] 78.9 AJAX-hantering för borttagning utan sidladdning
+    - [x] 78.10 Hover-effekter och animationer för bättre användarupplevelse
+    - [x] 78.11 .webp-optimering: visar .webp-versioner för snabbare laddning men laddar ner originalfiler
+    - [x] 78.12 Korrekt svenska grammatik med plural-former för "antal bilder" och "antal grupper"
+    - [x] 78.13 Lägg till länk till vyn i admin-navigation (kommer att implementeras när inloggning/adminvy införs)
+    - [x] 78.14 Implementera motsvarande hantering för borttagning av tillverkare och deras bilder (flytt till okopplade bilder)
+        - [x] 78.14.1 Analysera vad som ska hända med yxor som tillhör tillverkaren (behåll som "okänd tillverkare" vs förhindra borttagning)
+        - [x] 78.14.2 Utvärdera om funktionen ens behövs eller om tillverkare ska vara permanent
 
 ## 9. Säkerhet och användare
 
-77. [x] Inloggning/behörighet – Privata delar eller flera användare.
-    - [x] 77.1 Django Auth-system implementerat med anpassade templates
-    - [x] 77.2 Långa sessioner (30 dagar) för bättre användarupplevelse
-    - [x] 77.3 Starka lösenord (minst 12 tecken) med Django's validering
-    - [x] 77.4 Login/logout-funktionalitet med redirect till rätt sida
-    - [x] 77.5 Användardropdown i navigationen med inställningar och logout
-    - [x] 77.6 Responsiv login-modal i navigationen för snabb inloggning
-    - [x] 77.7 Tydlig visuell feedback för inloggade vs icke-inloggade användare
-78. [ ] Loggning av ändringar (audit trail).
-79. [x] Inför inloggning/adminvy så att endast inloggade kan redigera, och visa en publik vy där känsliga uppgifter (t.ex. kontaktnamn, personuppgifter och ev. priser) maskeras eller döljs.
-    - [x] 79.1 Settings-modell med konfigurerbara publika inställningar
-    - [x] 79.2 Context processor som gör publika inställningar tillgängliga i alla templates
-    - [x] 79.3 Automatisk filtrering av känslig data för icke-inloggade användare
-    - [x] 79.4 Kontroll av användarstatus i alla vyer som visar känslig information
-    - [x] 79.5 Fallback-hantering om Settings-modellen inte finns ännu
-    - [x] 79.6 Dedikerad inställningssida för administratörer
-    - [x] 79.7 Switches för alla publika inställningar med tydliga beskrivningar
-    - [x] 79.8 Sajtinställningar för titel och beskrivning
-    - [x] 79.9 Endast inloggade användare kan komma åt inställningarna
-    - [x] 79.10 Global sökning respekterar publika inställningar
-    - [x] 79.11 Kontaktsökning döljs för icke-inloggade användare om inställt
-    - [x] 79.12 Plattformssökning kan konfigureras för publik/privat visning
-    - [x] 79.13 Intelligent filtrering baserat på användarstatus
-    - [x] 79.14 Yxlistan filtreras automatiskt för icke-inloggade användare
-    - [x] 79.15 Transaktionsdata döljs eller visas baserat på inställningar
-    - [x] 79.16 Kontaktinformation maskeras för publika användare
-    - [x] 79.17 Prisinformation kan döljas för publika användare
-    - [x] 79.18 Konsekvent navigation som anpassas efter användarstatus
-    - [x] 79.19 Snygga ikoner och styling för användargränssnittet
-    - [x] 79.20 Fixa yxdetaljsidan: Pris- och fraktkolumner visas fortfarande för publika användare trots att de ska döljas
-    - [x] 79.21 Fixa ekonomiska statistikkort på /yxor: Kronor-relaterade kort (vinst/förlust, totala värden) visas fortfarande för publika användare, ska döljas helt
+79. [x] Inloggning/behörighet – Privata delar eller flera användare.
+    - [x] 79.1 Django Auth-system implementerat med anpassade templates
+    - [x] 79.2 Långa sessioner (30 dagar) för bättre användarupplevelse
+    - [x] 79.3 Starka lösenord (minst 12 tecken) med Django's validering
+    - [x] 79.4 Login/logout-funktionalitet med redirect till rätt sida
+    - [x] 79.5 Användardropdown i navigationen med inställningar och logout
+    - [x] 79.6 Responsiv login-modal i navigationen för snabb inloggning
+    - [x] 79.7 Tydlig visuell feedback för inloggade vs icke-inloggade användare
+80. [ ] Loggning av ändringar (audit trail).
+81. [x] Inför inloggning/adminvy så att endast inloggade kan redigera, och visa en publik vy där känsliga uppgifter (t.ex. kontaktnamn, personuppgifter och ev. priser) maskeras eller döljs.
+    - [x] 81.1 Settings-modell med konfigurerbara publika inställningar
+    - [x] 81.2 Context processor som gör publika inställningar tillgängliga i alla templates
+    - [x] 81.3 Automatisk filtrering av känslig data för icke-inloggade användare
+    - [x] 81.4 Kontroll av användarstatus i alla vyer som visar känslig information
+    - [x] 81.5 Fallback-hantering om Settings-modellen inte finns ännu
+    - [x] 81.6 Dedikerad inställningssida för administratörer
+    - [x] 81.7 Switches för alla publika inställningar med tydliga beskrivningar
+    - [x] 81.8 Sajtinställningar för titel och beskrivning
+    - [x] 81.9 Endast inloggade användare kan komma åt inställningarna
+    - [x] 81.10 Global sökning respekterar publika inställningar
+    - [x] 81.11 Kontaktsökning döljs för icke-inloggade användare om inställt
+    - [x] 81.12 Plattformssökning kan konfigureras för publik/privat visning
+    - [x] 81.13 Intelligent filtrering baserat på användarstatus
+    - [x] 81.14 Yxlistan filtreras automatiskt för icke-inloggade användare
+    - [x] 81.15 Transaktionsdata döljs eller visas baserat på inställningar
+    - [x] 81.16 Kontaktinformation maskeras för publika användare
+    - [x] 81.17 Prisinformation kan döljas för publika användare
+    - [x] 81.18 Konsekvent navigation som anpassas efter användarstatus
+    - [x] 81.19 Snygga ikoner och styling för användargränssnittet
+    - [x] 81.20 Fixa yxdetaljsidan: Pris- och fraktkolumner visas fortfarande för publika användare trots att de ska döljas
+    - [x] 81.21 Fixa ekonomiska statistikkort på /yxor: Kronor-relaterade kort (vinst/förlust, totala värden) visas fortfarande för publika användare, ska döljas helt
 
 ## 10. Prestanda och kodkvalitet
 
-80. [x] Fler automatiska tester (unit/integration).
-81. [x] CI/CD – Automatiska tester vid push (GitHub Actions).
-    - [x] 81.1 Skapa GitHub Actions workflow för automatisk testning
-    - [x] 81.2 Konfigurera Docker build och push i CI/CD
-    - [x] 81.3 Lägg till test coverage reporting i CI/CD
-    - [ ] 81.4 Konfigurera automatisk deployment till testmiljö
-82. [x] Kodgranskning – Linting och kodstil (t.ex. black, flake8).
-83. [x] Periodvis kodgranskning: Gå igenom och granska koden stegvis för att identifiera behov av övergripande refaktorering, buggfixar och tillsnyggning. Gör detta processvis så att varje steg kan testas innan nästa påbörjas.
-    - [x] 83.1 Refaktorera vyer till mindre filer (views_axe.py, views_contact.py, views_manufacturer.py, views_transaction.py)
-    - [x] 83.2 Flytta statistik- och ekonomi-beräkning från vyer till model-properties
-    - [x] 83.3 Skapa återanvändbara template-includes för statistik-kort (_stat_card.html, _axe_stats_cards.html, _contact_stats_cards.html, _transaction_stats_cards.html)
-    - [x] 83.4 Uppdatera templates för att använda nya includes och model-properties
-    - [x] 83.5 Förenkla fler templates med includes och templatetags (t.ex. transaktionsrader, status-badges, breadcrumbs)
-    - [x] 83.6 Refaktorera formulär med återanvändbara komponenter
-    - [x] 83.7 Lägg till tester för vyer, modeller och templatetags
-    - [ ] 83.8 Prestandaoptimering (caching, lazy loading, etc.)
-84. [x] Dokumentation av förbättringar - Uppdatera markdown-filer med genomförda förbättringar och lärdomar
-85. [ ] Implementera Django REST Framework och ViewSets
-86. [x] Skapa fingerad testdata för demo och testning
-    - [x] 86.1 Exportera nuvarande databas-struktur för att förstå datamodellen
-    - [x] 86.2 Skapa script för att generera realistisk testdata (yxor, tillverkare, kontakter, transaktioner)
-    - [x] 86.3 Inkludera olika typer av yxor med varierande mått, bilder och transaktioner
-    - [x] 86.4 Skapa tillverkare med olika antal bilder och länkar
-    - [x] 86.5 Generera kontakter från olika länder med flaggemoji
-    - [x] 86.6 Skapa transaktioner med olika plattformar och priser
-    - [x] 86.7 Testa alla funktioner med testdata (sökning, filtrering, statistik, etc.)
-    - [x] 86.8 Förbereda för publik demo-webbplats
-    - [x] 86.9 Dokumentera hur man återställer till testdata
-87. [x] todo_manager behöver kunna hantera underuppgifter som 58.4 (slutföra underuppgifter)
+82. [x] Fler automatiska tester (unit/integration).
+83. [x] CI/CD – Automatiska tester vid push (GitHub Actions).
+    - [x] 83.1 Skapa GitHub Actions workflow för automatisk testning
+    - [x] 83.2 Konfigurera Docker build och push i CI/CD
+    - [x] 83.3 Lägg till test coverage reporting i CI/CD
+    - [ ] 83.4 Konfigurera automatisk deployment till testmiljö
+84. [x] Kodgranskning – Linting och kodstil (t.ex. black, flake8).
+85. [x] Periodvis kodgranskning: Gå igenom och granska koden stegvis för att identifiera behov av övergripande refaktorering, buggfixar och tillsnyggning. Gör detta processvis så att varje steg kan testas innan nästa påbörjas.
+    - [x] 85.1 Refaktorera vyer till mindre filer (views_axe.py, views_contact.py, views_manufacturer.py, views_transaction.py)
+    - [x] 85.2 Flytta statistik- och ekonomi-beräkning från vyer till model-properties
+    - [x] 85.3 Skapa återanvändbara template-includes för statistik-kort (_stat_card.html, _axe_stats_cards.html, _contact_stats_cards.html, _transaction_stats_cards.html)
+    - [x] 85.4 Uppdatera templates för att använda nya includes och model-properties
+    - [x] 85.5 Förenkla fler templates med includes och templatetags (t.ex. transaktionsrader, status-badges, breadcrumbs)
+    - [x] 85.6 Refaktorera formulär med återanvändbara komponenter
+    - [x] 85.7 Lägg till tester för vyer, modeller och templatetags
+    - [ ] 85.8 Prestandaoptimering (caching, lazy loading, etc.)
+86. [x] Dokumentation av förbättringar - Uppdatera markdown-filer med genomförda förbättringar och lärdomar
+87. [ ] Implementera Django REST Framework och ViewSets
+88. [x] Skapa fingerad testdata för demo och testning
+    - [x] 88.1 Exportera nuvarande databas-struktur för att förstå datamodellen
+    - [x] 88.2 Skapa script för att generera realistisk testdata (yxor, tillverkare, kontakter, transaktioner)
+    - [x] 88.3 Inkludera olika typer av yxor med varierande mått, bilder och transaktioner
+    - [x] 88.4 Skapa tillverkare med olika antal bilder och länkar
+    - [x] 88.5 Generera kontakter från olika länder med flaggemoji
+    - [x] 88.6 Skapa transaktioner med olika plattformar och priser
+    - [x] 88.7 Testa alla funktioner med testdata (sökning, filtrering, statistik, etc.)
+    - [x] 88.8 Förbereda för publik demo-webbplats
+    - [x] 88.9 Dokumentera hur man återställer till testdata
+89. [x] todo_manager behöver kunna hantera underuppgifter som 58.4 (slutföra underuppgifter)
 
 ## 11. Testdata och demo
 
-88. [x] Skapa fingerad testdata för demo och testning
-89. [x] Docker demo-läge med miljövariabel
-    - [x] 89.1 Lägg till miljövariabel DEMO_MODE för Docker-containern
-    - [x] 89.2 Implementera logik som kontrollerar DEMO_MODE vid container-start
-    - [x] 89.3 Automatisk körning av `generate_test_data --clear` när DEMO_MODE=true
-    - [x] 89.4 Säkerställ att demo-läget endast körs vid container-start, inte vid reload
-    - [x] 89.5 Dokumentera användning av demo-läge i deployment-guider
-    - [x] 89.6 Testa demo-läge i olika Docker-miljöer (utveckling, produktion)
-90. [x] Ordna demodata med hierarkiska tillverkare - Till exempel är smederna Johan Jonsson, Johan Skog och Willy Persson alla tre smeder hos Hjärtumssmedjan
+90. [x] Skapa fingerad testdata för demo och testning
+91. [x] Docker demo-läge med miljövariabel
+    - [x] 91.1 Lägg till miljövariabel DEMO_MODE för Docker-containern
+    - [x] 91.2 Implementera logik som kontrollerar DEMO_MODE vid container-start
+    - [x] 91.3 Automatisk körning av `generate_test_data --clear` när DEMO_MODE=true
+    - [x] 91.4 Säkerställ att demo-läget endast körs vid container-start, inte vid reload
+    - [x] 91.5 Dokumentera användning av demo-läge i deployment-guider
+    - [x] 91.6 Testa demo-läge i olika Docker-miljöer (utveckling, produktion)
+92. [x] Ordna demodata med hierarkiska tillverkare - Till exempel är smederna Johan Jonsson, Johan Skog och Willy Persson alla tre smeder hos Hjärtumssmedjan
 
 ## 12. Design och presentation
 
-91. [x] Bättre visuell presentation av galleriet, t.ex. lightbox för bilder.
-92. [x] Förbättrad UI med badges och ikoner – Tydligare visning av transaktionstyper med ikoner.
-93. [x] Förbättrad tillverkarsida – ID som badge, kommentar som egen sektion, hela bredden för korten.
-94. [x] Visa statistik (t.ex. antal yxor, mest populära tillverkare, dyraste köp).
-    - [x] 94.1 Dedikerad statistik-dashboard med samlingsöversikt
-    - [x] 94.2 Topplistor för mest aktiva tillverkare, plattformar och kontakter
-    - [x] 94.3 Ekonomisk översikt med totala köp- och försäljningsvärden
-    - [x] 94.4 Realtidsstatistik som uppdateras baserat på aktiva filter
-    - [x] 94.5 Fixat Django ORM-problem med annotate och properties
-    - [x] 94.6 Visa antal yxor i samlingen över tid (linje- eller stapeldiagram)
-        - [x] 94.6.1 Kombinerad tidslinje med "Yxor köpta (total)" och "Yxor i samlingen"
-        - [x] 94.6.2 Grupperad per månad baserat på transaktionsdatum
-        - [x] 94.6.3 Visar tydligt skillnaden mellan köpta och kvarvarande yxor
-        - [x] 94.6.4 Chart.js-implementation med två färgkodade linjer
-    - [x] 94.7 Visa totala inköpskostnader och försäljningsintäkter över tid (diagram)
-        - [x] 94.7.1 Stapeldiagram med transaktionsvärden per månad
-        - [x] 94.7.2 Röda staplar för köpvärde, gröna för försäljningsvärde
-        - [x] 94.7.3 Visar aktivitet över tid istället för kumulativa värden
-        - [x] 94.7.4 Svensk formatering av belopp i tooltips och axlar
-    - [x] 94.8 Visa dyraste och billigaste köp/sälj i topplistan, med länk till respektive yxa
-        - [x] 94.8.1 Länkar till yxorna från alla transaktionslistor
-        - [x] 94.8.2 Förbättrad layout med radbrytning för långa yxnamn
-        - [x] 94.8.3 Flexbox-layout för bättre "tabb-avstånd" och läsbarhet
-        - [x] 94.8.4 Billigaste köp och försäljningar tillagda
-    - [x] 94.9 Visa mest aktiva månader (när köps/säljs flest yxor)
-        - [x] 94.9.1 Staplat stapeldiagram som visar antal köp/sälj per månad
-        - [x] 94.9.2 Färgkodning: röd för köp, blå för sälj
-        - [x] 94.9.3 Tooltip med exakt antal transaktioner per typ
-        - [x] 94.9.4 Placerat efter ekonomiska diagrammen på statistiksidan
-    - [x] 94.10 Visa senaste aktivitet (senaste köp, sälj, tillagd yxa)
-        - [x] 94.10.1 Tre kort för senaste köp, försäljningar och tillagda yxor
-        - [x] 94.10.2 Visar de 5 senaste aktiviteterna per kategori
-        - [x] 94.10.3 Länkar till respektive yxas detaljsida
-        - [x] 94.10.4 Färgkodning: grön för köp, röd för sälj, blå för tillagda yxor
-        - [x] 94.10.5 Visar datum och pris/tillverkare för varje aktivitet
-95. [ ] QR-kod för att snabbt visa en yxa på mobilen. **(Pausad – kräver vidare diskussion och behovsanalys innan implementation)**
+93. [x] Bättre visuell presentation av galleriet, t.ex. lightbox för bilder.
+94. [x] Förbättrad UI med badges och ikoner – Tydligare visning av transaktionstyper med ikoner.
+95. [x] Förbättrad tillverkarsida – ID som badge, kommentar som egen sektion, hela bredden för korten.
+96. [x] Visa statistik (t.ex. antal yxor, mest populära tillverkare, dyraste köp).
+    - [x] 96.1 Dedikerad statistik-dashboard med samlingsöversikt
+    - [x] 96.2 Topplistor för mest aktiva tillverkare, plattformar och kontakter
+    - [x] 96.3 Ekonomisk översikt med totala köp- och försäljningsvärden
+    - [x] 96.4 Realtidsstatistik som uppdateras baserat på aktiva filter
+    - [x] 96.5 Fixat Django ORM-problem med annotate och properties
+    - [x] 96.6 Visa antal yxor i samlingen över tid (linje- eller stapeldiagram)
+        - [x] 96.6.1 Kombinerad tidslinje med "Yxor köpta (total)" och "Yxor i samlingen"
+        - [x] 96.6.2 Grupperad per månad baserat på transaktionsdatum
+        - [x] 96.6.3 Visar tydligt skillnaden mellan köpta och kvarvarande yxor
+        - [x] 96.6.4 Chart.js-implementation med två färgkodade linjer
+    - [x] 96.7 Visa totala inköpskostnader och försäljningsintäkter över tid (diagram)
+        - [x] 96.7.1 Stapeldiagram med transaktionsvärden per månad
+        - [x] 96.7.2 Röda staplar för köpvärde, gröna för försäljningsvärde
+        - [x] 96.7.3 Visar aktivitet över tid istället för kumulativa värden
+        - [x] 96.7.4 Svensk formatering av belopp i tooltips och axlar
+    - [x] 96.8 Visa dyraste och billigaste köp/sälj i topplistan, med länk till respektive yxa
+        - [x] 96.8.1 Länkar till yxorna från alla transaktionslistor
+        - [x] 96.8.2 Förbättrad layout med radbrytning för långa yxnamn
+        - [x] 96.8.3 Flexbox-layout för bättre "tabb-avstånd" och läsbarhet
+        - [x] 96.8.4 Billigaste köp och försäljningar tillagda
+    - [x] 96.9 Visa mest aktiva månader (när köps/säljs flest yxor)
+        - [x] 96.9.1 Staplat stapeldiagram som visar antal köp/sälj per månad
+        - [x] 96.9.2 Färgkodning: röd för köp, blå för sälj
+        - [x] 96.9.3 Tooltip med exakt antal transaktioner per typ
+        - [x] 96.9.4 Placerat efter ekonomiska diagrammen på statistiksidan
+    - [x] 96.10 Visa senaste aktivitet (senaste köp, sälj, tillagd yxa)
+        - [x] 96.10.1 Tre kort för senaste köp, försäljningar och tillagda yxor
+        - [x] 96.10.2 Visar de 5 senaste aktiviteterna per kategori
+        - [x] 96.10.3 Länkar till respektive yxas detaljsida
+        - [x] 96.10.4 Färgkodning: grön för köp, röd för sälj, blå för tillagda yxor
+        - [x] 96.10.5 Visar datum och pris/tillverkare för varje aktivitet
+97. [ ] QR-kod för att snabbt visa en yxa på mobilen. **(Pausad – kräver vidare diskussion och behovsanalys innan implementation)**
 
 ## 13. Framtida förbättringar
 
-96. [x] Fixa JavaScript-fel och landsfält-problem
-    - [x] 96.1 Fixa SyntaxError på yxformuläret (`window.axeId = ;` när axe.pk inte finns)
-    - [x] 96.2 Ersätt komplex sökbar select med enkel dropdown för landsfält på kontaktformuläret
-    - [x] 96.3 Ta bort all debug-kod (console.log) från båda formulären
-    - [x] 96.4 Förbättra felhantering för Django-template-syntax i JavaScript
-    - [x] 96.5 Implementera konsekvent landsfält med flagg-emoji och landsnamn
-    - [x] 96.6 Stöd för redigering av befintliga kontakter med landskod
-    - [x] 96.7 Rensa kod från onödiga CSS-regler och JavaScript-funktioner
-    - [x] 96.8 Förbättra användarupplevelse med enkel och pålitlig dropdown-lista
-97. [x] Fixa duplicerad "Detaljer"-knapp på /galleri-sidan
-    - [x] 97.1 Fixa SyntaxError på yxformuläret (`window.axeId = ;` när axe.pk inte finns)
-    - [x] 97.2 Ersätt komplex sökbar select med enkel dropdown för landsfält på kontaktformuläret
-    - [x] 97.3 Ta bort all debug-kod (console.log) från båda formulären
-    - [x] 97.4 Förbättra felhantering för Django-template-syntax i JavaScript
-    - [x] 97.5 Implementera konsekvent landsfält med flagg-emoji och landsnamn
-    - [x] 97.6 Stöd för redigering av befintliga kontakter med landskod
-    - [x] 97.7 Rensa kod från onödiga CSS-regler och JavaScript-funktioner
-    - [x] 97.8 Förbättra användarupplevelse med enkel och pålitlig dropdown-lista
-98. [ ] Kommentarsystem (framtida funktion)
-    - [ ] 98.1 Möjlighet att kommentera yxor
-    - [ ] 98.2 Möjlighet att kommentera tillverkare
-    - [ ] 98.3 Moderationssystem för kommentarer
-    - [ ] 98.4 Användarhantering för kommentarer
-99. [ ] Förbättrad felhantering och validering i formulär.
-100. [ ] Snabbare AJAX-sökningar med caching.
-101. [ ] Tangentbordsnavigering i lightbox (piltangenter för att bläddra mellan bilder).
-102. [ ] Touch-gester för mobil navigering i lightbox (swipe för att bläddra).
-103. [ ] Zoom-funktionalitet i lightbox för att se bilder i full storlek.
-104. [ ] Automatisk bildrotation baserat på EXIF-data.
-105. [ ] Bulk-redigering av bilder (redigera flera bilder samtidigt).
-106. [ ] Bildkommentarer med @-mentions för att länka till tillverkare eller yxor.
-107. [ ] **📋 Detaljerad dokumentation:** Se [STAMP_REGISTER_FEATURE.md](STAMP_REGISTER_FEATURE.md) för fullständig beskrivning av funktionen, datamodeller, API-endpoints och implementation.
+98. [x] Fixa JavaScript-fel och landsfält-problem
+    - [x] 98.1 Fixa SyntaxError på yxformuläret (`window.axeId = ;` när axe.pk inte finns)
+    - [x] 98.2 Ersätt komplex sökbar select med enkel dropdown för landsfält på kontaktformuläret
+    - [x] 98.3 Ta bort all debug-kod (console.log) från båda formulären
+    - [x] 98.4 Förbättra felhantering för Django-template-syntax i JavaScript
+    - [x] 98.5 Implementera konsekvent landsfält med flagg-emoji och landsnamn
+    - [x] 98.6 Stöd för redigering av befintliga kontakter med landskod
+    - [x] 98.7 Rensa kod från onödiga CSS-regler och JavaScript-funktioner
+    - [x] 98.8 Förbättra användarupplevelse med enkel och pålitlig dropdown-lista
+99. [x] Fixa duplicerad "Detaljer"-knapp på /galleri-sidan
+    - [x] 99.1 Fixa SyntaxError på yxformuläret (`window.axeId = ;` när axe.pk inte finns)
+    - [x] 99.2 Ersätt komplex sökbar select med enkel dropdown för landsfält på kontaktformuläret
+    - [x] 99.3 Ta bort all debug-kod (console.log) från båda formulären
+    - [x] 99.4 Förbättra felhantering för Django-template-syntax i JavaScript
+    - [x] 99.5 Implementera konsekvent landsfält med flagg-emoji och landsnamn
+    - [x] 99.6 Stöd för redigering av befintliga kontakter med landskod
+    - [x] 99.7 Rensa kod från onödiga CSS-regler och JavaScript-funktioner
+    - [x] 99.8 Förbättra användarupplevelse med enkel och pålitlig dropdown-lista
+100. [ ] Kommentarsystem (framtida funktion)
+    - [ ] 100.1 Möjlighet att kommentera yxor
+    - [ ] 100.2 Möjlighet att kommentera tillverkare
+    - [ ] 100.3 Moderationssystem för kommentarer
+    - [ ] 100.4 Användarhantering för kommentarer
+101. [ ] Förbättrad felhantering och validering i formulär.
+102. [ ] Snabbare AJAX-sökningar med caching.
+103. [ ] Tangentbordsnavigering i lightbox (piltangenter för att bläddra mellan bilder).
+104. [ ] Touch-gester för mobil navigering i lightbox (swipe för att bläddra).
+105. [ ] Zoom-funktionalitet i lightbox för att se bilder i full storlek.
+106. [ ] Automatisk bildrotation baserat på EXIF-data.
+107. [ ] Bulk-redigering av bilder (redigera flera bilder samtidigt).
+108. [ ] Bildkommentarer med @-mentions för att länka till tillverkare eller yxor.
+109. [ ] **📋 Detaljerad dokumentation:** Se [STAMP_REGISTER_FEATURE.md](STAMP_REGISTER_FEATURE.md) för fullständig beskrivning av funktionen, datamodeller, API-endpoints och implementation.

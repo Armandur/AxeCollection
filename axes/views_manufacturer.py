@@ -833,6 +833,7 @@ def delete_manufacturer(request, pk):
 
         axe_count = manufacturer.axe_count
         image_count = manufacturer.images.count()
+        target_manufacturer_name = None  # Initiera variabeln
 
         # Hantera yxor
         if axe_count > 0:

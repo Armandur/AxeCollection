@@ -2349,7 +2349,12 @@ function deleteManufacturer() {
         },
         body: formData
     })
-    .then(response => response.json())
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        return response.json();
+    })
     .then(data => {
         if (data.success) {
             // Visa framgångsmeddelande och omdirigera
@@ -2368,9 +2373,24 @@ function deleteManufacturer() {
                 message += `. ${data.images_deleted} bilder togs bort permanent`;
             }
             showNotification(message, 'success');
+            
+            // Stäng modalen först
+            const modal = bootstrap.Modal.getInstance(document.getElementById('deleteManufacturerModal'));
+            if (modal) {
+                modal.hide();
+            }
+            
+            // Omdirigera efter kortare fördröjning
             setTimeout(() => {
-                window.location.href = '/tillverkare/';
-            }, 2000);
+                // Försök med window.location.href först
+                try {
+                    window.location.href = '/tillverkare/';
+                } catch (e) {
+                    // Fallback till window.location.replace
+                    console.warn('window.location.href failed, trying replace:', e);
+                    window.location.replace('/tillverkare/');
+                }
+            }, 1500);
         } else {
             // Visa felmeddelande
             showNotification('Fel vid borttagning: ' + (data.error || 'Okänt fel'), 'error');
@@ -2379,8 +2399,7 @@ function deleteManufacturer() {
         }
     })
     .catch(error => {
-        console.error('Error:', error);
-        showNotification('Något gick fel vid borttagning', 'error');
+        showNotification('Något gick fel vid borttagning: ' + error.message, 'error');
         deleteBtn.innerHTML = originalText;
         deleteBtn.disabled = false;
     });
