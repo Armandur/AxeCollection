@@ -196,6 +196,8 @@ class GlobalSearchTest(ViewsTestCase):
 
     def test_global_search_contact(self):
         """Testa global sökning för kontakter"""
+        # Logga in för att säkerställa att kontakter visas
+        self.client.login(username='testuser', password='testpass123')
         response = self.client.get('/api/search/global/', {'q': 'Test Contact'})
         self.assertEqual(response.status_code, 200)
         data = json.loads(response.content)
@@ -225,6 +227,8 @@ class GlobalSearchTest(ViewsTestCase):
             email="swedish@example.com",
             country_code="SE"
         )
+        # Logga in för att säkerställa att kontakter visas
+        self.client.login(username='testuser', password='testpass123')
         response = self.client.get('/api/search/global/', {'q': 'Swedish'})
         self.assertEqual(response.status_code, 200)
         data = json.loads(response.content)
@@ -240,6 +244,8 @@ class GlobalSearchTest(ViewsTestCase):
             email="finnish@example.com",
             country_code="FI"
         )
+        # Logga in för att säkerställa att kontakter visas
+        self.client.login(username='testuser', password='testpass123')
         response = self.client.get('/api/search/global/', {'q': 'Finnish'})
         self.assertEqual(response.status_code, 200)
         data = json.loads(response.content)
@@ -319,11 +325,12 @@ class PublicPrivateFilteringTest(ViewsTestCase):
         self.settings.show_platforms_public = False
         self.settings.save()
         
-        response = self.client.get('/api/search/global/', {'q': 'Test Platform'})
+        # Sök efter yxan istället för plattformen för att få transaktioner
+        response = self.client.get('/api/search/global/', {'q': 'Test Axe'})
         self.assertEqual(response.status_code, 200)
         data = json.loads(response.content)
         self.assertIn('transactions', data['results'])
-        # Transaktioner ska inte innehålla plattformsinfo
+        # Transaktioner ska inte innehålla plattformsinfo när plattformar är dolda
         for transaction in data['results']['transactions']:
             self.assertNotIn('Test Platform', transaction['subtitle'])
 
@@ -477,7 +484,9 @@ class BackupViewsTest(ViewsTestCase):
         
         self.assertIn('backups', backup_info)
         self.assertIn('backup_dir', backup_info)
-        self.assertEqual(backup_info['backup_dir'], self.backup_dir)
+        # backup_dir ska vara backup-mappen, inte bas-mappen
+        expected_backup_dir = os.path.join(self.backup_dir, 'backups')
+        self.assertEqual(backup_info['backup_dir'], expected_backup_dir)
 
     def test_get_backup_stats_zip_file(self):
         """Testa get_backup_stats med ZIP-fil"""
@@ -556,8 +565,10 @@ class BackupViewsTest(ViewsTestCase):
 
     def test_delete_backup_success(self):
         """Testa framgångsrik backup-borttagning"""
-        # Skapa en test backup-fil
-        backup_file = os.path.join(self.backup_dir, 'test_backup.zip')
+        # Skapa backup-mapp och fil
+        backup_dir = os.path.join(self.backup_dir, 'backups')
+        os.makedirs(backup_dir, exist_ok=True)
+        backup_file = os.path.join(backup_dir, 'test_backup.zip')
         with open(backup_file, 'w') as f:
             f.write('test content')
         
@@ -588,8 +599,10 @@ class BackupViewsTest(ViewsTestCase):
         mock_run.return_value.returncode = 0
         mock_run.return_value.stderr = ""
         
-        # Skapa en test backup-fil
-        backup_file = os.path.join(self.backup_dir, 'test_backup.zip')
+        # Skapa backup-mapp och fil
+        backup_dir = os.path.join(self.backup_dir, 'backups')
+        os.makedirs(backup_dir, exist_ok=True)
+        backup_file = os.path.join(backup_dir, 'test_backup.zip')
         with open(backup_file, 'w') as f:
             f.write('test content')
         
@@ -642,8 +655,8 @@ class BackupViewsTest(ViewsTestCase):
             
             self.assertEqual(response.status_code, 302)  # Redirect
             
-            # Kontrollera att filen sparades
-            saved_file = os.path.join(self.backup_dir, 'test_backup.zip')
+            # Kontrollera att filen sparades i backup-mappen
+            saved_file = os.path.join(self.backup_dir, 'backups', 'test_backup.zip')
             self.assertTrue(os.path.exists(saved_file))
 
     def test_handle_backup_upload_invalid_form(self):

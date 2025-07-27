@@ -231,6 +231,25 @@ def global_search(request):
     if len(query) < 2 and not is_numeric:
         return JsonResponse({"results": {}})
 
+    # Sätt public_settings på request för sökfunktionerna
+    try:
+        from .models import Settings
+        settings = Settings.get_settings()
+        request.public_settings = {
+            "show_contacts": settings.show_contacts_public,
+            "show_prices": settings.show_prices_public,
+            "show_platforms": settings.show_platforms_public,
+            "show_only_received_axes": settings.show_only_received_axes_public,
+        }
+    except Exception:
+        # Fallback om Settings-modellen inte finns
+        request.public_settings = {
+            "show_contacts": False,
+            "show_prices": True,
+            "show_platforms": True,
+            "show_only_received_axes": False,
+        }
+
     axes_results = _search_axes(query, request)
     contacts_results = _search_contacts(query, request)
     manufacturers_results = _search_manufacturers(query)
@@ -242,8 +261,6 @@ def global_search(request):
         "manufacturers": manufacturers_results,
         "transactions": transactions_results,
     }
-
-
 
     return JsonResponse({"results": results})
 

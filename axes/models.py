@@ -165,37 +165,33 @@ class Manufacturer(models.Model):
 
     @property
     def total_buy_value(self):
-        return (
-            self.transactions.filter(type="KÖP").aggregate(total=Sum("price"))["total"]
-            or 0
-        )
+        from decimal import Decimal
+        result = self.transactions.filter(type="KÖP").aggregate(total=Sum("price"))["total"]
+        return result if result is not None else Decimal('0')
 
     @property
     def total_buy_value_including_sub_manufacturers(self):
         """Total köpvärde inklusive undertillverkare"""
-        return (
-            self.transactions_including_sub_manufacturers.filter(type="KÖP").aggregate(
-                total=Sum("price")
-            )["total"]
-            or 0
-        )
+        from decimal import Decimal
+        result = self.transactions_including_sub_manufacturers.filter(type="KÖP").aggregate(
+            total=Sum("price")
+        )["total"]
+        return result if result is not None else Decimal('0')
 
     @property
     def total_sale_value(self):
-        return (
-            self.transactions.filter(type="SÄLJ").aggregate(total=Sum("price"))["total"]
-            or 0
-        )
+        from decimal import Decimal
+        result = self.transactions.filter(type="SÄLJ").aggregate(total=Sum("price"))["total"]
+        return result if result is not None else Decimal('0')
 
     @property
     def total_sale_value_including_sub_manufacturers(self):
         """Total försäljningsvärde inklusive undertillverkare"""
-        return (
-            self.transactions_including_sub_manufacturers.filter(type="SÄLJ").aggregate(
-                total=Sum("price")
-            )["total"]
-            or 0
-        )
+        from decimal import Decimal
+        result = self.transactions_including_sub_manufacturers.filter(type="SÄLJ").aggregate(
+            total=Sum("price")
+        )["total"]
+        return result if result is not None else Decimal('0')
 
     @property
     def net_value(self):
@@ -265,35 +261,31 @@ class Axe(models.Model):
 
     @property
     def total_buy_value(self):
-        return (
-            self.transactions.filter(type="KÖP").aggregate(total=Sum("price"))["total"]
-            or 0
-        )
+        from decimal import Decimal
+        result = self.transactions.filter(type="KÖP").aggregate(total=Sum("price"))["total"]
+        return result if result is not None else Decimal('0')
 
     @property
     def total_buy_shipping(self):
-        return (
-            self.transactions.filter(type="KÖP").aggregate(total=Sum("shipping_cost"))[
-                "total"
-            ]
-            or 0
-        )
+        from decimal import Decimal
+        result = self.transactions.filter(type="KÖP").aggregate(total=Sum("shipping_cost"))[
+            "total"
+        ]
+        return result if result is not None else Decimal('0')
 
     @property
     def total_sale_value(self):
-        return (
-            self.transactions.filter(type="SÄLJ").aggregate(total=Sum("price"))["total"]
-            or 0
-        )
+        from decimal import Decimal
+        result = self.transactions.filter(type="SÄLJ").aggregate(total=Sum("price"))["total"]
+        return result if result is not None else Decimal('0')
 
     @property
     def total_sale_shipping(self):
-        return (
-            self.transactions.filter(type="SÄLJ").aggregate(total=Sum("shipping_cost"))[
-                "total"
-            ]
-            or 0
-        )
+        from decimal import Decimal
+        result = self.transactions.filter(type="SÄLJ").aggregate(total=Sum("shipping_cost"))[
+            "total"
+        ]
+        return result if result is not None else Decimal('0')
 
     @property
     def net_value(self):
@@ -600,17 +592,15 @@ class Contact(models.Model):
 
     @property
     def total_buy_value(self):
-        return (
-            self.transactions.filter(type="KÖP").aggregate(total=Sum("price"))["total"]
-            or 0
-        )
+        from decimal import Decimal
+        result = self.transactions.filter(type="KÖP").aggregate(total=Sum("price"))["total"]
+        return result if result is not None else Decimal('0')
 
     @property
     def total_sale_value(self):
-        return (
-            self.transactions.filter(type="SÄLJ").aggregate(total=Sum("price"))["total"]
-            or 0
-        )
+        from decimal import Decimal
+        result = self.transactions.filter(type="SÄLJ").aggregate(total=Sum("price"))["total"]
+        return result if result is not None else Decimal('0')
 
     @property
     def net_value(self):
