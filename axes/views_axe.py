@@ -416,15 +416,10 @@ def _handle_url_images(axe, request):
                     response = requests.get(image_url, timeout=10)
                     if response.status_code == 200:
                         file_extension = (
-                            os.path.splitext(urlparse(image_url).path)[1]
-                            or ".jpg"
+                            os.path.splitext(urlparse(image_url).path)[1] or ".jpg"
                         )
-                        filename = (
-                            f"{axe.id}_{uuid.uuid4().hex[:8]}{file_extension}"
-                        )
-                        image_file = ContentFile(
-                            response.content, name=filename
-                        )
+                        filename = f"{axe.id}_{uuid.uuid4().hex[:8]}{file_extension}"
+                        image_file = ContentFile(response.content, name=filename)
                         axe_image = AxeImage(axe=axe, image=image_file)
                         axe_image.save()
                 except Exception:
@@ -436,12 +431,12 @@ def _rename_axe_images(axe):
     remaining_images = list(axe.images.all().order_by("order", "id"))
     if not remaining_images:
         return
-    
+
     from django.core.files.storage import default_storage
 
     temp_paths = []
     temp_webps = []
-    
+
     # Steg 1: Döp om till temporära namn
     for idx, image in enumerate(remaining_images, 1):
         old_path = image.image.name
@@ -466,7 +461,7 @@ def _rename_axe_images(axe):
             except Exception:
                 pass
         temp_webps.append(temp_webp)
-    
+
     # Steg 2: Döp om till slutgiltiga namn
     for idx, (image, temp_path, file_ext) in enumerate(temp_paths, 1):
         final_filename = f"{axe.id}{chr(96 + idx)}{file_ext}"
@@ -481,9 +476,7 @@ def _rename_axe_images(axe):
         final_webp = f"axe_images/{axe.id}{chr(96 + idx)}.webp"
         if default_storage.exists(temp_webp):
             try:
-                with default_storage.open(
-                    temp_webp, "rb"
-                ) as temp_webp_file:
+                with default_storage.open(temp_webp, "rb") as temp_webp_file:
                     default_storage.save(final_webp, temp_webp_file)
                 default_storage.delete(temp_webp)
             except Exception:
@@ -491,7 +484,9 @@ def _rename_axe_images(axe):
         # Uppdatera databasen
         image.image = final_path
         image.order = idx
-        image.description = f"Bild {chr(96 + idx).upper()} av {axe.manufacturer.name} {axe.model}"
+        image.description = (
+            f"Bild {chr(96 + idx).upper()} av {axe.manufacturer.name} {axe.model}"
+        )
         image.save()
 
 
@@ -501,7 +496,7 @@ def _handle_contact_creation(axe, form):
     contact_search = form.cleaned_data.get("contact_search", "").strip()
     if not contact_search:
         return contact
-    
+
     # Försök hitta befintlig kontakt
     try:
         contact = Contact.objects.get(name__iexact=contact_search)
@@ -516,15 +511,11 @@ def _handle_contact_creation(axe, form):
                     "email": form.cleaned_data.get("contact_email", ""),
                     "phone": form.cleaned_data.get("contact_phone", ""),
                     "street": form.cleaned_data.get("contact_street", ""),
-                    "postal_code": form.cleaned_data.get(
-                        "contact_postal_code", ""
-                    ),
+                    "postal_code": form.cleaned_data.get("contact_postal_code", ""),
                     "city": form.cleaned_data.get("contact_city", ""),
                     "country": form.cleaned_data.get("contact_country", ""),
                     "comment": form.cleaned_data.get("contact_comment", ""),
-                    "is_naj_member": form.cleaned_data.get(
-                        "is_naj_member", False
-                    ),
+                    "is_naj_member": form.cleaned_data.get("is_naj_member", False),
                 },
             )
         else:
@@ -536,15 +527,11 @@ def _handle_contact_creation(axe, form):
                     "email": form.cleaned_data.get("contact_email", ""),
                     "phone": form.cleaned_data.get("contact_phone", ""),
                     "street": form.cleaned_data.get("contact_street", ""),
-                    "postal_code": form.cleaned_data.get(
-                        "contact_postal_code", ""
-                    ),
+                    "postal_code": form.cleaned_data.get("contact_postal_code", ""),
                     "city": form.cleaned_data.get("contact_city", ""),
                     "country": form.cleaned_data.get("contact_country", ""),
                     "comment": form.cleaned_data.get("contact_comment", ""),
-                    "is_naj_member": form.cleaned_data.get(
-                        "is_naj_member", False
-                    ),
+                    "is_naj_member": form.cleaned_data.get("is_naj_member", False),
                 },
             )
     return contact
@@ -555,7 +542,7 @@ def _handle_platform_creation(axe, form):
     platform = None
     platform_name = form.cleaned_data.get("platform_name", "").strip()
     platform_search = form.cleaned_data.get("platform_search", "").strip()
-    
+
     if platform_name:
         # Skapa ny plattform med endast namn (url och comment finns ej i modellen)
         platform, created = Platform.objects.get_or_create(name=platform_name)
@@ -564,7 +551,7 @@ def _handle_platform_creation(axe, form):
             platform = Platform.objects.get(name=platform_search)
         except Platform.DoesNotExist:
             platform = None
-    
+
     return platform
 
 
@@ -673,9 +660,7 @@ def _handle_new_images_for_edit(axe, request):
         max_order = axe.images.aggregate(Max("order"))["order__max"] or 0
         for i, image_file in enumerate(request.FILES.getlist("images"), 1):
             try:
-                axe_image = AxeImage(
-                    axe=axe, image=image_file, order=max_order + i
-                )
+                axe_image = AxeImage(axe=axe, image=image_file, order=max_order + i)
                 axe_image.save()
             except Exception:
                 pass
@@ -691,15 +676,10 @@ def _handle_url_images_for_edit(axe, request):
                     response = requests.get(image_url, timeout=10)
                     if response.status_code == 200:
                         file_extension = (
-                            os.path.splitext(urlparse(image_url).path)[1]
-                            or ".jpg"
+                            os.path.splitext(urlparse(image_url).path)[1] or ".jpg"
                         )
-                        filename = (
-                            f"{axe.id}_{uuid.uuid4().hex[:8]}{file_extension}"
-                        )
-                        image_file = ContentFile(
-                            response.content, name=filename
-                        )
+                        filename = f"{axe.id}_{uuid.uuid4().hex[:8]}{file_extension}"
+                        image_file = ContentFile(response.content, name=filename)
                         axe_image = AxeImage(
                             axe=axe, image=image_file, order=max_order + i
                         )
@@ -753,7 +733,7 @@ def _rename_axe_images_for_edit(axe):
     remaining_images = list(axe.images.all().order_by("order"))
     temp_paths = []
     temp_webps = []
-    
+
     # Steg 1: Döp om till temporära namn
     for idx, image in enumerate(remaining_images, 1):
         old_path = image.image.name
@@ -778,7 +758,7 @@ def _rename_axe_images_for_edit(axe):
             except Exception:
                 pass
         temp_webps.append(temp_webp)
-    
+
     # Steg 2: Döp om till slutgiltiga namn baserat på den nya ordningen
     for idx, (image, temp_path, file_ext) in enumerate(temp_paths, 1):
         final_filename = f"{axe.id}{chr(96 + idx)}{file_ext}"
@@ -793,9 +773,7 @@ def _rename_axe_images_for_edit(axe):
         final_webp = f"axe_images/{axe.id}{chr(96 + idx)}.webp"
         if default_storage.exists(temp_webp):
             try:
-                with default_storage.open(
-                    temp_webp, "rb"
-                ) as temp_webp_file:
+                with default_storage.open(temp_webp, "rb") as temp_webp_file:
                     default_storage.save(final_webp, temp_webp_file)
                 default_storage.delete(temp_webp)
             except Exception:
@@ -803,7 +781,9 @@ def _rename_axe_images_for_edit(axe):
         # Uppdatera databasen med den nya ordningen
         image.image = final_path
         image.order = idx
-        image.description = f"Bild {chr(96 + idx).upper()} av {axe.manufacturer.name} {axe.model}"
+        image.description = (
+            f"Bild {chr(96 + idx).upper()} av {axe.manufacturer.name} {axe.model}"
+        )
         image.save()
 
 
@@ -818,10 +798,10 @@ def axe_edit(request, pk):
             _handle_new_images_for_edit(axe, request)
             _handle_url_images_for_edit(axe, request)
             has_order_changes = _handle_image_order_changes(axe, request)
-            
+
             # Kontrollera om omdöpning behövs
             needs_renaming = _should_rename_images(request, has_order_changes, axe)
-            
+
             # Omnumrera och döp om alla bilder endast om det behövs
             if needs_renaming:
                 _rename_axe_images_for_edit(axe)
@@ -833,7 +813,7 @@ def axe_edit(request, pk):
     # Hämta mått och mallar för formuläret
     measurements = axe.measurements.all().order_by("name")
     measurement_templates = {}
-    
+
     # Gruppera mått efter namn (eftersom Measurement inte har measurement_type)
     for measurement in measurements:
         template_name = measurement.name

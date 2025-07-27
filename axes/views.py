@@ -54,7 +54,7 @@ def search_platforms(request):
 def _search_axes(query, request):
     """Sök i yxor med publik/privat filtrering"""
     from .models import Axe, Settings
-    
+
     text_query = (
         Q(manufacturer__name__icontains=query)
         | Q(model__icontains=query)
@@ -98,17 +98,16 @@ def _search_axes(query, request):
 def _search_contacts(query, request):
     """Sök i kontakter med publik/privat filtrering"""
     from .models import Contact
-    
+
     # Sök endast om användaren är inloggad eller kontakter visas publikt
-    if not (request.user.is_authenticated or getattr(request, "public_settings", {}).get(
-        "show_contacts", False
-    )):
+    if not (
+        request.user.is_authenticated
+        or getattr(request, "public_settings", {}).get("show_contacts", False)
+    ):
         return []
-    
+
     contacts = Contact.objects.filter(
-        Q(name__icontains=query)
-        | Q(alias__icontains=query)
-        | Q(email__icontains=query)
+        Q(name__icontains=query) | Q(alias__icontains=query) | Q(email__icontains=query)
     )[:5]
 
     results = []
@@ -133,7 +132,7 @@ def _search_contacts(query, request):
 def _search_manufacturers(query):
     """Sök i tillverkare"""
     from .models import Manufacturer
-    
+
     manufacturers = Manufacturer.objects.filter(
         Q(name__icontains=query) | Q(information__icontains=query)
     )[:5]
@@ -156,7 +155,7 @@ def _search_manufacturers(query):
 def _search_transactions(query, request):
     """Sök i transaktioner med publik/privat filtrering"""
     from .models import Transaction
-    
+
     transaction_query = Q(axe__manufacturer__name__icontains=query) | Q(
         axe__model__icontains=query
     )
@@ -232,7 +231,7 @@ def global_search(request):
         "axes": _search_axes(query, request),
         "contacts": _search_contacts(query, request),
         "manufacturers": _search_manufacturers(query),
-        "transactions": _search_transactions(query, request)
+        "transactions": _search_transactions(query, request),
     }
 
     return JsonResponse({"results": results})
