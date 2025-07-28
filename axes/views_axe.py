@@ -702,12 +702,17 @@ def _update_axe_from_form(axe, form, user):
 def _handle_image_removal(axe, request):
     """Hantera borttagning av befintliga bilder"""
     if "remove_images" in request.POST:
+        print(f"DEBUG: remove_images found in POST data: {request.POST.getlist('remove_images')}")
         for image_id in request.POST.getlist("remove_images"):
             try:
                 image = AxeImage.objects.get(id=image_id, axe=axe)
+                print(f"DEBUG: Deleting image {image_id} for axe {axe.id}")
                 image.delete()
             except AxeImage.DoesNotExist:
+                print(f"DEBUG: Image {image_id} not found for axe {axe.id}")
                 pass
+    else:
+        print(f"DEBUG: No remove_images in POST data. Available keys: {list(request.POST.keys())}")
 
 
 def _handle_new_images_for_edit(axe, request):
@@ -765,21 +770,27 @@ def _should_rename_images(request, has_order_changes, axe):
     has_new_images = "images" in request.FILES or "image_urls" in request.POST
     has_removals = "remove_images" in request.POST
 
+    print(f"DEBUG: _should_rename_images - has_new_images: {has_new_images}, has_order_changes: {has_order_changes}, has_removals: {has_removals}")
+
     # Om det finns borttagningar, kontrollera om den sista bilden tas bort
     skip_renaming_for_removals = False
     if has_removals:
         remaining_count = axe.images.count() - len(
             request.POST.getlist("remove_images")
         )
+        print(f"DEBUG: Current image count: {axe.images.count()}, removing: {len(request.POST.getlist('remove_images'))}, remaining: {remaining_count}")
         if remaining_count == 0:
             # Alla bilder tas bort, ingen omdöpning behövs
             skip_renaming_for_removals = True
+            print("DEBUG: All images being removed, skipping renaming")
 
-    return (
+    result = (
         has_new_images
         or has_order_changes
         or (has_removals and not skip_renaming_for_removals)
     )
+    print(f"DEBUG: Should rename images: {result}")
+    return result
 
 
 def _rename_axe_images_for_edit(axe):
@@ -850,17 +861,21 @@ def axe_edit(request, pk):
         form = AxeForm(request.POST, request.FILES, instance=axe)
         if form.is_valid():
             axe = _update_axe_from_form(axe, form, request.user)
-            _handle_image_removal(axe, request)
+            
+            # Hantera nya bilder först
             _handle_new_images_for_edit(axe, request)
             _handle_url_images_for_edit(axe, request)
             has_order_changes = _handle_image_order_changes(axe, request)
 
-            # Kontrollera om omdöpning behövs
+            # Kontrollera om omdöpning behövs (före borttagning)
             needs_renaming = _should_rename_images(request, has_order_changes, axe)
 
             # Omnumrera och döp om alla bilder endast om det behövs
             if needs_renaming:
                 _rename_axe_images_for_edit(axe)
+            
+            # Ta bort bilder sist (efter omdöpning)
+            _handle_image_removal(axe, request)
 
             return redirect("axe_detail", pk=axe.pk)
     else:
