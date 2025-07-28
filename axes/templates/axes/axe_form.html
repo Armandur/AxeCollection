@@ -1424,6 +1424,17 @@ document.addEventListener('DOMContentLoaded', function() {
                     hiddenInputs.appendChild(hiddenInput);
                 }
             });
+            
+            // Lägg till auktionsbilder om de finns
+            if (window.auctionImages && window.auctionImages.length > 0) {
+                window.auctionImages.forEach(imageUrl => {
+                    const hiddenInput = document.createElement('input');
+                    hiddenInput.type = 'hidden';
+                    hiddenInput.name = 'auction_images';
+                    hiddenInput.value = imageUrl;
+                    hiddenInputs.appendChild(hiddenInput);
+                });
+            }
         }
     }
     
@@ -1621,6 +1632,42 @@ document.addEventListener('DOMContentLoaded', function() {
         if (platformSearchInput && data.platform_id) {
             // Hitta Tradera-plattformen och sätt dess namn i sökfältet
             platformSearchInput.value = 'Tradera';
+        }
+        
+        // Hantera auktionsbilder
+        if (data.images && data.images.length > 0) {
+            // Spara bilderna för att skicka med formuläret
+            window.auctionImages = data.images;
+            
+            // Visa förhandsgranskning av auktionsbilderna
+            const imagePreview = document.getElementById('imagePreview');
+            const previewContainer = document.getElementById('previewContainer');
+            
+            if (imagePreview && previewContainer) {
+                // Rensa befintliga förhandsvisningar
+                previewContainer.innerHTML = '';
+                
+                // Lägg till varje auktionsbild som förhandsvisning
+                data.images.forEach(imageUrl => {
+                    addImagePreview(null, null, imageUrl);
+                });
+                
+                // Visa förhandsvisningssektionen
+                imagePreview.style.display = 'block';
+            }
+            
+            // Visa notifikation om att bilder kommer att laddas ner
+            const notification = document.getElementById('notification');
+            const notificationMessage = document.getElementById('notification-message');
+            
+            if (notification && notificationMessage) {
+                notification.className = 'alert alert-info';
+                notificationMessage.innerHTML = `
+                    <i class="fas fa-image me-2"></i>
+                    <strong>${data.images.length}</strong> auktionsbilder kommer att laddas ner automatiskt när yxan skapas
+                `;
+                notification.style.display = 'block';
+            }
         }
     }
     

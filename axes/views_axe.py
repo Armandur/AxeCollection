@@ -38,6 +38,9 @@ import json
 import re
 from datetime import datetime, timedelta
 from collections import defaultdict
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 def move_images_to_unlinked_folder(axe_images, delete_images=False):
@@ -655,6 +658,12 @@ def axe_create(request):
             axe = _create_axe_from_form(form, request.user)
             _handle_uploaded_images(axe, request)
             _handle_url_images(axe, request)
+            
+            # Hantera automatisk nedladdning av auktionsbilder
+            auction_images = request.POST.getlist("auction_images")
+            if auction_images:
+                _download_auction_images(axe, auction_images)
+            
             _rename_axe_images(axe)
             contact = _handle_contact_creation(axe, form)
             platform = _handle_platform_creation(axe, form)
@@ -1925,3 +1934,48 @@ def download_unlinked_images(request):
 
     except Exception as e:
         return JsonResponse({"success": False, "error": str(e)})
+
+
+def _download_auction_images(axe, image_urls):
+    """Ladda ner och spara auktionsbilder automatiskt"""
+    if not image_urls:
+        return
+    
+    max_order = axe.images.aggregate(Max("order"))["order__max"] or 0
+    
+    for i, image_url in enumerate(image_urls, 1):
+        if image_url and image_url.startswith("http"):
+            try:
+                response = requests.get(image_url, timeout=15)
+                if response.status_code == 200:
+                    # Bestäm filändelse baserat på URL eller Content-Type
+                    file_extension = os.path.splitext(urlparse(image_url).path)[1]
+                    if not file_extension:
+                        content_type = response.headers.get('content-type', '')
+                        if 'jpeg' in content_type or 'jpg' in content_type:
+                            file_extension = '.jpg'
+                        elif 'png' in content_type:
+                            file_extension = '.png'
+                        elif 'webp' in content_type:
+                            file_extension = '.webp'
+                        else:
+                            file_extension = '.jpg'  # Fallback
+                    
+                    # Skapa unikt filnamn
+                    filename = f"{axe.id}_{uuid.uuid4().hex[:8]}{file_extension}"
+                    image_file = ContentFile(response.content, name=filename)
+                    
+                    # Skapa AxeImage-objekt
+                    axe_image = AxeImage(
+                        axe=axe, 
+                        image=image_file, 
+                        order=max_order + i,
+                        description=f"Auktionsbild {i} från Tradera"
+                    )
+                    axe_image.save()
+                    
+                    logger.info(f"Laddade ner auktionsbild {i} för yxa {axe.id}: {image_url}")
+                    
+            except Exception as e:
+                logger.error(f"Fel vid nedladdning av auktionsbild {i} för yxa {axe.id}: {e}")
+                continue
