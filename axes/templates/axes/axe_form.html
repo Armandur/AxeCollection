@@ -205,7 +205,21 @@ tr.editing .form-control-sm {
                             <div class="card-body">
                                 <!-- Sök efter befintlig kontakt -->
                                 <div class="position-relative">
-                                    {% include 'axes/_form_field.html' with field=form.contact_search %}
+                                    <div class="mb-3">
+                                        <label for="{{ form.contact_search.id_for_label }}" class="form-label">
+                                            {{ form.contact_search.label }}
+                                            <span id="contact-match-info" class="badge bg-info ms-2" style="display: none;">
+                                                <i class="fas fa-info-circle me-1"></i>Ingen kontakt hittad - registrerar ny
+                                            </span>
+                                        </label>
+                                        {{ form.contact_search }}
+                                        {% if form.contact_search.help_text %}
+                                            <div class="form-text">{{ form.contact_search.help_text }}</div>
+                                        {% endif %}
+                                        {% if form.contact_search.errors %}
+                                            <div class="text-danger">{{ form.contact_search.errors }}</div>
+                                        {% endif %}
+                                    </div>
                                     <!-- Dropdown för sökresultat -->
                                     <div id="contactSearchResults" class="dropdown-menu w-100" style="display: none; position: absolute; z-index: 1000; max-height: 200px; overflow-y: auto;">
                                         <!-- Sökresultat visas här -->
@@ -1512,6 +1526,12 @@ document.addEventListener('DOMContentLoaded', function() {
         loadingIndicator.style.display = 'block';
         parsedDataSection.style.display = 'none';
         hideError();
+        
+        // Dölj info-badge när vi börjar en ny parsning
+        const contactMatchInfo = document.getElementById('contact-match-info');
+        if (contactMatchInfo) {
+            contactMatchInfo.style.display = 'none';
+        }
     }
     
     function hideLoading() {
@@ -1605,6 +1625,12 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     function showMatchingContacts(contacts, sellerAlias) {
+        // Dölj info-badge eftersom vi hittade kontakter
+        const contactMatchInfo = document.getElementById('contact-match-info');
+        if (contactMatchInfo) {
+            contactMatchInfo.style.display = 'none';
+        }
+        
         // Skapa en notifikation om matchande kontakter
         const notification = document.getElementById('notification');
         const notificationMessage = document.getElementById('notification-message');
@@ -1643,23 +1669,10 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     function showNoContactMatch(sellerAlias) {
-        // Visa notis om att ingen kontakt matchades
-        const notification = document.getElementById('notification');
-        const notificationMessage = document.getElementById('notification-message');
-        
-        if (notification && notificationMessage) {
-            notification.className = 'alert alert-info';
-            notificationMessage.innerHTML = `
-                <i class="fas fa-info-circle me-2"></i>
-                Ingen befintlig kontakt matchades för "${sellerAlias}". 
-                Ett nytt kontaktformulär visas nedan för att skapa en ny kontakt.
-            `;
-            notification.style.display = 'block';
-            
-            // Dölj notifikationen efter 10 sekunder
-            setTimeout(() => {
-                notification.style.display = 'none';
-            }, 10000);
+        // Visa info-badge bredvid "Försäljare"-labeln
+        const contactMatchInfo = document.getElementById('contact-match-info');
+        if (contactMatchInfo) {
+            contactMatchInfo.style.display = 'inline-block';
         }
         
         // Visa hela kontaktformuläret direkt

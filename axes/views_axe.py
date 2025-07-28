@@ -25,6 +25,19 @@ import os
 import shutil
 from urllib.parse import urlparse
 from django.contrib import messages
+from django.views.decorators.csrf import csrf_exempt
+from django.http import HttpResponse
+from django.db.models import Q, Count, Sum, Avg, Max, Min
+from django.db import transaction
+from django.core.paginator import Paginator
+from django.template.loader import render_to_string
+from django.core.exceptions import ValidationError
+from django.db.models.functions import Coalesce
+from decimal import Decimal
+import json
+import re
+from datetime import datetime, timedelta
+from collections import defaultdict
 
 
 def move_images_to_unlinked_folder(axe_images, delete_images=False):
@@ -599,6 +612,44 @@ def _handle_transaction_creation(axe, form, contact, platform):
 @login_required
 def axe_create(request):
     if request.method == "POST":
+        # Hantera AJAX-förfrågan för URL-parsning
+        if request.POST.get("parse_only") == "true":
+            auction_url = request.POST.get("auction_url", "").strip()
+            if not auction_url:
+                return JsonResponse({"success": False, "error": "Ingen URL angiven"})
+
+            try:
+                from .utils.tradera_parser import TraderaParser
+
+                parser = TraderaParser()
+                auction_data = parser.parse_tradera_page(auction_url)
+
+                # Sök efter befintlig kontakt baserat på säljaralias
+                seller_alias = auction_data.get("seller_alias", "")
+                matching_contacts = []
+                if seller_alias:
+                    # Sök efter kontakter med samma alias
+                    matching_contacts = Contact.objects.filter(
+                        alias__iexact=seller_alias
+                    ).values("id", "name", "alias", "email", "city", "country")
+
+                # Hitta Tradera-plattformen
+                tradera_platform = Platform.objects.filter(name="Tradera").first()
+                platform_id = tradera_platform.id if tradera_platform else None
+
+                # Lägg till kontakt- och plattformsinformation i svaret
+                auction_data["matching_contacts"] = list(matching_contacts)
+                auction_data["platform_id"] = platform_id
+
+                return JsonResponse({"success": True, "auction_data": auction_data})
+            except Exception as e:
+                return JsonResponse(
+                    {
+                        "success": False,
+                        "error": f"Kunde inte hämta auktionsdata: {str(e)}",
+                    }
+                )
+        # Vanlig formulärhantering
         form = AxeForm(request.POST, request.FILES)
         if form.is_valid():
             axe = _create_axe_from_form(form, request.user)

@@ -190,12 +190,12 @@
     <div>
         <h1 class="h3 mb-0">Samling</h1>
     </div>
-    {% if user.is_authenticated %}
-    <a href="{% url 'axe_create' %}" class="btn btn-success btn-sm" title="Lägg till ny yxa">
-        <i class="fas fa-plus-circle"></i>
-        <span class="d-none d-md-inline">Lägg till ny yxa</span>
-    </a>
-    {% endif %}
+                  {% if user.is_authenticated %}
+              <a href="{% url 'axe_create' %}" class="btn btn-success btn-sm" title="Lägg till ny yxa">
+                  <i class="fas fa-plus-circle"></i>
+                  <span class="d-none d-md-inline">Lägg till ny yxa</span>
+              </a>
+              {% endif %}
 </div>
 
 <!-- Filter-sektion -->

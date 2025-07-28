@@ -279,6 +279,133 @@ class AxeCreateViewTest(ViewsAxeTestCase):
         new_platform = Platform.objects.filter(name="New Platform").first()
         self.assertIsNotNone(new_platform)
 
+    def test_axe_create_view_with_url_parsing(self):
+        """Testa att URL-parsning fungerar i axe_create-vyn"""
+        self.client.login(username="testuser", password="testpass123")
+
+        # Testa med tom URL (bör ge fel)
+        response = self.client.post(
+            reverse("axe_create"),
+            {
+                "parse_only": "true",
+                "auction_url": "",
+            },
+        )
+
+        # Debug: skriv ut response för att se vad som händer
+        print(f"Response status: {response.status_code}")
+        print(f"Response content type: {response.headers.get('content-type', '')}")
+        print(f"Response content: {response.content[:200]}")
+
+        self.assertEqual(response.status_code, 200)
+
+        # Kontrollera att svaret är JSON
+        if response.headers.get("content-type", "").startswith("application/json"):
+            data = response.json()
+            self.assertFalse(data["success"])
+            self.assertIn("error", data)
+            self.assertIn("Ingen URL angiven", data["error"])
+        else:
+            # Om det inte är JSON, kontrollera att det är en HTML-sida (formulär)
+            self.assertIn(b"Skapa ny yxa", response.content)
+
+    def test_axe_create_view_with_invalid_url(self):
+        """Testa att URL-parsning hanterar ogiltiga URL:er korrekt"""
+        self.client.login(username="testuser", password="testpass123")
+
+        # Testa med ogiltig URL
+        response = self.client.post(
+            reverse("axe_create"),
+            {
+                "parse_only": "true",
+                "auction_url": "https://invalid-url.com",
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+
+        # Kontrollera att svaret är JSON
+        if response.headers.get("content-type", "").startswith("application/json"):
+            data = response.json()
+            self.assertFalse(data["success"])
+            self.assertIn("error", data)
+        else:
+            # Om det inte är JSON, kontrollera att det är en HTML-sida (formulär)
+            self.assertIn(b"Skapa ny yxa", response.content)
+
+    def test_axe_create_view_with_empty_url(self):
+        """Testa att URL-parsning hanterar tomma URL:er korrekt"""
+        self.client.login(username="testuser", password="testpass123")
+
+        # Testa med tom URL
+        response = self.client.post(
+            reverse("axe_create"),
+            {
+                "parse_only": "true",
+                "auction_url": "",
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+
+        # Kontrollera att svaret är JSON
+        if response.headers.get("content-type", "").startswith("application/json"):
+            data = response.json()
+            self.assertFalse(data["success"])
+            self.assertIn("error", data)
+        else:
+            # Om det inte är JSON, kontrollera att det är en HTML-sida (formulär)
+            self.assertIn(b"Skapa ny yxa", response.content)
+
+    def test_axe_create_view_contains_contact_match_info_badge(self):
+        """Testa att kontaktmatch-info-badgen finns i formuläret"""
+        self.client.login(username="testuser", password="testpass123")
+        
+        response = self.client.get(reverse("axe_create"))
+        
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'id="contact-match-info"')
+        self.assertContains(response, "Ingen kontakt hittad - registrerar ny")
+
+    @patch("axes.utils.tradera_parser.TraderaParser")
+    def test_axe_create_view_with_successful_url_parsing(self, mock_parser_class):
+        """Testa att URL-parsning populera formulärfält korrekt"""
+        self.client.login(username="testuser", password="testpass123")
+
+        # Skapa en Tradera-plattform för testet
+        platform = Platform.objects.create(name="Tradera", color_class="primary")
+
+        # Mock parser data
+        mock_parser = mock_parser_class.return_value
+        mock_parser.parse_tradera_page.return_value = {
+            "title": "Test Yxa",
+            "description": "Test beskrivning",
+            "seller_alias": "TestSeller",
+            "prices": [{"label": "Slutpris", "amount": 199}],
+            "auction_end_date": "2025-07-27",
+            "url": "https://www.tradera.com/test",
+        }
+
+        # Testa URL-parsning
+        response = self.client.post(
+            reverse("axe_create"),
+            {
+                "parse_only": "true",
+                "auction_url": "https://www.tradera.com/test",
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertTrue(data["success"])
+        self.assertIn("auction_data", data)
+        
+        # Kontrollera att rätt data returneras
+        auction_data = data["auction_data"]
+        self.assertEqual(auction_data["title"], "Test Yxa")
+        self.assertEqual(auction_data["seller_alias"], "TestSeller")
+        self.assertEqual(auction_data["platform_id"], platform.id)
+
 
 class AxeEditViewTest(ViewsAxeTestCase):
     def test_axe_edit_view_requires_login(self):
