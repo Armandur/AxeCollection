@@ -90,12 +90,12 @@ tr.editing .form-control-sm {
                                 <div class="row">
                                     <div class="col-md-8">
                                         <div class="mb-3">
-                                            <label for="auction_url" class="form-label">Tradera-auktions-URL</label>
+                                            <label for="auction_url" class="form-label">Auktions-URL (Tradera/eBay)</label>
                                             <input type="url" class="form-control" id="auction_url" name="auction_url" 
-                                                   placeholder="https://www.tradera.com/item/..." 
-                                                   title="Klistra in URL:en till den vunna Tradera-auktionen här">
+                                                   placeholder="https://www.tradera.com/item/... eller https://www.ebay.com/itm/..." 
+                                                   title="Klistra in URL:en till den vunna auktionen här">
                                             <div class="form-text">
-                                                Klistra in URL:en till den vunna Tradera-auktionen för att automatiskt fylla i data.
+                                                Klistra in URL:en till den vunna Tradera- eller eBay-auktionen för att automatiskt fylla i data.
                                             </div>
                                         </div>
                                     </div>
@@ -1575,12 +1575,12 @@ document.addEventListener('DOMContentLoaded', function() {
             const url = auctionUrlInput.value.trim();
             
             if (!url) {
-                showError('Ange en Tradera-auktions-URL');
+                showError('Ange en auktions-URL');
                 return;
             }
             
-            if (!url.includes('tradera.com')) {
-                showError('Endast Tradera-auktions-URL:er stöds för närvarande');
+            if (!url.includes('tradera.com') && !url.includes('ebay.com') && !url.includes('ebay.co.uk') && !url.includes('ebay.de') && !url.includes('ebay.se')) {
+                showError('Endast Tradera och eBay-auktions-URL:er stöds för närvarande');
                 return;
             }
             
@@ -1630,7 +1630,7 @@ document.addEventListener('DOMContentLoaded', function() {
         auctionUrlInput.addEventListener('paste', function(e) {
             setTimeout(() => {
                 const url = this.value.trim();
-                if (url && url.includes('tradera.com')) {
+                if (url && (url.includes('tradera.com') || url.includes('ebay.com') || url.includes('ebay.co.uk') || url.includes('ebay.de') || url.includes('ebay.se'))) {
                     parseUrlBtn.click();
                 }
             }, 100);

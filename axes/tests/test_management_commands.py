@@ -1372,3 +1372,57 @@ class GenerateTestDataCommandTest(TestCase):
             # Kontrollera att koden är en av de förväntade
             expected_codes = ["SE", "FI", "DK", "NO"]
             self.assertIn(manufacturer.country_code, expected_codes)
+
+    def test_init_platforms_command(self):
+        """Testa init_platforms management command"""
+        from axes.models import Platform
+
+        # Rensa befintliga plattformar för testet
+        Platform.objects.filter(name__in=["Tradera", "eBay"]).delete()
+
+        # Kör kommandot
+        call_command("init_platforms")
+
+        # Verifiera att plattformarna skapades
+        tradera = Platform.objects.filter(name="Tradera").first()
+        ebay = Platform.objects.filter(name="eBay").first()
+
+        self.assertIsNotNone(tradera)
+        self.assertIsNotNone(ebay)
+
+        # Verifiera att rätt data sattes
+        self.assertEqual(tradera.url, "https://www.tradera.com")
+        self.assertEqual(tradera.comment, "Tradera-auktionsplattform")
+        self.assertEqual(tradera.color_class, "bg-primary")
+
+        self.assertEqual(ebay.url, "https://www.ebay.com")
+        self.assertEqual(ebay.comment, "eBay-auktionsplattform")
+        self.assertEqual(ebay.color_class, "bg-success")
+
+    def test_init_platforms_command_existing_platforms(self):
+        """Testa att kommandot hanterar befintliga plattformar korrekt"""
+        from axes.models import Platform
+
+        # Skapa plattformarna först
+        tradera = Platform.objects.create(
+            name="Tradera",
+            url="https://www.tradera.com",
+            comment="Tradera-auktionsplattform",
+            color_class="bg-primary",
+        )
+        ebay = Platform.objects.create(
+            name="eBay",
+            url="https://www.ebay.com",
+            comment="eBay-auktionsplattform",
+            color_class="bg-success",
+        )
+
+        # Kör kommandot igen
+        call_command("init_platforms")
+
+        # Verifiera att inga nya plattformar skapades
+        tradera_count = Platform.objects.filter(name="Tradera").count()
+        ebay_count = Platform.objects.filter(name="eBay").count()
+
+        self.assertEqual(tradera_count, 1)
+        self.assertEqual(ebay_count, 1)

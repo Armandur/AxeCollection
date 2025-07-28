@@ -60,13 +60,14 @@ def move_images_to_unlinked_folder(axe_images, delete_images=False):
     if delete_images:
         # Ta bort alla bilder
         deleted_count = 0
+        error_count = 0
         for image in axe_images:
             try:
                 image.delete()
                 deleted_count += 1
-            except Exception:
-                pass
-        return {"moved": 0, "deleted": deleted_count, "errors": 0}
+            except Exception as e:
+                error_count += 1
+        return {"moved": 0, "deleted": deleted_count, "errors": error_count}
 
     # Skapa timestamp för borttagning
     timestamp = timezone.now().strftime("%Y%m%d_%H%M%S")
@@ -105,7 +106,7 @@ def move_images_to_unlinked_folder(axe_images, delete_images=False):
                             shutil.copy2(webp_path, webp_new_path)
                         moved_count += 1
                     axe_image.delete()
-            except Exception:
+            except Exception as e:
                 error_count += 1
                 pass
 
@@ -622,10 +623,61 @@ def axe_create(request):
                 return JsonResponse({"success": False, "error": "Ingen URL angiven"})
 
             try:
-                from .utils.tradera_parser import TraderaParser
+                # Bestäm vilken parser att använda baserat på URL
+                if "tradera.com" in auction_url:
+                    from .utils.tradera_parser import TraderaParser
 
-                parser = TraderaParser()
-                auction_data = parser.parse_tradera_page(auction_url)
+                    parser = TraderaParser()
+                    auction_data = parser.parse_tradera_page(auction_url)
+                    platform_name = "Tradera"
+
+                    # Skapa Tradera-plattformen automatiskt om den inte finns
+                    try:
+                        platform, created = Platform.objects.get_or_create(
+                            name="Tradera",
+                            defaults={
+                                "url": "https://www.tradera.com",
+                                "comment": "Tradera-auktionsplattform",
+                                "color_class": "bg-primary",
+                            },
+                        )
+                        if created:
+                            platform.save()
+                    except Exception as e:
+                        logger.error(f"Kunde inte skapa Tradera-plattform: {e}")
+                elif (
+                    "ebay.com" in auction_url
+                    or "ebay.co.uk" in auction_url
+                    or "ebay.de" in auction_url
+                    or "ebay.se" in auction_url
+                ):
+                    from .utils.ebay_parser import EbayParser
+
+                    parser = EbayParser()
+                    auction_data = parser.parse_ebay_page(auction_url)
+                    platform_name = "eBay"
+
+                    # Skapa eBay-plattformen automatiskt om den inte finns
+                    try:
+                        platform, created = Platform.objects.get_or_create(
+                            name="eBay",
+                            defaults={
+                                "url": "https://www.ebay.com",
+                                "comment": "eBay-auktionsplattform",
+                                "color_class": "bg-success",
+                            },
+                        )
+                        if created:
+                            platform.save()
+                    except Exception as e:
+                        logger.error(f"Kunde inte skapa eBay-plattform: {e}")
+                else:
+                    return JsonResponse(
+                        {
+                            "success": False,
+                            "error": "Endast Tradera och eBay-auktions-URL:er stöds för närvarande",
+                        }
+                    )
 
                 # Sök efter befintlig kontakt baserat på säljaralias
                 seller_alias = auction_data.get("seller_alias", "")
@@ -636,9 +688,9 @@ def axe_create(request):
                         alias__iexact=seller_alias
                     ).values("id", "name", "alias", "email", "city", "country")
 
-                # Hitta Tradera-plattformen
-                tradera_platform = Platform.objects.filter(name="Tradera").first()
-                platform_id = tradera_platform.id if tradera_platform else None
+                # Hitta plattformen
+                platform = Platform.objects.filter(name=platform_name).first()
+                platform_id = platform.id if platform else None
 
                 # Lägg till kontakt- och plattformsinformation i svaret
                 auction_data["matching_contacts"] = list(matching_contacts)
@@ -1646,12 +1698,16 @@ def delete_latest_axe(request):
         if image_count > 0:
             if delete_images:
                 # Ta bort bilderna
-                result = move_images_to_unlinked_folder(axe.images, delete_images=True)
+                result = move_images_to_unlinked_folder(
+                    axe.images.all(), delete_images=True
+                )
                 if result["deleted"] > 0:
                     messages.info(request, f'{result["deleted"]} bilder togs bort.')
             else:
                 # Flytta bilderna till okopplade bilder
-                result = move_images_to_unlinked_folder(axe.images, delete_images=False)
+                result = move_images_to_unlinked_folder(
+                    axe.images.all(), delete_images=False
+                )
                 if result["moved"] > 0:
                     messages.info(
                         request,

@@ -692,6 +692,15 @@ class Platform(models.Model):
     ]
 
     name = models.CharField(max_length=100)
+    url = models.URLField(
+        blank=True, null=True, verbose_name="URL", help_text="Hemsida för plattformen"
+    )
+    comment = models.TextField(
+        blank=True,
+        null=True,
+        verbose_name="Kommentar",
+        help_text="Beskrivning av plattformen",
+    )
     color_class = models.CharField(
         max_length=30,
         choices=COLOR_CHOICES,
