@@ -31,6 +31,15 @@ Ett Django-baserat system för att hantera och katalogisera yxsamlingar med avan
 - Inline-redigering av information
 - Markdown-stöd för beskrivningar
 - Kategoriserad bildhantering (stämplar vs övriga bilder)
+- Hierarkisk tillverkarsstruktur (huvudtillverkare och undertillverkare/smeder)
+
+
+
+### Auktionsparsers
+- **eBay-parser**: Automatisk extrahering av auktionsdata från eBay
+- **Tradera-parser**: Automatisk extrahering av auktionsdata från Tradera
+- **Stöd för flera eBay-domäner**: .com, .co.uk, .de, .se
+- **Automatisk dataextrahering**: Titel, beskrivning, säljare, priser, bilder, slutdatum
 
 ### Statistik och analys
 - Dedikerad statistik-dashboard med samlingsöversikt
@@ -38,7 +47,22 @@ Ett Django-baserat system för att hantera och katalogisera yxsamlingar med avan
 - Ekonomisk översikt med totala köp- och försäljningsvärden
 - Realtidsstatistik som uppdateras baserat på aktiva filter
 
+### Användarhantering
+- **Fullständigt inloggningssystem** med Django Auth
+- **Publik/privat vy** med konfigurerbara inställningar
+- **Inställningssida** för administratörer
+- **Intelligent filtrering** baserat på användarstatus
+- **Demo-läge** med fördefinierade användaruppgifter
+
 ## Senaste uppdateringar
+
+
+
+### Auktionsparsers (2025-01-XX)
+- **eBay-parser** - Automatisk extrahering av auktionsdata från eBay
+- **Tradera-parser** - Automatisk extrahering av auktionsdata från Tradera
+- **Stöd för flera eBay-domäner** - .com, .co.uk, .de, .se
+- **Automatisk dataextrahering** - Titel, beskrivning, säljare, priser, bilder, slutdatum
 
 ### Docker-integration och Unraid-deployment (2025-07-23)
 - **Integrerad Docker-image** - En enda container med Nginx, Gunicorn och Django för enkel deployment
@@ -83,10 +107,13 @@ Ett Django-baserat system för att hantera och katalogisera yxsamlingar med avan
 
 ## Teknisk stack
 
-- **Backend**: Django 4.x
+- **Backend**: Django 5.2.3
 - **Frontend**: Bootstrap 5, JavaScript (ES6+)
-- **Bildhantering**: Pillow, django-imagekit
+- **Bildhantering**: Pillow 10.4.0, django-imagekit
 - **Databas**: SQLite (alla miljöer) med WAL-mode för bättre prestanda och samtidighet
+- **Auktionsparsers**: requests 2.31.0, beautifulsoup4 4.12.2
+- **Testning**: pytest 8.0.0, pytest-django 4.8.0, coverage 7.10.0
+- **Kodkvalitet**: flake8 7.0.0, black 24.1.1, pylint 3.0.3
 
 ## Installation
 
@@ -124,7 +151,25 @@ docker-compose up -d
 - Automatisk sökvägsfix vid backup-återställning
 - Korrekt URL-generering för både yxbilder och tillverkarbilder
 
-Se `deploy/DEPLOYMENT.md` för detaljerade instruktioner.
+Se `DEPLOYMENT_INTEGRATED.md` för detaljerade instruktioner.
+
+## Testning
+
+Projektet har en omfattande test-suite med över 200 tester:
+
+```bash
+# Kör alla tester
+python manage.py test
+
+# Kör tester med coverage
+pytest --cov=axes
+
+# Kör specifika testfiler
+python manage.py test axes.tests.test_ebay_parser
+python manage.py test axes.tests.test_tradera_parser
+```
+
+Se `TESTING.md` för detaljerade testinstruktioner.
 
 ## Utvecklingsverktyg
 
@@ -175,13 +220,23 @@ Se `todo-manager/README.md` för fullständig dokumentation och `todo-manager/TO
 - **[DEPLOYMENT_INTEGRATED.md](DEPLOYMENT_INTEGRATED.md)** - Steg-för-steg deployment-guide
 - **[HOST_CONFIGURATION.md](HOST_CONFIGURATION.md)** - Konfiguration av externa hosts
 - **[MEDIA_FILES_PRODUCTION.md](MEDIA_FILES_PRODUCTION.md)** - Media-filhantering i produktion
+- **[UNRAID_AUTOMATED_SETUP.md](UNRAID_AUTOMATED_SETUP.md)** - Automatisk Unraid-installation
+- **[UNRAID_PERMISSIONS.md](UNRAID_PERMISSIONS.md)** - Behörighetshantering för Unraid
 
 ### Utveckling och testning
 - **[PROJECT_STRUCTURE.md](PROJECT_STRUCTURE.md)** - Projektstruktur och arkitektur
 - **[WORKFLOW_AND_COLLAB.md](WORKFLOW_AND_COLLAB.md)** - Utvecklingsarbetsflöde och samarbete
+- **[TESTING.md](TESTING.md)** - Teststrategi och instruktioner
+- **[UX_DESIGN_DISCUSSION.md](UX_DESIGN_DISCUSSION.md)** - UX-design och användarupplevelse
+
+### Docker och deployment
+- **[DOCKER_TAGGING_STRATEGY.md](DOCKER_TAGGING_STRATEGY.md)** - Docker image-taggningsstrategi
+- **[CI_CD_README.md](CI_CD_README.md)** - CI/CD-pipeline och automation
+- **[DEMO_SERVER_SETUP.md](DEMO_SERVER_SETUP.md)** - Demo-server-konfiguration
 
 ## Utveckling
 
 - Kör tester: `python manage.py test`
 - Samla statiska filer: `python manage.py collectstatic`
-- Skapa migreringar: `python manage.py makemigrations` 
+- Skapa migreringar: `python manage.py makemigrations`
+- Kör kodkvalitetsverktyg: `flake8`, `black`, `pylint` 

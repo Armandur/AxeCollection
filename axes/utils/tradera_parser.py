@@ -57,7 +57,9 @@ class TraderaParser:
 
             return {
                 "title": self._extract_title(soup),
-                "description": self._extract_description(soup),
+                "description": self._extract_title(
+                    soup
+                ),  # Använd titeln som beskrivning istället
                 "seller_alias": self._extract_seller_alias(soup),
                 "prices": prices,
                 "item_id": self.extract_item_id(url),
@@ -460,24 +462,35 @@ class TraderaParser:
         return "Okänd säljare"
 
     def _extract_prices(self, soup: BeautifulSoup) -> List[Dict]:
-        """Extrahera priser med etikett (slutpris, köparskydd, frakt med typ)"""
+        """Extrahera priser med etikett och valuta"""
         prices = []
+
+        # Tradera använder alltid SEK
+        currency = "SEK"
 
         # 1. Slutpris och köparskydd - leta efter specifika texter
         price_patterns = [
-            (r"slutpris.*?(\d+)\s*kr", "Slutpris"),
-            (r"vinnande bud.*?(\d+)\s*kr", "Vinnande bud"),
-            (r"du vann.*?(\d+)\s*kr", "Du vann"),
+            (r"slutpris.*?(\d+)\s*kr", "Slutpris", "SEK"),
+            (r"vinnande bud.*?(\d+)\s*kr", "Vinnande bud", "SEK"),
+            (r"du vann.*?(\d+)\s*kr", "Du vann", "SEK"),
         ]
 
         page_text = soup.get_text()
-        for pattern, label in price_patterns:
+        for pattern, label, curr in price_patterns:
             matches = re.findall(pattern, page_text, re.IGNORECASE)
             for match in matches:
                 try:
                     amount = int(match)
                     if 10 <= amount <= 50000:
-                        prices.append({"label": label, "amount": amount})
+                        prices.append(
+                            {
+                                "label": label,
+                                "amount": amount,
+                                "currency": curr,
+                                "original_amount": amount,
+                                "original_currency": curr,
+                            }
+                        )
                 except ValueError:
                     continue
 
@@ -496,7 +509,15 @@ class TraderaParser:
                         for p in prices
                         if not (p["label"] == "med köparskydd" and p["amount"] < 200)
                     ]
-                    prices.append({"label": "med köparskydd", "amount": amount})
+                    prices.append(
+                        {
+                            "label": "med köparskydd",
+                            "amount": amount,
+                            "currency": "SEK",
+                            "original_amount": amount,
+                            "original_currency": "SEK",
+                        }
+                    )
             except ValueError:
                 pass
 
@@ -514,7 +535,15 @@ class TraderaParser:
                         p["label"] == "med köparskydd" and p["amount"] == amount
                         for p in prices
                     ):
-                        prices.append({"label": "med köparskydd", "amount": amount})
+                        prices.append(
+                            {
+                                "label": "med köparskydd",
+                                "amount": amount,
+                                "currency": "SEK",
+                                "original_amount": amount,
+                                "original_currency": "SEK",
+                            }
+                        )
             except ValueError:
                 pass
 
@@ -548,9 +577,17 @@ class TraderaParser:
         # 5. Fallback: leta efter alla priser med "kr" (om inget hittats)
         if not prices:
             for element in soup.find_all(text=re.compile(r"(\d+)\s*kr")):
-                price = self._parse_price(element)
+                price = self._parse_price_with_currency(element, "SEK")
                 if price:
-                    prices.append({"label": "Pris", "amount": price})
+                    prices.append(
+                        {
+                            "label": "Pris",
+                            "amount": price["amount"],
+                            "currency": "SEK",
+                            "original_amount": price["amount"],
+                            "original_currency": "SEK",
+                        }
+                    )
 
         return prices
 
@@ -593,6 +630,28 @@ class TraderaParser:
                         return price
                 except ValueError:
                     continue
+
+        return None
+
+    def _parse_price_with_currency(
+        self, price_text: str, currency: str
+    ) -> Optional[Dict]:
+        """Parsa pris med valuta från text"""
+        if currency == "SEK":
+            pattern = r"(\d+(?:,\d{3})*)\s*kr"
+        else:
+            return None
+
+        match = re.search(pattern, price_text, re.IGNORECASE)
+        if match:
+            try:
+                price_str = match.group(1).replace(",", "")
+                price = int(price_str)
+                # Kontrollera att priset är rimligt (1-50000)
+                if 1 <= price <= 50000:
+                    return {"amount": price, "currency": currency}
+            except ValueError:
+                pass
 
         return None
 

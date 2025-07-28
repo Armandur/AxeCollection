@@ -194,6 +194,13 @@ En checklista för vidareutveckling av AxeCollection. Bocka av med [x] när klar
     - [x] 55.11 Förbättrad eBay-parser: använd titeln som beskrivning om ingen beskrivning hittas
     - [x] 55.12 Automatisk skapande av Tradera och eBay som standardplattformar
     - [x] 55.13 Lagt till url och comment fält till Platform-modellen för bättre metadata
+    - [x] 55.14 Valutahantering för auktionsparsers - identifiera och visa valuta från eBay-auktioner
+    - [x] 55.15 Stöd för flera valutor (USD, EUR, GBP, SEK) i eBay-parsern
+    - [x] 55.16 Valutavarningar i UI när priset inte är i SEK
+    - [x] 55.17 Live valutakonvertering med exchangerate-api.com och caching
+    - [x] 55.18 Konverteringsknapp i UI för att konvertera priser till SEK
+    - [x] 55.19 Management command för att testa valutakonvertering
+    - [x] 55.20 Omfattande tester för valutakonvertering och integration
 56. [x] Fixa problem med att ändra tillverkare på en yxa - formuläret fungerar inte korrekt
 
 ## 6. Transaktions- och måtthantering

@@ -73,7 +73,7 @@ class EbayParser:
 
             return {
                 "title": title,
-                "description": description,
+                "description": title,  # Använd titeln som beskrivning istället
                 "seller_alias": seller_alias,
                 "prices": prices,
                 "item_id": self.extract_item_id(url),
@@ -1139,21 +1139,45 @@ class EbayParser:
         return "Okänd säljare"
 
     def _extract_prices(self, soup: BeautifulSoup) -> List[Dict]:
-        """Extrahera priser med etikett (slutpris, frakt med typ)"""
+        """Extrahera priser med etikett och valuta"""
         prices = []
 
-        # 1. Slutpris - leta efter specifika texter
-        price_patterns = [
-            (r"sold for.*?\$(\d+(?:,\d{3})*)", "Slutpris"),
-            (r"winning bid.*?\$(\d+(?:,\d{3})*)", "Vinnande bud"),
-            (r"you won.*?\$(\d+(?:,\d{3})*)", "Du vann"),
-            (r"final price.*?\$(\d+(?:,\d{3})*)", "Slutpris"),
-            (r"US \$(\d+(?:,\d{3})*)", "Slutpris"),  # eBay:s format
-            (r"\$(\d+(?:,\d{3})*)\s*US", "Slutpris"),  # Alternativt format
-        ]
+        # Identifiera valuta baserat på URL och sidinnehåll
+        currency = self._identify_currency(soup)
+
+        # 1. Slutpris - leta efter specifika texter med olika valutor
+        price_patterns = []
+
+        if currency == "USD":
+            price_patterns = [
+                (r"sold for.*?\$(\d+(?:,\d{3})*)", "Slutpris", "USD"),
+                (r"winning bid.*?\$(\d+(?:,\d{3})*)", "Vinnande bud", "USD"),
+                (r"you won.*?\$(\d+(?:,\d{3})*)", "Du vann", "USD"),
+                (r"final price.*?\$(\d+(?:,\d{3})*)", "Slutpris", "USD"),
+                (r"US \$(\d+(?:,\d{3})*)", "Slutpris", "USD"),
+                (r"\$(\d+(?:,\d{3})*)\s*US", "Slutpris", "USD"),
+            ]
+        elif currency == "EUR":
+            price_patterns = [
+                (r"sold for.*?€(\d+(?:,\d{3})*)", "Slutpris", "EUR"),
+                (r"winning bid.*?€(\d+(?:,\d{3})*)", "Vinnande bud", "EUR"),
+                (r"you won.*?€(\d+(?:,\d{3})*)", "Du vann", "EUR"),
+                (r"final price.*?€(\d+(?:,\d{3})*)", "Slutpris", "EUR"),
+                (r"EUR €(\d+(?:,\d{3})*)", "Slutpris", "EUR"),
+                (r"€(\d+(?:,\d{3})*)\s*EUR", "Slutpris", "EUR"),
+            ]
+        elif currency == "GBP":
+            price_patterns = [
+                (r"sold for.*?£(\d+(?:,\d{3})*)", "Slutpris", "GBP"),
+                (r"winning bid.*?£(\d+(?:,\d{3})*)", "Vinnande bud", "GBP"),
+                (r"you won.*?£(\d+(?:,\d{3})*)", "Du vann", "GBP"),
+                (r"final price.*?£(\d+(?:,\d{3})*)", "Slutpris", "GBP"),
+                (r"GBP £(\d+(?:,\d{3})*)", "Slutpris", "GBP"),
+                (r"£(\d+(?:,\d{3})*)\s*GBP", "Slutpris", "GBP"),
+            ]
 
         page_text = soup.get_text()
-        for pattern, label in price_patterns:
+        for pattern, label, curr in price_patterns:
             matches = re.findall(pattern, page_text, re.IGNORECASE)
             for match in matches:
                 try:
@@ -1161,55 +1185,130 @@ class EbayParser:
                     amount_str = match.replace(",", "")
                     amount = int(amount_str)
                     if 1 <= amount <= 50000:
-                        prices.append({"label": label, "amount": amount})
+                        prices.append(
+                            {
+                                "label": label,
+                                "amount": amount,
+                                "currency": curr,
+                                "original_amount": amount,
+                                "original_currency": curr,
+                            }
+                        )
                 except ValueError:
                     continue
 
-        # 2. Fraktpris
-        shipping_patterns = [
-            (r"shipping.*?\$(\d+(?:,\d{3})*)", "Frakt"),
-            (r"postage.*?\$(\d+(?:,\d{3})*)", "Frakt"),
-        ]
+        # 2. Fraktpris med valuta
+        shipping_patterns = []
+        if currency == "USD":
+            shipping_patterns = [
+                (r"shipping.*?\$(\d+(?:,\d{3})*)", "Frakt", "USD"),
+                (r"postage.*?\$(\d+(?:,\d{3})*)", "Frakt", "USD"),
+            ]
+        elif currency == "EUR":
+            shipping_patterns = [
+                (r"shipping.*?€(\d+(?:,\d{3})*)", "Frakt", "EUR"),
+                (r"postage.*?€(\d+(?:,\d{3})*)", "Frakt", "EUR"),
+            ]
+        elif currency == "GBP":
+            shipping_patterns = [
+                (r"shipping.*?£(\d+(?:,\d{3})*)", "Frakt", "GBP"),
+                (r"postage.*?£(\d+(?:,\d{3})*)", "Frakt", "GBP"),
+            ]
 
-        for pattern, label in shipping_patterns:
+        for pattern, label, curr in shipping_patterns:
             matches = re.findall(pattern, page_text, re.IGNORECASE)
             for match in matches:
                 try:
                     amount_str = match.replace(",", "")
                     amount = int(amount_str)
                     if 1 <= amount <= 1000:
-                        prices.append({"label": label, "amount": amount})
+                        prices.append(
+                            {
+                                "label": label,
+                                "amount": amount,
+                                "currency": curr,
+                                "original_amount": amount,
+                                "original_currency": curr,
+                            }
+                        )
                 except ValueError:
                     continue
 
-        # 3. Fallback: leta efter alla priser med "$" (om inget hittats)
+        # 3. Fallback: leta efter alla priser med valutasymboler
         if not prices:
-            for element in soup.find_all(text=re.compile(r"\$(\d+(?:,\d{3})*)")):
-                price = self._parse_price(element)
-                if price:
-                    prices.append({"label": "Pris", "amount": price})
+            currency_symbols = {
+                "USD": r"\$(\d+(?:,\d{3})*)",
+                "EUR": r"€(\d+(?:,\d{3})*)",
+                "GBP": r"£(\d+(?:,\d{3})*)",
+            }
+
+            for curr, pattern in currency_symbols.items():
+                for element in soup.find_all(text=re.compile(pattern)):
+                    price = self._parse_price_with_currency(element, curr)
+                    if price:
+                        prices.append(
+                            {
+                                "label": "Slutpris",
+                                "amount": price["amount"],
+                                "currency": curr,
+                                "original_amount": price["amount"],
+                                "original_currency": curr,
+                            }
+                        )
 
         return prices
 
-    def _parse_price(self, price_text: str) -> Optional[int]:
-        """Parsa pris från text"""
-        # Leta efter siffror följt av "$" eller siffror med kommatecken
-        price_patterns = [
-            r"\$(\d+(?:,\d{3})*)",  # $199 eller $1,999
-            r"(\d+(?:,\d{3})*)\s*\$",  # 199 $ eller 1,999 $
-        ]
+    def _identify_currency(self, soup: BeautifulSoup) -> str:
+        """Identifiera valuta baserat på sidinnehåll och URL"""
+        page_text = soup.get_text().lower()
 
-        for pattern in price_patterns:
-            match = re.search(pattern, price_text, re.IGNORECASE)
-            if match:
-                try:
-                    price_str = match.group(1).replace(",", "")
-                    price = int(price_str)
-                    # Kontrollera att priset är rimligt (1-50000)
-                    if 1 <= price <= 50000:
-                        return price
-                except ValueError:
-                    continue
+        # Kontrollera URL för eBay-domän
+        url = soup.find("meta", {"property": "og:url"})
+        if url:
+            url_content = url.get("content", "").lower()
+            if "ebay.co.uk" in url_content:
+                return "GBP"
+            elif "ebay.de" in url_content:
+                return "EUR"
+            elif "ebay.se" in url_content:
+                return "SEK"
+
+        # Kontrollera sidinnehåll för valutasymboler
+        if "€" in page_text or "eur" in page_text:
+            return "EUR"
+        elif "£" in page_text or "gbp" in page_text:
+            return "GBP"
+        elif "kr" in page_text or "sek" in page_text:
+            return "SEK"
+        else:
+            # Standard för eBay.com är USD
+            return "USD"
+
+    def _parse_price_with_currency(
+        self, price_text: str, currency: str
+    ) -> Optional[Dict]:
+        """Parsa pris med valuta från text"""
+        currency_patterns = {
+            "USD": r"\$(\d+(?:,\d{3})*)",
+            "EUR": r"€(\d+(?:,\d{3})*)",
+            "GBP": r"£(\d+(?:,\d{3})*)",
+            "SEK": r"(\d+(?:,\d{3})*)\s*kr",
+        }
+
+        pattern = currency_patterns.get(currency)
+        if not pattern:
+            return None
+
+        match = re.search(pattern, price_text, re.IGNORECASE)
+        if match:
+            try:
+                price_str = match.group(1).replace(",", "")
+                price = int(price_str)
+                # Kontrollera att priset är rimligt (1-50000)
+                if 1 <= price <= 50000:
+                    return {"amount": price, "currency": currency}
+            except ValueError:
+                pass
 
         return None
 

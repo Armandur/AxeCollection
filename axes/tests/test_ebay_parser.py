@@ -79,8 +79,8 @@ class EbayParserTestCase(SimpleTestCase):
 
         # Verifiera resultat
         self.assertEqual(result["title"], "Vintage Gränsfors Bruk Axe")
-        # Beskrivningen kommer från den extraherade beskrivningen
-        self.assertIn("Beautiful vintage axe", result["description"])
+        # Beskrivningen är nu samma som titeln
+        self.assertEqual(result["description"], "Vintage Gränsfors Bruk Axe")
         self.assertEqual(result["seller_alias"], "SellerName123")
         self.assertEqual(result["item_id"], "123456789012")
         self.assertEqual(result["url"], "https://www.ebay.com/itm/123456789012")
@@ -152,8 +152,8 @@ class EbayParserTestCase(SimpleTestCase):
             )
             self.assertEqual(result, {"title": "Test Axe"})
 
-    def test_extract_description_fallback_to_title(self):
-        """Testa att titeln används som beskrivning när ingen beskrivning hittas"""
+    def test_title_extraction(self):
+        """Testa att titel extraheras korrekt"""
         from bs4 import BeautifulSoup
 
         html = """
@@ -161,16 +161,17 @@ class EbayParserTestCase(SimpleTestCase):
             <head><title>Vintage Axe - eBay</title></head>
             <body>
                 <h1>Vintage Gränsfors Bruk Axe</h1>
-                <!-- Ingen beskrivning finns -->
+                <!-- Ingen beskrivning extraheras längre -->
             </body>
         </html>
         """
         soup = BeautifulSoup(html, "html.parser")
 
-        description = self.parser._extract_description(soup)
+        # Testa att titeln extraheras korrekt
+        title = self.parser._extract_title(soup)
 
-        # Verifiera att fallback-meddelandet returneras när ingen beskrivning finns
-        self.assertEqual(description, "Ingen beskrivning tillgänglig")
+        # Verifiera att titeln extraheras korrekt
+        self.assertEqual(title, "Vintage Gränsfors Bruk Axe")
 
     def test_extract_images_high_resolution(self):
         """Testa att högre upplösa bilder extraheras"""
@@ -216,10 +217,10 @@ class EbayParserTestCase(SimpleTestCase):
         self.assertIn(".jpg", images[0])
         self.assertNotIn(".webp", images[0])
 
-    def test_parse_ebay_page_with_title_fallback(self):
-        """Testa att parsning använder titeln som beskrivning när ingen beskrivning finns"""
+    def test_parse_ebay_page_with_title_as_description(self):
+        """Testa att parsning använder titeln som beskrivning"""
         with patch("axes.utils.ebay_parser.requests.Session") as mock_session:
-            # Mock response utan beskrivning
+            # Mock response
             mock_response = MagicMock()
             mock_response.content = """
             <html>
