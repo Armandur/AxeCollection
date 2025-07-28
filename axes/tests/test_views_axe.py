@@ -360,9 +360,9 @@ class AxeCreateViewTest(ViewsAxeTestCase):
     def test_axe_create_view_contains_contact_match_info_badge(self):
         """Testa att kontaktmatch-info-badgen finns i formuläret"""
         self.client.login(username="testuser", password="testpass123")
-        
+
         response = self.client.get(reverse("axe_create"))
-        
+
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'id="contact-match-info"')
         self.assertContains(response, "Ingen kontakt hittad - registrerar ny")
@@ -399,7 +399,7 @@ class AxeCreateViewTest(ViewsAxeTestCase):
         data = response.json()
         self.assertTrue(data["success"])
         self.assertIn("auction_data", data)
-        
+
         # Kontrollera att rätt data returneras
         auction_data = data["auction_data"]
         self.assertEqual(auction_data["title"], "Test Yxa")

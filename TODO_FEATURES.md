@@ -184,7 +184,7 @@ En checklista för vidareutveckling av AxeCollection. Bocka av med [x] när klar
     - [x] 55.1 Implementera URL-parser för Tradera-auktioner som extraherar titel, beskrivning, bilder och slutpris
     - [ ] 55.2 Implementera URL-parser för eBay-auktioner med motsvarande funktionalitet
     - [x] 55.3 Automatisk förfyllning av yxformulär baserat på extraherad auktionsdata
-    - [ ] 55.4 Automatisk nedladdning och lagring av auktionsbilder
+    - [x] 55.4 Automatisk nedladdning och lagring av auktionsbilder
     - [ ] 55.5 Intelligent kategorisering och tillverkargissning baserat på auktionsbeskrivning
     - [x] 55.6 Automatisk skapande av transaktion med slutpris som köpvärde
     - [x] 55.7 Felhantering för ogiltiga URL:er eller auktioner som inte kan parsas

@@ -658,12 +658,12 @@ def axe_create(request):
             axe = _create_axe_from_form(form, request.user)
             _handle_uploaded_images(axe, request)
             _handle_url_images(axe, request)
-            
+
             # Hantera automatisk nedladdning av auktionsbilder
             auction_images = request.POST.getlist("auction_images")
             if auction_images:
                 _download_auction_images(axe, auction_images)
-            
+
             _rename_axe_images(axe)
             contact = _handle_contact_creation(axe, form)
             platform = _handle_platform_creation(axe, form)
@@ -702,7 +702,9 @@ def _update_axe_from_form(axe, form, user):
 def _handle_image_removal(axe, request):
     """Hantera borttagning av befintliga bilder"""
     if "remove_images" in request.POST:
-        print(f"DEBUG: remove_images found in POST data: {request.POST.getlist('remove_images')}")
+        print(
+            f"DEBUG: remove_images found in POST data: {request.POST.getlist('remove_images')}"
+        )
         for image_id in request.POST.getlist("remove_images"):
             try:
                 image = AxeImage.objects.get(id=image_id, axe=axe)
@@ -712,7 +714,9 @@ def _handle_image_removal(axe, request):
                 print(f"DEBUG: Image {image_id} not found for axe {axe.id}")
                 pass
     else:
-        print(f"DEBUG: No remove_images in POST data. Available keys: {list(request.POST.keys())}")
+        print(
+            f"DEBUG: No remove_images in POST data. Available keys: {list(request.POST.keys())}"
+        )
 
 
 def _handle_new_images_for_edit(axe, request):
@@ -770,7 +774,9 @@ def _should_rename_images(request, has_order_changes, axe):
     has_new_images = "images" in request.FILES or "image_urls" in request.POST
     has_removals = "remove_images" in request.POST
 
-    print(f"DEBUG: _should_rename_images - has_new_images: {has_new_images}, has_order_changes: {has_order_changes}, has_removals: {has_removals}")
+    print(
+        f"DEBUG: _should_rename_images - has_new_images: {has_new_images}, has_order_changes: {has_order_changes}, has_removals: {has_removals}"
+    )
 
     # Om det finns borttagningar, kontrollera om den sista bilden tas bort
     skip_renaming_for_removals = False
@@ -778,7 +784,9 @@ def _should_rename_images(request, has_order_changes, axe):
         remaining_count = axe.images.count() - len(
             request.POST.getlist("remove_images")
         )
-        print(f"DEBUG: Current image count: {axe.images.count()}, removing: {len(request.POST.getlist('remove_images'))}, remaining: {remaining_count}")
+        print(
+            f"DEBUG: Current image count: {axe.images.count()}, removing: {len(request.POST.getlist('remove_images'))}, remaining: {remaining_count}"
+        )
         if remaining_count == 0:
             # Alla bilder tas bort, ingen omdöpning behövs
             skip_renaming_for_removals = True
@@ -861,7 +869,7 @@ def axe_edit(request, pk):
         form = AxeForm(request.POST, request.FILES, instance=axe)
         if form.is_valid():
             axe = _update_axe_from_form(axe, form, request.user)
-            
+
             # Hantera nya bilder först
             _handle_new_images_for_edit(axe, request)
             _handle_url_images_for_edit(axe, request)
@@ -873,7 +881,7 @@ def axe_edit(request, pk):
             # Omnumrera och döp om alla bilder endast om det behövs
             if needs_renaming:
                 _rename_axe_images_for_edit(axe)
-            
+
             # Ta bort bilder sist (efter omdöpning)
             _handle_image_removal(axe, request)
 
@@ -1955,9 +1963,9 @@ def _download_auction_images(axe, image_urls):
     """Ladda ner och spara auktionsbilder automatiskt"""
     if not image_urls:
         return
-    
+
     max_order = axe.images.aggregate(Max("order"))["order__max"] or 0
-    
+
     for i, image_url in enumerate(image_urls, 1):
         if image_url and image_url.startswith("http"):
             try:
@@ -1966,31 +1974,35 @@ def _download_auction_images(axe, image_urls):
                     # Bestäm filändelse baserat på URL eller Content-Type
                     file_extension = os.path.splitext(urlparse(image_url).path)[1]
                     if not file_extension:
-                        content_type = response.headers.get('content-type', '')
-                        if 'jpeg' in content_type or 'jpg' in content_type:
-                            file_extension = '.jpg'
-                        elif 'png' in content_type:
-                            file_extension = '.png'
-                        elif 'webp' in content_type:
-                            file_extension = '.webp'
+                        content_type = response.headers.get("content-type", "")
+                        if "jpeg" in content_type or "jpg" in content_type:
+                            file_extension = ".jpg"
+                        elif "png" in content_type:
+                            file_extension = ".png"
+                        elif "webp" in content_type:
+                            file_extension = ".webp"
                         else:
-                            file_extension = '.jpg'  # Fallback
-                    
+                            file_extension = ".jpg"  # Fallback
+
                     # Skapa unikt filnamn
                     filename = f"{axe.id}_{uuid.uuid4().hex[:8]}{file_extension}"
                     image_file = ContentFile(response.content, name=filename)
-                    
+
                     # Skapa AxeImage-objekt
                     axe_image = AxeImage(
-                        axe=axe, 
-                        image=image_file, 
+                        axe=axe,
+                        image=image_file,
                         order=max_order + i,
-                        description=f"Auktionsbild {i} från Tradera"
+                        description=f"Auktionsbild {i} från Tradera",
                     )
                     axe_image.save()
-                    
-                    logger.info(f"Laddade ner auktionsbild {i} för yxa {axe.id}: {image_url}")
-                    
+
+                    logger.info(
+                        f"Laddade ner auktionsbild {i} för yxa {axe.id}: {image_url}"
+                    )
+
             except Exception as e:
-                logger.error(f"Fel vid nedladdning av auktionsbild {i} för yxa {axe.id}: {e}")
+                logger.error(
+                    f"Fel vid nedladdning av auktionsbild {i} för yxa {axe.id}: {e}"
+                )
                 continue

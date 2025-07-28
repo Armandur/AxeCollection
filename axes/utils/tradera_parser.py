@@ -93,18 +93,29 @@ class TraderaParser:
         ]
 
         month_names = {
-            "jan": 1, "januari": 1,
-            "feb": 2, "februari": 2,
-            "mar": 3, "mars": 3,
-            "apr": 4, "april": 4,
+            "jan": 1,
+            "januari": 1,
+            "feb": 2,
+            "februari": 2,
+            "mar": 3,
+            "mars": 3,
+            "apr": 4,
+            "april": 4,
             "maj": 5,
-            "jun": 6, "juni": 6,
-            "jul": 7, "juli": 7,
-            "aug": 8, "augusti": 8,
-            "sep": 9, "september": 9,
-            "okt": 10, "oktober": 10,
-            "nov": 11, "november": 11,
-            "dec": 12, "december": 12,
+            "jun": 6,
+            "juni": 6,
+            "jul": 7,
+            "juli": 7,
+            "aug": 8,
+            "augusti": 8,
+            "sep": 9,
+            "september": 9,
+            "okt": 10,
+            "oktober": 10,
+            "nov": 11,
+            "november": 11,
+            "dec": 12,
+            "december": 12,
         }
 
         for pattern in date_patterns:
@@ -119,13 +130,13 @@ class TraderaParser:
                         # Timme och minut ignoreras för datum
                         if month_name in month_names:
                             month = month_names[month_name]
-                            
+
                             # Intelligent årbestämning baserat på dagens datum
                             today = datetime.now().date()
                             current_year = today.year
                             current_month = today.month
-                            
-                            # Om auktionsmånad är senare än nuvarande månad, 
+
+                            # Om auktionsmånad är senare än nuvarande månad,
                             # och vi är i slutet av året, så är auktionen från föregående år
                             if month > current_month and current_month >= 11:
                                 year = current_year - 1
@@ -136,7 +147,7 @@ class TraderaParser:
                             else:
                                 # Annars använd nuvarande år
                                 year = current_year
-                            
+
                             # Validera datum
                             if 1 <= day <= 31 and 1 <= month <= 12:
                                 return f"{year:04d}-{month:02d}-{day:02d}"
@@ -231,20 +242,20 @@ class TraderaParser:
     def _convert_html_to_text_with_linebreaks(self, element) -> str:
         """Konvertera HTML-element till text med radbrytningar"""
         # Ersätt <br> och <br/> taggar med radbrytningar
-        for br in element.find_all(['br']):
-            br.replace_with('\n')
-        
+        for br in element.find_all(["br"]):
+            br.replace_with("\n")
+
         # Ersätt block-element med radbrytningar
-        for block in element.find_all(['p', 'div', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6']):
+        for block in element.find_all(["p", "div", "h1", "h2", "h3", "h4", "h5", "h6"]):
             if block.name != element.name:  # Undvik att ersätta själva elementet
-                block.insert_before('\n')
-                block.insert_after('\n')
-        
+                block.insert_before("\n")
+                block.insert_after("\n")
+
         # Hämta text och normalisera
         text = element.get_text()
         # Ta bort extra whitespace men behåll radbrytningar
-        lines = [line.strip() for line in text.split('\n') if line.strip()]
-        return '\n'.join(lines)
+        lines = [line.strip() for line in text.split("\n") if line.strip()]
+        return "\n".join(lines)
 
     def _extract_seller_alias(self, soup: BeautifulSoup) -> str:
         """Extrahera säljarens alias"""
@@ -253,7 +264,7 @@ class TraderaParser:
         for link in soup.find_all("a", href=True):
             href = link.get("href", "")
             text = link.get_text(strip=True)
-            
+
             # Om länken går till en profil och texten verkar vara ett alias
             if "/profile/" in href and text:
                 # Filtrera bort text som inte är alias
@@ -277,26 +288,32 @@ class TraderaParser:
                         ]
                     )
                 )
-                
+
                 # Specialfall: tillåt alias som innehåller "auktioner" om det verkar vara ett riktigt alias
-                if "auktioner" in text_lower and len(text) < 30 and not any(char in text for char in [" ", ","]):
+                if (
+                    "auktioner" in text_lower
+                    and len(text) < 30
+                    and not any(char in text for char in [" ", ","])
+                ):
                     is_valid_alias = True
-                
+
                 if is_valid_alias:
                     display_aliases.append(text)
-        
+
         # Prioritera renare alias från display-texten (med rätt versalisering)
         for text in display_aliases:
             # Rensa bort recensionsbetyg som "5.0", "4.8", etc. och extra text
             # Försök hitta mönster där betyget är tydligt separerat från aliaset
             # Exempel: "Sandra123895.0" -> "Sandra12389", "PetrusAuktioner4.8" -> "PetrusAuktioner"
-            
+
             # Ta bort decimaltal i slutet om det verkar vara ett betyg
             # Kontrollera först om texten slutar med ett decimaltal
             if re.search(r"\d+\.\d+$", text):
                 # Om det finns en kombination av bokstäver och siffror följt av decimaltal
                 # så är det troligen alias + betyg
-                match = re.search(r"([a-zA-ZåäöÅÄÖ]+[a-zA-ZåäöÅÄÖ0-9_]*)\d+\.\d+$", text)
+                match = re.search(
+                    r"([a-zA-ZåäöÅÄÖ]+[a-zA-ZåäöÅÄÖ0-9_]*)\d+\.\d+$", text
+                )
                 if match:
                     cleaned_text = match.group(1)
                 else:
@@ -304,28 +321,36 @@ class TraderaParser:
                     cleaned_text = re.sub(r"\d+\.\d+$", "", text).strip()
             else:
                 cleaned_text = text.strip()
-            
+
             # Ta bort extra text som städer, länder, etc.
             cleaned_text = re.sub(r"\s*[,\s].*$", "", cleaned_text).strip()
             # Kontrollera att det verkar vara ett rimligt alias
-            if cleaned_text and len(cleaned_text) >= 3 and not any(char in cleaned_text for char in [" ", "\n", "\t"]):
+            if (
+                cleaned_text
+                and len(cleaned_text) >= 3
+                and not any(char in cleaned_text for char in [" ", "\n", "\t"])
+            ):
                 # Behåll ursprunglig versalisering från display-texten
                 return cleaned_text
-        
+
         # Fallback: använd URL-baserad extraktion om display-texten inte fungerar
         for link in soup.find_all("a", href=True):
             href = link.get("href", "")
-            
+
             # Leta efter profil-URL:er som innehåller aliaset
             # Exempel: /profile/items/1376193/sandra12389
             profile_match = re.search(r"/profile/items/\d+/([^/]+)$", href)
             if profile_match:
                 alias = profile_match.group(1)
                 # Kontrollera att det verkar vara ett rimligt alias
-                if alias and len(alias) >= 3 and not any(char in alias for char in [" ", "\n", "\t"]):
+                if (
+                    alias
+                    and len(alias) >= 3
+                    and not any(char in alias for char in [" ", "\n", "\t"])
+                ):
                     # Behåll ursprunglig versalisering från URL:en
                     return alias
-        
+
         # Fallback: försök hitta säljaralias i länkar till butik/profil
         profile_links = []
         for link in soup.find_all("a", href=True):
@@ -355,11 +380,15 @@ class TraderaParser:
                         ]
                     )
                 )
-                
+
                 # Specialfall: tillåt alias som innehåller "auktioner" om det verkar vara ett riktigt alias
-                if "auktioner" in text_lower and len(text) < 30 and not any(char in text for char in [" ", ","]):
+                if (
+                    "auktioner" in text_lower
+                    and len(text) < 30
+                    and not any(char in text for char in [" ", ","])
+                ):
                     is_valid_alias = True
-                
+
                 if is_valid_alias:
                     profile_links.append(text)
 
@@ -368,13 +397,15 @@ class TraderaParser:
             # Rensa bort recensionsbetyg som "5.0", "4.8", etc. och extra text
             # Försök hitta mönster där betyget är tydligt separerat från aliaset
             # Exempel: "Sandra123895.0" -> "Sandra12389", "PetrusAuktioner4.8" -> "PetrusAuktioner"
-            
+
             # Ta bort decimaltal i slutet om det verkar vara ett betyg
             # Kontrollera först om texten slutar med ett decimaltal
             if re.search(r"\d+\.\d+$", text):
                 # Om det finns en kombination av bokstäver och siffror följt av decimaltal
                 # så är det troligen alias + betyg
-                match = re.search(r"([a-zA-ZåäöÅÄÖ]+[a-zA-ZåäöÅÄÖ0-9_]*)\d+\.\d+$", text)
+                match = re.search(
+                    r"([a-zA-ZåäöÅÄÖ]+[a-zA-ZåäöÅÄÖ0-9_]*)\d+\.\d+$", text
+                )
                 if match:
                     cleaned_text = match.group(1)
                 else:
@@ -382,15 +413,19 @@ class TraderaParser:
                     cleaned_text = re.sub(r"\d+\.\d+$", "", text).strip()
             else:
                 cleaned_text = text.strip()
-            
+
             # Ta bort extra text som städer, länder, etc.
             cleaned_text = re.sub(r"\s*[,\s].*$", "", cleaned_text).strip()
             # Kontrollera att det verkar vara ett rimligt alias
-            if cleaned_text and len(cleaned_text) >= 3 and not any(char in cleaned_text for char in [" ", "\n", "\t"]):
+            if (
+                cleaned_text
+                and len(cleaned_text) >= 3
+                and not any(char in cleaned_text for char in [" ", "\n", "\t"])
+            ):
                 # Behåll ursprunglig versalisering från display-texten
                 return cleaned_text
 
-                    # Specifikt leta efter text som innehåller "Auktioner" (som PetrusAuktioner)
+                # Specifikt leta efter text som innehåller "Auktioner" (som PetrusAuktioner)
             for element in soup.find_all(["a", "span", "div"]):
                 text = element.get_text(strip=True)
                 if text and "auktioner" in text.lower() and len(text) < 30:
