@@ -180,17 +180,27 @@ En checklista för vidareutveckling av AxeCollection. Bocka av med [x] när klar
 52. [x] Plattformshantering – Skapa nya plattformar direkt från yxformuläret med smart matchning.
 53. [x] Automatisk transaktionstypbestämning – Baserat på pris (negativ = köp, positiv = sälj).
 54. [x] Separata formulär för skapande vs redigering – Olika fält visas beroende på om yxa skapas eller redigeras.
-55. [ ] Lägg till yxa via auktions-URL – Möjlighet att lägga till yxa genom att ange URL till vunnen Tradera- eller eBay-auktion.
-    - [ ] 55.1 Implementera URL-parser för Tradera-auktioner som extraherar titel, beskrivning, bilder och slutpris
-    - [ ] 55.2 Implementera URL-parser för eBay-auktioner med motsvarande funktionalitet
-    - [ ] 55.3 Automatisk förfyllning av yxformulär baserat på extraherad auktionsdata
-    - [ ] 55.4 Automatisk nedladdning och lagring av auktionsbilder
-    - [ ] 55.5 Intelligent kategorisering och tillverkargissning baserat på auktionsbeskrivning
-    - [ ] 55.6 Automatisk skapande av transaktion med slutpris som köpvärde
-    - [ ] 55.7 Felhantering för ogiltiga URL:er eller auktioner som inte kan parsas
-    - [ ] 55.8 Stöd för olika auktionsformat och språk (svenska/engelska)
-    - [ ] 55.9 Förhandsvisning av extraherad data innan sparning
-    - [ ] 55.10 Möjlighet att redigera och justera automatiskt extraherad information
+55. [x] Lägg till yxa via auktions-URL – Möjlighet att lägga till yxa genom att ange URL till vunnen Tradera- eller eBay-auktion.
+    - [x] 55.1 Implementera URL-parser för Tradera-auktioner som extraherar titel, beskrivning, bilder och slutpris
+    - [x] 55.2 Implementera URL-parser för eBay-auktioner med motsvarande funktionalitet
+    - [x] 55.3 Automatisk förfyllning av yxformulär baserat på extraherad auktionsdata
+    - [x] 55.4 Automatisk nedladdning och lagring av auktionsbilder
+    - [x] 55.5 Intelligent kategorisering och tillverkargissning baserat på auktionsbeskrivning
+    - [x] 55.6 Automatisk skapande av transaktion med slutpris som köpvärde
+    - [x] 55.7 Felhantering för ogiltiga URL:er eller auktioner som inte kan parsas
+    - [x] 55.8 Stöd för olika auktionsformat och språk (svenska/engelska)
+    - [x] 55.9 Förhandsvisning av extraherad data innan sparning
+    - [x] 55.10 Möjlighet att redigera och justera automatiskt extraherad information
+    - [x] 55.11 Förbättrad eBay-parser: använd titeln som beskrivning om ingen beskrivning hittas
+    - [x] 55.12 Automatisk skapande av Tradera och eBay som standardplattformar
+    - [x] 55.13 Lagt till url och comment fält till Platform-modellen för bättre metadata
+    - [x] 55.14 Valutahantering för auktionsparsers - identifiera och visa valuta från eBay-auktioner
+    - [x] 55.15 Stöd för flera valutor (USD, EUR, GBP, SEK) i eBay-parsern
+    - [x] 55.16 Valutavarningar i UI när priset inte är i SEK
+    - [x] 55.17 Live valutakonvertering med exchangerate-api.com och caching
+    - [x] 55.18 Konverteringsknapp i UI för att konvertera priser till SEK
+    - [x] 55.19 Management command för att testa valutakonvertering
+    - [x] 55.20 Omfattande tester för valutakonvertering och integration
 56. [x] Fixa problem med att ändra tillverkare på en yxa - formuläret fungerar inte korrekt
 
 ## 6. Transaktions- och måtthantering

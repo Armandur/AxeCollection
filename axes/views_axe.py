@@ -25,6 +25,22 @@ import os
 import shutil
 from urllib.parse import urlparse
 from django.contrib import messages
+from django.views.decorators.csrf import csrf_exempt
+from django.http import HttpResponse
+from django.db.models import Q, Count, Sum, Avg, Max, Min
+from django.db import transaction
+from django.core.paginator import Paginator
+from django.template.loader import render_to_string
+from django.core.exceptions import ValidationError
+from django.db.models.functions import Coalesce
+from decimal import Decimal
+import json
+import re
+from datetime import datetime, timedelta
+from collections import defaultdict
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 def move_images_to_unlinked_folder(axe_images, delete_images=False):
@@ -44,13 +60,14 @@ def move_images_to_unlinked_folder(axe_images, delete_images=False):
     if delete_images:
         # Ta bort alla bilder
         deleted_count = 0
+        error_count = 0
         for image in axe_images:
             try:
                 image.delete()
                 deleted_count += 1
-            except Exception:
-                pass
-        return {"moved": 0, "deleted": deleted_count, "errors": 0}
+            except Exception as e:
+                error_count += 1
+        return {"moved": 0, "deleted": deleted_count, "errors": error_count}
 
     # Skapa timestamp för borttagning
     timestamp = timezone.now().strftime("%Y%m%d_%H%M%S")
@@ -89,7 +106,7 @@ def move_images_to_unlinked_folder(axe_images, delete_images=False):
                             shutil.copy2(webp_path, webp_new_path)
                         moved_count += 1
                     axe_image.delete()
-            except Exception:
+            except Exception as e:
                 error_count += 1
                 pass
 
@@ -599,11 +616,106 @@ def _handle_transaction_creation(axe, form, contact, platform):
 @login_required
 def axe_create(request):
     if request.method == "POST":
+        # Hantera AJAX-förfrågan för URL-parsning
+        if request.POST.get("parse_only") == "true":
+            auction_url = request.POST.get("auction_url", "").strip()
+            if not auction_url:
+                return JsonResponse({"success": False, "error": "Ingen URL angiven"})
+
+            try:
+                # Bestäm vilken parser att använda baserat på URL
+                if "tradera.com" in auction_url:
+                    from .utils.tradera_parser import TraderaParser
+
+                    parser = TraderaParser()
+                    auction_data = parser.parse_tradera_page(auction_url)
+                    platform_name = "Tradera"
+
+                    # Skapa Tradera-plattformen automatiskt om den inte finns
+                    try:
+                        platform, created = Platform.objects.get_or_create(
+                            name="Tradera",
+                            defaults={
+                                "url": "https://www.tradera.com",
+                                "comment": "Tradera-auktionsplattform",
+                                "color_class": "bg-primary",
+                            },
+                        )
+                        if created:
+                            platform.save()
+                    except Exception as e:
+                        logger.error(f"Kunde inte skapa Tradera-plattform: {e}")
+                elif (
+                    "ebay.com" in auction_url
+                    or "ebay.co.uk" in auction_url
+                    or "ebay.de" in auction_url
+                    or "ebay.se" in auction_url
+                ):
+                    from .utils.ebay_parser import EbayParser
+
+                    parser = EbayParser()
+                    auction_data = parser.parse_ebay_page(auction_url)
+                    platform_name = "eBay"
+
+                    # Skapa eBay-plattformen automatiskt om den inte finns
+                    try:
+                        platform, created = Platform.objects.get_or_create(
+                            name="eBay",
+                            defaults={
+                                "url": "https://www.ebay.com",
+                                "comment": "eBay-auktionsplattform",
+                                "color_class": "bg-success",
+                            },
+                        )
+                        if created:
+                            platform.save()
+                    except Exception as e:
+                        logger.error(f"Kunde inte skapa eBay-plattform: {e}")
+                else:
+                    return JsonResponse(
+                        {
+                            "success": False,
+                            "error": "Endast Tradera och eBay-auktions-URL:er stöds för närvarande",
+                        }
+                    )
+
+                # Sök efter befintlig kontakt baserat på säljaralias
+                seller_alias = auction_data.get("seller_alias", "")
+                matching_contacts = []
+                if seller_alias:
+                    # Sök efter kontakter med samma alias
+                    matching_contacts = Contact.objects.filter(
+                        alias__iexact=seller_alias
+                    ).values("id", "name", "alias", "email", "city", "country")
+
+                # Hitta plattformen
+                platform = Platform.objects.filter(name=platform_name).first()
+                platform_id = platform.id if platform else None
+
+                # Lägg till kontakt- och plattformsinformation i svaret
+                auction_data["matching_contacts"] = list(matching_contacts)
+                auction_data["platform_id"] = platform_id
+
+                return JsonResponse({"success": True, "auction_data": auction_data})
+            except Exception as e:
+                return JsonResponse(
+                    {
+                        "success": False,
+                        "error": f"Kunde inte hämta auktionsdata: {str(e)}",
+                    }
+                )
+        # Vanlig formulärhantering
         form = AxeForm(request.POST, request.FILES)
         if form.is_valid():
             axe = _create_axe_from_form(form, request.user)
             _handle_uploaded_images(axe, request)
             _handle_url_images(axe, request)
+
+            # Hantera automatisk nedladdning av auktionsbilder
+            auction_images = request.POST.getlist("auction_images")
+            if auction_images:
+                _download_auction_images(axe, auction_images)
+
             _rename_axe_images(axe)
             contact = _handle_contact_creation(axe, form)
             platform = _handle_platform_creation(axe, form)
@@ -642,12 +754,21 @@ def _update_axe_from_form(axe, form, user):
 def _handle_image_removal(axe, request):
     """Hantera borttagning av befintliga bilder"""
     if "remove_images" in request.POST:
+        print(
+            f"DEBUG: remove_images found in POST data: {request.POST.getlist('remove_images')}"
+        )
         for image_id in request.POST.getlist("remove_images"):
             try:
                 image = AxeImage.objects.get(id=image_id, axe=axe)
+                print(f"DEBUG: Deleting image {image_id} for axe {axe.id}")
                 image.delete()
             except AxeImage.DoesNotExist:
+                print(f"DEBUG: Image {image_id} not found for axe {axe.id}")
                 pass
+    else:
+        print(
+            f"DEBUG: No remove_images in POST data. Available keys: {list(request.POST.keys())}"
+        )
 
 
 def _handle_new_images_for_edit(axe, request):
@@ -705,21 +826,31 @@ def _should_rename_images(request, has_order_changes, axe):
     has_new_images = "images" in request.FILES or "image_urls" in request.POST
     has_removals = "remove_images" in request.POST
 
+    print(
+        f"DEBUG: _should_rename_images - has_new_images: {has_new_images}, has_order_changes: {has_order_changes}, has_removals: {has_removals}"
+    )
+
     # Om det finns borttagningar, kontrollera om den sista bilden tas bort
     skip_renaming_for_removals = False
     if has_removals:
         remaining_count = axe.images.count() - len(
             request.POST.getlist("remove_images")
         )
+        print(
+            f"DEBUG: Current image count: {axe.images.count()}, removing: {len(request.POST.getlist('remove_images'))}, remaining: {remaining_count}"
+        )
         if remaining_count == 0:
             # Alla bilder tas bort, ingen omdöpning behövs
             skip_renaming_for_removals = True
+            print("DEBUG: All images being removed, skipping renaming")
 
-    return (
+    result = (
         has_new_images
         or has_order_changes
         or (has_removals and not skip_renaming_for_removals)
     )
+    print(f"DEBUG: Should rename images: {result}")
+    return result
 
 
 def _rename_axe_images_for_edit(axe):
@@ -790,17 +921,21 @@ def axe_edit(request, pk):
         form = AxeForm(request.POST, request.FILES, instance=axe)
         if form.is_valid():
             axe = _update_axe_from_form(axe, form, request.user)
-            _handle_image_removal(axe, request)
+
+            # Hantera nya bilder först
             _handle_new_images_for_edit(axe, request)
             _handle_url_images_for_edit(axe, request)
             has_order_changes = _handle_image_order_changes(axe, request)
 
-            # Kontrollera om omdöpning behövs
+            # Kontrollera om omdöpning behövs (före borttagning)
             needs_renaming = _should_rename_images(request, has_order_changes, axe)
 
             # Omnumrera och döp om alla bilder endast om det behövs
             if needs_renaming:
                 _rename_axe_images_for_edit(axe)
+
+            # Ta bort bilder sist (efter omdöpning)
+            _handle_image_removal(axe, request)
 
             return redirect("axe_detail", pk=axe.pk)
     else:
@@ -1563,12 +1698,16 @@ def delete_latest_axe(request):
         if image_count > 0:
             if delete_images:
                 # Ta bort bilderna
-                result = move_images_to_unlinked_folder(axe.images, delete_images=True)
+                result = move_images_to_unlinked_folder(
+                    axe.images.all(), delete_images=True
+                )
                 if result["deleted"] > 0:
                     messages.info(request, f'{result["deleted"]} bilder togs bort.')
             else:
                 # Flytta bilderna till okopplade bilder
-                result = move_images_to_unlinked_folder(axe.images, delete_images=False)
+                result = move_images_to_unlinked_folder(
+                    axe.images.all(), delete_images=False
+                )
                 if result["moved"] > 0:
                     messages.info(
                         request,
@@ -1874,3 +2013,52 @@ def download_unlinked_images(request):
 
     except Exception as e:
         return JsonResponse({"success": False, "error": str(e)})
+
+
+def _download_auction_images(axe, image_urls):
+    """Ladda ner och spara auktionsbilder automatiskt"""
+    if not image_urls:
+        return
+
+    max_order = axe.images.aggregate(Max("order"))["order__max"] or 0
+
+    for i, image_url in enumerate(image_urls, 1):
+        if image_url and image_url.startswith("http"):
+            try:
+                response = requests.get(image_url, timeout=15)
+                if response.status_code == 200:
+                    # Bestäm filändelse baserat på URL eller Content-Type
+                    file_extension = os.path.splitext(urlparse(image_url).path)[1]
+                    if not file_extension:
+                        content_type = response.headers.get("content-type", "")
+                        if "jpeg" in content_type or "jpg" in content_type:
+                            file_extension = ".jpg"
+                        elif "png" in content_type:
+                            file_extension = ".png"
+                        elif "webp" in content_type:
+                            file_extension = ".webp"
+                        else:
+                            file_extension = ".jpg"  # Fallback
+
+                    # Skapa unikt filnamn
+                    filename = f"{axe.id}_{uuid.uuid4().hex[:8]}{file_extension}"
+                    image_file = ContentFile(response.content, name=filename)
+
+                    # Skapa AxeImage-objekt
+                    axe_image = AxeImage(
+                        axe=axe,
+                        image=image_file,
+                        order=max_order + i,
+                        description=f"Auktionsbild {i} från Tradera",
+                    )
+                    axe_image.save()
+
+                    logger.info(
+                        f"Laddade ner auktionsbild {i} för yxa {axe.id}: {image_url}"
+                    )
+
+            except Exception as e:
+                logger.error(
+                    f"Fel vid nedladdning av auktionsbild {i} för yxa {axe.id}: {e}"
+                )
+                continue

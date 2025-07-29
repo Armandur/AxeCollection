@@ -252,6 +252,29 @@ class PlatformModelTest(TestCase):
         self.assertIsInstance(platform.get_total_sale_value(), (int, Decimal))
         self.assertIsInstance(platform.get_profit_loss(), (int, Decimal))
 
+    def test_platform_url_and_comment_fields(self):
+        """Test att Platform-modellen har url och comment fält"""
+        platform = Platform.objects.create(
+            name="Test Platform",
+            url="https://www.example.com",
+            comment="Test kommentar",
+            color_class="bg-primary",
+        )
+
+        self.assertEqual(platform.url, "https://www.example.com")
+        self.assertEqual(platform.comment, "Test kommentar")
+        self.assertEqual(platform.color_class, "bg-primary")
+
+    def test_platform_optional_fields(self):
+        """Test att url och comment fält är valfria"""
+        platform = Platform.objects.create(
+            name="Test Platform", color_class="bg-primary"
+        )
+
+        self.assertIsNone(platform.url)
+        self.assertIsNone(platform.comment)
+        self.assertEqual(platform.name, "Test Platform")
+
 
 class SettingsModelTest(TestCase):
     """Tester för Settings-modellen"""

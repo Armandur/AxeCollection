@@ -78,6 +78,135 @@ tr.editing .form-control-sm {
                     <form id="axeForm" method="post" enctype="multipart/form-data" autocomplete="off">
                         {% csrf_token %}
                         
+                        <!-- URL-parsning sektion (endast för nya yxor) -->
+                        {% if not is_edit %}
+                        <div class="card mb-4">
+                            <div class="card-header">
+                                <h6 class="mb-0">
+                                    <i class="fas fa-link me-2"></i>Hämta data från auktions-URL (valfritt)
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-8">
+                                        <div class="mb-3">
+                                            <label for="auction_url" class="form-label">Auktions-URL (Tradera/eBay)</label>
+                                            <input type="url" class="form-control" id="auction_url" name="auction_url" 
+                                                   placeholder="https://www.tradera.com/item/... eller https://www.ebay.com/itm/..." 
+                                                   title="Klistra in URL:en till den vunna auktionen här">
+                                            <div class="form-text">
+                                                Klistra in URL:en till den vunna Tradera- eller eBay-auktionen för att automatiskt fylla i data.
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="mb-3">
+                                            <label class="form-label">&nbsp;</label>
+                                            <button type="button" id="parseUrlBtn" class="btn btn-info w-100">
+                                                <i class="fas fa-download me-2"></i>Hämta data
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Visning av extraherad data -->
+                                <div id="parsedDataSection" style="display: none;">
+                                    <hr class="my-3">
+                                    <div class="alert alert-success">
+                                        <h6 class="mb-2">
+                                            <i class="fas fa-check-circle me-2"></i>Auktionsdata extraherad
+                                        </h6>
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <small><strong>Titel:</strong> <span id="parsedTitle"></span></small><br>
+                                                <small><strong>Säljare:</strong> <span id="parsedSeller"></span></small><br>
+                                                <small><strong>Slutpris:</strong> <span id="parsedPrice"></span></small><br>
+                                                <small><strong>Valuta:</strong> <span id="parsedCurrency"></span></small><br>
+                                                <small><strong>Slutdatum:</strong> <span id="parsedEndDate"></span></small>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <!-- Beskrivning tas bort eftersom vi använder titeln som beskrivning -->
+                                            </div>
+                                        </div>
+                                        <!-- Valutavarning -->
+                                        <div id="currencyWarning" class="alert alert-info mt-3" style="display: none;">
+                                            <div class="d-flex align-items-start">
+                                                <i class="fas fa-info-circle me-2 mt-1"></i>
+                                                <div class="flex-grow-1">
+                                                    <div class="fw-bold mb-2">Valutainformation</div>
+                                                    <div id="currencyWarningText" class="mb-2"></div>
+                                                    
+                                                    <!-- Kursinformation -->
+                                                    <div class="row mb-3">
+                                                        <div class="col-md-6">
+                                                            <small class="text-muted">
+                                                                <strong>Live kurs:</strong> <span id="conversionRate"></span>
+                                                            </small>
+                                                        </div>
+                                                        <div class="col-md-6">
+                                                            <small class="text-muted">
+                                                                <strong>Senast uppdaterad:</strong> <span id="lastUpdated"></span>
+                                                            </small>
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    <!-- Konverteringsalternativ -->
+                                                    <div class="row">
+                                                        <div class="col-md-6">
+                                                            <button type="button" id="convertToSekBtn" class="btn btn-sm btn-primary">
+                                                                <i class="fas fa-exchange-alt me-1"></i>Konvertera automatiskt
+                                                            </button>
+                                                        </div>
+                                                        <div class="col-md-6">
+                                                            <button type="button" id="manualSekBtn" class="btn btn-sm btn-outline-secondary">
+                                                                <i class="fas fa-edit me-1"></i>Ange SEK-belopp manuellt
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    <!-- Manuell SEK-input (dold) -->
+                                                    <div id="manualSekInput" class="mt-3" style="display: none;">
+                                                        <div class="row">
+                                                            <div class="col-md-6">
+                                                                <div class="input-group input-group-sm">
+                                                                    <input type="number" id="manualSekValue" class="form-control" 
+                                                                           placeholder="Belopp i SEK" step="1" min="1">
+                                                                    <span class="input-group-text">kr</span>
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-md-6">
+                                                                <button type="button" id="applyManualSekBtn" class="btn btn-sm btn-success">
+                                                                    <i class="fas fa-check me-1"></i>Använd
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                        <small class="text-muted">Ange det slutliga beloppet i svenska kronor</small>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Laddningsindikator -->
+                                <div id="loadingIndicator" style="display: none;">
+                                    <div class="text-center">
+                                        <div class="spinner-border text-info" role="status">
+                                            <span class="visually-hidden">Laddar...</span>
+                                        </div>
+                                        <p class="mt-2 text-muted">Hämtar auktionsdata...</p>
+                                    </div>
+                                </div>
+                                
+                                <!-- Felmeddelande -->
+                                <div id="errorMessage" class="alert alert-danger" style="display: none;">
+                                    <i class="fas fa-exclamation-triangle me-2"></i>
+                                    <span id="errorText"></span>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                        
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="mb-3">
@@ -134,7 +263,21 @@ tr.editing .form-control-sm {
                             <div class="card-body">
                                 <!-- Sök efter befintlig kontakt -->
                                 <div class="position-relative">
-                                    {% include 'axes/_form_field.html' with field=form.contact_search %}
+                                    <div class="mb-3">
+                                        <label for="{{ form.contact_search.id_for_label }}" class="form-label">
+                                            {{ form.contact_search.label }}
+                                            <span id="contact-match-info" class="badge bg-info ms-2" style="display: none;">
+                                                <i class="fas fa-info-circle me-1"></i>Ingen kontakt hittad - registrerar ny
+                                            </span>
+                                        </label>
+                                        {{ form.contact_search }}
+                                        {% if form.contact_search.help_text %}
+                                            <div class="form-text">{{ form.contact_search.help_text }}</div>
+                                        {% endif %}
+                                        {% if form.contact_search.errors %}
+                                            <div class="text-danger">{{ form.contact_search.errors }}</div>
+                                        {% endif %}
+                                    </div>
                                     <!-- Dropdown för sökresultat -->
                                     <div id="contactSearchResults" class="dropdown-menu w-100" style="display: none; position: absolute; z-index: 1000; max-height: 200px; overflow-y: auto;">
                                         <!-- Sökresultat visas här -->
@@ -332,7 +475,7 @@ tr.editing .form-control-sm {
                                                 <div class="position-absolute" style="top: 5px; left: 5px; background: rgba(0,0,0,0.7); color: white; padding: 2px 6px; border-radius: 3px; font-size: 10px;">
                                                     {{ image.image.name|basename }}
                                                 </div>
-                                                <button type="button" class="btn btn-danger btn-sm position-absolute" style="top: 5px; right: 5px; width: 30px; height: 30px; border-radius: 50%;" onclick="removeExistingImage({{ image.id }})">
+                                                <button type="button" class="btn btn-danger btn-sm position-absolute delete-image-btn" style="top: 5px; right: 5px; width: 30px; height: 30px; border-radius: 50%;" onclick="removeExistingImage({{ image.id }})" title="Ta bort bild">
                                                     <i class="fas fa-times"></i>
                                                 </button>
 
@@ -689,16 +832,83 @@ tr.editing .form-control-sm {
     transform: translateY(-2px);
     box-shadow: 0 4px 8px rgba(0,0,0,0.1);
 }
+
+/* Stilar för bilder markerade för borttagning */
+.existing-image-item.marked-for-deletion {
+    opacity: 0.6;
+    filter: grayscale(50%);
+    position: relative;
+}
+
+.existing-image-item.marked-for-deletion::before {
+    content: "MARKERAD FÖR BORTTAGNING";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(220, 53, 69, 0.9);
+    color: white;
+    padding: 8px 12px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: bold;
+    text-align: center;
+    z-index: 10;
+    white-space: nowrap;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+
+.existing-image-item.marked-for-deletion .card {
+    border: 2px solid #dc3545;
+}
+
+.existing-image-item.marked-for-deletion .btn-danger {
+    background-color: #6c757d;
+    border-color: #6c757d;
+}
+
+.existing-image-item.marked-for-deletion .delete-image-btn {
+    background-color: #28a745 !important;
+    border-color: #28a745 !important;
+}
+
+.existing-image-item.marked-for-deletion .delete-image-btn:hover {
+    background-color: #218838 !important;
+    border-color: #1e7e34 !important;
+}
 </style>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     // === GLOBALA FUNKTIONER ===
     
-    // === TA BORT BILD (flera bilder) ===
-    window.removeExistingImage = function(imageId) {
-        if (confirm('Är du säker på att du vill ta bort denna bild?')) {
+    // === NOTIFIKATIONER ===
+    function showNotification(message, type) {
+        const notification = document.getElementById('notification');
+        const notificationMessage = document.getElementById('notification-message');
+        
+        if (notification && notificationMessage) {
+            notification.className = `alert alert-${type === 'error' ? 'danger' : type}`;
+            notificationMessage.textContent = message;
+            notification.style.display = 'block';
+            
+            // Dölj notifikationen efter 5 sekunder
+            setTimeout(() => {
+                notification.style.display = 'none';
+            }, 5000);
+        }
+    }
     
+            // === TA BORT BILD (flera bilder) ===
+        window.removeExistingImage = function(imageId) {
+            // Kontrollera om bilden redan är markerad för borttagning
+            const imageElement = document.querySelector(`[data-image-id="${imageId}"]`);
+            if (imageElement && imageElement.classList.contains('marked-for-deletion')) {
+                // Om bilden redan är markerad, ångra borttagningen
+                undoImageDeletion(imageId);
+                return;
+            }
+            
             // Lägg till en dold input för att markera bilden som borttagen
             const hiddenInputs = document.getElementById('hiddenInputs');
             if (hiddenInputs) {
@@ -712,15 +922,48 @@ document.addEventListener('DOMContentLoaded', function() {
                     hiddenInputs.appendChild(hiddenInput);
                 }
             }
-            // Ta bort bilden från DOM
-            const imageElement = document.querySelector(`[data-image-id="${imageId}"]`);
+            
+            // Markera bilden visuellt för borttagning istället för att ta bort den från DOM
             if (imageElement) {
-                imageElement.remove();
+                imageElement.classList.add('marked-for-deletion');
+                // Uppdatera X-knappen för denna bild
+                const deleteBtn = imageElement.querySelector('.delete-image-btn');
+                if (deleteBtn) {
+                    deleteBtn.disabled = false;
+                    deleteBtn.style.cursor = 'pointer';
+                    deleteBtn.title = 'Ångra borttagning';
+                    deleteBtn.innerHTML = '<i class="fas fa-undo"></i>';
+                }
                 // Visa notifikation
-                showNotification('Bild markerad för borttagning', 'success');
+                showNotification('Bild markerad för borttagning - kommer att tas bort när du sparar yxan', 'success');
             }
+        };
+    
+    // === ÅNGRA BILDBORTTAGNING ===
+    function undoImageDeletion(imageId) {
+        // Ta bort den dolda input:en för denna bild
+        const hiddenInputs = document.getElementById('hiddenInputs');
+        if (hiddenInputs) {
+            const existingInputs = hiddenInputs.querySelectorAll(`input[name="remove_images"][value="${imageId}"]`);
+            existingInputs.forEach(input => input.remove());
         }
-    };
+        
+        // Ta bort visuell markering
+        const imageElement = document.querySelector(`[data-image-id="${imageId}"]`);
+        if (imageElement) {
+            imageElement.classList.remove('marked-for-deletion');
+            // Återställ X-knappen för denna bild
+            const deleteBtn = imageElement.querySelector('.delete-image-btn');
+            if (deleteBtn) {
+                deleteBtn.disabled = false;
+                deleteBtn.style.cursor = 'pointer';
+                deleteBtn.title = 'Ta bort bild';
+                deleteBtn.innerHTML = '<i class="fas fa-times"></i>';
+            }
+            // Visa notifikation
+            showNotification('Borttagning av bild ångrad', 'success');
+        }
+    }
 
     const uploadArea = document.getElementById('uploadArea');
     const fileInput = document.querySelector('input[type="file"]');
@@ -1339,12 +1582,27 @@ document.addEventListener('DOMContentLoaded', function() {
                     hiddenInputs.appendChild(hiddenInput);
                 }
             });
+            
+            // Lägg till auktionsbilder om de finns
+            if (window.auctionImages && window.auctionImages.length > 0) {
+                window.auctionImages.forEach(imageUrl => {
+                    const hiddenInput = document.createElement('input');
+                    hiddenInput.type = 'hidden';
+                    hiddenInput.name = 'auction_images';
+                    hiddenInput.value = imageUrl;
+                    hiddenInputs.appendChild(hiddenInput);
+                });
+            }
         }
     }
     
     if (axeForm) {
         axeForm.addEventListener('submit', function(e) {
             prepareFormForSubmit();
+            
+            // Debug: Logga vad som skickas
+            const removeImageInputs = document.querySelectorAll('input[name="remove_images"]');
+            console.log('Bilder markerade för borttagning:', Array.from(removeImageInputs).map(input => input.value));
         });
     }
     
@@ -1357,6 +1615,468 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    // === URL-PARSNING ===
+    
+    // URL-parsning funktionalitet
+    const parseUrlBtn = document.getElementById('parseUrlBtn');
+    const auctionUrlInput = document.getElementById('auction_url');
+    const parsedDataSection = document.getElementById('parsedDataSection');
+    const loadingIndicator = document.getElementById('loadingIndicator');
+    const errorMessage = document.getElementById('errorMessage');
+    const parsedTitle = document.getElementById('parsedTitle');
+    const parsedSeller = document.getElementById('parsedSeller');
+    const parsedPrice = document.getElementById('parsedPrice');
+    
+    // Funktion för att hämta valutasymbol
+    function getCurrencySymbol(currency) {
+        const symbols = {
+            'USD': '$',
+            'EUR': '€',
+            'GBP': '£',
+            'SEK': 'kr'
+        };
+        return symbols[currency] || currency;
+    }
+    
+    // Funktion för att hämta uppskattade kurser
+    function getEstimatedRate(currency) {
+        const rates = {
+            'USD': 10.5,
+            'EUR': 11.4,
+            'GBP': 13.2
+        };
+        return rates[currency] || 1.0;
+    }
+    
+    // Funktion för att konvertera pris till SEK
+    function convertPriceToSek(amount, currency) {
+        const rate = getEstimatedRate(currency);
+        return Math.round(amount * rate);
+    }
+    
+    // Funktion för att hämta valutainformation
+    function getCurrencyInfo(currency) {
+        const currencyInfo = {
+            'USD': { name: 'US Dollar', symbol: '$' },
+            'EUR': { name: 'Euro', symbol: '€' },
+            'GBP': { name: 'British Pound', symbol: '£' },
+            'SEK': { name: 'Swedish Krona', symbol: 'kr' }
+        };
+        return currencyInfo[currency] || { name: currency, symbol: currency };
+    }
+    
+    if (parseUrlBtn && auctionUrlInput) {
+        parseUrlBtn.addEventListener('click', function() {
+            const url = auctionUrlInput.value.trim();
+            
+            if (!url) {
+                showError('Ange en auktions-URL');
+                return;
+            }
+            
+            if (!url.includes('tradera.com') && !url.includes('ebay.com') && !url.includes('ebay.co.uk') && !url.includes('ebay.de') && !url.includes('ebay.se')) {
+                showError('Endast Tradera och eBay-auktions-URL:er stöds för närvarande');
+                return;
+            }
+            
+            // Visa laddningsindikator
+            showLoading();
+            
+            // Skicka AJAX-förfrågan
+            fetch('{% url "axe_create" %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                },
+                body: new URLSearchParams({
+                    'auction_url': url,
+                    'parse_only': 'true'
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                hideLoading();
+                
+                if (data.success) {
+                    // Visa extraherad data
+                    if (parsedTitle) parsedTitle.textContent = data.auction_data.title;
+                    if (parsedSeller) parsedSeller.textContent = data.auction_data.seller_alias;
+                    
+                    // Visa slutdatum
+                    const endDate = data.auction_data.auction_end_date;
+                    const parsedEndDateElement = document.getElementById('parsedEndDate');
+                    if (endDate && parsedEndDateElement) {
+                        // Formatera datum till svenskt format
+                        const date = new Date(endDate);
+                        const formattedDate = date.toLocaleDateString('sv-SE');
+                        parsedEndDateElement.textContent = formattedDate;
+                    } else if (parsedEndDateElement) {
+                        parsedEndDateElement.textContent = 'N/A';
+                    }
+                    
+                    // Hantera pris och valuta
+                    const priceData = data.auction_data.prices.find(p => p.label === 'Slutpris' || p.label === 'Pris');
+                    if (priceData && priceData.amount) {
+                        const currency = priceData.currency || 'SEK';
+                        const currencySymbol = getCurrencySymbol(currency);
+                        if (parsedPrice) parsedPrice.textContent = `${priceData.amount} ${currencySymbol}`;
+                        
+                        const parsedCurrencyElement = document.getElementById('parsedCurrency');
+                        if (parsedCurrencyElement) parsedCurrencyElement.textContent = currency;
+                        
+                        // Spara priceData för konvertering
+                        window.currentPriceData = priceData;
+                        
+                        // Visa valutainformation om det inte är SEK
+                        if (currency !== 'SEK') {
+                            const currencyInfo = getCurrencyInfo(currency);
+                            const warningText = `Priset är i ${currency} (${currencyInfo.name}) men systemet använder SEK. Du kan konvertera priset eller ange en egen kurs.`;
+                            
+                            const currencyWarningTextElement = document.getElementById('currencyWarningText');
+                            if (currencyWarningTextElement) currencyWarningTextElement.textContent = warningText;
+                            
+                            const currencyWarningElement = document.getElementById('currencyWarning');
+                            if (currencyWarningElement) currencyWarningElement.style.display = 'block';
+                            
+                            // Visa live kurs och timestamp
+                            const estimatedRate = getEstimatedRate(currency);
+                            const conversionRateElement = document.getElementById('conversionRate');
+                            if (conversionRateElement) conversionRateElement.textContent = `1 ${currency} ≈ ${estimatedRate} SEK`;
+                            
+                            const lastUpdatedElement = document.getElementById('lastUpdated');
+                            if (lastUpdatedElement) lastUpdatedElement.textContent = new Date().toLocaleString('sv-SE');
+                            
+                            // Sätt valutasymbol för manuell kurs
+                            const manualCurrencySymbolElement = document.getElementById('manualCurrencySymbol');
+                            if (manualCurrencySymbolElement) manualCurrencySymbolElement.textContent = currency;
+                        } else {
+                            const currencyWarningElement = document.getElementById('currencyWarning');
+                            if (currencyWarningElement) currencyWarningElement.style.display = 'none';
+                        }
+                    } else {
+                        if (parsedPrice) parsedPrice.textContent = 'N/A';
+                        const parsedCurrencyElement = document.getElementById('parsedCurrency');
+                        if (parsedCurrencyElement) parsedCurrencyElement.textContent = 'N/A';
+                        
+                        const currencyWarningElement = document.getElementById('currencyWarning');
+                        if (currencyWarningElement) currencyWarningElement.style.display = 'none';
+                        window.currentPriceData = null;
+                    }
+                    
+                    // Beskrivning hanteras inte längre - användaren får titeln som utgångspunkt
+                    
+                    // Fyll i formulärfält
+                    fillFormWithParsedData(data.auction_data);
+                    
+                    // Visa sektionen med extraherad data
+                    parsedDataSection.style.display = 'block';
+                    hideError();
+                } else {
+                    showError(data.error || 'Kunde inte hämta auktionsdata');
+                }
+            })
+            .catch(error => {
+                hideLoading();
+                showError('Ett fel uppstod vid hämtning av auktionsdata: ' + error.message);
+            });
+        });
+        
+        // Automatisk parsning när användaren klistrar in URL
+        auctionUrlInput.addEventListener('paste', function(e) {
+            setTimeout(() => {
+                const url = this.value.trim();
+                if (url && (url.includes('tradera.com') || url.includes('ebay.com') || url.includes('ebay.co.uk') || url.includes('ebay.de') || url.includes('ebay.se'))) {
+                    parseUrlBtn.click();
+                }
+            }, 100);
+        });
+        
+        // Hantera automatisk konvertering till SEK
+        const convertToSekBtn = document.getElementById('convertToSekBtn');
+        if (convertToSekBtn) {
+            convertToSekBtn.addEventListener('click', function() {
+                const priceData = window.currentPriceData;
+                if (priceData && priceData.currency !== 'SEK') {
+                    const sekAmount = convertPriceToSek(priceData.amount, priceData.currency);
+                    const currencySymbol = getCurrencySymbol(priceData.currency);
+                    
+                    // Uppdatera visningen
+                    const parsedPriceElement = document.getElementById('parsedPrice');
+                    if (parsedPriceElement) parsedPriceElement.textContent = `${sekAmount} kr`;
+                    
+                    const parsedCurrencyElement = document.getElementById('parsedCurrency');
+                    if (parsedCurrencyElement) parsedCurrencyElement.textContent = 'SEK';
+                    
+                    // Fyll i formulärfältet för transaktion
+                    const transactionPriceInput = document.getElementById('{{ form.transaction_price.id_for_label }}');
+                    if (transactionPriceInput) {
+                        transactionPriceInput.value = sekAmount;
+                    }
+                    
+                    // Visa bekräftelse
+                    const warningDiv = document.getElementById('currencyWarning');
+                    if (warningDiv) {
+                        warningDiv.className = 'alert alert-success mt-3';
+                        warningDiv.innerHTML = `
+                            <i class="fas fa-check-circle me-2"></i>
+                            <span>Priset har konverterats automatiskt: ${priceData.amount} ${currencySymbol} → ${sekAmount} kr</span>
+                        `;
+                    }
+                }
+            });
+        }
+        
+        // Hantera manuell SEK-inmatning
+        const manualSekBtn = document.getElementById('manualSekBtn');
+        const manualSekInput = document.getElementById('manualSekInput');
+        const applyManualSekBtn = document.getElementById('applyManualSekBtn');
+        
+        if (manualSekBtn) {
+            manualSekBtn.addEventListener('click', function() {
+                if (manualSekInput) manualSekInput.style.display = 'block';
+                const manualSekValueElement = document.getElementById('manualSekValue');
+                if (manualSekValueElement) manualSekValueElement.focus();
+            });
+        }
+        
+        if (applyManualSekBtn) {
+            applyManualSekBtn.addEventListener('click', function() {
+                const manualSekValueElement = document.getElementById('manualSekValue');
+                const manualValue = manualSekValueElement ? manualSekValueElement.value : '';
+                if (manualValue && !isNaN(manualValue)) {
+                    const sekAmount = parseInt(manualValue);
+                    
+                    // Uppdatera visningen
+                    const parsedPriceElement = document.getElementById('parsedPrice');
+                    if (parsedPriceElement) parsedPriceElement.textContent = `${sekAmount} kr`;
+                    
+                    const parsedCurrencyElement = document.getElementById('parsedCurrency');
+                    if (parsedCurrencyElement) parsedCurrencyElement.textContent = 'SEK';
+                    
+                    // Fyll i formulärfältet för transaktion
+                    const transactionPriceInput = document.getElementById('{{ form.transaction_price.id_for_label }}');
+                    if (transactionPriceInput) {
+                        transactionPriceInput.value = sekAmount;
+                    }
+                    
+                    // Visa bekräftelse
+                    const warningDiv = document.getElementById('currencyWarning');
+                    if (warningDiv) {
+                        warningDiv.className = 'alert alert-success mt-3';
+                        warningDiv.innerHTML = `
+                            <i class="fas fa-check-circle me-2"></i>
+                            <span>Manuellt belopp använt: ${sekAmount} kr</span>
+                        `;
+                    }
+                } else {
+                    alert('Ange ett giltigt belopp i SEK');
+                }
+            });
+        }
+    }
+    
+    function showLoading() {
+        loadingIndicator.style.display = 'block';
+        parsedDataSection.style.display = 'none';
+        hideError();
+        
+        // Dölj info-badge när vi börjar en ny parsning
+        const contactMatchInfo = document.getElementById('contact-match-info');
+        if (contactMatchInfo) {
+            contactMatchInfo.style.display = 'none';
+        }
+    }
+    
+    function hideLoading() {
+        loadingIndicator.style.display = 'none';
+    }
+    
+    function showError(message) {
+        errorMessage.style.display = 'block';
+        document.getElementById('errorText').textContent = message;
+        parsedDataSection.style.display = 'none';
+        hideLoading();
+    }
+    
+    function hideError() {
+        errorMessage.style.display = 'none';
+    }
+    
+    function fillFormWithParsedData(data) {
+        // Fyll i modellnamn
+        const modelInput = document.getElementById('{{ form.model.id_for_label }}');
+        if (modelInput && data.title) {
+            modelInput.value = data.title;
+        }
+        
+        // Fyll i kommentar/beskrivning med titeln istället
+        const commentInput = document.getElementById('{{ form.comment.id_for_label }}');
+        if (commentInput && data.title) {
+            commentInput.value = data.title;
+        }
+        
+        // Fyll i auktions-URL
+        const auctionUrlInput = document.getElementById('auction_url');
+        if (auctionUrlInput && data.url) {
+            auctionUrlInput.value = data.url;
+        }
+        
+        // Hantera kontaktinformation och matchning
+        const contactAliasInput = document.getElementById('{{ form.contact_alias.id_for_label }}');
+        const contactSearchInput = document.getElementById('{{ form.contact_search.id_for_label }}');
+        
+        if (data.seller_alias) {
+            // Sätt alias i kontaktfältet
+            if (contactAliasInput) {
+                contactAliasInput.value = data.seller_alias;
+            }
+            
+            // Om det finns matchande kontakter, hantera dem
+            if (data.matching_contacts && data.matching_contacts.length > 0) {
+                if (data.matching_contacts.length === 1) {
+                    // Om det finns exakt en matchning, sätt den i sökfältet
+                    const contact = data.matching_contacts[0];
+                    if (contactSearchInput) {
+                        contactSearchInput.value = contact.name;
+                    }
+                }
+                showMatchingContacts(data.matching_contacts, data.seller_alias);
+            } else {
+                // Om ingen matchning hittades, sätt säljarens namn i sökfältet
+                if (contactSearchInput) {
+                    contactSearchInput.value = data.seller_alias;
+                }
+                // Visa notis om att ingen kontakt matchades och visa kontaktformuläret
+                showNoContactMatch(data.seller_alias);
+            }
+        }
+        
+        // Sätt transaktionspris (negativt för köp)
+        const transactionPriceInput = document.getElementById('{{ form.transaction_price.id_for_label }}');
+        if (transactionPriceInput) {
+            const finalPrice = data.prices.find(p => p.label === 'Slutpris' || p.label === 'Pris');
+            if (finalPrice) {
+                // Om priset är i annan valuta än SEK, konvertera det
+                let priceAmount = finalPrice.amount;
+                if (finalPrice.currency && finalPrice.currency !== 'SEK') {
+                    priceAmount = convertPriceToSek(finalPrice.amount, finalPrice.currency);
+                }
+                transactionPriceInput.value = -priceAmount; // Negativt för köp
+                // Manuellt trigga badge-uppdatering
+                const event = new Event('input', { bubbles: true });
+                transactionPriceInput.dispatchEvent(event);
+            }
+        }
+        
+        // Sätt transaktionsdatum
+        const transactionDateInput = document.getElementById('{{ form.transaction_date.id_for_label }}');
+        if (transactionDateInput && data.auction_end_date) {
+            transactionDateInput.value = data.auction_end_date;
+        }
+        
+        // Sätt plattform till Tradera (använd platform_search istället för platform)
+        const platformSearchInput = document.getElementById('{{ form.platform_search.id_for_label }}');
+        if (platformSearchInput && data.platform_id) {
+            // Hitta Tradera-plattformen och sätt dess namn i sökfältet
+            platformSearchInput.value = 'Tradera';
+        }
+        
+        // Hantera auktionsbilder
+        if (data.images && data.images.length > 0) {
+            // Spara bilderna för att skicka med formuläret
+            window.auctionImages = data.images;
+            
+            // Visa förhandsgranskning av auktionsbilderna
+            const imagePreview = document.getElementById('imagePreview');
+            const previewContainer = document.getElementById('previewContainer');
+            
+            if (imagePreview && previewContainer) {
+                // Rensa befintliga förhandsvisningar
+                previewContainer.innerHTML = '';
+                
+                // Lägg till varje auktionsbild som förhandsvisning
+                data.images.forEach(imageUrl => {
+                    addImagePreview(null, null, imageUrl);
+                });
+                
+                // Visa förhandsvisningssektionen
+                imagePreview.style.display = 'block';
+            }
+            
+            // Visa notifikation om att bilder kommer att laddas ner
+            const notification = document.getElementById('notification');
+            const notificationMessage = document.getElementById('notification-message');
+            
+            if (notification && notificationMessage) {
+                notification.className = 'alert alert-info';
+                notificationMessage.innerHTML = `
+                    <i class="fas fa-image me-2"></i>
+                    <strong>${data.images.length}</strong> auktionsbilder kommer att laddas ner automatiskt när yxan skapas
+                `;
+                notification.style.display = 'block';
+            }
+        }
+    }
+    
+    function showMatchingContacts(contacts, sellerAlias) {
+        // Dölj info-badge eftersom vi hittade kontakter
+        const contactMatchInfo = document.getElementById('contact-match-info');
+        if (contactMatchInfo) {
+            contactMatchInfo.style.display = 'none';
+        }
+        
+        // Skapa en notifikation om matchande kontakter
+        const notification = document.getElementById('notification');
+        const notificationMessage = document.getElementById('notification-message');
+        
+        if (notification && notificationMessage) {
+            if (contacts.length === 1) {
+                const contact = contacts[0];
+                notification.className = 'alert alert-info';
+                notificationMessage.innerHTML = `
+                    <i class="fas fa-info-circle me-2"></i>
+                    Hittade matchande kontakt: <strong>${contact.name}</strong> (${contact.alias})
+                    ${contact.city ? `från ${contact.city}` : ''}
+                    ${contact.country ? `, ${contact.country}` : ''}
+                `;
+            } else {
+                notification.className = 'alert alert-warning';
+                notificationMessage.innerHTML = `
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    Hittade ${contacts.length} matchande kontakter för "${sellerAlias}". 
+                    Välj rätt kontakt från listan eller skapa en ny.
+                `;
+                
+                // Visa kontaktformuläret för att skapa ny kontakt om det finns flera matchningar
+                const newContactSection = document.getElementById('newContactSection');
+                if (newContactSection) {
+                    newContactSection.style.display = 'block';
+                }
+            }
+            notification.style.display = 'block';
+            
+            // Dölj notifikationen efter 10 sekunder
+            setTimeout(() => {
+                notification.style.display = 'none';
+            }, 10000);
+        }
+    }
+    
+    function showNoContactMatch(sellerAlias) {
+        // Visa info-badge bredvid "Försäljare"-labeln
+        const contactMatchInfo = document.getElementById('contact-match-info');
+        if (contactMatchInfo) {
+            contactMatchInfo.style.display = 'inline-block';
+        }
+        
+        // Visa hela kontaktformuläret direkt
+        const newContactSection = document.getElementById('newContactSection');
+        if (newContactSection) {
+            newContactSection.style.display = 'block';
+        }
+    }
+    
     // === MÅTT-HANTERING ===
     
     // === ENHETSVÄLJARE FÖR MÅTT ===
@@ -1398,8 +2118,8 @@ document.addEventListener('DOMContentLoaded', function() {
     // === SMART ENHETS-IFYLLNING BASERAT PÅ MÅTTTYP ===
     const measurementNameSelect = document.getElementById('measurement-name');
     
-    // Måtttyper och deras enheter från servern
-    const measurementTypesData = {{ measurement_types_data|safe }};
+            // Måtttyper och deras enheter från servern
+        const measurementTypesData = {{ measurement_types_data|safe|default:'{}' }};
     
     if (measurementNameSelect && measurementTypesData) {
         measurementNameSelect.addEventListener('change', function() {
@@ -1434,4 +2154,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 });
 </script>
+
+
+
 {% endblock %}
