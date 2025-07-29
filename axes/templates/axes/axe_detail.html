@@ -195,6 +195,115 @@
                 </div>
             </div>
         {% endif %}
+
+        <!-- Stämplar -->
+        <div class="card mt-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h4 class="mb-0">Stämplar</h4>
+                {% if user.is_authenticated %}
+                <div>
+                    <a href="{% url 'add_axe_stamp' axe.id %}" class="btn btn-primary btn-sm">
+                        <i class="fas fa-plus-circle me-1"></i>
+                        <span class="d-none d-md-inline">Lägg till stämpel</span>
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+            <div class="card-body">
+                {% if axe_stamps %}
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Stämpel</th>
+                                    <th>Tillverkare</th>
+                                    <th>Typ</th>
+                                    <th>Position</th>
+                                    <th>Osäkerhet</th>
+                                    <th>Kommentar</th>
+                                    {% if user.is_authenticated %}
+                                    <th>Åtgärder</th>
+                                    {% endif %}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for axe_stamp in axe_stamps %}
+                                    <tr>
+                                        <td>
+                                            <a href="{% url 'stamp_detail' axe_stamp.stamp.id %}">
+                                                {{ axe_stamp.stamp.name }}
+                                            </a>
+                                            {% if axe_stamp.stamp.status == 'unknown' %}
+                                                <span class="badge bg-warning">Okänd</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if axe_stamp.stamp.manufacturer %}
+                                                <a href="{% url 'manufacturer_detail' axe_stamp.stamp.manufacturer.id %}">
+                                                    {{ axe_stamp.stamp.manufacturer.name }}
+                                                </a>
+                                            {% else %}
+                                                <span class="text-muted">Okänd</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-info">{{ axe_stamp.stamp.get_stamp_type_display }}</span>
+                                        </td>
+                                        <td>
+                                            {% if axe_stamp.position %}
+                                                {{ axe_stamp.position }}
+                                            {% else %}
+                                                <span class="text-muted">-</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if axe_stamp.uncertainty_level == 'uncertain' %}
+                                                <span class="badge bg-warning">Osäker</span>
+                                            {% elif axe_stamp.uncertainty_level == 'tentative' %}
+                                                <span class="badge bg-secondary">Tentativ</span>
+                                            {% else %}
+                                                <span class="badge bg-success">Säker</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if axe_stamp.comment %}
+                                                {{ axe_stamp.comment|truncatewords:10 }}
+                                            {% else %}
+                                                <span class="text-muted">-</span>
+                                            {% endif %}
+                                        </td>
+                                        {% if user.is_authenticated %}
+                                        <td>
+                                            <div class="btn-group btn-group-sm" role="group">
+                                                <a href="{% url 'stamp_detail' axe_stamp.stamp.id %}" class="btn btn-outline-primary btn-sm" title="Visa stämpel">
+                                                    <i class="fas fa-eye"></i>
+                                                </a>
+                                                <a href="{% url 'remove_axe_stamp' axe.id axe_stamp.stamp.id %}" class="btn btn-outline-danger btn-sm" title="Ta bort stämpel"
+                                                   onclick="return confirm('Är du säker på att du vill ta bort denna stämpel från yxan?')">
+                                                    <i class="fas fa-times"></i>
+                                                </a>
+                                            </div>
+                                        </td>
+                                        {% endif %}
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-stamp fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">Inga stämplar definierade</h5>
+                        <p class="text-muted">Denna yxa har inga stämplar kopplade än.</p>
+                        {% if user.is_authenticated %}
+                            <a href="{% url 'add_axe_stamp' axe.id %}" class="btn btn-primary">
+                                <i class="fas fa-plus-circle me-1"></i>Lägg till stämpel
+                            </a>
+                        {% endif %}
+                    </div>
+                {% endif %}
+            </div>
+        </div>
     </div>
 
     <!-- Högra kolumnen -->

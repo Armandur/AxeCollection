@@ -1,0 +1,145 @@
+{% extends 'axes/base.html' %}
+{% load static %}
+
+{% block title %}Lägg till stämpel - {{ axe }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'axe_list' %}">Yxor</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'axe_detail' axe.id %}">{{ axe }}</a></li>
+            <li class="breadcrumb-item active">Lägg till stämpel</li>
+        </ol>
+    </nav>
+
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h2>Lägg till stämpel på {{ axe }}</h2>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.stamp.id_for_label }}" class="form-label">Stämpel *</label>
+                            {{ form.stamp }}
+                            {% if form.stamp.errors %}
+                                <div class="text-danger">{{ form.stamp.errors }}</div>
+                            {% endif %}
+                            <div class="form-text">Välj en befintlig stämpel eller skapa en ny</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.position.id_for_label }}" class="form-label">Position</label>
+                            {{ form.position }}
+                            {% if form.position.errors %}
+                                <div class="text-danger">{{ form.position.errors }}</div>
+                            {% endif %}
+                            <div class="form-text">Var på yxan stämpeln finns (t.ex. "på bladet", "på skaftet")</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.uncertainty_level.id_for_label }}" class="form-label">Osäkerhet</label>
+                            {{ form.uncertainty_level }}
+                            {% if form.uncertainty_level.errors %}
+                                <div class="text-danger">{{ form.uncertainty_level.errors }}</div>
+                            {% endif %}
+                            <div class="form-text">
+                                <strong>Säker:</strong> Stämpeln är tydligt identifierad<br>
+                                <strong>Osäker:</strong> Stämpeln är svår att läsa eller tolka<br>
+                                <strong>Tentativ:</strong> Stämpeln är preliminärt identifierad
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.comment.id_for_label }}" class="form-label">Kommentar</label>
+                            {{ form.comment }}
+                            {% if form.comment.errors %}
+                                <div class="text-danger">{{ form.comment.errors }}</div>
+                            {% endif %}
+                            <div class="form-text">Lägg till kommentarer om stämpeln (kvalitet, synlighet, etc.)</div>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'axe_detail' axe.id %}" class="btn btn-secondary">Avbryt</a>
+                            <button type="submit" class="btn btn-primary">Lägg till stämpel</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Yxinformation</h5>
+                </div>
+                <div class="card-body">
+                    <p><strong>Yxa:</strong> {{ axe }}</p>
+                    <p><strong>Tillverkare:</strong> 
+                        {% if axe.manufacturer %}
+                            <a href="{% url 'manufacturer_detail' axe.manufacturer.id %}">{{ axe.manufacturer.name }}</a>
+                        {% else %}
+                            <span class="text-muted">Okänd</span>
+                        {% endif %}
+                    </p>
+                    <p><strong>Status:</strong> 
+                        <span class="badge {% if axe.status == 'received' %}bg-success{% else %}bg-warning{% endif %}">
+                            {% if axe.status == 'received' %}Mottagen{% else %}Ej mottagen{% endif %}
+                        </span>
+                    </p>
+                    {% if axe.description %}
+                        <p><strong>Beskrivning:</strong> {{ axe.description|truncatewords:20 }}</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h5>Befintliga stämplar</h5>
+                </div>
+                <div class="card-body">
+                    {% if axe.stamps.all %}
+                        <div class="list-group list-group-flush">
+                            {% for axe_stamp in axe.stamps.all %}
+                                <div class="list-group-item">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div>
+                                            <h6 class="mb-1">
+                                                <a href="{% url 'stamp_detail' axe_stamp.stamp.id %}">{{ axe_stamp.stamp.name }}</a>
+                                            </h6>
+                                            <small class="text-muted">
+                                                {% if axe_stamp.stamp.manufacturer %}{{ axe_stamp.stamp.manufacturer.name }}{% else %}Okänd tillverkare{% endif %}
+                                            </small>
+                                        </div>
+                                        <span class="badge {% if axe_stamp.uncertainty_level == 'uncertain' %}bg-warning{% elif axe_stamp.uncertainty_level == 'tentative' %}bg-secondary{% else %}bg-success{% endif %}">
+                                            {{ axe_stamp.get_uncertainty_level_display }}
+                                        </span>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-muted">Inga stämplar kopplade än</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h5>Hjälp</h5>
+                </div>
+                <div class="card-body">
+                    <p><strong>Stämpel:</strong> Välj en befintlig stämpel från listan. Om stämpeln inte finns kan du skapa en ny först.</p>
+                    <p><strong>Position:</strong> Beskriv var på yxan stämpeln finns för enklare identifiering.</p>
+                    <p><strong>Osäkerhet:</strong> Ange hur säker du är på stämpelns identifiering.</p>
+                    <p><strong>Kommentar:</strong> Lägg till användbara anteckningar om stämpeln.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

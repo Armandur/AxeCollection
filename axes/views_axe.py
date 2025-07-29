@@ -303,7 +303,7 @@ def axe_detail(request, pk):
     axe = get_object_or_404(
         Axe.objects.select_related("manufacturer")
         .prefetch_related("measurements", "images")
-        .prefetch_related("images"),
+        .prefetch_related("images", "stamps__stamp__manufacturer", "stamps__stamp__transcriptions"),
         pk=pk,
     )
     # Hämta transaktioner för denna yxa
@@ -382,9 +382,13 @@ def axe_detail(request, pk):
             return redirect("axe_detail", pk=axe.pk)
     else:
         transaction_form = TransactionForm()
+    # Hämta stämplar för denna yxa
+    axe_stamps = axe.stamps.all().select_related('stamp__manufacturer').prefetch_related('stamp__transcriptions')
+    
     context = {
         "axe": axe,
         "transactions": transactions,
+        "axe_stamps": axe_stamps,
         "total_cost": total_cost,
         "total_shipping_cost": total_shipping_cost,
         "total_revenue": total_revenue,
