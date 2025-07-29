@@ -239,7 +239,7 @@ class StampUncertaintyGroup(models.Model):
 ### Fas 2: Användargränssnitt
 - [x] 105.6 Implementera stämpelregister-vy med sökfunktion, filtrering på tillverkare/typ/taggar, och gruppering av okända stämplar
 - [x] 105.7 Skapa stämpeldetalj-vy som visar alla bilder, transkriberingar, taggar, och kopplade yxor för varje stämpel
-- [ ] 105.8 Lägg till stämpelvisning på yxdetaljsidan med möjlighet att koppla/avkoppla stämplar och lägga till kommentarer
+- [x] 105.8 Lägg till stämpelvisning på yxdetaljsidan med möjlighet att koppla/avkoppla stämplar och lägga till kommentarer
 - [x] 105.12 Skapa vy för yxor utan stämplar med prioritering och snabbkoppling till stämpeldefinition
 
 ### Fas 3: Avancerade funktioner
@@ -348,8 +348,8 @@ class StampUncertaintyGroup(models.Model):
 ### Pågående arbete
 
 #### Nästa steg att implementera
-- [ ] **Yxdetaljsida-integration**: Visa stämplar på yxdetaljsidan
-- [ ] **Stämpelkoppling**: Möjlighet att koppla/avkoppla stämplar från yxdetaljsidan
+- [x] **Yxdetaljsida-integration**: Visa stämplar på yxdetaljsidan
+- [x] **Stämpelkoppling**: Möjlighet att koppla/avkoppla stämplar från yxdetaljsidan
 - [ ] **AJAX-sökning**: Implementera AJAX-funktionalitet för stämpelsökning
 - [ ] **Mottagningsflöde-integration**: Integrera stämpeldefinition i mottagningsarbetsflödet
 
@@ -368,5 +368,30 @@ class StampUncertaintyGroup(models.Model):
 ### Kända begränsningar
 - **Ingen data**: Databasen är tom för stämplar (förväntat)
 - **Ingen AJAX**: Sökfunktionalitet är inte AJAX-baserad än
-- **Ingen integration**: Stämplar visas inte på yxdetaljsidan än
-- **Ingen mottagningsintegration**: Stämpeldefinition är inte integrerad i mottagningsflödet än 
+- **Ingen mottagningsintegration**: Stämpeldefinition är inte integrerad i mottagningsflödet än
+
+### Nyligen implementerat (2025-07-29)
+
+#### Yxdetaljsida-integration
+- [x] **Stämpelsektion**: Lagt till stämpelsektion på yxdetaljsidan som visar alla kopplade stämplar
+- [x] **Stämpeltabell**: Tabell som visar stämpelnamn, tillverkare, typ, position, osäkerhet och kommentar
+- [x] **Stämpelkoppling**: Knapp för att lägga till nya stämplar på yxan
+- [x] **Stämpelavkoppling**: Möjlighet att ta bort stämplar från yxan med bekräftelsedialog
+- [x] **Stämpelformulär**: Skapat `axe_stamp_form.html` för att lägga till stämplar på yxor
+- [x] **View-uppdatering**: Uppdaterat `axe_detail` view för att inkludera stämpeldata
+- [x] **Navigation**: Breadcrumbs och länkar mellan yxdetaljsida och stämpelfunktioner
+
+#### Tekniska detaljer
+- **Template**: `axe_detail.html` - Lagt till stämpelsektion efter transaktionshistoriken
+- **View**: `views_axe.py` - Uppdaterat `axe_detail` för att hämta stämpeldata
+- **Form**: `AxeStampForm` - Används för att koppla stämplar till yxor
+- **URL**: `add_axe_stamp` och `remove_axe_stamp` - Hanterar stämpelkoppling/avkoppling
+- **Styling**: Bootstrap-klasser för responsiv design och konsistent utseende
+
+#### Stämpelprioritering (2025-07-29)
+- [x] **Tillverkarprioritering**: Stämplar från yxans tillverkare visas först i dropdown-listan
+- [x] **Separatorer**: Tydliga separatorer mellan prioriterade och andra stämplar
+- [x] **Tillverkarinformation**: Andra stämplar visar tillverkarnamn för tydlighet
+- [x] **Form-uppdatering**: `AxeStampForm` anpassad för att ta emot `axe`-parameter
+- [x] **View-uppdatering**: `add_axe_stamp` view uppdaterad för att skicka `axe` till formuläret
+- [x] **Validering**: `clean_stamp` metod tillagd för att konvertera ID till Stamp-objekt 

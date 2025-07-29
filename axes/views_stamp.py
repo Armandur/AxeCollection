@@ -242,7 +242,7 @@ def add_axe_stamp(request, axe_id):
     axe = get_object_or_404(Axe, id=axe_id)
     
     if request.method == 'POST':
-        form = AxeStampForm(request.POST)
+        form = AxeStampForm(request.POST, axe=axe)
         if form.is_valid():
             axe_stamp = form.save(commit=False)
             axe_stamp.axe = axe
@@ -257,7 +257,7 @@ def add_axe_stamp(request, axe_id):
             messages.success(request, f'Stämpel "{axe_stamp.stamp.name}" lades till på yxan.')
             return redirect('axe_detail', axe_id=axe.id)
     else:
-        form = AxeStampForm()
+        form = AxeStampForm(axe=axe)
     
     context = {
         'axe': axe,

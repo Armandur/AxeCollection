@@ -914,6 +914,43 @@ class StampTranscriptionForm(forms.ModelForm):
 class AxeStampForm(forms.ModelForm):
     """Formulär för att koppla stämpel till yxa"""
     
+    def __init__(self, *args, **kwargs):
+        axe = kwargs.pop('axe', None)
+        super().__init__(*args, **kwargs)
+        
+        if axe and axe.manufacturer:
+            # Hämta alla stämplar, prioritera tillverkarens stämplar först
+            from .models import Stamp
+            
+            # Stämplar från yxans tillverkare (prioriterade)
+            primary_stamps = Stamp.objects.filter(manufacturer=axe.manufacturer).order_by('name')
+            
+            # Alla andra stämplar (sekundära)
+            other_stamps = Stamp.objects.exclude(manufacturer=axe.manufacturer).order_by('name')
+            
+            # Skapa choices med prioriterade stämplar först
+            choices = [('', 'Välj stämpel...')]
+            
+            # Lägg till prioriterade stämplar med separator
+            if primary_stamps.exists():
+                choices.append(('', f'--- Stämplar från {axe.manufacturer.name} ---'))
+                for stamp in primary_stamps:
+                    choices.append((stamp.id, f"{stamp.name} ({stamp.get_stamp_type_display()})"))
+            
+            # Lägg till separator för andra stämplar
+            if other_stamps.exists():
+                choices.append(('', '--- Andra stämplar ---'))
+                for stamp in other_stamps:
+                    choices.append((stamp.id, f"{stamp.name} - {stamp.manufacturer.name if stamp.manufacturer else 'Okänd'} ({stamp.get_stamp_type_display()})"))
+            
+            self.fields['stamp'] = forms.ChoiceField(
+                choices=choices,
+                required=True,
+                widget=forms.Select(attrs={'class': 'form-control'}),
+                label='Stämpel',
+                help_text=f'Prioriterade stämplar från {axe.manufacturer.name} visas först'
+            )
+    
     class Meta:
         model = AxeStamp
         fields = ['stamp', 'comment', 'position', 'uncertainty_level']
@@ -942,6 +979,18 @@ class AxeStampForm(forms.ModelForm):
             'position': 'Var på yxan stämpeln finns (valfritt)',
             'uncertainty_level': 'Hur säker är identifieringen av stämpeln',
         }
+    
+    def clean_stamp(self):
+        """Konvertera stamp ID till Stamp-objekt"""
+        stamp_id = self.cleaned_data.get('stamp')
+        if stamp_id:
+            try:
+                from .models import Stamp
+                return Stamp.objects.get(id=stamp_id)
+            except Stamp.DoesNotExist:
+                raise forms.ValidationError("Vald stämpel finns inte.")
+        else:
+            raise forms.ValidationError("Stämpel måste väljas.")
 
 
 class StampTagForm(forms.ModelForm):
