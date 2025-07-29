@@ -247,4 +247,6 @@ urlpatterns = [
     path("yxor-utan-stamplar/", views_stamp.axes_without_stamps, name="axes_without_stamps"),
     path("yxor/<int:axe_id>/stampel/lagg-till/", views_stamp.add_axe_stamp, name="add_axe_stamp"),
     path("yxor/<int:axe_id>/stampel/<int:stamp_id>/ta-bort/", views_stamp.remove_axe_stamp, name="remove_axe_stamp"),
+    path("stamplar/<int:stamp_id>/bild/lagg-till/", views_stamp.stamp_image_upload, name="stamp_image_upload"),
+    path("stamplar/<int:stamp_id>/bild/<int:image_id>/ta-bort/", views_stamp.stamp_image_delete, name="stamp_image_delete"),
 ]

@@ -209,8 +209,8 @@ class StampTranscriptionInline(admin.TabularInline):
 class StampImageInline(admin.TabularInline):
     model = StampImage
     extra = 1
-    fields = ("image", "quality")
-    ordering = ("-uploaded_at",)
+    fields = ("image", "caption", "description", "quality", "order")
+    ordering = ("order", "-uploaded_at",)
 
 
 class StampTagInline(admin.TabularInline):
@@ -255,10 +255,21 @@ class StampTagAdmin(admin.ModelAdmin):
 
 
 class StampImageAdmin(admin.ModelAdmin):
-    list_display = ("stamp", "image", "quality", "uploaded_at")
+    list_display = ("stamp", "caption", "image", "quality", "order", "uploaded_at")
     list_filter = ("quality", "uploaded_at", "stamp__manufacturer")
-    search_fields = ("stamp__name", "stamp__manufacturer__name")
-    ordering = ("-uploaded_at",)
+    search_fields = ("stamp__name", "stamp__manufacturer__name", "caption", "description")
+    ordering = ("order", "-uploaded_at",)
+    fieldsets = (
+        ("Bild", {
+            "fields": ("stamp", "image")
+        }),
+        ("Beskrivning", {
+            "fields": ("caption", "description")
+        }),
+        ("Metadata", {
+            "fields": ("quality", "order")
+        }),
+    )
 
 
 class AxeStampAdmin(admin.ModelAdmin):

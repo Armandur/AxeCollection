@@ -1140,15 +1140,84 @@ class StampImage(models.Model):
         default="medium",
         verbose_name="Kvalitet"
     )
+    caption = models.CharField(
+        max_length=255, 
+        blank=True, 
+        null=True,
+        verbose_name="Bildtext",
+        help_text="Kort beskrivning av bilden"
+    )
+    description = models.TextField(
+        blank=True, 
+        null=True,
+        verbose_name="Beskrivning",
+        help_text="Detaljerad beskrivning av vad bilden visar"
+    )
+    order = models.PositiveIntegerField(
+        default=0,
+        verbose_name="Ordning",
+        help_text="Sorteringsordning för bilderna"
+    )
+    cache_busting_timestamp = models.DateTimeField(
+        auto_now=True,
+        verbose_name="Cache-busting timestamp"
+    )
     uploaded_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        ordering = ["-uploaded_at"]
+        ordering = ["order", "-uploaded_at"]
         verbose_name = "Stämpelbild"
         verbose_name_plural = "Stämpelbilder"
 
+    @property
+    def webp_url(self):
+        """Returnerar WebP-version av bilden om den finns"""
+        if self.image and self.image.name:
+            webp_path = os.path.splitext(self.image.path)[0] + ".webp"
+            if os.path.exists(webp_path):
+                rel_path = os.path.relpath(webp_path, settings.MEDIA_ROOT)
+                base_url = settings.MEDIA_URL + rel_path.replace("\\", "/")
+                # Lägg till cache-busting parameter
+                timestamp = int(self.cache_busting_timestamp.timestamp())
+                return f"{base_url}?v={timestamp}"
+        return None
+
+    @property
+    def image_url_with_cache_busting(self):
+        """Returnerar bildens URL med cache-busting parameter"""
+        if self.image and self.image.name:
+            base_url = self.image.url
+            timestamp = int(self.cache_busting_timestamp.timestamp())
+            return f"{base_url}?v={timestamp}"
+        return None
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        if self.image and self.image.name:
+            img_path = self.image.path
+            webp_path = os.path.splitext(img_path)[0] + ".webp"
+            try:
+                img = Image.open(img_path)
+                img.save(webp_path, "WEBP", quality=85)
+            except Exception:
+                pass  # Kan logga fel om så önskas
+
+    def delete(self, *args, **kwargs):
+        # Ta bort både originalfilen och .webp-filen
+        if self.image and self.image.name:
+            img_path = self.image.path
+            webp_path = os.path.splitext(img_path)[0] + ".webp"
+            try:
+                if os.path.exists(img_path):
+                    os.remove(img_path)
+                if os.path.exists(webp_path):
+                    os.remove(webp_path)
+            except Exception:
+                pass  # Kan logga fel om så önskas
+        super().delete(*args, **kwargs)
+
     def __str__(self):
-        return f"{self.stamp.name} - {self.image.name}"
+        return f"{self.stamp.name} - {self.caption or 'Bild'}"
 
 
 class AxeStamp(models.Model):

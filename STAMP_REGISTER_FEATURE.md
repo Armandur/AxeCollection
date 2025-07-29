@@ -414,4 +414,19 @@ class StampUncertaintyGroup(models.Model):
 - [x] **JavaScript-fil**: `stamp_search.js` skapad med fullständig AJAX-funktionalitet
 - [x] **Template-uppdateringar**: `stamp_list.html` och `axe_stamp_form.html` uppdaterade
 - [x] **Responsiv design**: Dropdown som anpassar sig efter innehåll
-- [x] **Felhantering**: Visar laddningsindikator och felmeddelanden 
+- [x] **Felhantering**: Visar laddningsindikator och felmeddelanden
+
+#### Stämpelbilder och dokumentation (2025-07-29)
+- [x] **Förbättrad StampImage-modell**: Lagt till caption, description, order och cache-busting
+- [x] **WebP-stöd**: Automatisk konvertering till WebP-format för bättre prestanda
+- [x] **Admin-förbättringar**: Uppdaterat StampImageInline och StampImageAdmin med nya fält
+- [x] **Bilduppladdning**: Ny vy `stamp_image_upload` för att ladda upp bilder
+- [x] **Bildborttagning**: Ny vy `stamp_image_delete` för att ta bort bilder
+- [x] **Formulär**: Förbättrat `StampImageForm` med alla nya fält
+- [x] **Templates**: Skapat `stamp_image_form.html` och `stamp_image_delete.html`
+- [x] **Förhandsvisning**: JavaScript-förhandsvisning av bilder vid uppladdning
+- [x] **Stämpeldetalj-vy**: Förbättrat bildvisning i `stamp_detail.html` med WebP-stöd
+- [x] **URL-struktur**: Lagt till URL-mönster för bildhantering
+- [x] **Responsiv design**: Bilder anpassar sig efter skärmstorlek
+- [x] **Kvalitetsindikatorer**: Visuella badges för bildkvalitet
+- [x] **Ordning**: Stöd för att sortera bilder med order-fält 

@@ -1032,19 +1032,39 @@ class StampImageForm(forms.ModelForm):
     
     class Meta:
         model = StampImage
-        fields = ['image', 'quality']
+        fields = ['image', 'caption', 'description', 'quality', 'order']
         labels = {
             'image': 'Bild',
+            'caption': 'Bildtext',
+            'description': 'Beskrivning',
             'quality': 'Kvalitet',
+            'order': 'Ordning',
         }
         widgets = {
             'image': forms.FileInput(attrs={
                 'class': 'form-control',
                 'accept': 'image/*'
             }),
+            'caption': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Kort beskrivning av bilden'
+            }),
+            'description': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 3,
+                'placeholder': 'Detaljerad beskrivning av vad bilden visar'
+            }),
             'quality': forms.Select(attrs={'class': 'form-control'}),
+            'order': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'placeholder': '0',
+                'min': '0'
+            }),
         }
         help_texts = {
-            'image': 'Bild av stämpeln',
+            'image': 'Välj bildfil att ladda upp',
+            'caption': 'Kort beskrivning som visas med bilden',
+            'description': 'Detaljerad beskrivning av vad bilden visar',
             'quality': 'Bedömning av bildkvalitet för identifiering',
+            'order': 'Sorteringsordning för bilderna (lägre nummer visas först)',
         }

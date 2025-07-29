@@ -193,38 +193,71 @@
             {% endif %}
 
             <!-- Bilder -->
-            {% if stamp.images.all %}
             <div class="row mt-4">
                 <div class="col-12">
                     <div class="card">
                         <div class="card-header">
-                            <h5 class="mb-0">Bilder</h5>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0">Bilder ({{ stamp.images.count }})</h5>
+                                <a href="{% url 'stamp_image_upload' stamp.id %}" class="btn btn-primary btn-sm">
+                                    <i class="fas fa-plus"></i> Lägg till bild
+                                </a>
+                            </div>
                         </div>
                         <div class="card-body">
-                            <div class="row">
-                                {% for image in stamp.images.all %}
-                                <div class="col-md-4 col-lg-3 mb-3">
-                                    <div class="card">
-                                        <img src="{{ image.image.url }}" class="card-img-top" alt="{{ stamp.name }}">
-                                        <div class="card-body">
-                                            <p class="card-text">
-                                                <span class="badge bg-{% if image.quality == 'high' %}success{% elif image.quality == 'medium' %}warning{% else %}danger{% endif %}">
-                                                    {{ image.get_quality_display }}
-                                                </span>
-                                            </p>
-                                            <small class="text-muted">
-                                                Uppladdad {{ image.uploaded_at|date:"Y-m-d" }}
-                                            </small>
+                            {% if stamp.images.all %}
+                                <div class="row">
+                                    {% for image in stamp.images.all %}
+                                    <div class="col-md-4 col-lg-3 mb-3">
+                                        <div class="card h-100">
+                                            <div class="position-relative">
+                                                {% if image.webp_url %}
+                                                    <img src="{{ image.webp_url }}" class="card-img-top" alt="{{ image.caption|default:stamp.name }}" style="height: 200px; object-fit: cover;">
+                                                {% else %}
+                                                    <img src="{{ image.image_url_with_cache_busting }}" class="card-img-top" alt="{{ image.caption|default:stamp.name }}" style="height: 200px; object-fit: cover;">
+                                                {% endif %}
+                                                <div class="position-absolute top-0 end-0 m-2">
+                                                    <span class="badge bg-{% if image.quality == 'high' %}success{% elif image.quality == 'medium' %}warning{% else %}danger{% endif %}">
+                                                        {{ image.get_quality_display }}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                            <div class="card-body d-flex flex-column">
+                                                {% if image.caption %}
+                                                    <h6 class="card-title">{{ image.caption }}</h6>
+                                                {% endif %}
+                                                {% if image.description %}
+                                                    <p class="card-text small">{{ image.description|truncatewords:15 }}</p>
+                                                {% endif %}
+                                                <div class="mt-auto">
+                                                    <small class="text-muted">
+                                                        Ordning: {{ image.order }} • {{ image.uploaded_at|date:"Y-m-d" }}
+                                                    </small>
+                                                    <div class="mt-2">
+                                                        <a href="{% url 'stamp_image_delete' stamp.id image.id %}" 
+                                                           class="btn btn-sm btn-outline-danger">
+                                                            <i class="fas fa-trash"></i> Ta bort
+                                                        </a>
+                                                    </div>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
+                                    {% endfor %}
                                 </div>
-                                {% endfor %}
-                            </div>
+                            {% else %}
+                                <div class="text-center py-4">
+                                    <i class="fas fa-image fa-3x text-muted mb-3"></i>
+                                    <p class="text-muted">Inga bilder tillgängliga för denna stämpel.</p>
+                                    <a href="{% url 'stamp_image_upload' stamp.id %}" class="btn btn-primary">
+                                        <i class="fas fa-plus"></i> Lägg till första bilden
+                                    </a>
+                                </div>
+                            {% endif %}
                         </div>
                     </div>
                 </div>
             </div>
-            {% endif %}
 
             <!-- Kopplade yxor -->
             {% if stamp.axes.all %}

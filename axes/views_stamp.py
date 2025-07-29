@@ -268,6 +268,71 @@ def stamp_search(request):
 
 
 @login_required
+def stamp_image_upload(request, stamp_id):
+    """Ladda upp bild för stämpel"""
+    
+    stamp = get_object_or_404(Stamp, id=stamp_id)
+    
+    if request.method == 'POST':
+        form = StampImageForm(request.POST, request.FILES)
+        if form.is_valid():
+            stamp_image = form.save(commit=False)
+            stamp_image.stamp = stamp
+            stamp_image.save()
+            
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({
+                    'success': True,
+                    'message': 'Bild laddades upp framgångsrikt.',
+                    'image_id': stamp_image.id,
+                    'image_url': stamp_image.image_url_with_cache_busting,
+                    'webp_url': stamp_image.webp_url,
+                })
+            
+            messages.success(request, 'Bild laddades upp framgångsrikt.')
+            return redirect('stamp_detail', stamp_id=stamp.id)
+    else:
+        form = StampImageForm()
+    
+    context = {
+        'stamp': stamp,
+        'form': form,
+        'title': f'Ladda upp bild för {stamp.name}',
+    }
+    
+    return render(request, 'axes/stamp_image_form.html', context)
+
+
+@login_required
+def stamp_image_delete(request, stamp_id, image_id):
+    """Ta bort stämpelbild"""
+    
+    stamp = get_object_or_404(Stamp, id=stamp_id)
+    stamp_image = get_object_or_404(StampImage, id=image_id, stamp=stamp)
+    
+    if request.method == 'POST':
+        image_name = stamp_image.caption or 'Bild'
+        stamp_image.delete()
+        
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({
+                'success': True,
+                'message': f'Bild "{image_name}" togs bort.'
+            })
+        
+        messages.success(request, f'Bild "{image_name}" togs bort.')
+        return redirect('stamp_detail', stamp_id=stamp.id)
+    
+    context = {
+        'stamp': stamp,
+        'stamp_image': stamp_image,
+        'title': f'Ta bort bild från {stamp.name}',
+    }
+    
+    return render(request, 'axes/stamp_image_delete.html', context)
+
+
+@login_required
 def add_axe_stamp(request, axe_id):
     """Lägg till stämpel på yxa"""
     
