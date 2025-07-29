@@ -233,3 +233,4 @@ Desktop.ini
 
 # --- Test/coverage ---
 # axes/migrations/
+currency_cache.json

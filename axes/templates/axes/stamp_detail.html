@@ -1,0 +1,343 @@
+{% extends 'axes/base.html' %}
+{% load static %}
+
+{% block title %}{{ stamp.name }} - Stämplar - AxeCollection{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <!-- Breadcrumbs -->
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'stamp_list' %}">Stämplar</a></li>
+                    <li class="breadcrumb-item active">{{ stamp.name }}</li>
+                </ol>
+            </nav>
+
+            <!-- Huvudinformation -->
+            <div class="row">
+                <div class="col-md-8">
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <h1 class="h3 mb-0">{{ stamp.name }}</h1>
+                                <div>
+                                    <a href="{% url 'stamp_edit' stamp.id %}" class="btn btn-outline-primary">
+                                        <i class="fas fa-edit"></i> Redigera
+                                    </a>
+                                    <a href="{% url 'stamp_list' %}" class="btn btn-outline-secondary">
+                                        <i class="fas fa-arrow-left"></i> Tillbaka
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h5>Grundinformation</h5>
+                                    <dl class="row">
+                                        <dt class="col-sm-4">Status</dt>
+                                        <dd class="col-sm-8">
+                                            <span class="badge bg-{% if stamp.status == 'known' %}success{% else %}warning{% endif %}">
+                                                {{ stamp.get_status_display }}
+                                            </span>
+                                        </dd>
+                                        
+                                        <dt class="col-sm-4">Typ</dt>
+                                        <dd class="col-sm-8">{{ stamp.get_stamp_type_display }}</dd>
+                                        
+                                        {% if stamp.manufacturer %}
+                                        <dt class="col-sm-4">Tillverkare</dt>
+                                        <dd class="col-sm-8">
+                                            <a href="{% url 'manufacturer_detail' stamp.manufacturer.id %}">
+                                                {{ stamp.manufacturer.name }}
+                                            </a>
+                                        </dd>
+                                        {% endif %}
+                                        
+                                        <dt class="col-sm-4">Årtal</dt>
+                                        <dd class="col-sm-8">
+                                            {{ stamp.year_range }}
+                                            {% if stamp.year_uncertainty %}
+                                                <span class="text-muted">(osäker)</span>
+                                            {% endif %}
+                                        </dd>
+                                        
+                                        {% if stamp.year_notes %}
+                                        <dt class="col-sm-4">Årtalsanteckningar</dt>
+                                        <dd class="col-sm-8">{{ stamp.year_notes }}</dd>
+                                        {% endif %}
+                                    </dl>
+                                </div>
+                                <div class="col-md-6">
+                                    <h5>Källinformation</h5>
+                                    <dl class="row">
+                                        <dt class="col-sm-4">Källa</dt>
+                                        <dd class="col-sm-8">{{ stamp.get_source_category_display }}</dd>
+                                        
+                                        {% if stamp.source_reference %}
+                                        <dt class="col-sm-4">Hänvisning</dt>
+                                        <dd class="col-sm-8">{{ stamp.source_reference }}</dd>
+                                        {% endif %}
+                                        
+                                        <dt class="col-sm-4">Skapad</dt>
+                                        <dd class="col-sm-8">{{ stamp.created_at|date:"Y-m-d H:i" }}</dd>
+                                        
+                                        <dt class="col-sm-4">Uppdaterad</dt>
+                                        <dd class="col-sm-8">{{ stamp.updated_at|date:"Y-m-d H:i" }}</dd>
+                                    </dl>
+                                </div>
+                            </div>
+                            
+                            {% if stamp.description %}
+                            <div class="mt-4">
+                                <h5>Beskrivning</h5>
+                                <p>{{ stamp.description }}</p>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-4">
+                    <!-- Statistik -->
+                    <div class="card mb-3">
+                        <div class="card-header">
+                            <h5 class="mb-0">Statistik</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row text-center">
+                                <div class="col-6">
+                                    <div class="border-end">
+                                        <h4 class="text-primary">{{ stamp.axes.count }}</h4>
+                                        <small class="text-muted">Yxor</small>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <h4 class="text-success">{{ stamp.transcriptions.count }}</h4>
+                                    <small class="text-muted">Transkriberingar</small>
+                                </div>
+                            </div>
+                            <div class="row text-center mt-3">
+                                <div class="col-6">
+                                    <div class="border-end">
+                                        <h4 class="text-info">{{ stamp.images.count }}</h4>
+                                        <small class="text-muted">Bilder</small>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <h4 class="text-warning">{{ related_stamps.count }}</h4>
+                                    <small class="text-muted">Relaterade</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Snabblänkar -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">Snabblänkar</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="d-grid gap-2">
+                                <a href="{% url 'stamp_list' %}?manufacturer={{ stamp.manufacturer.id }}" 
+                                   class="btn btn-outline-primary btn-sm">
+                                    <i class="fas fa-filter"></i> Fler stämplar från {{ stamp.manufacturer.name|default:"okänd tillverkare" }}
+                                </a>
+                                <a href="{% url 'stamp_list' %}?stamp_type={{ stamp.stamp_type }}" 
+                                   class="btn btn-outline-secondary btn-sm">
+                                    <i class="fas fa-tag"></i> Fler {{ stamp.get_stamp_type_display }}stämplar
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Transkriberingar -->
+            {% if stamp.transcriptions.all %}
+            <div class="row mt-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">Transkriberingar</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                {% for transcription in stamp.transcriptions.all %}
+                                <div class="col-md-6 col-lg-4 mb-3">
+                                    <div class="card">
+                                        <div class="card-body">
+                                            <h6 class="card-title">{{ transcription.text }}</h6>
+                                            <p class="card-text">
+                                                <span class="badge bg-{% if transcription.quality == 'high' %}success{% elif transcription.quality == 'medium' %}warning{% else %}danger{% endif %}">
+                                                    {{ transcription.get_quality_display }}
+                                                </span>
+                                            </p>
+                                            <small class="text-muted">
+                                                Skapad {{ transcription.created_at|date:"Y-m-d" }}
+                                                {% if transcription.created_by %}
+                                                    av {{ transcription.created_by }}
+                                                {% endif %}
+                                            </small>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Bilder -->
+            {% if stamp.images.all %}
+            <div class="row mt-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">Bilder</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                {% for image in stamp.images.all %}
+                                <div class="col-md-4 col-lg-3 mb-3">
+                                    <div class="card">
+                                        <img src="{{ image.image.url }}" class="card-img-top" alt="{{ stamp.name }}">
+                                        <div class="card-body">
+                                            <p class="card-text">
+                                                <span class="badge bg-{% if image.quality == 'high' %}success{% elif image.quality == 'medium' %}warning{% else %}danger{% endif %}">
+                                                    {{ image.get_quality_display }}
+                                                </span>
+                                            </p>
+                                            <small class="text-muted">
+                                                Uppladdad {{ image.uploaded_at|date:"Y-m-d" }}
+                                            </small>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Kopplade yxor -->
+            {% if stamp.axes.all %}
+            <div class="row mt-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">Kopplade yxor ({{ stamp.axes.count }})</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Yxa</th>
+                                            <th>Tillverkare</th>
+                                            <th>Position</th>
+                                            <th>Osäkerhet</th>
+                                            <th>Kommentar</th>
+                                            <th>Åtgärder</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for axe_stamp in stamp.axes.all %}
+                                        <tr>
+                                            <td>
+                                                <a href="{% url 'axe_detail' axe_stamp.axe.id %}">
+                                                    {{ axe_stamp.axe }}
+                                                </a>
+                                            </td>
+                                            <td>
+                                                {% if axe_stamp.axe.manufacturer %}
+                                                    <a href="{% url 'manufacturer_detail' axe_stamp.axe.manufacturer.id %}">
+                                                        {{ axe_stamp.axe.manufacturer.name }}
+                                                    </a>
+                                                {% else %}
+                                                    <span class="text-muted">Okänd</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {% if axe_stamp.position %}
+                                                    {{ axe_stamp.position }}
+                                                {% else %}
+                                                    <span class="text-muted">-</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-{% if axe_stamp.uncertainty_level == 'certain' %}success{% elif axe_stamp.uncertainty_level == 'uncertain' %}warning{% else %}danger{% endif %}">
+                                                    {{ axe_stamp.get_uncertainty_level_display }}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                {% if axe_stamp.comment %}
+                                                    {{ axe_stamp.comment|truncatewords:10 }}
+                                                {% else %}
+                                                    <span class="text-muted">-</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                <a href="{% url 'remove_axe_stamp' axe_stamp.axe.id stamp.id %}" 
+                                                   class="btn btn-sm btn-outline-danger">
+                                                    <i class="fas fa-unlink"></i> Ta bort
+                                                </a>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Relaterade stämplar -->
+            {% if related_stamps %}
+            <div class="row mt-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">Relaterade stämplar</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                {% for related_stamp in related_stamps %}
+                                <div class="col-md-6 col-lg-4 mb-3">
+                                    <div class="card">
+                                        <div class="card-body">
+                                            <h6 class="card-title">
+                                                <a href="{% url 'stamp_detail' related_stamp.id %}">
+                                                    {{ related_stamp.name }}
+                                                </a>
+                                            </h6>
+                                            {% if related_stamp.manufacturer %}
+                                                <p class="card-text text-muted">
+                                                    {{ related_stamp.manufacturer.name }}
+                                                </p>
+                                            {% endif %}
+                                            <small class="text-muted">
+                                                {{ related_stamp.get_stamp_type_display }} • {{ related_stamp.year_range }}
+                                            </small>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %} 

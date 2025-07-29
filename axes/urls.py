@@ -6,6 +6,7 @@ from . import views_contact
 from . import views_manufacturer
 from . import views_transaction
 from . import views_platform
+from . import views_stamp
 
 urlpatterns = [
     path("", views_axe.axe_list, name="axe_list"),
@@ -236,4 +237,14 @@ urlpatterns = [
         views.api_delete_measurement_type,
         name="api_delete_measurement_type",
     ),
+    # Stämpelregister URL:er
+    path("stamplar/", views_stamp.stamp_list, name="stamp_list"),
+    path("stamplar/ny/", views_stamp.stamp_create, name="stamp_create"),
+    path("stamplar/<int:stamp_id>/", views_stamp.stamp_detail, name="stamp_detail"),
+    path("stamplar/<int:stamp_id>/redigera/", views_stamp.stamp_edit, name="stamp_edit"),
+    path("stamplar/sok/", views_stamp.stamp_search, name="stamp_search"),
+    path("stamplar/statistik/", views_stamp.stamp_statistics, name="stamp_statistics"),
+    path("yxor-utan-stamplar/", views_stamp.axes_without_stamps, name="axes_without_stamps"),
+    path("yxor/<int:axe_id>/stampel/lagg-till/", views_stamp.add_axe_stamp, name="add_axe_stamp"),
+    path("yxor/<int:axe_id>/stampel/<int:stamp_id>/ta-bort/", views_stamp.remove_axe_stamp, name="remove_axe_stamp"),
 ]

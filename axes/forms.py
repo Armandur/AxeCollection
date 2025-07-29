@@ -8,6 +8,11 @@ from .models import (
     Transaction,
     MeasurementType,
     Measurement,
+    Stamp,
+    StampTranscription,
+    AxeStamp,
+    StampTag,
+    StampImage,
 )
 from django.utils import timezone
 from .templatetags.axe_filters import country_flag
@@ -791,41 +796,206 @@ class BackupUploadForm(forms.Form):
     """Form för att ladda upp backupfiler"""
 
     backup_file = forms.FileField(
-        label="Backup-fil",
-        help_text="Välj en backup-fil (.zip eller .sqlite3) att ladda upp",
-        widget=forms.FileInput(
-            attrs={"class": "form-control", "accept": ".zip,.sqlite3"}
-        ),
+        widget=forms.FileInput(attrs={"class": "form-control"}),
+        label="Backupfil",
+        help_text="Välj en .sqlite3-fil att återställa från",
     )
 
     def clean_backup_file(self):
-        file = self.cleaned_data.get("backup_file")
-        if file:
-            # Kontrollera filstorlek (max 2GB)
-            max_size = 2 * 1024 * 1024 * 1024  # 2GB
-            if file.size > max_size:
-                raise forms.ValidationError(
-                    "Filen är för stor. Maximal storlek är 2GB."
-                )
-
+        backup_file = self.cleaned_data.get("backup_file")
+        if backup_file:
             # Kontrollera filtyp
-            allowed_extensions = [".zip", ".sqlite3"]
-            file_extension = file.name.lower()
-            if not any(file_extension.endswith(ext) for ext in allowed_extensions):
-                raise forms.ValidationError(
-                    "Endast .zip och .sqlite3 filer är tillåtna."
-                )
+            if not backup_file.name.endswith(".sqlite3"):
+                raise forms.ValidationError("Endast .sqlite3-filer är tillåtna.")
+            
+            # Kontrollera filstorlek (max 100MB)
+            if backup_file.size > 100 * 1024 * 1024:
+                raise forms.ValidationError("Filen är för stor. Maximal storlek är 100MB.")
+        
+        return backup_file
 
-            # Kontrollera att filen inte redan finns
-            import os
-            from django.conf import settings
 
-            backup_dir = os.path.join(settings.BASE_DIR, "backups")
-            if not os.path.exists(backup_dir):
-                os.makedirs(backup_dir)
+# Stämpelregister-formulär
+class StampForm(forms.ModelForm):
+    """Formulär för att skapa och redigera stämplar"""
+    
+    class Meta:
+        model = Stamp
+        fields = [
+            'name', 'description', 'manufacturer', 'stamp_type', 'status',
+            'year_from', 'year_to', 'year_uncertainty', 'year_notes',
+            'source_category', 'source_reference'
+        ]
+        labels = {
+            'name': 'Namn',
+            'description': 'Beskrivning',
+            'manufacturer': 'Tillverkare',
+            'stamp_type': 'Typ',
+            'status': 'Status',
+            'year_from': 'Från år',
+            'year_to': 'Till år',
+            'year_uncertainty': 'Osäker årtalsinformation',
+            'year_notes': 'Anteckningar om årtal',
+            'source_category': 'Källkategori',
+            'source_reference': 'Källhänvisning',
+        }
+        widgets = {
+            'name': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Ange stämpelns namn'
+            }),
+            'description': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 3,
+                'placeholder': 'Beskriv stämpeln...'
+            }),
+            'manufacturer': forms.Select(attrs={'class': 'form-control'}),
+            'stamp_type': forms.Select(attrs={'class': 'form-control'}),
+            'status': forms.Select(attrs={'class': 'form-control'}),
+            'year_from': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'placeholder': '1884'
+            }),
+            'year_to': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'placeholder': '1900'
+            }),
+            'year_uncertainty': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'year_notes': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 2,
+                'placeholder': 'Anteckningar om årtal (t.ex. "cirka")'
+            }),
+            'source_category': forms.Select(attrs={'class': 'form-control'}),
+            'source_reference': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 2,
+                'placeholder': 'Specifik källhänvisning (t.ex. "eBay-auktion 2023")'
+            }),
+        }
+        help_texts = {
+            'name': 'Unikt namn för stämpeln',
+            'description': 'Detaljerad beskrivning av stämpeln',
+            'manufacturer': 'Tillverkare som använde denna stämpel (kan vara okänd)',
+            'stamp_type': 'Typ av stämpel (text, bild eller symbol)',
+            'status': 'Är stämpeln känd eller okänd',
+            'year_from': 'Startår för när stämpeln användes',
+            'year_to': 'Slutår för när stämpeln användes',
+            'year_uncertainty': 'Markera om årtalsinformationen är osäker',
+            'year_notes': 'Anteckningar om årtal (t.ex. "cirka", "omkring")',
+            'source_category': 'Kategori för källan till stämpelinformationen',
+            'source_reference': 'Specifik hänvisning till källan',
+        }
 
-            file_path = os.path.join(backup_dir, file.name)
-            if os.path.exists(file_path):
-                raise forms.ValidationError("En fil med samma namn finns redan.")
 
-        return file
+class StampTranscriptionForm(forms.ModelForm):
+    """Formulär för att lägga till transkriberingar"""
+    
+    class Meta:
+        model = StampTranscription
+        fields = ['text', 'quality']
+        labels = {
+            'text': 'Text',
+            'quality': 'Kvalitet',
+        }
+        widgets = {
+            'text': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Ange text från stämpeln (t.ex. "GRÄNSFORS")'
+            }),
+            'quality': forms.Select(attrs={'class': 'form-control'}),
+        }
+        help_texts = {
+            'text': 'Textbaserad beskrivning av stämpeln',
+            'quality': 'Bedömning av hur säker transkriberingen är',
+        }
+
+
+class AxeStampForm(forms.ModelForm):
+    """Formulär för att koppla stämpel till yxa"""
+    
+    class Meta:
+        model = AxeStamp
+        fields = ['stamp', 'comment', 'position', 'uncertainty_level']
+        labels = {
+            'stamp': 'Stämpel',
+            'comment': 'Kommentar',
+            'position': 'Position',
+            'uncertainty_level': 'Osäkerhetsnivå',
+        }
+        widgets = {
+            'stamp': forms.Select(attrs={'class': 'form-control'}),
+            'comment': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 3,
+                'placeholder': 'Lägg till kommentar om stämpeln...'
+            }),
+            'position': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Var på yxan stämpeln finns'
+            }),
+            'uncertainty_level': forms.Select(attrs={'class': 'form-control'}),
+        }
+        help_texts = {
+            'stamp': 'Välj stämpel att koppla till yxan',
+            'comment': 'Kommentar om stämpeln (kvalitet, synlighet, etc.)',
+            'position': 'Var på yxan stämpeln finns (valfritt)',
+            'uncertainty_level': 'Hur säker är identifieringen av stämpeln',
+        }
+
+
+class StampTagForm(forms.ModelForm):
+    """Formulär för att skapa stämpeltaggar"""
+    
+    class Meta:
+        model = StampTag
+        fields = ['name', 'description', 'color']
+        labels = {
+            'name': 'Namn',
+            'description': 'Beskrivning',
+            'color': 'Färg',
+        }
+        widgets = {
+            'name': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Ange taggnamn (t.ex. "tillverkarnamn")'
+            }),
+            'description': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 2,
+                'placeholder': 'Beskriv vad taggen representerar'
+            }),
+            'color': forms.TextInput(attrs={
+                'class': 'form-control',
+                'type': 'color',
+                'placeholder': '#007bff'
+            }),
+        }
+        help_texts = {
+            'name': 'Namn på taggen',
+            'description': 'Beskrivning av vad taggen representerar',
+            'color': 'Hex-färg för taggen (t.ex. #007bff)',
+        }
+
+
+class StampImageForm(forms.ModelForm):
+    """Formulär för att ladda upp stämpelbilder"""
+    
+    class Meta:
+        model = StampImage
+        fields = ['image', 'quality']
+        labels = {
+            'image': 'Bild',
+            'quality': 'Kvalitet',
+        }
+        widgets = {
+            'image': forms.FileInput(attrs={
+                'class': 'form-control',
+                'accept': 'image/*'
+            }),
+            'quality': forms.Select(attrs={'class': 'form-control'}),
+        }
+        help_texts = {
+            'image': 'Bild av stämpeln',
+            'quality': 'Bedömning av bildkvalitet för identifiering',
+        }

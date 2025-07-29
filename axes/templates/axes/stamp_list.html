@@ -1,0 +1,224 @@
+{% extends 'axes/base.html' %}
+{% load static %}
+
+{% block title %}Stämplar - AxeCollection{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1>Stämplar</h1>
+                <div>
+                    <a href="{% url 'stamp_create' %}" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> Ny stämpel
+                    </a>
+                    <a href="{% url 'stamp_statistics' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-chart-bar"></i> Statistik
+                    </a>
+                    <a href="{% url 'axes_without_stamps' %}" class="btn btn-outline-warning">
+                        <i class="fas fa-exclamation-triangle"></i> Yxor utan stämplar
+                    </a>
+                </div>
+            </div>
+
+            <!-- Sök- och filterformulär -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <form method="get" class="row g-3">
+                        <div class="col-md-3">
+                            <label for="search" class="form-label">Sök</label>
+                            <input type="text" class="form-control" id="search" name="search" 
+                                   value="{{ filters.search }}" placeholder="Sök i namn, beskrivning...">
+                        </div>
+                        <div class="col-md-2">
+                            <label for="manufacturer" class="form-label">Tillverkare</label>
+                            <select class="form-select" id="manufacturer" name="manufacturer">
+                                <option value="">Alla tillverkare</option>
+                                {% for manufacturer in manufacturers %}
+                                    <option value="{{ manufacturer.id }}" 
+                                            {% if filters.manufacturer == manufacturer.id|stringformat:"s" %}selected{% endif %}>
+                                        {{ manufacturer.name }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label for="stamp_type" class="form-label">Typ</label>
+                            <select class="form-select" id="stamp_type" name="stamp_type">
+                                <option value="">Alla typer</option>
+                                {% for value, label in stamp_types %}
+                                    <option value="{{ value }}" 
+                                            {% if filters.stamp_type == value %}selected{% endif %}>
+                                        {{ label }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label for="status" class="form-label">Status</label>
+                            <select class="form-select" id="status" name="status">
+                                <option value="">Alla statusar</option>
+                                {% for value, label in status_choices %}
+                                    <option value="{{ value }}" 
+                                            {% if filters.status == value %}selected{% endif %}>
+                                        {{ label }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label for="source" class="form-label">Källa</label>
+                            <select class="form-select" id="source" name="source">
+                                <option value="">Alla källor</option>
+                                {% for value, label in source_choices %}
+                                    <option value="{{ value }}" 
+                                            {% if filters.source == value %}selected{% endif %}>
+                                        {{ label }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-1">
+                            <label for="sort" class="form-label">Sortera</label>
+                            <select class="form-select" id="sort" name="sort">
+                                <option value="name" {% if filters.sort == 'name' %}selected{% endif %}>Namn</option>
+                                <option value="manufacturer" {% if filters.sort == 'manufacturer' %}selected{% endif %}>Tillverkare</option>
+                                <option value="created" {% if filters.sort == 'created' %}selected{% endif %}>Skapad</option>
+                                <option value="axes_count" {% if filters.sort == 'axes_count' %}selected{% endif %}>Antal yxor</option>
+                            </select>
+                        </div>
+                        <div class="col-12">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-search"></i> Sök
+                            </button>
+                            <a href="{% url 'stamp_list' %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-times"></i> Rensa
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Stämpellista -->
+            <div class="row">
+                {% for stamp in stamps %}
+                <div class="col-md-6 col-lg-4 mb-4">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <h5 class="card-title mb-0">
+                                    <a href="{% url 'stamp_detail' stamp.id %}" class="text-decoration-none">
+                                        {{ stamp.name }}
+                                    </a>
+                                </h5>
+                                <span class="badge bg-{% if stamp.status == 'known' %}success{% else %}warning{% endif %}">
+                                    {{ stamp.get_status_display }}
+                                </span>
+                            </div>
+                            
+                            {% if stamp.manufacturer %}
+                                <p class="card-text text-muted mb-2">
+                                    <i class="fas fa-industry"></i> {{ stamp.manufacturer.name }}
+                                </p>
+                            {% endif %}
+                            
+                            {% if stamp.description %}
+                                <p class="card-text">{{ stamp.description|truncatewords:20 }}</p>
+                            {% endif %}
+                            
+                            <div class="row text-muted small">
+                                <div class="col-6">
+                                    <i class="fas fa-tag"></i> {{ stamp.get_stamp_type_display }}
+                                </div>
+                                <div class="col-6">
+                                    <i class="fas fa-calendar"></i> {{ stamp.year_range }}
+                                </div>
+                            </div>
+                            
+                            {% if stamp.transcriptions.all %}
+                                <div class="mt-2">
+                                    <small class="text-muted">
+                                        <i class="fas fa-font"></i> 
+                                        {% for transcription in stamp.transcriptions.all|slice:":3" %}
+                                            {{ transcription.text }}{% if not forloop.last %}, {% endif %}
+                                        {% endfor %}
+                                        {% if stamp.transcriptions.count > 3 %}...{% endif %}
+                                    </small>
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="card-footer">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <small class="text-muted">
+                                    {{ stamp.axes.count }} yxa{{ stamp.axes.count|pluralize:"r,or" }}
+                                </small>
+                                <div>
+                                    <a href="{% url 'stamp_detail' stamp.id %}" class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-eye"></i> Visa
+                                    </a>
+                                    <a href="{% url 'stamp_edit' stamp.id %}" class="btn btn-sm btn-outline-secondary">
+                                        <i class="fas fa-edit"></i> Redigera
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="col-12">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i> Inga stämplar hittades med de valda filtren.
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- Paginering -->
+            {% if page_obj.has_other_pages %}
+            <nav aria-label="Stämpel-paginering">
+                <ul class="pagination justify-content-center">
+                    {% if page_obj.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page=1{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                                <i class="fas fa-angle-double-left"></i>
+                            </a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                                <i class="fas fa-angle-left"></i>
+                            </a>
+                        </li>
+                    {% endif %}
+
+                    {% for num in page_obj.paginator.page_range %}
+                        {% if page_obj.number == num %}
+                            <li class="page-item active">
+                                <span class="page-link">{{ num }}</span>
+                            </li>
+                        {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ num }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">{{ num }}</a>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+
+                    {% if page_obj.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                                <i class="fas fa-angle-right"></i>
+                            </a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                                <i class="fas fa-angle-double-right"></i>
+                            </a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %} 

@@ -935,8 +935,8 @@ class Settings(models.Model):
     external_csrf_origins = models.TextField(
         blank=True,
         null=True,
-        verbose_name="CSRF-tillåtna origins",
-        help_text="Komma-separerad lista av CSRF-tillåtna origins med protokoll (t.ex. https://demo.domain.com,http://192.168.1.100)",
+        verbose_name="Externa CSRF origins",
+        help_text="Komma-separerad lista av externa CSRF origins (t.ex. https://demo.domain.com,https://192.168.1.100)",
     )
 
     class Meta:
@@ -944,10 +944,321 @@ class Settings(models.Model):
         verbose_name_plural = "Inställningar"
 
     def __str__(self):
-        return "Systeminställningar"
+        return f"Inställningar - {self.site_title}"
 
     @classmethod
     def get_settings(cls):
-        """Hämta eller skapa inställningar"""
-        obj, created = cls.objects.get_or_create(id=1)
-        return obj
+        """Hämta inställningar eller skapa standardinställningar"""
+        settings, created = cls.objects.get_or_create(
+            id=1,
+            defaults={
+                "site_title": "AxeCollection",
+                "show_contacts_public": False,
+                "show_prices_public": True,
+                "show_platforms_public": True,
+                "show_only_received_axes_public": False,
+            },
+        )
+        return settings
+
+
+# Stämpelregister-modeller
+class Stamp(models.Model):
+    """Stämpel - huvudmodell för stämplar"""
+    
+    STAMP_TYPE_CHOICES = [
+        ("text", "Text"),
+        ("image", "Bild"),
+        ("symbol", "Symbol"),
+    ]
+    
+    STATUS_CHOICES = [
+        ("known", "Känd"),
+        ("unknown", "Okänd"),
+    ]
+    
+    SOURCE_CATEGORY_CHOICES = [
+        ("own_collection", "Egen samling"),
+        ("ebay_auction", "eBay/Auktion"),
+        ("museum", "Museum"),
+        ("private_collector", "Privat samlare"),
+        ("book_article", "Bok/Artikel"),
+        ("internet", "Internet"),
+        ("unknown", "Okänd"),
+    ]
+
+    name = models.CharField(max_length=200, verbose_name="Namn")
+    description = models.TextField(blank=True, null=True, verbose_name="Beskrivning")
+    manufacturer = models.ForeignKey(
+        Manufacturer, 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True,
+        verbose_name="Tillverkare"
+    )
+    stamp_type = models.CharField(
+        max_length=20, 
+        choices=STAMP_TYPE_CHOICES,
+        default="text",
+        verbose_name="Typ"
+    )
+    status = models.CharField(
+        max_length=20, 
+        choices=STATUS_CHOICES,
+        default="unknown",
+        verbose_name="Status"
+    )
+    
+    # Årtalsinformation
+    year_from = models.IntegerField(null=True, blank=True, verbose_name="Från år")
+    year_to = models.IntegerField(null=True, blank=True, verbose_name="Till år")
+    year_uncertainty = models.BooleanField(default=False, verbose_name="Osäker årtalsinformation")
+    year_notes = models.TextField(blank=True, null=True, verbose_name="Anteckningar om årtal")
+    
+    # Källinformation
+    source_category = models.CharField(
+        max_length=20, 
+        choices=SOURCE_CATEGORY_CHOICES, 
+        default="own_collection",
+        verbose_name="Källkategori"
+    )
+    source_reference = models.TextField(blank=True, null=True, verbose_name="Källhänvisning")
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["name"]
+        verbose_name = "Stämpel"
+        verbose_name_plural = "Stämplar"
+
+    def __str__(self):
+        return self.name
+
+    @property
+    def display_name(self):
+        """Visa namn med tillverkare om tillgänglig"""
+        if self.manufacturer:
+            return f"{self.name} ({self.manufacturer.name})"
+        return self.name
+
+    @property
+    def year_range(self):
+        """Visa årtalsintervall"""
+        if self.year_from and self.year_to:
+            if self.year_from == self.year_to:
+                return str(self.year_from)
+            else:
+                return f"{self.year_from}-{self.year_to}"
+        elif self.year_from:
+            return f"från {self.year_from}"
+        elif self.year_to:
+            return f"till {self.year_to}"
+        return "Okänt årtal"
+
+
+class StampTranscription(models.Model):
+    """Textbaserad beskrivning av stämplar"""
+    
+    QUALITY_CHOICES = [
+        ("high", "Hög"),
+        ("medium", "Medium"),
+        ("low", "Låg"),
+    ]
+
+    stamp = models.ForeignKey(
+        Stamp, 
+        on_delete=models.CASCADE, 
+        related_name="transcriptions",
+        verbose_name="Stämpel"
+    )
+    text = models.CharField(max_length=500, verbose_name="Text")
+    quality = models.CharField(
+        max_length=20, 
+        choices=QUALITY_CHOICES,
+        default="medium",
+        verbose_name="Kvalitet"
+    )
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, 
+        on_delete=models.SET_NULL, 
+        null=True,
+        verbose_name="Skapad av"
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        verbose_name = "Stämpeltranskribering"
+        verbose_name_plural = "Stämpeltranskriberingar"
+
+    def __str__(self):
+        return f"{self.stamp.name}: {self.text}"
+
+
+class StampTag(models.Model):
+    """Kategorisering av stämplar"""
+    
+    name = models.CharField(max_length=100, verbose_name="Namn")
+    description = models.TextField(blank=True, null=True, verbose_name="Beskrivning")
+    color = models.CharField(
+        max_length=7, 
+        default="#007bff",
+        verbose_name="Färg (hex)",
+        help_text="Hex-färg för taggen, t.ex. #007bff"
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["name"]
+        verbose_name = "Stämpeltagg"
+        verbose_name_plural = "Stämpeltaggar"
+
+    def __str__(self):
+        return self.name
+
+
+class StampImage(models.Model):
+    """Bilder av stämplar"""
+    
+    QUALITY_CHOICES = [
+        ("high", "Hög"),
+        ("medium", "Medium"),
+        ("low", "Låg"),
+    ]
+
+    stamp = models.ForeignKey(
+        Stamp, 
+        on_delete=models.CASCADE, 
+        related_name="images",
+        verbose_name="Stämpel"
+    )
+    image = models.ImageField(upload_to="stamps/", verbose_name="Bild")
+    quality = models.CharField(
+        max_length=20, 
+        choices=QUALITY_CHOICES,
+        default="medium",
+        verbose_name="Kvalitet"
+    )
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-uploaded_at"]
+        verbose_name = "Stämpelbild"
+        verbose_name_plural = "Stämpelbilder"
+
+    def __str__(self):
+        return f"{self.stamp.name} - {self.image.name}"
+
+
+class AxeStamp(models.Model):
+    """Koppling mellan yxa och stämpel"""
+    
+    UNCERTAINTY_CHOICES = [
+        ("certain", "Säker"),
+        ("uncertain", "Osäker"),
+        ("tentative", "Tentativ"),
+    ]
+
+    axe = models.ForeignKey(
+        Axe, 
+        on_delete=models.CASCADE, 
+        related_name="stamps",
+        verbose_name="Yxa"
+    )
+    stamp = models.ForeignKey(
+        Stamp, 
+        on_delete=models.CASCADE, 
+        related_name="axes",
+        verbose_name="Stämpel"
+    )
+    comment = models.TextField(blank=True, null=True, verbose_name="Kommentar")
+    position = models.CharField(
+        max_length=100, 
+        blank=True, 
+        null=True,
+        verbose_name="Position",
+        help_text="Var på yxan stämpeln finns"
+    )
+    uncertainty_level = models.CharField(
+        max_length=20, 
+        choices=UNCERTAINTY_CHOICES, 
+        default="certain",
+        verbose_name="Osäkerhetsnivå"
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        verbose_name = "Yxstämpel"
+        verbose_name_plural = "Yxstämplar"
+        unique_together = ["axe", "stamp"]
+
+    def __str__(self):
+        return f"{self.axe} - {self.stamp}"
+
+
+class StampVariant(models.Model):
+    """Varianter av stämplar"""
+    
+    main_stamp = models.ForeignKey(
+        Stamp, 
+        on_delete=models.CASCADE, 
+        related_name="variants",
+        verbose_name="Huvudstämpel"
+    )
+    variant_stamp = models.ForeignKey(
+        Stamp, 
+        on_delete=models.CASCADE, 
+        related_name="main_stamp",
+        verbose_name="Variantstämpel"
+    )
+    description = models.TextField(
+        blank=True, 
+        null=True,
+        verbose_name="Beskrivning",
+        help_text="Beskrivning av skillnaden"
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        verbose_name = "Stämpelvariant"
+        verbose_name_plural = "Stämpelvarianter"
+        unique_together = ["main_stamp", "variant_stamp"]
+
+    def __str__(self):
+        return f"{self.main_stamp} - variant av {self.variant_stamp}"
+
+
+class StampUncertaintyGroup(models.Model):
+    """Grupper av stämplar med osäker identifiering"""
+    
+    CONFIDENCE_CHOICES = [
+        ("high", "Hög"),
+        ("medium", "Medium"),
+        ("low", "Låg"),
+    ]
+
+    name = models.CharField(max_length=200, verbose_name="Namn")
+    description = models.TextField(blank=True, null=True, verbose_name="Beskrivning")
+    stamps = models.ManyToManyField(
+        Stamp, 
+        related_name="uncertainty_groups",
+        verbose_name="Stämplar"
+    )
+    confidence_level = models.CharField(
+        max_length=20, 
+        choices=CONFIDENCE_CHOICES,
+        default="medium",
+        verbose_name="Konfidensnivå"
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        verbose_name = "Osäkerhetsgrupp"
+        verbose_name_plural = "Osäkerhetsgrupper"
+
+    def __str__(self):
+        return self.name

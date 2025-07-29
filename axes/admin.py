@@ -12,6 +12,14 @@ from .models import (
     ManufacturerImage,
     ManufacturerLink,
     AxeImage,
+    # Stämpelregister-modeller
+    Stamp,
+    StampTranscription,
+    StampTag,
+    StampImage,
+    AxeStamp,
+    StampVariant,
+    StampUncertaintyGroup,
 )
 from django import forms
 from django.utils.translation import gettext_lazy as _
@@ -188,6 +196,113 @@ class MeasurementTemplateAdmin(admin.ModelAdmin):
         return obj.items.count()
 
     item_count.short_description = "Antal mått"
+
+
+# Stämpelregister admin-klasser
+class StampTranscriptionInline(admin.TabularInline):
+    model = StampTranscription
+    extra = 1
+    fields = ("text", "quality", "created_by")
+    ordering = ("-created_at",)
+
+
+class StampImageInline(admin.TabularInline):
+    model = StampImage
+    extra = 1
+    fields = ("image", "quality")
+    ordering = ("-uploaded_at",)
+
+
+class StampTagInline(admin.TabularInline):
+    model = StampTag
+    extra = 1
+    fields = ("name", "description", "color")
+
+
+class StampAdmin(admin.ModelAdmin):
+    list_display = ("name", "manufacturer", "stamp_type", "status", "year_range", "source_category")
+    list_filter = ("stamp_type", "status", "source_category", "manufacturer")
+    search_fields = ("name", "description", "manufacturer__name")
+    ordering = ("name",)
+    fieldsets = (
+        ("Grundinformation", {
+            "fields": ("name", "description", "manufacturer", "stamp_type", "status")
+        }),
+        ("Årtalsinformation", {
+            "fields": ("year_from", "year_to", "year_uncertainty", "year_notes"),
+            "classes": ("collapse",)
+        }),
+        ("Källinformation", {
+            "fields": ("source_category", "source_reference"),
+            "classes": ("collapse",)
+        }),
+    )
+    inlines = [StampTranscriptionInline, StampImageInline]
+
+
+class StampTranscriptionAdmin(admin.ModelAdmin):
+    list_display = ("stamp", "text", "quality", "created_by", "created_at")
+    list_filter = ("quality", "created_at", "stamp__manufacturer")
+    search_fields = ("text", "stamp__name", "stamp__manufacturer__name")
+    ordering = ("-created_at",)
+
+
+class StampTagAdmin(admin.ModelAdmin):
+    list_display = ("name", "description", "color", "created_at")
+    list_filter = ("created_at",)
+    search_fields = ("name", "description")
+    ordering = ("name",)
+
+
+class StampImageAdmin(admin.ModelAdmin):
+    list_display = ("stamp", "image", "quality", "uploaded_at")
+    list_filter = ("quality", "uploaded_at", "stamp__manufacturer")
+    search_fields = ("stamp__name", "stamp__manufacturer__name")
+    ordering = ("-uploaded_at",)
+
+
+class AxeStampAdmin(admin.ModelAdmin):
+    list_display = ("axe", "stamp", "uncertainty_level", "position", "created_at")
+    list_filter = ("uncertainty_level", "created_at", "stamp__manufacturer")
+    search_fields = ("axe__model", "stamp__name", "comment", "position")
+    ordering = ("-created_at",)
+    fieldsets = (
+        ("Koppling", {
+            "fields": ("axe", "stamp")
+        }),
+        ("Detaljer", {
+            "fields": ("comment", "position", "uncertainty_level")
+        }),
+    )
+
+
+class StampVariantAdmin(admin.ModelAdmin):
+    list_display = ("main_stamp", "variant_stamp", "description", "created_at")
+    list_filter = ("created_at", "main_stamp__manufacturer")
+    search_fields = ("main_stamp__name", "variant_stamp__name", "description")
+    ordering = ("-created_at",)
+
+
+class StampUncertaintyGroupAdmin(admin.ModelAdmin):
+    list_display = ("name", "confidence_level", "stamp_count", "created_at")
+    list_filter = ("confidence_level", "created_at")
+    search_fields = ("name", "description")
+    ordering = ("-created_at",)
+
+    def stamp_count(self, obj):
+        return obj.stamps.count()
+    
+    stamp_count.short_description = "Antal stämplar"
+
+
+# Registrera admin-klasserna
+admin.site.register(Stamp, StampAdmin)
+admin.site.register(StampTranscription, StampTranscriptionAdmin)
+admin.site.register(StampTag, StampTagAdmin)
+admin.site.register(StampImage, StampImageAdmin)
+admin.site.register(AxeStamp, AxeStampAdmin)
+admin.site.register(StampVariant, StampVariantAdmin)
+admin.site.register(StampUncertaintyGroup, StampUncertaintyGroupAdmin)
 
 
 # "Registrera" dina modeller så de dyker upp i admin-gränssnittet
