@@ -98,6 +98,15 @@ Många yxor har stämplar som innehåller viktig information om tillverkare, kva
 
 ### 4. Sökfunktionalitet
 
+#### AJAX-sökning
+- **Live-sökning**: Realtidssökning med debouncing (300ms)
+- **Förbättrad sökning**: Sök i namn, beskrivning, transkriberingar och tillverkare
+- **Filtrering**: Kombinera sökning med tillverkare och stämpeltyp
+- **Resultatvisning**: Dropdown med detaljerad information om varje stämpel
+- **Formulärintegration**: AJAX-sökning i add_axe_stamp formuläret
+- **Prioritering**: Stämplar från yxans tillverkare visas först
+- **Responsiv design**: Dropdown som anpassar sig efter innehåll
+
 #### Textbaserad sökning
 - **Transkriberingar**: Sök i textbeskrivningar av stämplar
 - **Taggar**: Sök på kategorier och taggar
@@ -350,7 +359,7 @@ class StampUncertaintyGroup(models.Model):
 #### Nästa steg att implementera
 - [x] **Yxdetaljsida-integration**: Visa stämplar på yxdetaljsidan
 - [x] **Stämpelkoppling**: Möjlighet att koppla/avkoppla stämplar från yxdetaljsidan
-- [ ] **AJAX-sökning**: Implementera AJAX-funktionalitet för stämpelsökning
+- [x] **AJAX-sökning**: Implementera AJAX-funktionalitet för stämpelsökning
 - [ ] **Mottagningsflöde-integration**: Integrera stämpeldefinition i mottagningsarbetsflödet
 
 #### Tekniska detaljer
@@ -394,4 +403,15 @@ class StampUncertaintyGroup(models.Model):
 - [x] **Tillverkarinformation**: Andra stämplar visar tillverkarnamn för tydlighet
 - [x] **Form-uppdatering**: `AxeStampForm` anpassad för att ta emot `axe`-parameter
 - [x] **View-uppdatering**: `add_axe_stamp` view uppdaterad för att skicka `axe` till formuläret
-- [x] **Validering**: `clean_stamp` metod tillagd för att konvertera ID till Stamp-objekt 
+- [x] **Validering**: `clean_stamp` metod tillagd för att konvertera ID till Stamp-objekt
+
+#### AJAX-sökning (2025-07-29)
+- [x] **Live-sökning**: Realtidssökning med debouncing (300ms) i stämpellistan
+- [x] **Förbättrad sökning**: Sök i namn, beskrivning, transkriptioner och tillverkare
+- [x] **Filtrering**: Kombinera sökning med tillverkare och stämpeltyp
+- [x] **Resultatvisning**: Dropdown med detaljerad information om varje stämpel
+- [x] **Formulärintegration**: AJAX-sökning i add_axe_stamp formuläret
+- [x] **JavaScript-fil**: `stamp_search.js` skapad med fullständig AJAX-funktionalitet
+- [x] **Template-uppdateringar**: `stamp_list.html` och `axe_stamp_form.html` uppdaterade
+- [x] **Responsiv design**: Dropdown som anpassar sig efter innehåll
+- [x] **Felhantering**: Visar laddningsindikator och felmeddelanden 

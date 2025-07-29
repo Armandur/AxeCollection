@@ -213,23 +213,55 @@ def stamp_search(request):
     """AJAX-sökning för stämplar"""
     
     query = request.GET.get('q', '')
-    if not query:
+    manufacturer_filter = request.GET.get('manufacturer', '')
+    stamp_type_filter = request.GET.get('stamp_type', '')
+    
+    if not query and not manufacturer_filter and not stamp_type_filter:
         return JsonResponse({'results': []})
     
-    stamps = Stamp.objects.filter(
-        Q(name__icontains=query) |
-        Q(transcriptions__text__icontains=query) |
-        Q(manufacturer__name__icontains=query)
-    ).select_related('manufacturer').distinct()[:10]
+    stamps = Stamp.objects.select_related('manufacturer').prefetch_related('transcriptions')
+    
+    # Sökning
+    if query:
+        stamps = stamps.filter(
+            Q(name__icontains=query) |
+            Q(description__icontains=query) |
+            Q(transcriptions__text__icontains=query) |
+            Q(manufacturer__name__icontains=query)
+        ).distinct()
+    
+    # Filtrering
+    if manufacturer_filter:
+        stamps = stamps.filter(manufacturer_id=manufacturer_filter)
+    
+    if stamp_type_filter:
+        stamps = stamps.filter(stamp_type=stamp_type_filter)
+    
+    # Begränsa resultat
+    stamps = stamps[:20]
     
     results = []
     for stamp in stamps:
+        # Hitta bästa matchande transkription
+        best_transcription = ''
+        if query:
+            transcriptions = stamp.transcriptions.all()
+            for transcription in transcriptions:
+                if query.lower() in transcription.text.lower():
+                    best_transcription = transcription.text
+                    break
+            if not best_transcription and transcriptions.exists():
+                best_transcription = transcriptions.first().text
+        
         results.append({
             'id': stamp.id,
             'name': stamp.name,
             'manufacturer': stamp.manufacturer.name if stamp.manufacturer else 'Okänd',
             'type': stamp.get_stamp_type_display(),
             'status': stamp.get_status_display(),
+            'description': stamp.description[:100] + '...' if stamp.description and len(stamp.description) > 100 else stamp.description,
+            'transcription': best_transcription[:100] + '...' if best_transcription and len(best_transcription) > 100 else best_transcription,
+            'url': f'/stamplar/{stamp.id}/',
         })
     
     return JsonResponse({'results': results})

@@ -25,11 +25,16 @@
                         
                         <div class="mb-3">
                             <label for="{{ form.stamp.id_for_label }}" class="form-label">Stämpel *</label>
-                            {{ form.stamp }}
+                            <div class="position-relative">
+                                {{ form.stamp }}
+                                <div id="stamp-search-results" class="dropdown-menu w-100" style="display: none; max-height: 300px; overflow-y: auto;">
+                                    <!-- AJAX-resultat kommer här -->
+                                </div>
+                            </div>
                             {% if form.stamp.errors %}
                                 <div class="text-danger">{{ form.stamp.errors }}</div>
                             {% endif %}
-                            <div class="form-text">Välj en befintlig stämpel eller skapa en ny</div>
+                            <div class="form-text">Välj en befintlig stämpel eller skapa en ny. Sökning prioriterar stämplar från {{ axe.manufacturer.name }}.</div>
                         </div>
 
                         <div class="mb-3">
@@ -142,4 +147,8 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/stamp_search.js' %}"></script>
 {% endblock %} 

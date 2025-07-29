@@ -28,8 +28,13 @@
                     <form method="get" class="row g-3">
                         <div class="col-md-3">
                             <label for="search" class="form-label">Sök</label>
-                            <input type="text" class="form-control" id="search" name="search" 
-                                   value="{{ filters.search }}" placeholder="Sök i namn, beskrivning...">
+                            <div class="position-relative">
+                                <input type="text" class="form-control" id="stamp-search-input" name="search" 
+                                       value="{{ filters.search }}" placeholder="Sök i namn, beskrivning...">
+                                <div id="stamp-search-results" class="dropdown-menu w-100" style="display: none; max-height: 400px; overflow-y: auto;">
+                                    <!-- AJAX-resultat kommer här -->
+                                </div>
+                            </div>
                         </div>
                         <div class="col-md-2">
                             <label for="manufacturer" class="form-label">Tillverkare</label>
@@ -221,4 +226,8 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/stamp_search.js' %}"></script>
 {% endblock %} 
