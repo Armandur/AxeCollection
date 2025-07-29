@@ -429,4 +429,48 @@ class StampUncertaintyGroup(models.Model):
 - [x] **URL-struktur**: Lagt till URL-mönster för bildhantering
 - [x] **Responsiv design**: Bilder anpassar sig efter skärmstorlek
 - [x] **Kvalitetsindikatorer**: Visuella badges för bildkvalitet
-- [x] **Ordning**: Stöd för att sortera bilder med order-fält 
+- [x] **Ordning**: Stöd för att sortera bilder med order-fält
+
+#### Ersättning av ManufacturerImage för stämplar (2025-07-29)
+- [x] **Tillverkardetaljsida**: Ersatt ManufacturerImage stämplar med Stamp-systemet
+- [x] **Visa stämplar**: Tillverkardetaljsidan visar nu registrerade Stamp-objekt istället för ManufacturerImage
+- [x] **Bildvisning**: Stämplar visar första bilden från StampImage-samlingen
+- [x] **Länkar till detaljer**: Varje stämpel har länk till stamp_detail-sidan
+- [x] **Skapa nya stämplar**: Knapp för att skapa nya stämplar direkt från tillverkarsidan
+- [x] **Formulärintegration**: stamp_create vyn hanterar manufacturer-parameter från URL
+- [x] **Responsiv design**: Stämplar visas i samma layout som tidigare bilder
+- [x] **Fallback**: Visar stämpelikon om ingen bild finns tillgänglig
+
+### Kommande funktioner (TODO)
+
+#### Avancerad bildhantering
+- [ ] **Markera AxeImage som StampImage**: Möjlighet att markera befintliga AxeImage som StampImage för specifika stämplar
+- [ ] **Huvudbildsval**: På stämpeldetaljsidan kunna välja "bästa" bilden som stämpelns huvudbild
+- [ ] **Bildbeskärning**: Implementera beskärning eller definiera visningsområde för stämpel inom AxeImage
+- [ ] **Visa hela bilden**: Alternativ att visa hela AxeImage istället för bara stämpelområdet
+- [ ] **Bildkoordinater**: Spara x,y-koordinater för stämpelområdet inom bilden
+- [ ] **Zoom-funktionalitet**: Möjlighet att zooma in på stämpelområdet
+
+#### Mottagningsflöde-integration
+- [ ] **Stämpeldefinition i mottagningsflödet**: Integrera stämpeldefinition i receiving_workflow
+- [ ] **Realtidsfotografering**: Möjlighet att fota stämplar direkt i mottagningsflödet
+- [ ] **Snabbidentifiering**: Automatiska förslag på stämplar baserat på tillverkare/transkription
+- [ ] **Bulk-operationer**: Markera flera yxor för stämpeldefinition samtidigt
+
+#### Avancerad sökning och filtrering
+- [ ] **Visuell stämpelsökning**: Sök stämplar baserat på visuell likhet
+- [ ] **OCR-integration**: Automatisk textigenkänning från stämpelbilder
+- [ ] **Fuzzy matching**: Fuzzy matching för stämpeltranskriptioner
+- [ ] **Geografisk filtrering**: Filtrera stämplar baserat på tillverkarens land
+
+#### Dataimport/export
+- [ ] **CSV-export**: Exportera stämpeldata för delning
+- [ ] **JSON-import**: Importera stämpeldata från andra samlare
+- [ ] **Backup-funktionalitet**: Säkerhetskopiera stämpelregister
+- [ ] **Bildimport**: Massimport av stämpelbilder från externa källor
+
+#### Användargränssnitt
+- [ ] **Drag-and-drop**: Drag-and-drop för bildordning och stämpelkoppling
+- [ ] **Lightbox för stämplar**: Förbättrad bildvisning för stämpelbilder
+- [ ] **Mobiloptimering**: Förbättrad mobilupplevelse för stämpelfunktioner
+- [ ] **Tema-anpassning**: Anpassa färger och stil för stämpelfunktioner 

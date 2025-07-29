@@ -120,6 +120,17 @@ def stamp_detail(request, stamp_id):
 def stamp_create(request):
     """Skapa ny stämpel"""
     
+    # Hämta manufacturer från URL-parametern
+    manufacturer_id = request.GET.get('manufacturer')
+    initial_data = {}
+    
+    if manufacturer_id:
+        try:
+            manufacturer = Manufacturer.objects.get(id=manufacturer_id)
+            initial_data['manufacturer'] = manufacturer
+        except Manufacturer.DoesNotExist:
+            pass
+    
     if request.method == 'POST':
         form = StampForm(request.POST)
         if form.is_valid():
@@ -127,7 +138,7 @@ def stamp_create(request):
             messages.success(request, f'Stämpel "{stamp.name}" skapades framgångsrikt.')
             return redirect('stamp_detail', stamp_id=stamp.id)
     else:
-        form = StampForm()
+        form = StampForm(initial=initial_data)
     
     context = {
         'form': form,

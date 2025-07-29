@@ -424,9 +424,16 @@ def manufacturer_edit(request, pk):
 def manufacturer_detail(request, pk):
     manufacturer = get_object_or_404(Manufacturer, pk=pk)
     axes = Axe.objects.filter(manufacturer=manufacturer).order_by("-id")
-    images = ManufacturerImage.objects.filter(manufacturer=manufacturer).order_by(
-        "image_type", "order"
-    )
+    
+    # Hämta ManufacturerImage för icke-stämpel bilder (övriga bilder)
+    images = ManufacturerImage.objects.filter(
+        manufacturer=manufacturer, 
+        image_type="OTHER"
+    ).order_by("order")
+    
+    # Hämta Stamp objekt för denna tillverkare
+    stamps = Stamp.objects.filter(manufacturer=manufacturer).order_by("name")
+    
     links = ManufacturerLink.objects.filter(manufacturer=manufacturer).order_by(
         "link_type", "order"
     )
@@ -523,10 +530,14 @@ def manufacturer_detail(request, pk):
                 axe.status_class = "bg-light"
     # Gruppera bilder efter typ
     images_by_type = {}
-    for image in images:
-        if image.image_type not in images_by_type:
-            images_by_type[image.image_type] = []
-        images_by_type[image.image_type].append(image)
+    
+    # Lägg till övriga bilder (icke-stämplar)
+    if images:
+        images_by_type["OTHER"] = list(images)
+    
+    # Lägg till stämplar från det nya Stamp-systemet
+    if stamps:
+        images_by_type["STAMP"] = list(stamps)
 
     # Gruppera länkar efter typ
     links_by_type = {}
@@ -576,6 +587,7 @@ def manufacturer_detail(request, pk):
         "axes": axes,
         "sub_manufacturer_axes": sub_manufacturer_axes,
         "images": images,
+        "stamps": stamps,
         "links": links,
         "images_by_type": images_by_type,
         "links_by_type": links_by_type,
