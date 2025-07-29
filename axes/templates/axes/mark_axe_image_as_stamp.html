@@ -1,0 +1,181 @@
+{% extends 'axes/base.html' %}
+
+{% block title %}Markera stämpel på bild - {{ axe.display_id }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'axe_list' %}">Yxor</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'axe_detail' axe.id %}">{{ axe.display_id }}</a></li>
+            <li class="breadcrumb-item active">Markera stämpel</li>
+        </ol>
+    </nav>
+
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h4>Markera stämpel på bild</h4>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Bild från {{ axe.display_id }}</h6>
+                            <div class="position-relative" id="image-container">
+                                <img src="{{ axe_image.image_url_with_cache_busting }}" 
+                                     class="img-fluid" 
+                                     alt="Yxbild"
+                                     id="axe-image"
+                                     style="max-width: 100%; height: auto;">
+                                <div id="crop-overlay" class="position-absolute border border-primary" 
+                                     style="display: none; background: rgba(0, 123, 255, 0.2);"></div>
+                            </div>
+                            <small class="text-muted">Klicka och dra för att markera stämpelområde</small>
+                        </div>
+                        <div class="col-md-6">
+                            <form method="post">
+                                {% csrf_token %}
+                                <div class="mb-3">
+                                    <label for="stamp" class="form-label">Välj stämpel</label>
+                                    <select name="stamp" id="stamp" class="form-select" required>
+                                        <option value="">-- Välj stämpel --</option>
+                                        {% for stamp in available_stamps %}
+                                            <option value="{{ stamp.id }}" 
+                                                    {% if existing_mark and existing_mark.stamp.id == stamp.id %}selected{% endif %}>
+                                                {{ stamp.name }}
+                                                {% if stamp.manufacturer %}
+                                                    ({{ stamp.manufacturer.name }})
+                                                {% endif %}
+                                            </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="comment" class="form-label">Kommentar</label>
+                                    <textarea name="comment" id="comment" class="form-control" rows="3">{{ existing_mark.comment|default:'' }}</textarea>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <label for="x_coordinate" class="form-label">X-koordinat</label>
+                                        <input type="number" name="x_coordinate" id="x_coordinate" class="form-control" 
+                                               value="{{ existing_mark.x_coordinate|default:'' }}" min="0">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="y_coordinate" class="form-label">Y-koordinat</label>
+                                        <input type="number" name="y_coordinate" id="y_coordinate" class="form-control" 
+                                               value="{{ existing_mark.y_coordinate|default:'' }}" min="0">
+                                    </div>
+                                </div>
+
+                                <div class="row mt-2">
+                                    <div class="col-md-6">
+                                        <label for="width" class="form-label">Bredd</label>
+                                        <input type="number" name="width" id="width" class="form-control" 
+                                               value="{{ existing_mark.width|default:'' }}" min="1">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="height" class="form-label">Höjd</label>
+                                        <input type="number" name="height" id="height" class="form-control" 
+                                               value="{{ existing_mark.height|default:'' }}" min="1">
+                                    </div>
+                                </div>
+
+
+
+                                <div class="mt-3">
+                                    <button type="submit" class="btn btn-primary">
+                                        {% if existing_mark %}Uppdatera{% else %}Markera{% endif %} stämpel
+                                    </button>
+                                    <a href="{% url 'axe_detail' axe.id %}" class="btn btn-secondary">Avbryt</a>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const image = document.getElementById('axe-image');
+    const overlay = document.getElementById('crop-overlay');
+    const xInput = document.getElementById('x_coordinate');
+    const yInput = document.getElementById('y_coordinate');
+    const widthInput = document.getElementById('width');
+    const heightInput = document.getElementById('height');
+    
+    let isDrawing = false;
+    let startX, startY;
+    
+    function updateOverlay() {
+        const x = parseInt(xInput.value) || 0;
+        const y = parseInt(yInput.value) || 0;
+        const width = parseInt(widthInput.value) || 0;
+        const height = parseInt(heightInput.value) || 0;
+        
+        if (x > 0 && y > 0 && width > 0 && height > 0) {
+            overlay.style.left = x + 'px';
+            overlay.style.top = y + 'px';
+            overlay.style.width = width + 'px';
+            overlay.style.height = height + 'px';
+            overlay.style.display = 'block';
+        } else {
+            overlay.style.display = 'none';
+        }
+    }
+    
+    function getImageCoordinates(clientX, clientY) {
+        const rect = image.getBoundingClientRect();
+        const x = Math.max(0, Math.min(clientX - rect.left, rect.width));
+        const y = Math.max(0, Math.min(clientY - rect.top, rect.height));
+        return { x: Math.round(x), y: Math.round(y) };
+    }
+    
+    image.addEventListener('mousedown', function(e) {
+        isDrawing = true;
+        const coords = getImageCoordinates(e.clientX, e.clientY);
+        startX = coords.x;
+        startY = coords.y;
+        
+        xInput.value = startX;
+        yInput.value = startY;
+        widthInput.value = 0;
+        heightInput.value = 0;
+        
+        updateOverlay();
+    });
+    
+    image.addEventListener('mousemove', function(e) {
+        if (!isDrawing) return;
+        
+        const coords = getImageCoordinates(e.clientX, e.clientY);
+        const width = Math.abs(coords.x - startX);
+        const height = Math.abs(coords.y - startY);
+        
+        widthInput.value = width;
+        heightInput.value = height;
+        
+        updateOverlay();
+    });
+    
+    image.addEventListener('mouseup', function() {
+        isDrawing = false;
+    });
+    
+    // Uppdatera overlay när input-värden ändras
+    [xInput, yInput, widthInput, heightInput].forEach(input => {
+        input.addEventListener('input', updateOverlay);
+    });
+    
+    // Visa befintlig markering vid laddning
+    updateOverlay();
+});
+</script>
+{% endblock %} 

@@ -18,6 +18,7 @@ from .models import (
     StampTag,
     StampImage,
     AxeStamp,
+    AxeImageStamp,
     StampVariant,
     StampUncertaintyGroup,
 )
@@ -306,6 +307,30 @@ class StampUncertaintyGroupAdmin(admin.ModelAdmin):
     stamp_count.short_description = "Antal stämplar"
 
 
+class AxeImageStampAdmin(admin.ModelAdmin):
+    list_display = ("axe_image", "stamp", "has_coordinates", "is_primary", "show_full_image", "created_at")
+    list_filter = ("is_primary", "show_full_image", "created_at", "stamp__manufacturer")
+    search_fields = ("axe_image__axe__model", "stamp__name", "comment")
+    ordering = ("-created_at",)
+    fieldsets = (
+        ("Grundinformation", {
+            "fields": ("axe_image", "stamp", "comment")
+        }),
+        ("Bildkoordinater", {
+            "fields": ("x_coordinate", "y_coordinate", "width", "height"),
+            "classes": ("collapse",)
+        }),
+        ("Visningsinställningar", {
+            "fields": ("show_full_image", "is_primary")
+        }),
+    )
+    
+    def has_coordinates(self, obj):
+        return obj.has_coordinates
+    has_coordinates.boolean = True
+    has_coordinates.short_description = "Koordinater"
+
+
 # Registrera admin-klasserna
 admin.site.register(Stamp, StampAdmin)
 admin.site.register(StampTranscription, StampTranscriptionAdmin)
@@ -314,6 +339,7 @@ admin.site.register(StampImage, StampImageAdmin)
 admin.site.register(AxeStamp, AxeStampAdmin)
 admin.site.register(StampVariant, StampVariantAdmin)
 admin.site.register(StampUncertaintyGroup, StampUncertaintyGroupAdmin)
+admin.site.register(AxeImageStamp, AxeImageStampAdmin)
 
 
 # "Registrera" dina modeller så de dyker upp i admin-gränssnittet

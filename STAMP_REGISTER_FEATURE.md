@@ -16,7 +16,7 @@ Många yxor har stämplar som innehåller viktig information om tillverkare, kva
 - **Namn**: Unikt namn för stämpeln
 - **Beskrivning**: Detaljerad beskrivning av stämpeln
 - **Tillverkare**: Koppling till tillverkare (kan vara okänd)
-- **Typ**: text/bild/symbol
+- **Typ**: text/symbol/text_symbol/etikett
 - **Status**: känd/okänd
 - **Användningsår**: Tidsperiod när stämpeln användes (exakt år, årtionde, eller osäker)
 - **Årtalsosäkerhet**: Flagga för osäker årtalsinformation (t.ex. "cirka")
@@ -440,15 +440,17 @@ class StampUncertaintyGroup(models.Model):
 - [x] **Formulärintegration**: stamp_create vyn hanterar manufacturer-parameter från URL
 - [x] **Responsiv design**: Stämplar visas i samma layout som tidigare bilder
 - [x] **Fallback**: Visar stämpelikon om ingen bild finns tillgänglig
+- [x] **Separat sektion**: Stämplar visas nu som en egen sektion, separerad från övriga bilder
+- [x] **Tydlig gruppering**: "Stämplar för [tillverkare]" och "Bilder för [tillverkare]" som separata kort
 
 ### Kommande funktioner (TODO)
 
 #### Avancerad bildhantering
-- [ ] **Markera AxeImage som StampImage**: Möjlighet att markera befintliga AxeImage som StampImage för specifika stämplar
-- [ ] **Huvudbildsval**: På stämpeldetaljsidan kunna välja "bästa" bilden som stämpelns huvudbild
-- [ ] **Bildbeskärning**: Implementera beskärning eller definiera visningsområde för stämpel inom AxeImage
-- [ ] **Visa hela bilden**: Alternativ att visa hela AxeImage istället för bara stämpelområdet
-- [ ] **Bildkoordinater**: Spara x,y-koordinater för stämpelområdet inom bilden
+- [x] **Markera AxeImage som StampImage**: Möjlighet att markera befintliga AxeImage som StampImage för specifika stämplar
+- [x] **Huvudbildsval**: På stämpeldetaljsidan kunna välja "bästa" bilden som stämpelns huvudbild
+- [x] **Bildbeskärning**: Implementera beskärning eller definiera visningsområde för stämpel inom AxeImage
+- [x] **Visa hela bilden**: Alternativ att visa hela AxeImage istället för bara stämpelområdet
+- [x] **Bildkoordinater**: Spara x,y-koordinater för stämpelområdet inom bilden
 - [ ] **Zoom-funktionalitet**: Möjlighet att zooma in på stämpelområdet
 
 #### Mottagningsflöde-integration
@@ -473,4 +475,51 @@ class StampUncertaintyGroup(models.Model):
 - [ ] **Drag-and-drop**: Drag-and-drop för bildordning och stämpelkoppling
 - [ ] **Lightbox för stämplar**: Förbättrad bildvisning för stämpelbilder
 - [ ] **Mobiloptimering**: Förbättrad mobilupplevelse för stämpelfunktioner
-- [ ] **Tema-anpassning**: Anpassa färger och stil för stämpelfunktioner 
+- [ ] **Tema-anpassning**: Anpassa färger och stil för stämpelfunktioner
+
+#### Stämpeltyper och etiketter (2025-07-29)
+- [x] **Ny stämpeltyp**: Lagt till "Etikett" som ny typ i STAMP_TYPE_CHOICES
+- [x] **Databasuppdatering**: Migration skapad och applicerad för nya stämpeltypen
+- [x] **Dokumentation**: Uppdaterat STAMP_REGISTER_FEATURE.md med ny typ
+- [x] **Stöd för etiketter**: Systemet kan nu hantera etiketter som en typ av märkning
+- [x] **Konsistent terminologi**: "Etikett" används konsekvent i hela systemet
+
+#### Stämpeltyper uppdaterade (2025-07-29)
+- [x] **Ta bort "Bild"-typ**: "image"-typen har tagits bort från STAMP_TYPE_CHOICES
+- [x] **Ny kombinationstyp**: Lagt till "text_symbol" för stämplar som innehåller både text och symbol
+- [x] **Databasuppdatering**: Migration skapad och applicerad för uppdaterade stämpeltyper
+- [x] **Dokumentation**: Uppdaterat STAMP_REGISTER_FEATURE.md med nya typer
+- [x] **Förbättrad kategorisering**: Systemet kan nu bättre kategorisera stämplar baserat på innehåll
+
+#### AxeImageStamp-funktionalitet (2025-07-29)
+- [x] **Ny modell**: Skapat AxeImageStamp för att koppla AxeImage till Stamp med koordinater
+- [x] **Bildkoordinater**: Stöd för x, y, width, height för stämpelområden
+- [x] **Visningsinställningar**: show_full_image och is_primary för bildhantering
+- [x] **Admin-integration**: AxeImageStampAdmin med fältgruppering och sökning
+- [x] **Views**: mark_axe_image_as_stamp, unmark_axe_image_stamp, stamp_image_crop, set_primary_stamp_image
+- [x] **URL-struktur**: Nya URL-patterns för AxeImageStamp-funktionalitet
+- [x] **Templates**: mark_axe_image_as_stamp.html och unmark_axe_image_stamp.html
+- [x] **Bildmarkering**: Visuell markering av stämpelområden på yxbilder
+- [x] **Interaktiv beskärning**: Klicka och dra för att markera stämpelområden
+- [x] **Yxdetaljsida-integration**: Uppdaterat axe_detail.html med stämpelmarkeringar
+- [x] **Knappar för markering**: Lägg till/ta bort stämpelmarkering på bilder
+- [x] **Huvudbildshantering**: Möjlighet att sätta huvudbild för stämplar
+- [x] **Koordinatvalidering**: has_coordinates property för att kontrollera kompletta koordinater
+- [x] **Crop-area**: crop_area property för enkel åtkomst till beskärningsområde
+- [x] **Modal-bekräftelser**: Konverterat till modals istället för full-page bekräftelser
+- [x] **AJAX-hantering**: Views stöder både AJAX och vanliga requests
+- [x] **JavaScript-integration**: Dynamisk laddning av modal-innehåll och formulärhantering
+- [x] **Template-uppdateringar**: axe_stamp_confirm_delete_modal.html och unmark_axe_image_stamp_modal.html
+- [x] **Responsiv design**: Modaler anpassar sig efter innehåll och skärmstorlek
+- [x] **Felhantering**: Visar laddningsindikator och felmeddelanden för modal-anrop
+- [x] **Ikonfix**: Ändrat från bi bi-stamp till fas fa-stamp för korrekt ikonvisning
+- [x] **Redigeringssida-integration**: Lagt till stämpelhantering på axe_form.html med knappar och modal-funktionalitet
+- [x] **Prefetch-optimering**: Uppdaterat axe_edit view för att inkludera stamp_marks i prefetch
+- [x] **Yxdetaljsida-rensning**: Tagit bort stämpelknappar från axe_detail.html - stämpelhantering visas endast på redigeringssidan
+- [x] **Positionering**: Flyttat stämpelikonen från övre vänstra till övre högra hörnet på redigeringssidan för att undvika överlappning med filnamnsbadgen
+- [x] **Stämpeldetaljsida-förbättringar**: Flyttat "Visa hela bilden" och "Markera som huvudbild" funktioner från /markera-stampel/ till stamp_detail.html
+- [x] **Kombinerad bildvisning**: Stamp_detail.html visar nu både StampImage och AxeImageStamp bilder i samma sektion
+- [x] **AJAX-funktionalitet**: Lagt till JavaScript-funktioner för att uppdatera show_full_image och is_primary via AJAX
+- [x] **Nya views**: update_axe_image_stamp_show_full view för att hantera AJAX-anrop
+- [x] **URL-uppdateringar**: Ny URL-mönster för update_axe_image_stamp_show_full
+- [x] **Visuella förbättringar**: Stämpelområde overlay, badges för huvudbild och "Från yxa", länk till yxdetaljsida

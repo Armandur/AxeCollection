@@ -1,0 +1,128 @@
+{% extends 'axes/base.html' %}
+{% load static %}
+
+{% block title %}Redigera stämpelmarkering - {{ axe.display_id }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <!-- Breadcrumbs -->
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'axe_detail' axe.id %}">{{ axe.display_id }}</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'axe_detail' axe.id %}">Bilder</a></li>
+                    <li class="breadcrumb-item active">Redigera stämpelmarkering</li>
+                </ol>
+            </nav>
+
+            <div class="row">
+                <div class="col-md-8">
+                    <div class="card">
+                        <div class="card-header">
+                            <h4>Redigera stämpelmarkering</h4>
+                        </div>
+                        <div class="card-body">
+                            <form method="post" id="editStampForm">
+                                {% csrf_token %}
+                                
+                                <!-- Stämpelval -->
+                                <div class="mb-3">
+                                    <label for="stamp" class="form-label">Stämpel</label>
+                                    <select name="stamp" id="stamp" class="form-select" required>
+                                        <option value="">Välj stämpel...</option>
+                                        {% for stamp in stamps %}
+                                            <option value="{{ stamp.id }}" {% if stamp.id == stamp_mark.stamp.id %}selected{% endif %}>
+                                                {{ stamp.name }}
+                                                {% if stamp.manufacturer %} - {{ stamp.manufacturer.name }}{% endif %}
+                                            </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+
+                                <!-- Koordinater -->
+                                <div class="row">
+                                    <div class="col-md-3">
+                                        <label for="x_coordinate" class="form-label">X-koordinat</label>
+                                        <input type="number" name="x_coordinate" id="x_coordinate" 
+                                               class="form-control" value="{{ stamp_mark.x_coordinate|default:'' }}"
+                                               placeholder="Pixlar från vänster">
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label for="y_coordinate" class="form-label">Y-koordinat</label>
+                                        <input type="number" name="y_coordinate" id="y_coordinate" 
+                                               class="form-control" value="{{ stamp_mark.y_coordinate|default:'' }}"
+                                               placeholder="Pixlar från toppen">
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label for="width" class="form-label">Bredd</label>
+                                        <input type="number" name="width" id="width" 
+                                               class="form-control" value="{{ stamp_mark.width|default:'' }}"
+                                               placeholder="Pixlar">
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label for="height" class="form-label">Höjd</label>
+                                        <input type="number" name="height" id="height" 
+                                               class="form-control" value="{{ stamp_mark.height|default:'' }}"
+                                               placeholder="Pixlar">
+                                    </div>
+                                </div>
+
+                                <!-- Kommentar -->
+                                <div class="mb-3">
+                                    <label for="comment" class="form-label">Kommentar</label>
+                                    <textarea name="comment" id="comment" class="form-control" rows="3"
+                                              placeholder="Valfri kommentar om stämpelmarkeringen">{{ stamp_mark.comment|default:'' }}</textarea>
+                                </div>
+
+                                <!-- Knappar -->
+                                <div class="d-flex gap-2">
+                                    <button type="submit" name="action" value="update" class="btn btn-primary">
+                                        <i class="fas fa-save"></i> Uppdatera markering
+                                    </button>
+                                    <button type="submit" name="action" value="delete" class="btn btn-danger"
+                                            onclick="return confirm('Är du säker på att du vill ta bort stämpelmarkeringen?')">
+                                        <i class="fas fa-trash"></i> Ta bort markering
+                                    </button>
+                                    <a href="{% url 'axe_detail' axe.id %}" class="btn btn-outline-secondary">
+                                        <i class="fas fa-times"></i> Avbryt
+                                    </a>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5>Bild</h5>
+                        </div>
+                        <div class="card-body">
+                            <img src="{{ axe_image.image_url_with_cache_busting }}" 
+                                 class="img-fluid rounded" 
+                                 alt="Bild från {{ axe.display_id }}">
+                            
+                            {% if stamp_mark.has_coordinates %}
+                                <div class="mt-3">
+                                    <h6>Nuvarande markering:</h6>
+                                    <ul class="list-unstyled">
+                                        <li><strong>X:</strong> {{ stamp_mark.x_coordinate }}px</li>
+                                        <li><strong>Y:</strong> {{ stamp_mark.y_coordinate }}px</li>
+                                        <li><strong>Bredd:</strong> {{ stamp_mark.width }}px</li>
+                                        <li><strong>Höjd:</strong> {{ stamp_mark.height }}px</li>
+                                    </ul>
+                                </div>
+                            {% else %}
+                                <div class="mt-3">
+                                    <p class="text-muted">Ingen koordinatmarkering</p>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

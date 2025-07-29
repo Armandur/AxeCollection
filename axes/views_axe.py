@@ -302,8 +302,9 @@ def axe_list(request):
 def axe_detail(request, pk):
     axe = get_object_or_404(
         Axe.objects.select_related("manufacturer")
-        .prefetch_related("measurements", "images")
-        .prefetch_related("images", "stamps__stamp__manufacturer", "stamps__stamp__transcriptions"),
+        .prefetch_related("measurements", "images", "images__stamp_marks__stamp__manufacturer")
+        .prefetch_related("stamps__stamp__manufacturer", "stamps__stamp__transcriptions", "stamps__stamp__images")
+        .prefetch_related("stamps__stamp__axe_image_marks__axe_image"),
         pk=pk,
     )
     # Hämta transaktioner för denna yxa
@@ -920,7 +921,12 @@ def _rename_axe_images_for_edit(axe):
 
 @login_required
 def axe_edit(request, pk):
-    axe = get_object_or_404(Axe, pk=pk)
+    axe = get_object_or_404(
+        Axe.objects.prefetch_related(
+            'images__stamp_marks__stamp__manufacturer'
+        ), 
+        pk=pk
+    )
     if request.method == "POST":
         form = AxeForm(request.POST, request.FILES, instance=axe)
         if form.is_valid():

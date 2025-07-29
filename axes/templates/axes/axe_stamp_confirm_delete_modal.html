@@ -1,0 +1,44 @@
+<div class="modal-header">
+    <h5 class="modal-title">
+        <i class="fas fa-exclamation-triangle text-warning"></i>
+        Ta bort stämpel från yxa
+    </h5>
+    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Stäng"></button>
+</div>
+<div class="modal-body">
+    <div class="alert alert-warning">
+        <strong>Varning:</strong> Du är på väg att ta bort stämpeln från yxan.
+    </div>
+    
+    <div class="row">
+        <div class="col-md-6">
+            <strong>Yxa:</strong><br>
+            {{ axe.display_id }} - {{ axe.model }}
+        </div>
+        <div class="col-md-6">
+            <strong>Stämpel:</strong><br>
+            {{ stamp.name }}
+            {% if stamp.manufacturer %}
+                <br><small class="text-muted">{{ stamp.manufacturer.name }}</small>
+            {% endif %}
+        </div>
+    </div>
+    
+    {% if axe_stamp.comment %}
+    <div class="mt-3">
+        <strong>Kommentar:</strong><br>
+        {{ axe_stamp.comment }}
+    </div>
+    {% endif %}
+</div>
+<div class="modal-footer">
+    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+        <i class="fas fa-times"></i> Avbryt
+    </button>
+    <form method="post" class="d-inline" action="{% url 'remove_axe_stamp' axe.id stamp.id %}">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-danger">
+            <i class="fas fa-trash"></i> Ta bort stämpel
+        </button>
+    </form>
+</div> 

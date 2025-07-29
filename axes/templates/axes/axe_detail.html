@@ -37,6 +37,24 @@
         margin-bottom: 0;
         vertical-align: middle;
     }
+    .stamp-card {
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .stamp-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+    .stamp-image-container {
+        position: relative;
+        overflow: hidden;
+        border-radius: 0.375rem;
+    }
+    .stamp-image-container img {
+        transition: transform 0.3s;
+    }
+    .stamp-image-container:hover img {
+        transform: scale(1.05);
+    }
     @media (max-width: 480px) {
         .edit-col {
             text-align: center;
@@ -201,94 +219,118 @@
             <div class="card-header d-flex justify-content-between align-items-center">
                 <h4 class="mb-0">Stämplar</h4>
                 {% if user.is_authenticated %}
-                <div>
-                    <a href="{% url 'add_axe_stamp' axe.id %}" class="btn btn-primary btn-sm">
-                        <i class="fas fa-plus-circle me-1"></i>
-                        <span class="d-none d-md-inline">Lägg till stämpel</span>
-                    </a>
-                </div>
+                <a href="{% url 'add_axe_stamp' axe.id %}" class="btn btn-primary btn-sm" title="Ange stämpel">
+                    <i class="fas fa-plus"></i>
+                    <span class="d-none d-md-inline">Ange stämpel</span>
+                </a>
                 {% endif %}
             </div>
             <div class="card-body">
                 {% if axe_stamps %}
-                    <div class="table-responsive">
-                        <table class="table table-sm">
-                            <thead>
-                                <tr>
-                                    <th>Stämpel</th>
-                                    <th>Tillverkare</th>
-                                    <th>Typ</th>
-                                    <th>Position</th>
-                                    <th>Osäkerhet</th>
-                                    <th>Kommentar</th>
-                                    {% if user.is_authenticated %}
-                                    <th>Åtgärder</th>
-                                    {% endif %}
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for axe_stamp in axe_stamps %}
-                                    <tr>
-                                        <td>
-                                            <a href="{% url 'stamp_detail' axe_stamp.stamp.id %}">
+                    <div class="row">
+                        {% for axe_stamp in axe_stamps %}
+                            <div class="col-md-6 col-lg-4 mb-3">
+                                <div class="card h-100 stamp-card">
+                                    <div class="card-body p-3">
+                                        <!-- Stämpelbild -->
+                                        <div class="text-center mb-3 stamp-image-container">
+                                            {% if axe_stamp.stamp.images.exists %}
+                                                <img src="{{ axe_stamp.stamp.images.first.image_url_with_cache_busting }}" 
+                                                     class="img-fluid rounded" 
+                                                     style="max-height: 150px; object-fit: contain;"
+                                                     alt="{{ axe_stamp.stamp.name }}">
+                                            {% elif axe_stamp.stamp.axe_image_marks.exists %}
+                                                {% with image_mark=axe_stamp.stamp.axe_image_marks.first %}
+                                                    <div class="position-relative d-inline-block">
+                                                        <img src="{{ image_mark.axe_image.image_url_with_cache_busting }}" 
+                                                             class="img-fluid rounded" 
+                                                             style="max-height: 150px; object-fit: contain;"
+                                                             alt="{{ axe_stamp.stamp.name }}">
+                                                        {% if image_mark.has_coordinates %}
+                                                            <div class="position-absolute border border-warning bg-warning bg-opacity-25" 
+                                                                 style="left: {{ image_mark.x_coordinate }}px; top: {{ image_mark.y_coordinate }}px; width: {{ image_mark.width }}px; height: {{ image_mark.height }}px;">
+                                                            </div>
+                                                        {% endif %}
+                                                    </div>
+                                                {% endwith %}
+                                            {% else %}
+                                                <div class="bg-light rounded d-flex align-items-center justify-content-center" 
+                                                     style="height: 150px;">
+                                                    <i class="fas fa-stamp fa-3x text-muted"></i>
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                        
+                                        <!-- Stämpelinformation -->
+                                        <h6 class="card-title mb-2">
+                                            <a href="{% url 'stamp_detail' axe_stamp.stamp.id %}" class="text-decoration-none">
                                                 {{ axe_stamp.stamp.name }}
                                             </a>
                                             {% if axe_stamp.stamp.status == 'unknown' %}
-                                                <span class="badge bg-warning">Okänd</span>
+                                                <span class="badge bg-warning ms-1">Okänd</span>
                                             {% endif %}
-                                        </td>
-                                        <td>
+                                        </h6>
+                                        
+                                        <div class="mb-2">
                                             {% if axe_stamp.stamp.manufacturer %}
-                                                <a href="{% url 'manufacturer_detail' axe_stamp.stamp.manufacturer.id %}">
-                                                    {{ axe_stamp.stamp.manufacturer.name }}
-                                                </a>
+                                                <small class="text-muted">
+                                                    <a href="{% url 'manufacturer_detail' axe_stamp.stamp.manufacturer.id %}" class="text-decoration-none">
+                                                        {{ axe_stamp.stamp.manufacturer.name }}
+                                                    </a>
+                                                </small>
                                             {% else %}
-                                                <span class="text-muted">Okänd</span>
+                                                <small class="text-muted">Okänd tillverkare</small>
                                             {% endif %}
-                                        </td>
-                                        <td>
+                                        </div>
+                                        
+                                        <div class="mb-2">
                                             <span class="badge bg-info">{{ axe_stamp.stamp.get_stamp_type_display }}</span>
-                                        </td>
-                                        <td>
-                                            {% if axe_stamp.position %}
-                                                {{ axe_stamp.position }}
-                                            {% else %}
-                                                <span class="text-muted">-</span>
-                                            {% endif %}
-                                        </td>
-                                        <td>
                                             {% if axe_stamp.uncertainty_level == 'uncertain' %}
                                                 <span class="badge bg-warning">Osäker</span>
                                             {% elif axe_stamp.uncertainty_level == 'tentative' %}
-                                                <span class="badge bg-secondary">Tentativ</span>
+                                                <span class="badge bg-secondary">Preliminär</span>
                                             {% else %}
                                                 <span class="badge bg-success">Säker</span>
                                             {% endif %}
-                                        </td>
-                                        <td>
-                                            {% if axe_stamp.comment %}
-                                                {{ axe_stamp.comment|truncatewords:10 }}
-                                            {% else %}
-                                                <span class="text-muted">-</span>
-                                            {% endif %}
-                                        </td>
-                                        {% if user.is_authenticated %}
-                                        <td>
-                                            <div class="btn-group btn-group-sm" role="group">
-                                                <a href="{% url 'stamp_detail' axe_stamp.stamp.id %}" class="btn btn-outline-primary btn-sm" title="Visa stämpel">
-                                                    <i class="fas fa-eye"></i>
-                                                </a>
-                                                <a href="{% url 'remove_axe_stamp' axe.id axe_stamp.stamp.id %}" class="btn btn-outline-danger btn-sm" title="Ta bort stämpel"
-                                                   onclick="return confirm('Är du säker på att du vill ta bort denna stämpel från yxan?')">
-                                                    <i class="fas fa-times"></i>
-                                                </a>
+                                        </div>
+                                        
+                                        {% if axe_stamp.position %}
+                                            <div class="mb-2">
+                                                <small class="text-muted">
+                                                    <i class="fas fa-map-marker-alt me-1"></i>
+                                                    {{ axe_stamp.position }}
+                                                </small>
                                             </div>
-                                        </td>
                                         {% endif %}
-                                    </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
+                                        
+                                        {% if axe_stamp.comment %}
+                                            <div class="mb-2">
+                                                <small class="text-muted">
+                                                    {{ axe_stamp.comment|truncatewords:8 }}
+                                                </small>
+                                            </div>
+                                        {% endif %}
+                                        
+                                        {% if user.is_authenticated %}
+                                            <div class="mt-auto">
+                                                <div class="btn-group btn-group-sm w-100" role="group">
+                                                    <a href="{% url 'edit_axe_stamp' axe.id axe_stamp.id %}" class="btn btn-outline-primary" title="Redigera stämpel">
+                                                        <i class="fas fa-edit"></i>
+                                                    </a>
+                                                    <a href="{% url 'stamp_detail' axe_stamp.stamp.id %}" class="btn btn-outline-info" title="Visa stämpel">
+                                                        <i class="fas fa-eye"></i>
+                                                    </a>
+                                                    <button type="button" class="btn btn-outline-danger" title="Ta bort stämpel"
+                                                            onclick="showRemoveStampModal('{% url 'remove_axe_stamp' axe.id axe_stamp.stamp.id %}')">
+                                                        <i class="fas fa-times"></i>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
                     </div>
                 {% else %}
                     <div class="text-center py-4">
@@ -296,8 +338,9 @@
                         <h5 class="text-muted">Inga stämplar definierade</h5>
                         <p class="text-muted">Denna yxa har inga stämplar kopplade än.</p>
                         {% if user.is_authenticated %}
-                            <a href="{% url 'add_axe_stamp' axe.id %}" class="btn btn-primary">
-                                <i class="fas fa-plus-circle me-1"></i>Lägg till stämpel
+                            <a href="{% url 'add_axe_stamp' axe.id %}" class="btn btn-primary" title="Ange stämpel">
+                                <i class="fas fa-plus"></i>
+                                Ange stämpel
                             </a>
                         {% endif %}
                     </div>
@@ -320,14 +363,29 @@
                             <div class="carousel-inner">
                                 {% for image in axe.images.all %}
                                     <div class="carousel-item {% if forloop.first %}active{% endif %}">
-                                        <a href="{{ image.image_url_with_cache_busting }}" data-pswp-width="{{ image.image.width }}" data-pswp-height="{{ image.image.height }}">
-                                            <picture>
-                                                {% if image.webp_url %}
-                                                    <source srcset="{{ image.webp_url }}" type="image/webp">
-                                                {% endif %}
-                                                <img src="{{ image.image_url_with_cache_busting }}" class="d-block w-100" alt="Yxa {{ forloop.counter }}" loading="lazy">
-                                            </picture>
-                                        </a>
+                                        <div class="position-relative">
+                                            <a href="{{ image.image_url_with_cache_busting }}" data-pswp-width="{{ image.image.width }}" data-pswp-height="{{ image.image.height }}">
+                                                <picture>
+                                                    {% if image.webp_url %}
+                                                        <source srcset="{{ image.webp_url }}" type="image/webp">
+                                                    {% endif %}
+                                                    <img src="{{ image.image_url_with_cache_busting }}" class="d-block w-100" alt="Yxa {{ forloop.counter }}" loading="lazy">
+                                                </picture>
+                                            </a>
+                                            
+                                            <!-- Stämpelmarkeringar -->
+                                            {% for stamp_mark in image.stamp_marks.all %}
+                                                <div class="position-absolute border border-warning bg-warning bg-opacity-25" 
+                                                     style="left: {{ stamp_mark.x_coordinate }}px; top: {{ stamp_mark.y_coordinate }}px; width: {{ stamp_mark.width }}px; height: {{ stamp_mark.height }}px;"
+                                                     title="{{ stamp_mark.stamp.name }}">
+                                                    {% if stamp_mark.is_primary %}
+                                                        <span class="position-absolute top-0 start-0 badge bg-success">★</span>
+                                                    {% endif %}
+                                                </div>
+                                            {% endfor %}
+                                            
+
+                                        </div>
                                     </div>
                                 {% endfor %}
                             </div>
@@ -976,4 +1034,124 @@ document.addEventListener('DOMContentLoaded', function() {
 </div>
 {% endif %}
 
+<!-- Modal för att ta bort stämpel från yxa -->
+<div class="modal fade" id="removeStampModal" tabindex="-1" aria-labelledby="removeStampModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content" id="removeStampModalContent">
+            <!-- Innehåll laddas dynamiskt -->
+        </div>
+    </div>
+</div>
+
+<!-- Modal för att ta bort stämpelmarkering från bild -->
+<div class="modal fade" id="unmarkStampModal" tabindex="-1" aria-labelledby="unmarkStampModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content" id="unmarkStampModalContent">
+            <!-- Innehåll laddas dynamiskt -->
+        </div>
+    </div>
+</div>
+
+<script>
+// Funktioner för stämpelmodaler
+function showRemoveStampModal(url) {
+    fetch(url, {
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => response.text())
+    .then(html => {
+        document.getElementById('removeStampModalContent').innerHTML = html;
+        const modal = new bootstrap.Modal(document.getElementById('removeStampModal'));
+        modal.show();
+    })
+    .catch(error => {
+        console.error('Fel vid laddning av modal:', error);
+        alert('Ett fel uppstod vid laddning av bekräftelsedialog.');
+    });
+}
+
+function showUnmarkStampModal(url) {
+    fetch(url, {
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => response.text())
+    .then(html => {
+        document.getElementById('unmarkStampModalContent').innerHTML = html;
+        const modal = new bootstrap.Modal(document.getElementById('unmarkStampModal'));
+        modal.show();
+    })
+    .catch(error => {
+        console.error('Fel vid laddning av modal:', error);
+        alert('Ett fel uppstod vid laddning av bekräftelsedialog.');
+    });
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Hantera submit för remove stamp modal
+    document.addEventListener('submit', function(e) {
+        if (e.target.closest('#removeStampModal')) {
+            e.preventDefault();
+            const form = e.target;
+            const formData = new FormData(form);
+            
+            fetch(form.action, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Stäng modal och ladda om sidan
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('removeStampModal'));
+                    modal.hide();
+                    location.reload();
+                } else {
+                    alert('Ett fel uppstod: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Fel vid submit:', error);
+                alert('Ett fel uppstod vid borttagning av stämpel.');
+            });
+        }
+        
+        // Hantera submit för unmark stamp modal
+        if (e.target.closest('#unmarkStampModal')) {
+            e.preventDefault();
+            const form = e.target;
+            const formData = new FormData(form);
+            
+            fetch(form.action, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Stäng modal och ladda om sidan
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('unmarkStampModal'));
+                    modal.hide();
+                    location.reload();
+                } else {
+                    alert('Ett fel uppstod: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Fel vid submit:', error);
+                alert('Ett fel uppstod vid borttagning av stämpelmarkering.');
+            });
+        }
+    });
+});
+</script>
 {% endblock %} 

@@ -1,147 +1,144 @@
 {% extends 'axes/base.html' %}
-{% load static %}
 
-{% block title %}Lägg till stämpel - {{ axe }}{% endblock %}
+{% block title %}{{ title }}{% endblock %}
 
 {% block content %}
 <div class="container mt-4">
     <nav aria-label="breadcrumb">
         <ol class="breadcrumb">
             <li class="breadcrumb-item"><a href="{% url 'axe_list' %}">Yxor</a></li>
-            <li class="breadcrumb-item"><a href="{% url 'axe_detail' axe.id %}">{{ axe }}</a></li>
-            <li class="breadcrumb-item active">Lägg till stämpel</li>
+            <li class="breadcrumb-item"><a href="{% url 'axe_detail' axe.id %}">{{ axe.display_id }}</a></li>
+            <li class="breadcrumb-item active">Ange stämpel</li>
         </ol>
     </nav>
 
     <div class="row">
-        <div class="col-md-8">
+        <div class="col-12">
             <div class="card">
                 <div class="card-header">
-                    <h2>Lägg till stämpel på {{ axe }}</h2>
+                    <h4>
+                        <i class="fas fa-stamp me-2"></i>
+                        Ange stämpel för {{ axe.display_id }}
+                    </h4>
                 </div>
                 <div class="card-body">
-                    <form method="post">
-                        {% csrf_token %}
-                        
-                        <div class="mb-3">
-                            <label for="{{ form.stamp.id_for_label }}" class="form-label">Stämpel *</label>
-                            <div class="position-relative">
-                                {{ form.stamp }}
-                                <div id="stamp-search-results" class="dropdown-menu w-100" style="display: none; max-height: 300px; overflow-y: auto;">
-                                    <!-- AJAX-resultat kommer här -->
+                    {% if selected_image %}
+                        <!-- Steg 2: Bildmarkering och stämpeldetaljer -->
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6>Markera stämpelområde</h6>
+                                <div class="position-relative" id="image-container">
+                                    <img src="{{ selected_image.image_url_with_cache_busting }}" 
+                                         class="img-fluid" 
+                                         alt="Yxbild"
+                                         id="axe-image"
+                                         style="max-width: 100%; height: auto;">
+                                    <div id="crop-overlay" class="position-absolute border border-primary" 
+                                         style="display: none; background: rgba(0, 123, 255, 0.2);"></div>
                                 </div>
+                                <small class="text-muted">Klicka och dra för att markera stämpelområde</small>
                             </div>
-                            {% if form.stamp.errors %}
-                                <div class="text-danger">{{ form.stamp.errors }}</div>
-                            {% endif %}
-                            <div class="form-text">Välj en befintlig stämpel eller skapa en ny. Sökning prioriterar stämplar från {{ axe.manufacturer.name }}.</div>
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="{{ form.position.id_for_label }}" class="form-label">Position</label>
-                            {{ form.position }}
-                            {% if form.position.errors %}
-                                <div class="text-danger">{{ form.position.errors }}</div>
-                            {% endif %}
-                            <div class="form-text">Var på yxan stämpeln finns (t.ex. "på bladet", "på skaftet")</div>
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="{{ form.uncertainty_level.id_for_label }}" class="form-label">Osäkerhet</label>
-                            {{ form.uncertainty_level }}
-                            {% if form.uncertainty_level.errors %}
-                                <div class="text-danger">{{ form.uncertainty_level.errors }}</div>
-                            {% endif %}
-                            <div class="form-text">
-                                <strong>Säker:</strong> Stämpeln är tydligt identifierad<br>
-                                <strong>Osäker:</strong> Stämpeln är svår att läsa eller tolka<br>
-                                <strong>Tentativ:</strong> Stämpeln är preliminärt identifierad
-                            </div>
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="{{ form.comment.id_for_label }}" class="form-label">Kommentar</label>
-                            {{ form.comment }}
-                            {% if form.comment.errors %}
-                                <div class="text-danger">{{ form.comment.errors }}</div>
-                            {% endif %}
-                            <div class="form-text">Lägg till kommentarer om stämpeln (kvalitet, synlighet, etc.)</div>
-                        </div>
-
-                        <div class="d-flex justify-content-between">
-                            <a href="{% url 'axe_detail' axe.id %}" class="btn btn-secondary">Avbryt</a>
-                            <button type="submit" class="btn btn-primary">Lägg till stämpel</button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
-        
-        <div class="col-md-4">
-            <div class="card">
-                <div class="card-header">
-                    <h5>Yxinformation</h5>
-                </div>
-                <div class="card-body">
-                    <p><strong>Yxa:</strong> {{ axe }}</p>
-                    <p><strong>Tillverkare:</strong> 
-                        {% if axe.manufacturer %}
-                            <a href="{% url 'manufacturer_detail' axe.manufacturer.id %}">{{ axe.manufacturer.name }}</a>
-                        {% else %}
-                            <span class="text-muted">Okänd</span>
-                        {% endif %}
-                    </p>
-                    <p><strong>Status:</strong> 
-                        <span class="badge {% if axe.status == 'received' %}bg-success{% else %}bg-warning{% endif %}">
-                            {% if axe.status == 'received' %}Mottagen{% else %}Ej mottagen{% endif %}
-                        </span>
-                    </p>
-                    {% if axe.description %}
-                        <p><strong>Beskrivning:</strong> {{ axe.description|truncatewords:20 }}</p>
-                    {% endif %}
-                </div>
-            </div>
-
-            <div class="card mt-3">
-                <div class="card-header">
-                    <h5>Befintliga stämplar</h5>
-                </div>
-                <div class="card-body">
-                    {% if axe.stamps.all %}
-                        <div class="list-group list-group-flush">
-                            {% for axe_stamp in axe.stamps.all %}
-                                <div class="list-group-item">
-                                    <div class="d-flex justify-content-between align-items-start">
-                                        <div>
-                                            <h6 class="mb-1">
-                                                <a href="{% url 'stamp_detail' axe_stamp.stamp.id %}">{{ axe_stamp.stamp.name }}</a>
-                                            </h6>
-                                            <small class="text-muted">
-                                                {% if axe_stamp.stamp.manufacturer %}{{ axe_stamp.stamp.manufacturer.name }}{% else %}Okänd tillverkare{% endif %}
-                                            </small>
-                                        </div>
-                                        <span class="badge {% if axe_stamp.uncertainty_level == 'uncertain' %}bg-warning{% elif axe_stamp.uncertainty_level == 'tentative' %}bg-secondary{% else %}bg-success{% endif %}">
-                                            {{ axe_stamp.get_uncertainty_level_display }}
-                                        </span>
+                            <div class="col-md-6">
+                                <form method="post">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="action" value="save_stamp">
+                                    <input type="hidden" name="selected_image" value="{{ selected_image.id }}">
+                                    
+                                    <div class="mb-3">
+                                        <label for="stamp" class="form-label">Välj stämpel *</label>
+                                        <select name="stamp" id="stamp" class="form-select" required>
+                                            <option value="">-- Välj stämpel --</option>
+                                            {% for stamp in available_stamps %}
+                                                <option value="{{ stamp.id }}">
+                                                    {{ stamp.name }}
+                                                    {% if stamp.manufacturer %}
+                                                        ({{ stamp.manufacturer.name }})
+                                                    {% endif %}
+                                                </option>
+                                            {% endfor %}
+                                        </select>
+                                        <div class="form-text">Välj vilken stämpel som finns på bilden</div>
                                     </div>
-                                </div>
-                            {% endfor %}
+
+                                    <div class="mb-3">
+                                        <label for="position" class="form-label">Position på yxan</label>
+                                        <input type="text" name="position" id="position" class="form-control" 
+                                               placeholder="Var på yxan stämpeln finns (t.ex. 'på bladet', 'vid nacken')">
+                                        <div class="form-text">Var på yxan stämpeln finns</div>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label for="uncertainty_level" class="form-label">Osäkerhet</label>
+                                        <select name="uncertainty_level" id="uncertainty_level" class="form-select">
+                                            <option value="säker">Säker</option>
+                                            <option value="osäker">Osäker</option>
+                                            <option value="preliminär">Preliminär</option>
+                                        </select>
+                                        <div class="form-text">
+                                            <strong>Säker:</strong> Stämpeln är tydligt identifierad<br>
+                                            <strong>Osäker:</strong> Stämpeln är svår att läsa eller tolka<br>
+                                            <strong>Preliminär:</strong> Stämpeln är preliminärt identifierad
+                                        </div>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label for="comment" class="form-label">Kommentar</label>
+                                        <textarea name="comment" id="comment" class="form-control" rows="3" 
+                                                  placeholder="Lägg till kommentarer om stämpeln (kvalitet, synlighet, etc.)"></textarea>
+                                        <div class="form-text">Lägg till kommentarer om stämpeln</div>
+                                    </div>
+
+                                    <!-- Dolda fält för koordinater -->
+                                    <input type="hidden" name="x_coordinate" id="x_coordinate" value="">
+                                    <input type="hidden" name="y_coordinate" id="y_coordinate" value="">
+                                    <input type="hidden" name="width" id="width" value="">
+                                    <input type="hidden" name="height" id="height" value="">
+
+                                    <div class="d-flex justify-content-between">
+                                        <a href="{% url 'axe_detail' axe.id %}" class="btn btn-secondary">Avbryt</a>
+                                        <button type="submit" class="btn btn-primary">Spara stämpel</button>
+                                    </div>
+                                </form>
+                            </div>
                         </div>
                     {% else %}
-                        <p class="text-muted">Inga stämplar kopplade än</p>
+                        <!-- Steg 1: Bildval -->
+                        <div class="mb-4">
+                            <h5>Välj bild för stämpelmarkering</h5>
+                            <p class="text-muted">Välj en bild som innehåller stämpeln du vill markera.</p>
+                            
+                            <form method="post">
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="select_image">
+                                
+                                <div class="row">
+                                    {% for image in existing_images %}
+                                    <div class="col-md-4 col-sm-6 mb-3">
+                                        <div class="card h-100">
+                                            <div class="card-body p-2">
+                                                <img src="{{ image.image_url_with_cache_busting }}" 
+                                                     class="img-fluid mb-2" 
+                                                     style="height: 150px; object-fit: cover;"
+                                                     alt="Bild {{ forloop.counter }}">
+                                                <div class="d-grid">
+                                                    <button type="submit" name="selected_image" value="{{ image.id }}" 
+                                                            class="btn btn-outline-primary btn-sm">
+                                                        <i class="fas fa-stamp me-1"></i>
+                                                        Välj denna bild
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                                
+                                <div class="mt-3">
+                                    <a href="{% url 'axe_detail' axe.id %}" class="btn btn-secondary">Avbryt</a>
+                                </div>
+                            </form>
+                        </div>
                     {% endif %}
-                </div>
-            </div>
-
-            <div class="card mt-3">
-                <div class="card-header">
-                    <h5>Hjälp</h5>
-                </div>
-                <div class="card-body">
-                    <p><strong>Stämpel:</strong> Välj en befintlig stämpel från listan. Om stämpeln inte finns kan du skapa en ny först.</p>
-                    <p><strong>Position:</strong> Beskriv var på yxan stämpeln finns för enklare identifiering.</p>
-                    <p><strong>Osäkerhet:</strong> Ange hur säker du är på stämpelns identifiering.</p>
-                    <p><strong>Kommentar:</strong> Lägg till användbara anteckningar om stämpeln.</p>
                 </div>
             </div>
         </div>
@@ -150,5 +147,82 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="{% static 'js/stamp_search.js' %}"></script>
+{% if selected_image %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const image = document.getElementById('axe-image');
+    const overlay = document.getElementById('crop-overlay');
+    const xInput = document.getElementById('x_coordinate');
+    const yInput = document.getElementById('y_coordinate');
+    const widthInput = document.getElementById('width');
+    const heightInput = document.getElementById('height');
+    
+    let isDrawing = false;
+    let startX, startY;
+    
+    function updateOverlay() {
+        const x = parseInt(xInput.value) || 0;
+        const y = parseInt(yInput.value) || 0;
+        const width = parseInt(widthInput.value) || 0;
+        const height = parseInt(heightInput.value) || 0;
+        
+        if (x > 0 && y > 0 && width > 0 && height > 0) {
+            overlay.style.left = x + 'px';
+            overlay.style.top = y + 'px';
+            overlay.style.width = width + 'px';
+            overlay.style.height = height + 'px';
+            overlay.style.display = 'block';
+        } else {
+            overlay.style.display = 'none';
+        }
+    }
+    
+    function getImageCoordinates(clientX, clientY) {
+        const rect = image.getBoundingClientRect();
+        const x = Math.max(0, Math.min(clientX - rect.left, rect.width));
+        const y = Math.max(0, Math.min(clientY - rect.top, rect.height));
+        return { x: Math.round(x), y: Math.round(y) };
+    }
+    
+    image.addEventListener('mousedown', function(e) {
+        isDrawing = true;
+        const coords = getImageCoordinates(e.clientX, e.clientY);
+        startX = coords.x;
+        startY = coords.y;
+        
+        xInput.value = startX;
+        yInput.value = startY;
+        widthInput.value = 0;
+        heightInput.value = 0;
+        
+        updateOverlay();
+    });
+    
+    image.addEventListener('mousemove', function(e) {
+        if (!isDrawing) return;
+        
+        const coords = getImageCoordinates(e.clientX, e.clientY);
+        const width = Math.abs(coords.x - startX);
+        const height = Math.abs(coords.y - startY);
+        
+        widthInput.value = width;
+        heightInput.value = height;
+        
+        updateOverlay();
+    });
+    
+    image.addEventListener('mouseup', function() {
+        isDrawing = false;
+    });
+    
+    // Uppdatera overlay när input-värden ändras
+    [xInput, yInput, widthInput, heightInput].forEach(input => {
+        input.addEventListener('input', updateOverlay);
+    });
+    
+    // Visa befintlig markering vid laddning
+    updateOverlay();
+});
+</script>
+{% endif %}
 {% endblock %} 

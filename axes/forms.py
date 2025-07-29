@@ -980,17 +980,7 @@ class AxeStampForm(forms.ModelForm):
             'uncertainty_level': 'Hur säker är identifieringen av stämpeln',
         }
     
-    def clean_stamp(self):
-        """Konvertera stamp ID till Stamp-objekt"""
-        stamp_id = self.cleaned_data.get('stamp')
-        if stamp_id:
-            try:
-                from .models import Stamp
-                return Stamp.objects.get(id=stamp_id)
-            except Stamp.DoesNotExist:
-                raise forms.ValidationError("Vald stämpel finns inte.")
-        else:
-            raise forms.ValidationError("Stämpel måste väljas.")
+
 
 
 class StampTagForm(forms.ModelForm):

@@ -968,8 +968,9 @@ class Stamp(models.Model):
     
     STAMP_TYPE_CHOICES = [
         ("text", "Text"),
-        ("image", "Bild"),
         ("symbol", "Symbol"),
+        ("text_symbol", "Text + Symbol"),
+        ("label", "Etikett"),
     ]
     
     STATUS_CHOICES = [
@@ -1226,7 +1227,7 @@ class AxeStamp(models.Model):
     UNCERTAINTY_CHOICES = [
         ("certain", "Säker"),
         ("uncertain", "Osäker"),
-        ("tentative", "Tentativ"),
+        ("tentative", "Preliminär"),
     ]
 
     axe = models.ForeignKey(
@@ -1261,10 +1262,10 @@ class AxeStamp(models.Model):
         ordering = ["-created_at"]
         verbose_name = "Yxstämpel"
         verbose_name_plural = "Yxstämplar"
-        unique_together = ["axe", "stamp"]
+        # Removed unique_together constraint to allow multiple instances of the same stamp
 
     def __str__(self):
-        return f"{self.axe} - {self.stamp}"
+        return f"{self.axe.display_id} - {self.stamp.name}"
 
 
 class StampVariant(models.Model):
@@ -1331,3 +1332,94 @@ class StampUncertaintyGroup(models.Model):
 
     def __str__(self):
         return self.name
+
+
+class AxeImageStamp(models.Model):
+    """Koppling mellan AxeImage och Stamp för att markera stämplar på yxbilder"""
+    
+    axe_image = models.ForeignKey(
+        AxeImage, 
+        on_delete=models.CASCADE, 
+        related_name="stamp_marks",
+        verbose_name="Yxbild"
+    )
+    stamp = models.ForeignKey(
+        Stamp, 
+        on_delete=models.CASCADE, 
+        related_name="axe_image_marks",
+        verbose_name="Stämpel"
+    )
+    
+    # Bildkoordinater för stämpelområdet
+    x_coordinate = models.PositiveIntegerField(
+        null=True, 
+        blank=True,
+        verbose_name="X-koordinat",
+        help_text="X-koordinat för stämpelområdet (pixlar från vänster)"
+    )
+    y_coordinate = models.PositiveIntegerField(
+        null=True, 
+        blank=True,
+        verbose_name="Y-koordinat", 
+        help_text="Y-koordinat för stämpelområdet (pixlar från toppen)"
+    )
+    width = models.PositiveIntegerField(
+        null=True, 
+        blank=True,
+        verbose_name="Bredd",
+        help_text="Bredd på stämpelområdet (pixlar)"
+    )
+    height = models.PositiveIntegerField(
+        null=True, 
+        blank=True,
+        verbose_name="Höjd",
+        help_text="Höjd på stämpelområdet (pixlar)"
+    )
+    
+    # Inställningar för visning
+    show_full_image = models.BooleanField(
+        default=False,
+        verbose_name="Visa hela bilden",
+        help_text="Visa hela yxbilden istället för bara stämpelområdet"
+    )
+    is_primary = models.BooleanField(
+        default=False,
+        verbose_name="Huvudbild",
+        help_text="Markera som huvudbild för stämpeln"
+    )
+    
+    # Metadata
+    comment = models.TextField(
+        blank=True, 
+        null=True,
+        verbose_name="Kommentar",
+        help_text="Anteckningar om stämpelområdet"
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ["-is_primary", "-created_at"]
+        verbose_name = "Yxbildstämpel"
+        verbose_name_plural = "Yxbildstämplar"
+        unique_together = ["axe_image", "stamp"]
+    
+    def __str__(self):
+        return f"{self.stamp.name} på {self.axe_image.axe.display_id}"
+    
+    @property
+    def has_coordinates(self):
+        """Returnerar True om koordinater är definierade"""
+        return all([
+            self.x_coordinate is not None,
+            self.y_coordinate is not None,
+            self.width is not None,
+            self.height is not None
+        ])
+    
+    @property
+    def crop_area(self):
+        """Returnerar beskärningsområdet som en tuple (x, y, width, height)"""
+        if self.has_coordinates:
+            return (self.x_coordinate, self.y_coordinate, self.width, self.height)
+        return None

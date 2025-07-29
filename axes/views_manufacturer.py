@@ -5,7 +5,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.decorators import login_required
 from django.utils import timezone
 from django.contrib import messages
-from .models import Manufacturer, ManufacturerImage, ManufacturerLink, Axe, Transaction
+from .models import Manufacturer, ManufacturerImage, ManufacturerLink, Axe, Transaction, Stamp
 from django.db.models import Sum, Max
 import json
 import os

@@ -1,0 +1,96 @@
+{% extends 'axes/base.html' %}
+
+{% block title %}Ta bort stämpelmarkering - {{ axe.display_id }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'axe_list' %}">Yxor</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'axe_detail' axe.id %}">{{ axe.display_id }}</a></li>
+            <li class="breadcrumb-item active">Ta bort stämpelmarkering</li>
+        </ol>
+    </nav>
+
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h4>Ta bort stämpelmarkering</h4>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-warning">
+                        <h6>Är du säker på att du vill ta bort stämpelmarkeringen?</h6>
+                        <p class="mb-0">
+                            Detta kommer att ta bort markeringen av <strong>{{ stamp_mark.stamp.name }}</strong> 
+                            från bilden av {{ axe.display_id }}.
+                        </p>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Bild från {{ axe.display_id }}</h6>
+                            <img src="{{ axe_image.image_url_with_cache_busting }}" 
+                                 class="img-fluid" 
+                                 alt="Yxbild">
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Stämpelinformation</h6>
+                            <dl class="row">
+                                <dt class="col-sm-4">Stämpel:</dt>
+                                <dd class="col-sm-8">{{ stamp_mark.stamp.name }}</dd>
+                                
+                                {% if stamp_mark.stamp.manufacturer %}
+                                <dt class="col-sm-4">Tillverkare:</dt>
+                                <dd class="col-sm-8">{{ stamp_mark.stamp.manufacturer.name }}</dd>
+                                {% endif %}
+                                
+                                {% if stamp_mark.comment %}
+                                <dt class="col-sm-4">Kommentar:</dt>
+                                <dd class="col-sm-8">{{ stamp_mark.comment }}</dd>
+                                {% endif %}
+                                
+                                {% if stamp_mark.has_coordinates %}
+                                <dt class="col-sm-4">Koordinater:</dt>
+                                <dd class="col-sm-8">
+                                    X: {{ stamp_mark.x_coordinate }}, Y: {{ stamp_mark.y_coordinate }}<br>
+                                    Bredd: {{ stamp_mark.width }}, Höjd: {{ stamp_mark.height }}
+                                </dd>
+                                {% endif %}
+                                
+                                <dt class="col-sm-4">Huvudbild:</dt>
+                                <dd class="col-sm-8">
+                                    {% if stamp_mark.is_primary %}
+                                        <span class="badge bg-success">Ja</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">Nej</span>
+                                    {% endif %}
+                                </dd>
+                                
+                                <dt class="col-sm-4">Visa hela bild:</dt>
+                                <dd class="col-sm-8">
+                                    {% if stamp_mark.show_full_image %}
+                                        <span class="badge bg-info">Ja</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">Nej</span>
+                                    {% endif %}
+                                </dd>
+                            </dl>
+                        </div>
+                    </div>
+
+                    <form method="post" class="mt-3">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger">
+                            <i class="bi bi-trash"></i> Ta bort stämpelmarkering
+                        </button>
+                        <a href="{% url 'axe_detail' axe.id %}" class="btn btn-secondary">
+                            Avbryt
+                        </a>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

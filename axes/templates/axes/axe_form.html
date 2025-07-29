@@ -460,7 +460,7 @@ tr.editing .form-control-sm {
 
                         <!-- Befintliga bilder (endast i redigeringsläge) -->
                         {% if is_edit and axe.images.all %}
-                            <div class="mb-4">
+                            <div class="mb-4" id="stampel-sektion">
                                 <h6>Befintliga bilder:</h6>
                                 <div class="row" id="existingImagesContainer">
                                     {% for image in axe.images.all %}
@@ -478,6 +478,23 @@ tr.editing .form-control-sm {
                                                 <button type="button" class="btn btn-danger btn-sm position-absolute delete-image-btn" style="top: 5px; right: 5px; width: 30px; height: 30px; border-radius: 50%;" onclick="removeExistingImage({{ image.id }})" title="Ta bort bild">
                                                     <i class="fas fa-times"></i>
                                                 </button>
+                                                
+                                                                                                   <!-- Stämpelhantering -->
+                                                   <div class="position-absolute" style="top: 5px; right: 40px;">
+                                                       {% if image.stamp_marks.all %}
+                                                           <a href="{% url 'edit_axe_image_stamp' axe.id image.id %}" 
+                                                              class="btn btn-sm btn-outline-warning"
+                                                              title="Redigera stämpelmarkering">
+                                                               <i class="fas fa-edit"></i>
+                                                           </a>
+                                                       {% else %}
+                                                           <a href="{% url 'mark_axe_image_as_stamp' axe.id image.id %}" 
+                                                              class="btn btn-sm btn-outline-primary"
+                                                              title="Markera stämpel">
+                                                               <i class="fas fa-stamp"></i>
+                                                           </a>
+                                                       {% endif %}
+                                                   </div>
 
                                                 <div class="card-body p-2">
                                                     <small class="text-muted">{{ image.description|default:"Bild" }}</small>
@@ -2152,9 +2169,32 @@ document.addEventListener('DOMContentLoaded', function() {
     // window.axeId = {{ axe.pk }}; // Moved to extra_head
     // const measurementTemplates = {{ measurement_templates|safe }}; // Moved to extra_head
 
+    // === STÄMPEL-MODAL-HANTERING ===
+    function showUnmarkStampModal(url) {
+        fetch(url)
+            .then(response => response.text())
+            .then(html => {
+                const modal = document.getElementById('unmarkStampModal');
+                const modalBody = modal.querySelector('.modal-content');
+                modalBody.innerHTML = html;
+                new bootstrap.Modal(modal).show();
+            })
+            .catch(error => {
+                console.error('Fel vid laddning av modal:', error);
+                alert('Ett fel uppstod vid laddning av bekräftelsen.');
+            });
+    }
+
 });
 </script>
 
-
+<!-- Modal för stämpelmarkering -->
+<div class="modal fade" id="unmarkStampModal" tabindex="-1" aria-labelledby="unmarkStampModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <!-- Modal-innehåll laddas dynamiskt -->
+        </div>
+    </div>
+</div>
 
 {% endblock %}
