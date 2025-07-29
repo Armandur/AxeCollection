@@ -104,18 +104,26 @@ class LiveCurrencyConverterTestCase(SimpleTestCase):
 
     def test_currency_conversion_edge_cases(self):
         """Testa edge cases för valutakonvertering"""
-        # Testa samma valuta
-        result = convert_currency(100, "SEK", "SEK")
-        self.assertEqual(result, 100)
+        with patch("axes.utils.currency_converter.get_exchange_rates") as mock_rates:
+            # Mock fasta kurser för att undvika live-API-anrop
+            mock_rates.return_value = {
+                "USD": {"SEK": 9.51, "EUR": 0.85},
+                "EUR": {"SEK": 11.18, "USD": 1.18},
+                "SEK": {"USD": 0.105, "EUR": 0.089},
+            }
 
-        # Testa med None/ogiltig valuta
-        result = convert_currency(100, "INVALID", "SEK")
-        self.assertIsNone(result)
+            # Testa samma valuta
+            result = convert_currency(100, "SEK", "SEK")
+            self.assertEqual(result, 100)
 
-        # Testa med negativt belopp (ska hantera som positivt)
-        result = convert_currency(-100, "USD", "SEK")
-        self.assertIsNotNone(result)
-        self.assertEqual(result, -951.0)  # Negativt belopp konverteras
+            # Testa med None/ogiltig valuta
+            result = convert_currency(100, "INVALID", "SEK")
+            self.assertIsNone(result)
+
+            # Testa med negativt belopp (ska hantera som positivt)
+            result = convert_currency(-100, "USD", "SEK")
+            self.assertIsNotNone(result)
+            self.assertEqual(result, -951.0)  # Negativt belopp konverteras
 
     def test_api_timeout_handling(self):
         """Testa hantering av API-timeout"""
