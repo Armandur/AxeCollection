@@ -145,7 +145,7 @@
                                             <!-- Markeringsoverlay -->
                                             <div id="markingOverlay" 
                                                  class="position-absolute" 
-                                                 style="top: 0; left: 0; width: 100%; height: 100%; pointer-events: none;">
+                                                 style="top: 0; left: 0; width: 100%; height: 100%; pointer-events: auto; cursor: crosshair;">
                                                 <div id="stampMarking" 
                                                      class="position-absolute border border-danger bg-danger bg-opacity-25"
                                                      style="display: none; min-width: 20px; min-height: 20px;">
@@ -157,19 +157,23 @@
                                         <div class="row mt-3">
                                             <div class="col-md-3">
                                                 <label for="x_coordinate" class="form-label">X-koordinat</label>
-                                                <input type="number" id="x_coordinate" name="x_coordinate" class="form-control" readonly>
+                                                <input type="number" id="x_coordinate" name="x_coordinate" class="form-control" readonly 
+                                                       value="{% if existing_axe_image_stamp %}{{ existing_axe_image_stamp.x_coordinate }}{% endif %}">
                                             </div>
                                             <div class="col-md-3">
                                                 <label for="y_coordinate" class="form-label">Y-koordinat</label>
-                                                <input type="number" id="y_coordinate" name="y_coordinate" class="form-control" readonly>
+                                                <input type="number" id="y_coordinate" name="y_coordinate" class="form-control" readonly
+                                                       value="{% if existing_axe_image_stamp %}{{ existing_axe_image_stamp.y_coordinate }}{% endif %}">
                                             </div>
                                             <div class="col-md-3">
                                                 <label for="width" class="form-label">Bredd</label>
-                                                <input type="number" id="width" name="width" class="form-control" readonly>
+                                                <input type="number" id="width" name="width" class="form-control" readonly
+                                                       value="{% if existing_axe_image_stamp %}{{ existing_axe_image_stamp.width }}{% endif %}">
                                             </div>
                                             <div class="col-md-3">
                                                 <label for="height" class="form-label">Höjd</label>
-                                                <input type="number" id="height" name="height" class="form-control" readonly>
+                                                <input type="number" id="height" name="height" class="form-control" readonly
+                                                       value="{% if existing_axe_image_stamp %}{{ existing_axe_image_stamp.height }}{% endif %}">
                                             </div>
                                         </div>
                                         
@@ -221,7 +225,7 @@
                                             
                                             <div class="mb-3">
                                                 <label for="image_comment" class="form-label">Bildkommentar</label>
-                                                <textarea id="image_comment" name="image_comment" class="form-control" rows="3" placeholder="Kommentar om stämpelområdet på bilden"></textarea>
+                                                <textarea id="image_comment" name="image_comment" class="form-control" rows="3" placeholder="Kommentar om stämpelområdet på bilden">{% if existing_axe_image_stamp %}{{ existing_axe_image_stamp.comment }}{% endif %}</textarea>
                                             </div>
                                         </div>
                                     </div>
@@ -272,13 +276,47 @@ document.addEventListener('DOMContentLoaded', function() {
         overlay.style.height = rect.height + 'px';
     }
     
+    // Visa befintlig markering om den finns
+    function showExistingMarking() {
+        const xCoord = document.getElementById('x_coordinate').value;
+        const yCoord = document.getElementById('y_coordinate').value;
+        const width = document.getElementById('width').value;
+        const height = document.getElementById('height').value;
+        
+        if (xCoord && yCoord && width && height) {
+            const rect = image.getBoundingClientRect();
+            const x = (parseInt(xCoord) / image.naturalWidth) * rect.width;
+            const y = (parseInt(yCoord) / image.naturalHeight) * rect.height;
+            const w = (parseInt(width) / image.naturalWidth) * rect.width;
+            const h = (parseInt(height) / image.naturalHeight) * rect.height;
+            
+            marking.style.left = x + 'px';
+            marking.style.top = y + 'px';
+            marking.style.width = w + 'px';
+            marking.style.height = h + 'px';
+            marking.style.display = 'block';
+        }
+    }
+    
     // Uppdatera storlek när bilden laddas
-    image.addEventListener('load', updateOverlaySize);
-    window.addEventListener('resize', updateOverlaySize);
+    image.addEventListener('load', function() {
+        updateOverlaySize();
+        showExistingMarking();
+    });
+    window.addEventListener('resize', function() {
+        updateOverlaySize();
+        showExistingMarking();
+    });
     updateOverlaySize();
+    
+    // Visa befintlig markering direkt om bilden redan är laddad
+    if (image.complete) {
+        showExistingMarking();
+    }
     
     // Hantera musinteraktion
     overlay.addEventListener('mousedown', function(e) {
+        e.preventDefault();
         isDrawing = true;
         const rect = image.getBoundingClientRect();
         startX = e.clientX - rect.left;
@@ -289,13 +327,12 @@ document.addEventListener('DOMContentLoaded', function() {
         marking.style.width = '0px';
         marking.style.height = '0px';
         marking.style.display = 'block';
-        
-        overlay.style.pointerEvents = 'auto';
     });
     
     overlay.addEventListener('mousemove', function(e) {
         if (!isDrawing) return;
         
+        e.preventDefault();
         const rect = image.getBoundingClientRect();
         const currentX = e.clientX - rect.left;
         const currentY = e.clientY - rect.top;
@@ -311,9 +348,11 @@ document.addEventListener('DOMContentLoaded', function() {
         marking.style.height = height + 'px';
     });
     
-    overlay.addEventListener('mouseup', function() {
+    overlay.addEventListener('mouseup', function(e) {
+        if (!isDrawing) return;
+        
+        e.preventDefault();
         isDrawing = false;
-        overlay.style.pointerEvents = 'none';
         
         // Uppdatera koordinatfält
         const rect = image.getBoundingClientRect();
@@ -328,6 +367,13 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('y_coordinate').value = y;
         document.getElementById('width').value = width;
         document.getElementById('height').value = height;
+    });
+    
+    // Global mouseup-hanterare för att hantera när musen släpps utanför overlay
+    document.addEventListener('mouseup', function(e) {
+        if (isDrawing) {
+            isDrawing = false;
+        }
     });
     
     // Rensa markering

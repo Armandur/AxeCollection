@@ -478,23 +478,6 @@ tr.editing .form-control-sm {
                                                 <button type="button" class="btn btn-danger btn-sm position-absolute delete-image-btn" style="top: 5px; right: 5px; width: 30px; height: 30px; border-radius: 50%;" onclick="removeExistingImage({{ image.id }})" title="Ta bort bild">
                                                     <i class="fas fa-times"></i>
                                                 </button>
-                                                
-                                                                                                   <!-- Stämpelhantering -->
-                                                   <div class="position-absolute" style="top: 5px; right: 40px;">
-                                                       {% if image.stamp_marks.all %}
-                                                           <a href="{% url 'edit_axe_image_stamp' axe.id image.id %}" 
-                                                              class="btn btn-sm btn-outline-warning"
-                                                              title="Redigera stämpelmarkering">
-                                                               <i class="fas fa-edit"></i>
-                                                           </a>
-                                                       {% else %}
-                                                           <a href="{% url 'mark_axe_image_as_stamp' axe.id image.id %}" 
-                                                              class="btn btn-sm btn-outline-primary"
-                                                              title="Markera stämpel">
-                                                               <i class="fas fa-stamp"></i>
-                                                           </a>
-                                                       {% endif %}
-                                                   </div>
 
                                                 <div class="card-body p-2">
                                                     <small class="text-muted">{{ image.description|default:"Bild" }}</small>

@@ -442,6 +442,13 @@ def remove_axe_stamp(request, axe_id, stamp_id):
     stamp_name = axe_stamp.stamp.name
     
     if request.method == 'POST':
+        # Ta bort alla stämpelmarkeringar för denna stämpel på denna yxa
+        AxeImageStamp.objects.filter(
+            axe_image__axe_id=axe_id,
+            stamp_id=stamp_id
+        ).delete()
+        
+        # Ta bort själva stämpelkopplingen
         axe_stamp.delete()
         
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
@@ -778,12 +785,18 @@ def edit_axe_stamp(request, axe_id, axe_stamp_id):
                 selected_image = get_object_or_404(AxeImage, id=selected_image_id, axe=axe)
                 available_stamps = Stamp.objects.all().order_by('name')
                 
+                # Hämta befintlig AxeImageStamp för den valda bilden
+                selected_image_stamp = AxeImageStamp.objects.filter(
+                    stamp=axe_stamp.stamp,
+                    axe_image=selected_image
+                ).first()
+                
                 context = {
                     'axe': axe,
                     'axe_stamp': axe_stamp,
                     'selected_image': selected_image,
                     'available_stamps': available_stamps,
-                    'existing_axe_image_stamp': existing_axe_image_stamp,
+                    'existing_axe_image_stamp': selected_image_stamp,
                     'title': f'Redigera stämpel - {axe.display_id}',
                 }
                 return render(request, 'axes/axe_stamp_edit.html', context)
@@ -822,6 +835,12 @@ def edit_axe_stamp(request, axe_id, axe_stamp_id):
                             height=int(height),
                             comment=request.POST.get('image_comment', '')
                         )
+                    else:
+                        # Om inga koordinater finns, ta bort alla AxeImageStamp för denna stämpel
+                        AxeImageStamp.objects.filter(
+                            stamp=axe_stamp.stamp,
+                            axe_image__axe=axe
+                        ).delete()
                 
                 messages.success(request, f'Stämpel "{axe_stamp.stamp.name}" uppdaterades.')
                 return redirect('axe_detail', pk=axe.id)
@@ -843,5 +862,10 @@ def edit_axe_stamp(request, axe_id, axe_stamp_id):
         'form': form,
         'title': f'Redigera stämpel - {axe.display_id}',
     }
+    
+    # Om det finns en befintlig AxeImageStamp, förvalda den aktuella bilden
+    if existing_axe_image_stamp:
+        context['selected_image'] = existing_axe_image_stamp.axe_image
+        context['available_stamps'] = Stamp.objects.all().order_by('name')
     
     return render(request, 'axes/axe_stamp_edit.html', context) 

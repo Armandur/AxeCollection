@@ -386,6 +386,16 @@ def axe_detail(request, pk):
     # Hämta stämplar för denna yxa
     axe_stamps = axe.stamps.all().select_related('stamp__manufacturer').prefetch_related('stamp__transcriptions')
     
+    # För varje axe_stamp, hitta den specifika AxeImageStamp för denna yxa (om den finns)
+    for axe_stamp in axe_stamps:
+        # Hitta AxeImageStamp för denna yxa och denna stämpel
+        axe_image_stamp = None
+        for image_mark in axe_stamp.stamp.axe_image_marks.all():
+            if image_mark.axe_image.axe.id == axe.id:
+                axe_image_stamp = image_mark
+                break
+        axe_stamp.axe_specific_image_stamp = axe_image_stamp
+    
     context = {
         "axe": axe,
         "transactions": transactions,

@@ -27,14 +27,22 @@
                         <div class="row">
                             <div class="col-md-6">
                                 <h6>Markera stämpelområde</h6>
-                                <div class="position-relative" id="image-container">
-                                    <img src="{{ selected_image.image_url_with_cache_busting }}" 
+                                <div class="position-relative" style="max-width: 100%; overflow: hidden;">
+                                    <img id="stampImage" 
+                                         src="{{ selected_image.image_url_with_cache_busting }}" 
                                          class="img-fluid" 
-                                         alt="Yxbild"
-                                         id="axe-image"
+                                         alt="Yxbild för stämpelmarkering"
                                          style="max-width: 100%; height: auto;">
-                                    <div id="crop-overlay" class="position-absolute border border-primary" 
-                                         style="display: none; background: rgba(0, 123, 255, 0.2);"></div>
+                                    
+                                    <!-- Markeringsoverlay -->
+                                    <div id="markingOverlay" 
+                                         class="position-absolute" 
+                                         style="top: 0; left: 0; width: 100%; height: 100%; pointer-events: auto; cursor: crosshair;">
+                                        <div id="stampMarking" 
+                                             class="position-absolute border border-danger bg-danger bg-opacity-25"
+                                             style="display: none; min-width: 20px; min-height: 20px;">
+                                        </div>
+                                    </div>
                                 </div>
                                 <small class="text-muted">Klicka och dra för att markera stämpelområde</small>
                             </div>
@@ -146,82 +154,166 @@
 </div>
 {% endblock %}
 
-{% block extra_js %}
+{% block scripts %}
 {% if selected_image %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    const image = document.getElementById('axe-image');
-    const overlay = document.getElementById('crop-overlay');
-    const xInput = document.getElementById('x_coordinate');
-    const yInput = document.getElementById('y_coordinate');
-    const widthInput = document.getElementById('width');
-    const heightInput = document.getElementById('height');
+    const image = document.getElementById('stampImage');
+    const overlay = document.getElementById('markingOverlay');
+    const marking = document.getElementById('stampMarking');
+    
+    // Debug: Kontrollera att elementen finns
+    console.log('Image element:', image);
+    console.log('Overlay element:', overlay);
+    console.log('Marking element:', marking);
+    
+    if (!image || !overlay || !marking) {
+        console.error('Kunde inte hitta alla nödvändiga element');
+        return;
+    }
     
     let isDrawing = false;
     let startX, startY;
     
-    function updateOverlay() {
-        const x = parseInt(xInput.value) || 0;
-        const y = parseInt(yInput.value) || 0;
-        const width = parseInt(widthInput.value) || 0;
-        const height = parseInt(heightInput.value) || 0;
-        
-        if (x > 0 && y > 0 && width > 0 && height > 0) {
-            overlay.style.left = x + 'px';
-            overlay.style.top = y + 'px';
-            overlay.style.width = width + 'px';
-            overlay.style.height = height + 'px';
-            overlay.style.display = 'block';
-        } else {
-            overlay.style.display = 'none';
-        }
-    }
-    
-    function getImageCoordinates(clientX, clientY) {
+    // Sätt overlay-storlek till bildstorlek
+    function updateOverlaySize() {
         const rect = image.getBoundingClientRect();
-        const x = Math.max(0, Math.min(clientX - rect.left, rect.width));
-        const y = Math.max(0, Math.min(clientY - rect.top, rect.height));
-        return { x: Math.round(x), y: Math.round(y) };
+        overlay.style.width = rect.width + 'px';
+        overlay.style.height = rect.height + 'px';
+        console.log('Overlay size updated:', rect.width, 'x', rect.height);
     }
     
-    image.addEventListener('mousedown', function(e) {
+    // Uppdatera storlek när bilden laddas
+    image.addEventListener('load', updateOverlaySize);
+    window.addEventListener('resize', updateOverlaySize);
+    updateOverlaySize();
+    
+    // Hantera musinteraktion
+    overlay.addEventListener('mousedown', function(e) {
+        console.log('Mouse down detected');
+        e.preventDefault();
+        e.stopPropagation();
         isDrawing = true;
-        const coords = getImageCoordinates(e.clientX, e.clientY);
-        startX = coords.x;
-        startY = coords.y;
+        const rect = image.getBoundingClientRect();
+        startX = e.clientX - rect.left;
+        startY = e.clientY - rect.top;
         
-        xInput.value = startX;
-        yInput.value = startY;
-        widthInput.value = 0;
-        heightInput.value = 0;
+        console.log('Start position:', startX, startY);
         
-        updateOverlay();
+        marking.style.left = startX + 'px';
+        marking.style.top = startY + 'px';
+        marking.style.width = '0px';
+        marking.style.height = '0px';
+        marking.style.display = 'block';
     });
     
-    image.addEventListener('mousemove', function(e) {
+    overlay.addEventListener('mousemove', function(e) {
         if (!isDrawing) return;
         
-        const coords = getImageCoordinates(e.clientX, e.clientY);
-        const width = Math.abs(coords.x - startX);
-        const height = Math.abs(coords.y - startY);
+        e.preventDefault();
+        e.stopPropagation();
+        const rect = image.getBoundingClientRect();
+        const currentX = e.clientX - rect.left;
+        const currentY = e.clientY - rect.top;
         
-        widthInput.value = width;
-        heightInput.value = height;
+        const width = Math.abs(currentX - startX);
+        const height = Math.abs(currentY - startY);
+        const left = Math.min(startX, currentX);
+        const top = Math.min(startY, currentY);
         
-        updateOverlay();
+        marking.style.left = left + 'px';
+        marking.style.top = top + 'px';
+        marking.style.width = width + 'px';
+        marking.style.height = height + 'px';
     });
     
-    image.addEventListener('mouseup', function() {
+    overlay.addEventListener('mouseup', function(e) {
+        if (!isDrawing) return;
+        
+        console.log('Mouse up detected');
+        e.preventDefault();
+        e.stopPropagation();
         isDrawing = false;
+        
+        // Uppdatera koordinatfält
+        const rect = image.getBoundingClientRect();
+        const markingRect = marking.getBoundingClientRect();
+        
+        const x = Math.round((markingRect.left - rect.left) / rect.width * image.naturalWidth);
+        const y = Math.round((markingRect.top - rect.top) / rect.height * image.naturalHeight);
+        const width = Math.round(markingRect.width / rect.width * image.naturalWidth);
+        const height = Math.round(markingRect.height / rect.height * image.naturalHeight);
+        
+        console.log('Coordinates:', x, y, width, height);
+        
+        document.getElementById('x_coordinate').value = x;
+        document.getElementById('y_coordinate').value = y;
+        document.getElementById('width').value = width;
+        document.getElementById('height').value = height;
     });
     
-    // Uppdatera overlay när input-värden ändras
-    [xInput, yInput, widthInput, heightInput].forEach(input => {
-        input.addEventListener('input', updateOverlay);
+    // Global mouseup-hanterare för att hantera när musen släpps utanför overlay
+    document.addEventListener('mouseup', function(e) {
+        if (isDrawing) {
+            console.log('Global mouse up detected');
+            isDrawing = false;
+        }
     });
     
-    // Visa befintlig markering vid laddning
-    updateOverlay();
+    // Lägg till touch-events för mobila enheter
+    overlay.addEventListener('touchstart', function(e) {
+        console.log('Touch start detected');
+        e.preventDefault();
+        isDrawing = true;
+        const rect = image.getBoundingClientRect();
+        const touch = e.touches[0];
+        startX = touch.clientX - rect.left;
+        startY = touch.clientY - rect.top;
+        
+        marking.style.left = startX + 'px';
+        marking.style.top = startY + 'px';
+        marking.style.width = '0px';
+        marking.style.height = '0px';
+        marking.style.display = 'block';
+    });
+    
+    overlay.addEventListener('touchmove', function(e) {
+        if (!isDrawing) return;
+        e.preventDefault();
+        const rect = image.getBoundingClientRect();
+        const touch = e.touches[0];
+        const currentX = touch.clientX - rect.left;
+        const currentY = touch.clientY - rect.top;
+        
+        const width = Math.abs(currentX - startX);
+        const height = Math.abs(currentY - startY);
+        const left = Math.min(startX, currentX);
+        const top = Math.min(startY, currentY);
+        
+        marking.style.left = left + 'px';
+        marking.style.top = top + 'px';
+        marking.style.width = width + 'px';
+        marking.style.height = height + 'px';
+    });
+    
+    overlay.addEventListener('touchend', function(e) {
+        if (!isDrawing) return;
+        e.preventDefault();
+        isDrawing = false;
+        
+        const rect = image.getBoundingClientRect();
+        const markingRect = marking.getBoundingClientRect();
+        
+        const x = Math.round((markingRect.left - rect.left) / rect.width * image.naturalWidth);
+        const y = Math.round((markingRect.top - rect.top) / rect.height * image.naturalHeight);
+        const width = Math.round(markingRect.width / rect.width * image.naturalWidth);
+        const height = Math.round(markingRect.height / rect.height * image.naturalHeight);
+        
+        document.getElementById('x_coordinate').value = x;
+        document.getElementById('y_coordinate').value = y;
+        document.getElementById('width').value = width;
+        document.getElementById('height').value = height;
+    });
 });
 </script>
 {% endif %}
