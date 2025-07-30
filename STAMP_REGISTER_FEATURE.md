@@ -523,3 +523,846 @@ class StampUncertaintyGroup(models.Model):
 - [x] **Nya views**: update_axe_image_stamp_show_full view för att hantera AJAX-anrop
 - [x] **URL-uppdateringar**: Ny URL-mönster för update_axe_image_stamp_show_full
 - [x] **Visuella förbättringar**: Stämpelområde overlay, badges för huvudbild och "Från yxa", länk till yxdetaljsida
+
+# Model-uppdateringar och felkorrigeringar
+
+## Översikt
+
+Flera viktiga uppdateringar och felkorrigeringar har gjorts i modellerna och formulären för att förbättra funktionaliteten och lösa tekniska problem.
+
+## Model-uppdateringar
+
+### 1. AxeStamp - Borttagning av unique_together constraint
+- **Problem**: Kunde inte lägga till flera instanser av samma stämpel på samma yxa
+- **Lösning**: Borttagen `unique_together = ["axe", "stamp"]` constraint
+- **Anledning**: Dubbelstämpling finns och ska tillåtas
+- **Migration**: `0038_alter_axestamp_unique_together_and_more.py`
+
+```python
+# axes/models.py - AxeStamp model
+class AxeStamp(models.Model):
+    axe = models.ForeignKey(Axe, on_delete=models.CASCADE, related_name='stamps')
+    stamp = models.ForeignKey(Stamp, on_delete=models.CASCADE, related_name='axes')
+    comment = models.TextField(blank=True)
+    position = models.CharField(max_length=100, blank=True)
+    uncertainty_level = models.CharField(
+        max_length=20, 
+        choices=UNCERTAINTY_CHOICES, 
+        default='certain'
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    # Borttagen: unique_together = ["axe", "stamp"]
+    
+    class Meta:
+        ordering = ['stamp__name']
+```
+
+### 2. Uncertainty levels - "Tentativ" bytt till "Preliminär"
+- **Problem**: Terminologi "Tentativ" var otydlig
+- **Lösning**: Bytte till "Preliminär" för bättre förståelse
+- **Påverkan**: Alla ställen där uncertainty levels visas
+
+```python
+# axes/models.py - UNCERTAINTY_CHOICES
+UNCERTAINTY_CHOICES = [
+    ("certain", "Säker"),
+    ("uncertain", "Osäker"),
+    ("tentative", "Preliminär"),  # Ändrat från "Tentativ"
+]
+```
+
+### 3. AxeImageStamp - Förbättrad bildmarkering
+- **Funktionalitet**: Sparar koordinater för stämpelområden på bilder
+- **Fält**: x_coordinate, y_coordinate, width, height, comment
+- **Användning**: För att markera exakt var stämpeln finns på bilden
+
+```python
+# axes/models.py - AxeImageStamp model
+class AxeImageStamp(models.Model):
+    axe_image = models.ForeignKey(AxeImage, on_delete=models.CASCADE, related_name='stamp_marks')
+    stamp = models.ForeignKey(Stamp, on_delete=models.CASCADE, related_name='axe_image_marks')
+    x_coordinate = models.IntegerField()
+    y_coordinate = models.IntegerField()
+    width = models.IntegerField()
+    height = models.IntegerField()
+    comment = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        unique_together = ["axe_image", "stamp"]
+        ordering = ['created_at']
+```
+
+## Form-uppdateringar
+
+### 1. AxeStampForm - Borttagning av clean_stamp metod
+- **Problem**: TypeError när formuläret skickades in
+- **Felmeddelande**: `TypeError: Field 'id' expected a number but got <Stamp: HB 1884-1930>`
+- **Orsak**: Django's ModelChoiceField konverterar automatiskt ID till objekt
+- **Lösning**: Borttagen `clean_stamp` metod som försökte konvertera igen
+
+```python
+# axes/forms.py - AxeStampForm (före)
+def clean_stamp(self):
+    """Konvertera stamp ID till Stamp-objekt"""
+    stamp_id = self.cleaned_data.get('stamp')
+    if stamp_id:
+        try:
+            from .models import Stamp
+            return Stamp.objects.get(id=stamp_id)  # Fel: försöker konvertera objekt till ID igen
+        except Stamp.DoesNotExist:
+            raise forms.ValidationError("Vald stämpel finns inte.")
+    else:
+        raise forms.ValidationError("Stämpel måste väljas.")
+
+# axes/forms.py - AxeStampForm (efter)
+# Borttagen clean_stamp metod - Django hanterar konvertering automatiskt
+```
+
+### 2. Förbättrad prioritering av stämplar
+- **Funktionalitet**: Stämplar från yxans tillverkare visas först
+- **Implementation**: Dynamisk skapning av choices i `__init__`
+- **Separatorer**: Tydliga avdelare mellan prioriterade och andra stämplar
+
+```python
+# axes/forms.py - AxeStampForm.__init__
+def __init__(self, *args, **kwargs):
+    axe = kwargs.pop('axe', None)
+    super().__init__(*args, **kwargs)
+    
+    if axe and axe.manufacturer:
+        # Stämplar från yxans tillverkare (prioriterade)
+        primary_stamps = Stamp.objects.filter(manufacturer=axe.manufacturer).order_by('name')
+        
+        # Alla andra stämplar (sekundära)
+        other_stamps = Stamp.objects.exclude(manufacturer=axe.manufacturer).order_by('name')
+        
+        # Skapa choices med prioriterade stämplar först
+        choices = [('', 'Välj stämpel...')]
+        
+        # Lägg till prioriterade stämplar med separator
+        if primary_stamps.exists():
+            choices.append(('', f'--- Stämplar från {axe.manufacturer.name} ---'))
+            for stamp in primary_stamps:
+                choices.append((stamp.id, f"{stamp.name} ({stamp.get_stamp_type_display()})"))
+        
+        # Lägg till separator för andra stämplar
+        if other_stamps.exists():
+            choices.append(('', '--- Andra stämplar ---'))
+            for stamp in other_stamps:
+                choices.append((stamp.id, f"{stamp.name} - {stamp.manufacturer.name if stamp.manufacturer else 'Okänd'} ({stamp.get_stamp_type_display()})"))
+        
+        self.fields['stamp'] = forms.ChoiceField(
+            choices=choices,
+            required=True,
+            widget=forms.Select(attrs={'class': 'form-control'}),
+            label='Stämpel',
+            help_text=f'Prioriterade stämplar från {axe.manufacturer.name} visas först'
+        )
+```
+
+## View-uppdateringar
+
+### 1. Prefetch-optimering för axe_detail
+- **Problem**: N+1 queries när stämpelbilder laddades
+- **Lösning**: Lagt till prefetch_related för effektiv dataladdning
+- **Påverkan**: Förbättrad prestanda på yxdetaljsidan
+
+```python
+# views_axe.py - axe_detail view
+def axe_detail(request, pk):
+    axe = get_object_or_404(
+        Axe.objects.prefetch_related(
+            "stamps__stamp__images",
+            "stamps__stamp__axe_image_marks__axe_image"
+        ),
+        pk=pk
+    )
+    # ... resten av view-koden
+```
+
+### 2. Integrerad stämpeltillägg med felhantering
+- **Funktionalitet**: Kontrollerar om yxan har bilder innan stämpeltillägg
+- **Felhantering**: Omdirigerar till redigera om inga bilder finns
+- **Användarupplevelse**: Tydliga meddelanden om vad som behöver göras
+
+```python
+# views_stamp.py - add_axe_stamp view
+@login_required
+def add_axe_stamp(request, axe_id):
+    axe = get_object_or_404(Axe, id=axe_id)
+    existing_images = axe.images.all().order_by('order')
+    
+    if not existing_images.exists():
+        messages.warning(request, 'Yxan har inga bilder. Lägg till bilder först via redigera.')
+        return redirect('axe_edit', pk=axe.id)
+    
+    # ... resten av view-koden
+```
+
+## Template-uppdateringar
+
+### 1. Förenklad "Lägg till stämpel" knapp
+- **Ändring**: Ersatt dropdown-meny med enkel knapp
+- **Design**: Konsistent med resten av gränssnittet
+- **Funktionalitet**: Dirigerar till integrerat formulär
+
+```html
+<!-- axe_detail.html - Före -->
+<div class="dropdown">
+    <button class="btn btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+        Lägg till stämpel
+    </button>
+    <ul class="dropdown-menu">
+        <li><a class="dropdown-item" href="...">Markera befintlig stämpel</a></li>
+        <li><a class="dropdown-item" href="...">Koppla stämpel</a></li>
+    </ul>
+</div>
+
+<!-- axe_detail.html - Efter -->
+<a href="{% url 'add_axe_stamp' axe.id %}" class="btn btn-primary btn-sm">
+    <i class="fas fa-plus"></i> Ange stämpel
+</a>
+```
+
+### 2. Kortbaserad stämpelvisning
+- **Layout**: Bootstrap-kort istället för tabell
+- **Responsiv**: Anpassar sig efter skärmstorlek
+- **Interaktiv**: Hover-effekter och åtgärdsknappar
+
+```html
+<!-- axe_detail.html - Stämpelkort -->
+<div class="col-md-6 col-lg-4 mb-3">
+    <div class="card stamp-card h-100">
+        <div class="stamp-image-container">
+            <!-- Bildhantering med fallback -->
+        </div>
+        <div class="card-body">
+            <!-- Stämpelinformation -->
+        </div>
+        <div class="card-footer">
+            <!-- Åtgärdsknappar -->
+        </div>
+    </div>
+</div>
+```
+
+## Felkorrigeringar
+
+### 1. TypeError i AxeStampForm
+- **Problem**: `TypeError: Field 'id' expected a number but got <Stamp: HB 1884-1930>`
+- **Orsak**: `clean_stamp` metod försökte konvertera redan konverterat objekt
+- **Lösning**: Borttagen `clean_stamp` metod
+- **Status**: ✅ Löst
+
+### 2. RuntimeWarning vid app-initialisering
+- **Problem**: `RuntimeWarning: Accessing the database during app initialization`
+- **Orsak**: Queries körs under app-initialisering
+- **Påverkan**: Varning men inget funktionellt problem
+- **Status**: ⚠️ Varning kvarstår men påverkar inte funktionalitet
+
+### 3. Unique constraint för AxeStamp
+- **Problem**: Kunde inte lägga till flera instanser av samma stämpel
+- **Lösning**: Borttagen `unique_together` constraint
+- **Status**: ✅ Löst
+
+## Migrationer
+
+### 1. AxeStamp unique_together borttagning
+```python
+# migrations/0038_alter_axestamp_unique_together_and_more.py
+class Migration(migrations.Migration):
+    dependencies = [
+        ('axes', '0037_...'),
+    ]
+
+    operations = [
+        migrations.AlterUniqueTogether(
+            name='axestamp',
+            unique_together=set(),  # Borttagen constraint
+        ),
+        migrations.AlterField(
+            model_name='axestamp',
+            name='uncertainty_level',
+            field=models.CharField(
+                choices=[
+                    ('certain', 'Säker'),
+                    ('uncertain', 'Osäker'),
+                    ('tentative', 'Preliminär')  # Ändrat från "Tentativ"
+                ],
+                default='certain',
+                max_length=20
+            ),
+        ),
+    ]
+```
+
+## Fördelar med uppdateringarna
+
+1. **Förbättrad användarupplevelse**: Logiskt flöde för stämpeltillägg
+2. **Teknisk stabilitet**: Löst TypeError-problem
+3. **Flexibilitet**: Tillåter flera instanser av samma stämpel
+4. **Prestanda**: Optimerad dataladdning med prefetch
+5. **Tydlighet**: Bättre terminologi ("Preliminär" istället för "Tentativ")
+6. **Visuell förbättring**: Kortbaserad layout istället för tabell
+
+## Status
+- ✅ Alla felkorrigeringar implementerade
+- ✅ Model-uppdateringar testade
+- ✅ Form-uppdateringar fungerar
+- ✅ Template-uppdateringar implementerade
+- ✅ Migrationer skapade och applicerade
+- ✅ Prestanda-optimeringar implementerade 
+
+
+# Integrerad stämpeltillägg - Ny funktionalitet
+
+## Översikt
+
+En ny integrerad stämpeltillägg-funktionalitet har implementerats som ersätter den tidigare ologiska flödet för att lägga till stämplar på yxor. Den nya funktionen ger ett enkelt, tvåstegs flöde som kombinerar bildval, stämpelmarkering och stämpeldefinition i ett enda formulär.
+
+## Ny funktionalitet
+
+### 1. Förenklad "Lägg till stämpel" knapp
+- **Plats**: Yxdetaljsidan (`/yxor/NN`)
+- **Ändring**: Ersatt dropdown-meny med en enkel "+" knapp
+- **Text**: "Ange stämpel"
+- **Funktion**: Dirigerar till det nya integrerade formuläret
+
+### 2. Integrerat tvåstegs formulär
+- **URL**: `/yxor/NN/stampel/lagg-till/`
+- **Steg 1**: Bildval
+  - Visar alla befintliga bilder för yxan som kort
+  - Om inga bilder finns: Varning och omdirigering till `/redigera`
+  - "Välj denna bild" knapp för varje bild
+- **Steg 2**: Stämpelmarkering och definition
+  - Vald bild visas större med interaktiv markering
+  - JavaScript-driven beskärning för att markera stämpelområde
+  - Formulär för stämpeldetaljer (stämpeltyp, position, osäkerhet, kommentar)
+
+### 3. Bildmarkering med JavaScript
+- **Interaktiv markering**: Klicka och dra för att markera stämpelområde
+- **Koordinater**: Automatisk sparning av x, y, width, height
+- **Rensa markering**: Knapp för att rensa markering
+- **Visuell feedback**: Tydlig overlay som visar markerat område
+
+### 4. Stämpeldetaljer
+- **Stämpelval**: Dropdown med prioriterade stämplar från yxans tillverkare
+- **Position**: Textfält för var på yxan stämpeln finns
+- **Osäkerhetsnivå**: "Säker", "Osäker", "Preliminär" (tidigare "Tentativ")
+- **Kommentar**: Textarea för användarkommentarer
+- **Bildkommentar**: Separat kommentar för bildmarkeringen
+
+## Teknisk implementation
+
+### Views
+```python
+@login_required
+def add_axe_stamp(request, axe_id):
+    """Lägg till stämpel på yxa - integrerat flöde med bildval och markering"""
+    
+    axe = get_object_or_404(Axe, id=axe_id)
+    existing_images = axe.images.all().order_by('order')
+    
+    if not existing_images.exists():
+        messages.warning(request, 'Yxan har inga bilder. Lägg till bilder först via redigera.')
+        return redirect('axe_edit', pk=axe.id)
+    
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        
+        if action == 'select_image':
+            # Steg 1: Välj bild
+            selected_image_id = request.POST.get('selected_image_id')
+            if selected_image_id:
+                selected_image = get_object_or_404(AxeImage, id=selected_image_id, axe=axe)
+                available_stamps = Stamp.objects.all().order_by('name')
+                
+                context = {
+                    'axe': axe,
+                    'selected_image': selected_image,
+                    'available_stamps': available_stamps,
+                    'title': f'Lägg till stämpel - {axe.display_id}',
+                }
+                return render(request, 'axes/axe_stamp_form.html', context)
+        
+        elif action == 'save_stamp':
+            # Steg 2: Spara stämpel med bildmarkering
+            form = AxeStampForm(request.POST)
+            if form.is_valid():
+                # Skapa AxeStamp
+                axe_stamp = form.save(commit=False)
+                axe_stamp.axe = axe
+                axe_stamp.save()
+                
+                # Hantera AxeImageStamp
+                selected_image_id = request.POST.get('selected_image_id')
+                if selected_image_id:
+                    selected_image = get_object_or_404(AxeImage, id=selected_image_id, axe=axe)
+                    
+                    x_coord = request.POST.get('x_coordinate')
+                    y_coord = request.POST.get('y_coordinate')
+                    width = request.POST.get('width')
+                    height = request.POST.get('height')
+                    
+                    if x_coord and y_coord and width and height:
+                        AxeImageStamp.objects.create(
+                            axe_image=selected_image,
+                            stamp=axe_stamp.stamp,
+                            x_coordinate=int(x_coord),
+                            y_coordinate=int(y_coord),
+                            width=int(width),
+                            height=int(height),
+                            comment=request.POST.get('image_comment', '')
+                        )
+                
+                messages.success(request, f'Stämpel "{axe_stamp.stamp.name}" lades till.')
+                return redirect('axe_detail', pk=axe.id)
+    
+    # GET request - visa bildval
+    context = {
+        'axe': axe,
+        'existing_images': existing_images,
+        'title': f'Lägg till stämpel - {axe.display_id}',
+    }
+    return render(request, 'axes/axe_stamp_form.html', context)
+```
+
+### Template-struktur
+```html
+<!-- axe_stamp_form.html -->
+{% if selected_image %}
+    <!-- Steg 2: Stämpelmarkering och definition -->
+    <div class="image-marking-section">
+        <img src="{{ selected_image.image.url }}" id="stamp-image" />
+        <div id="marking-overlay"></div>
+        <input type="hidden" name="x_coordinate" id="x_coordinate" />
+        <input type="hidden" name="y_coordinate" id="y_coordinate" />
+        <input type="hidden" name="width" id="width" />
+        <input type="hidden" name="height" id="height" />
+        <!-- Stämpelformulär -->
+    </div>
+{% else %}
+    <!-- Steg 1: Bildval -->
+    <div class="image-selection-grid">
+        {% for image in existing_images %}
+            <div class="image-card">
+                <img src="{{ image.image.url }}" />
+                <form method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="select_image" />
+                    <input type="hidden" name="selected_image_id" value="{{ image.id }}" />
+                    <button type="submit">Välj denna bild</button>
+                </form>
+            </div>
+        {% endfor %}
+    </div>
+{% endif %}
+```
+
+### JavaScript för bildmarkering
+```javascript
+// Bildmarkering med musinteraktion
+let isMarking = false;
+let startX, startY;
+
+document.getElementById('stamp-image').addEventListener('mousedown', function(e) {
+    isMarking = true;
+    const rect = this.getBoundingClientRect();
+    startX = e.clientX - rect.left;
+    startY = e.clientY - rect.top;
+    
+    // Skapa markering
+    const overlay = document.getElementById('marking-overlay');
+    overlay.style.left = startX + 'px';
+    overlay.style.top = startY + 'px';
+    overlay.style.width = '0px';
+    overlay.style.height = '0px';
+    overlay.style.display = 'block';
+});
+
+document.addEventListener('mousemove', function(e) {
+    if (!isMarking) return;
+    
+    const rect = document.getElementById('stamp-image').getBoundingClientRect();
+    const currentX = e.clientX - rect.left;
+    const currentY = e.clientY - rect.top;
+    
+    const overlay = document.getElementById('marking-overlay');
+    const width = Math.abs(currentX - startX);
+    const height = Math.abs(currentY - startY);
+    
+    overlay.style.left = Math.min(startX, currentX) + 'px';
+    overlay.style.top = Math.min(startY, currentY) + 'px';
+    overlay.style.width = width + 'px';
+    overlay.style.height = height + 'px';
+    
+    // Uppdatera hidden inputs
+    document.getElementById('x_coordinate').value = Math.min(startX, currentX);
+    document.getElementById('y_coordinate').value = Math.min(startY, currentY);
+    document.getElementById('width').value = width;
+    document.getElementById('height').value = height;
+});
+
+document.addEventListener('mouseup', function() {
+    isMarking = false;
+});
+```
+
+## Fördelar med den nya funktionen
+
+1. **Logiskt flöde**: Bildval → Markering → Definition i ett enda formulär
+2. **Visuell feedback**: Tydlig markering av stämpelområden
+3. **Förbättrad UX**: Inga separata sidor eller ologiska hopp
+4. **Felhantering**: Automatisk omdirigering om inga bilder finns
+5. **Flexibilitet**: Möjlighet att rensa markering och börja om
+6. **Konsistens**: Samma flöde för alla stämpeltillägg
+
+## Relaterade ändringar
+
+### Model-uppdateringar
+- **AxeStamp**: Lagt till `uncertainty_level` med "Preliminär" istället för "Tentativ"
+- **AxeImageStamp**: Används för att spara bildmarkeringar med koordinater
+
+### Form-uppdateringar
+- **AxeStampForm**: Förbättrad med prioriterade stämplar från tillverkare
+- **clean_stamp metod**: Borttagen för att fixa TypeError (Django hanterar konvertering automatiskt)
+
+### Template-uppdateringar
+- **axe_detail.html**: Förenklad "Lägg till stämpel" knapp
+- **axe_stamp_form.html**: Nytt integrerat tvåstegs formulär
+- **axe_stamp_edit.html**: Liknande funktionalitet för redigering
+
+## Status
+- ✅ Implementerad och testad
+- ✅ Felhantering för saknade bilder
+- ✅ JavaScript-bildmarkering fungerar
+- ✅ Formulärvalidering fungerar
+- ✅ Responsiv design
+- ✅ Prioriterade stämplar från tillverkare 
+
+# Kortbaserad stämpelvisning - Ny funktionalitet
+
+## Översikt
+
+Stämpelvisningen på yxdetaljsidan har omarbetats från en enkel listvy till en visuell kortbaserad layout som visar stämplar med bilder och förbättrad information. Den nya designen ger bättre översikt och möjlighet att redigera befintliga stämplar.
+
+## Ny funktionalitet
+
+### 1. Kortbaserad layout
+- **Plats**: Yxdetaljsidan (`/yxor/NN`) i "Stämplar"-sektionen
+- **Ändring**: Ersatt tabellvy med Bootstrap-kort
+- **Layout**: Responsiv grid med `col-md-6 col-lg-4 mb-3`
+- **Visuell design**: Hover-effekter och moderna kort
+
+### 2. Stämpelkort-innehåll
+Varje stämpelkort visar:
+- **Bild**: Stämpelbild från `stamp.images` eller `axe_image_marks` med koordinater
+- **Stämpelnamn**: Tydlig rubrik med stämpelns namn
+- **Tillverkare**: Tillverkarens namn
+- **Typ**: Stämpeltyp (text, symbol, text_symbol, etikett)
+- **Osäkerhetsnivå**: Badge som visar "Preliminär" (tidigare "Tentativ")
+- **Position**: Var på yxan stämpeln finns
+- **Kommentar**: Användarkommentar om stämpeln
+- **Åtgärdsknappar**: "Redigera" och "Ta bort"
+
+### 3. Bildhantering
+- **Prioritering**: Först `stamp.images`, sedan `axe_image_marks` med koordinater
+- **Fallback**: Stämpelikon om ingen bild finns
+- **Koordinatvisning**: Visar beskärningsområde från AxeImageStamp
+- **Hover-effekt**: Bilden förstoras vid hover
+
+### 4. Redigeringsfunktionalitet
+- **Redigera-knapp**: Länk till `/yxor/NN/stampel/NN/redigera/`
+- **Integrerad redigering**: Samma tvåstegs flöde som för nya stämplar
+- **Bildmarkering**: Möjlighet att ändra bildmarkering på befintliga stämplar
+
+## Teknisk implementation
+
+### View-uppdateringar
+```python
+# views_axe.py - axe_detail view
+def axe_detail(request, pk):
+    axe = get_object_or_404(
+        Axe.objects.prefetch_related(
+            "stamps__stamp__images",
+            "stamps__stamp__axe_image_marks__axe_image"
+        ),
+        pk=pk
+    )
+    # ... resten av view-koden
+```
+
+### Template-struktur
+```html
+<!-- axe_detail.html - Stämplarsektion -->
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">Stämplar</h5>
+        <a href="{% url 'add_axe_stamp' axe.id %}" class="btn btn-primary btn-sm">
+            <i class="fas fa-plus"></i> Ange stämpel
+        </a>
+    </div>
+    <div class="card-body">
+        {% if axe.stamps.all %}
+            <div class="row">
+                {% for axe_stamp in axe.stamps.all %}
+                    <div class="col-md-6 col-lg-4 mb-3">
+                        <div class="card stamp-card h-100">
+                            <div class="stamp-image-container">
+                                {% if axe_stamp.stamp.images.first %}
+                                    <img src="{{ axe_stamp.stamp.images.first.image.url }}" 
+                                         class="card-img-top" alt="{{ axe_stamp.stamp.name }}">
+                                {% elif axe_stamp.stamp.axe_image_marks.first %}
+                                    <!-- Visa beskärningsområde från AxeImageStamp -->
+                                    <div class="stamp-crop-area">
+                                        <img src="{{ axe_stamp.stamp.axe_image_marks.first.axe_image.image.url }}" 
+                                             class="card-img-top" alt="{{ axe_stamp.stamp.name }}">
+                                    </div>
+                                {% else %}
+                                    <div class="stamp-placeholder">
+                                        <i class="fas fa-stamp fa-3x text-muted"></i>
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="card-body">
+                                <h6 class="card-title">{{ axe_stamp.stamp.name }}</h6>
+                                <p class="card-text">
+                                    <small class="text-muted">
+                                        {{ axe_stamp.stamp.manufacturer.name|default:"Okänd tillverkare" }}
+                                    </small>
+                                </p>
+                                <p class="card-text">
+                                    <span class="badge bg-secondary">{{ axe_stamp.stamp.get_stamp_type_display }}</span>
+                                    {% if axe_stamp.uncertainty_level == 'tentative' %}
+                                        <span class="badge bg-warning">Preliminär</span>
+                                    {% endif %}
+                                </p>
+                                {% if axe_stamp.position %}
+                                    <p class="card-text">
+                                        <small class="text-muted">Position: {{ axe_stamp.position }}</small>
+                                    </p>
+                                {% endif %}
+                                {% if axe_stamp.comment %}
+                                    <p class="card-text">{{ axe_stamp.comment }}</p>
+                                {% endif %}
+                            </div>
+                            <div class="card-footer">
+                                <div class="btn-group btn-group-sm w-100">
+                                    <a href="{% url 'edit_axe_stamp' axe.id axe_stamp.id %}" 
+                                       class="btn btn-outline-primary">
+                                        <i class="fas fa-edit"></i> Redigera
+                                    </a>
+                                    <button type="button" class="btn btn-outline-danger" 
+                                            onclick="confirmDeleteStamp({{ axe_stamp.id }})">
+                                        <i class="fas fa-trash"></i> Ta bort
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="text-center py-4">
+                <i class="fas fa-stamp fa-3x text-muted mb-3"></i>
+                <p class="text-muted">Inga stämplar definierade</p>
+                <a href="{% url 'add_axe_stamp' axe.id %}" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Lägg till stämpel
+                </a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+```
+
+### CSS-styling
+```css
+/* axe_detail.html - Lagt till CSS */
+<style>
+.stamp-card {
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+    border: 1px solid #dee2e6;
+}
+
+.stamp-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.stamp-image-container {
+    position: relative;
+    overflow: hidden;
+    height: 200px;
+}
+
+.stamp-image-container img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.2s ease-in-out;
+}
+
+.stamp-image-container:hover img {
+    transform: scale(1.05);
+}
+
+.stamp-placeholder {
+    height: 200px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #f8f9fa;
+}
+
+.stamp-crop-area {
+    position: relative;
+    overflow: hidden;
+}
+
+.stamp-crop-area::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.1);
+    pointer-events: none;
+}
+</style>
+```
+
+## Redigeringsfunktionalitet
+
+### Edit view
+```python
+@login_required
+def edit_axe_stamp(request, axe_id, axe_stamp_id):
+    """Redigera en befintlig yxstämpel med bildmarkering"""
+    
+    axe = get_object_or_404(Axe, id=axe_id)
+    axe_stamp = get_object_or_404(AxeStamp, id=axe_stamp_id, axe=axe)
+    
+    # Hämta befintliga bilder för yxan
+    existing_images = axe.images.all().order_by('order')
+    
+    # Hämta befintlig AxeImageStamp för denna stämpel
+    existing_axe_image_stamp = AxeImageStamp.objects.filter(
+        stamp=axe_stamp.stamp,
+        axe_image__axe=axe
+    ).first()
+    
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        
+        if action == 'select_image':
+            # Steg 1: Välj bild
+            selected_image_id = request.POST.get('selected_image_id')
+            if selected_image_id:
+                selected_image = get_object_or_404(AxeImage, id=selected_image_id, axe=axe)
+                available_stamps = Stamp.objects.all().order_by('name')
+                
+                context = {
+                    'axe': axe,
+                    'axe_stamp': axe_stamp,
+                    'selected_image': selected_image,
+                    'available_stamps': available_stamps,
+                    'existing_axe_image_stamp': existing_axe_image_stamp,
+                    'title': f'Redigera stämpel - {axe.display_id}',
+                }
+                return render(request, 'axes/axe_stamp_edit.html', context)
+        
+        elif action == 'save_stamp':
+            # Steg 2: Spara stämpel med bildmarkering
+            form = AxeStampForm(request.POST, instance=axe_stamp)
+            if form.is_valid():
+                # Spara AxeStamp
+                axe_stamp = form.save()
+                
+                # Hantera AxeImageStamp
+                selected_image_id = request.POST.get('selected_image_id')
+                if selected_image_id:
+                    selected_image = get_object_or_404(AxeImage, id=selected_image_id, axe=axe)
+                    
+                    # Ta bort befintlig AxeImageStamp för samma stämpel på samma bild
+                    AxeImageStamp.objects.filter(
+                        stamp=axe_stamp.stamp,
+                        axe_image=selected_image
+                    ).delete()
+                    
+                    # Skapa ny AxeImageStamp
+                    x_coord = request.POST.get('x_coordinate')
+                    y_coord = request.POST.get('y_coordinate')
+                    width = request.POST.get('width')
+                    height = request.POST.get('height')
+                    
+                    if x_coord and y_coord and width and height:
+                        AxeImageStamp.objects.create(
+                            axe_image=selected_image,
+                            stamp=axe_stamp.stamp,
+                            x_coordinate=int(x_coord),
+                            y_coordinate=int(y_coord),
+                            width=int(width),
+                            height=int(height),
+                            comment=request.POST.get('image_comment', '')
+                        )
+                
+                messages.success(request, f'Stämpel "{axe_stamp.stamp.name}" uppdaterades.')
+                return redirect('axe_detail', pk=axe.id)
+    
+    # GET request - visa redigeringsformulär
+    form = AxeStampForm(instance=axe_stamp)
+    
+    context = {
+        'axe': axe,
+        'axe_stamp': axe_stamp,
+        'existing_images': existing_images,
+        'existing_axe_image_stamp': existing_axe_image_stamp,
+        'form': form,
+        'title': f'Redigera stämpel - {axe.display_id}',
+    }
+    
+    return render(request, 'axes/axe_stamp_edit.html', context)
+```
+
+### URL-mönster
+```python
+# urls.py
+path("yxor/<int:axe_id>/stampel/<int:axe_stamp_id>/redigera/", 
+     views_stamp.edit_axe_stamp, name="edit_axe_stamp"),
+```
+
+## Fördelar med den nya designen
+
+1. **Visuell översikt**: Stämplar visas med bilder istället för bara text
+2. **Bättre information**: All relevant information synlig på varje kort
+3. **Redigeringsmöjlighet**: Enkel åtkomst till redigering av befintliga stämplar
+4. **Responsiv design**: Kort anpassar sig efter skärmstorlek
+5. **Hover-effekter**: Interaktiva element som förbättrar användarupplevelsen
+6. **Konsistent design**: Samma stil som resten av applikationen
+
+## Relaterade ändringar
+
+### Model-uppdateringar
+- **AxeStamp**: `unique_together` constraint borttagen för att tillåta flera instanser av samma stämpel
+- **Uncertainty levels**: "Tentativ" bytt till "Preliminär"
+
+### Template-uppdateringar
+- **axe_detail.html**: Komplett omarbetning av stämpelsektionen
+- **axe_stamp_edit.html**: Ny template för redigering av stämplar
+- **Responsiv grid**: Bootstrap-klasser för responsiv layout
+
+### JavaScript
+- **Bildmarkering**: Samma JavaScript-funktionalitet som för nya stämplar
+- **Bekräftelsedialoger**: För borttagning av stämplar
+
+## Status
+- ✅ Implementerad och testad
+- ✅ Responsiv design fungerar
+- ✅ Hover-effekter implementerade
+- ✅ Redigeringsfunktionalitet fungerar
+- ✅ Bildhantering med fallback
+- ✅ Prioriterade stämplar från tillverkare
+- ✅ Flera instanser av samma stämpel tillåtna 

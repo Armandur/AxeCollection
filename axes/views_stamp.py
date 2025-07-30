@@ -1,7 +1,7 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
-from django.db.models import Q, Count
+from django.db.models import Q, Count, Prefetch
 from django.core.paginator import Paginator
 from django.contrib import messages
 from .models import (
@@ -33,7 +33,11 @@ def stamp_list(request):
     source_filter = request.GET.get('source', '')
     
     # Basqueryset
-    stamps = Stamp.objects.select_related('manufacturer').prefetch_related('transcriptions', 'images')
+    stamps = Stamp.objects.select_related('manufacturer').prefetch_related(
+        'transcriptions', 
+        Prefetch('images', queryset=StampImage.objects.order_by('order', '-uploaded_at')),
+        Prefetch('axe_image_marks', queryset=AxeImageStamp.objects.select_related('axe_image').order_by('-is_primary', '-created_at'))
+    )
     
     # Applicera filter
     if search_query:
