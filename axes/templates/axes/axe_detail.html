@@ -232,42 +232,26 @@
                             <div class="col-md-6 col-lg-4 mb-3">
                                 <div class="card h-100 stamp-card">
                                     <div class="card-body p-3">
-                                        <!-- Stämpelbild -->
+                                        <!-- Stämpelbilder -->
                                         <div class="text-center mb-3 stamp-image-container">
-                                            {% if axe_stamp.axe_specific_image_stamp %}
-                                                {% with image_mark=axe_stamp.axe_specific_image_stamp %}
-                                                    <div class="position-relative d-inline-block">
-                                                        {% if image_mark.has_coordinates %}
-                                                            <!-- Visa endast den markerade delen -->
-                                                            <div class="stamp-crop-container" style="width: 100%; height: 150px; overflow: hidden; border-radius: 0.375rem; cursor: pointer;" 
-                                                                 onclick="showStampModal('{{ image_mark.axe_image.image_url_with_cache_busting }}', {{ image_mark.x_coordinate }}, {{ image_mark.y_coordinate }}, {{ image_mark.width }}, {{ image_mark.height }}, '{{ axe_stamp.stamp.name }}', '{{ image_mark.axe_image.axe.display_id }}')">
-                                                                <img src="{{ image_mark.axe_image.image_url_with_cache_busting }}" 
-                                                                     class="img-fluid" 
-                                                                     data-crop-x="{{ image_mark.x_coordinate }}"
-                                                                     data-crop-y="{{ image_mark.y_coordinate }}"
-                                                                     style="object-fit: cover; object-position: -{{ image_mark.x_coordinate }}px -{{ image_mark.y_coordinate }}px; width: {{ image_mark.axe_image.image.width }}px; height: {{ image_mark.axe_image.image.height }}px; max-width: none; max-height: none;"
-                                                                     alt="{{ axe_stamp.stamp.name }}">
-                                                            </div>
-                                                        {% else %}
-                                                            <!-- Fallback: visa hela bilden -->
-                                                            <img src="{{ image_mark.axe_image.image_url_with_cache_busting }}" 
-                                                                 class="img-fluid rounded" 
-                                                                 style="max-height: 150px; object-fit: contain; cursor: pointer;"
-                                                                 onclick="showStampModal('{{ image_mark.axe_image.image_url_with_cache_busting }}', null, null, null, null, '{{ axe_stamp.stamp.name }}', '{{ image_mark.axe_image.axe.display_id }}')"
-                                                                 alt="{{ axe_stamp.stamp.name }}">
-                                                        {% endif %}
-                                                    </div>
-                                                {% endwith %}
-                                            {% elif axe_stamp.stamp.images.exists %}
-                                                <img src="{{ axe_stamp.stamp.images.first.image_url_with_cache_busting }}" 
-                                                     class="img-fluid rounded" 
-                                                     style="max-height: 150px; object-fit: contain;"
-                                                     alt="{{ axe_stamp.stamp.name }}">
-                                            {% else %}
-                                                <div class="bg-light rounded d-flex align-items-center justify-content-center" 
-                                                     style="height: 150px;">
-                                                    <i class="fas fa-stamp fa-3x text-muted"></i>
+                                            {% if axe_stamp.has_coordinates %}
+                                                <!-- Visa endast den markerade delen -->
+                                                <div class="stamp-crop-container" style="width: 100%; height: 150px; overflow: hidden; border-radius: 0.375rem; cursor: pointer;" 
+                                                     onclick="showStampModal('{{ axe_stamp.axe_image.image_url_with_cache_busting }}', {{ axe_stamp.x_coordinate }}, {{ axe_stamp.y_coordinate }}, {{ axe_stamp.width }}, {{ axe_stamp.height }}, '{{ axe_stamp.stamp.name }}', '{{ axe_stamp.axe_image.axe.display_id }}')">
+                                                    <img src="{{ axe_stamp.axe_image.image_url_with_cache_busting }}" 
+                                                         class="img-fluid" 
+                                                         data-crop-x="{{ axe_stamp.x_coordinate }}"
+                                                         data-crop-y="{{ axe_stamp.y_coordinate }}"
+                                                         style="object-fit: cover; object-position: -{{ axe_stamp.x_coordinate }}px -{{ axe_stamp.y_coordinate }}px; width: {{ axe_stamp.axe_image.image.width }}px; height: {{ axe_stamp.axe_image.image.height }}px; max-width: none; max-height: none;"
+                                                         alt="{{ axe_stamp.stamp.name }}">
                                                 </div>
+                                            {% else %}
+                                                <!-- Fallback: visa hela bilden -->
+                                                <img src="{{ axe_stamp.axe_image.image_url_with_cache_busting }}" 
+                                                     class="img-fluid rounded" 
+                                                     style="max-height: 150px; object-fit: contain; cursor: pointer;"
+                                                     onclick="showStampModal('{{ axe_stamp.axe_image.image_url_with_cache_busting }}', null, null, null, null, '{{ axe_stamp.stamp.name }}', '{{ axe_stamp.axe_image.axe.display_id }}')"
+                                                     alt="{{ axe_stamp.stamp.name }}">
                                             {% endif %}
                                         </div>
                                         
@@ -321,17 +305,26 @@
                                             </div>
                                         {% endif %}
                                         
+                                        {% if axe_stamp.axe_stamp_comment %}
+                                            <div class="mb-2">
+                                                <small class="text-muted">
+                                                    <i class="fas fa-comment me-1"></i>
+                                                    {{ axe_stamp.axe_stamp_comment|truncatewords:8 }}
+                                                </small>
+                                            </div>
+                                        {% endif %}
+                                        
                                         {% if user.is_authenticated %}
                                             <div class="mt-auto">
                                                 <div class="btn-group btn-group-sm w-100" role="group">
-                                                    <a href="{% url 'edit_axe_stamp' axe.id axe_stamp.id %}" class="btn btn-outline-primary" title="Redigera stämpel">
+                                                    <a href="{% url 'edit_axe_image_stamp' axe.id axe_stamp.id %}" class="btn btn-outline-primary" title="Redigera markering">
                                                         <i class="fas fa-edit"></i>
                                                     </a>
                                                     <a href="{% url 'stamp_detail' axe_stamp.stamp.id %}" class="btn btn-outline-info" title="Visa stämpel">
                                                         <i class="fas fa-eye"></i>
                                                     </a>
-                                                    <button type="button" class="btn btn-outline-danger" title="Ta bort stämpel"
-                                                            onclick="showRemoveStampModal('{% url 'remove_axe_stamp' axe.id axe_stamp.stamp.id %}')">
+                                                    <button type="button" class="btn btn-outline-danger" title="Ta bort markering"
+                                                            onclick="showRemoveStampModal('{% url 'remove_axe_image_stamp' axe.id axe_stamp.id %}')">
                                                         <i class="fas fa-times"></i>
                                                     </button>
                                                 </div>

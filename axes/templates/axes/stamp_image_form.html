@@ -6,7 +6,7 @@
 {% block content %}
 <div class="container mt-4">
     <div class="row">
-        <div class="col-md-8 offset-md-2">
+        <div class="col-md-10 offset-md-1">
             <div class="card">
                 <div class="card-header">
                     <h4 class="mb-0">
@@ -14,10 +14,18 @@
                     </h4>
                 </div>
                 <div class="card-body">
-                    <form method="post" enctype="multipart/form-data" id="stamp-image-form">
+                    <form method="post" enctype="multipart/form-data" id="stamp-image-form"
+                          data-editing="{% if stamp_image %}true{% else %}false{% endif %}"
+                          data-existing-image-url="{% if stamp_image %}{% if stamp_image.axe_image %}{{ stamp_image.axe_image.image_url_with_cache_busting }}{% else %}{{ stamp_image.image_url_with_cache_busting }}{% endif %}{% endif %}"
+                          data-existing-x-coord="{% if stamp_image and stamp_image.x_coordinate %}{{ stamp_image.x_coordinate }}{% endif %}"
+                          data-existing-y-coord="{% if stamp_image and stamp_image.y_coordinate %}{{ stamp_image.y_coordinate }}{% endif %}"
+                          data-existing-width="{% if stamp_image and stamp_image.width %}{{ stamp_image.width }}{% endif %}"
+                          data-existing-height="{% if stamp_image and stamp_image.height %}{{ stamp_image.height }}{% endif %}">
                         {% csrf_token %}
                         
-                        <div class="mb-3">
+                        <!-- Bilduppladdning - endast för StampImage, inte för AxeImageStamp -->
+                        {% if not stamp_image.axe_image %}
+                        <div class="mb-4">
                             <label for="{{ form.image.id_for_label }}" class="form-label">{{ form.image.label }} *</label>
                             {{ form.image }}
                             {% if form.image.errors %}
@@ -25,26 +33,89 @@
                             {% endif %}
                             <div class="form-text">{{ form.image.help_text }}</div>
                         </div>
+                        {% endif %}
 
-                        <div class="mb-3">
-                            <label for="{{ form.caption.id_for_label }}" class="form-label">{{ form.caption.label }}</label>
-                            {{ form.caption }}
-                            {% if form.caption.errors %}
-                                <div class="text-danger">{{ form.caption.errors }}</div>
-                            {% endif %}
-                            <div class="form-text">{{ form.caption.help_text }}</div>
+                        <!-- Bildförhandsvisning och markering -->
+                        <div id="imagePreviewContainer" class="mb-4" style="display: none;">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h6 class="mb-0">Markera stämpelområde</h6>
+                                    <small class="text-muted">Klicka och dra för att markera stämpelområdet</small>
+                                </div>
+                                <div class="card-body text-center">
+                                    <div id="imageContainer" class="position-relative" style="display: inline-block;">
+                                        <img id="previewImage" src="" alt="Förhandsvisning" style="max-width: 100%; max-height: 500px; cursor: crosshair;">
+                                        <div id="markingOverlay" class="position-absolute" style="border: 2px solid red; background-color: rgba(255, 0, 0, 0.2); display: none; pointer-events: none;"></div>
+                                    </div>
+                                </div>
+                                <div class="card-footer">
+                                    <div class="row">
+                                        <div class="col-md-3">
+                                            <label for="xCoordinate" class="form-label">X-koordinat</label>
+                                            <input type="number" id="xCoordinate" name="x_coordinate" class="form-control" readonly>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <label for="yCoordinate" class="form-label">Y-koordinat</label>
+                                            <input type="number" id="yCoordinate" name="y_coordinate" class="form-control" readonly>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <label for="width" class="form-label">Bredd</label>
+                                            <input type="number" id="width" name="width" class="form-control" readonly>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <label for="height" class="form-label">Höjd</label>
+                                            <input type="number" id="height" name="height" class="form-control" readonly>
+                                        </div>
+                                    </div>
+                                    <div class="row mt-2">
+                                        <div class="col-12">
+                                            <button type="button" id="resetMarking" class="btn btn-sm btn-outline-secondary">
+                                                <i class="fas fa-undo"></i> Återställ markering
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
 
-                        <div class="mb-3">
-                            <label for="{{ form.description.id_for_label }}" class="form-label">{{ form.description.label }}</label>
-                            {{ form.description }}
-                            {% if form.description.errors %}
-                                <div class="text-danger">{{ form.description.errors }}</div>
-                            {% endif %}
-                            <div class="form-text">{{ form.description.help_text }}</div>
-                        </div>
-
+                        <!-- Stämpelinformation - endast för StampImage -->
+                        {% if not stamp_image.axe_image %}
                         <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.uncertainty_level.id_for_label }}" class="form-label">{{ form.uncertainty_level.label }}</label>
+                                    {{ form.uncertainty_level }}
+                                    {% if form.uncertainty_level.errors %}
+                                        <div class="text-danger">{{ form.uncertainty_level.errors }}</div>
+                                    {% endif %}
+                                    <div class="form-text">{{ form.uncertainty_level.help_text }}</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.position.id_for_label }}" class="form-label">{{ form.position.label }}</label>
+                            {{ form.position }}
+                            {% if form.position.errors %}
+                                <div class="text-danger">{{ form.position.errors }}</div>
+                            {% endif %}
+                            <div class="form-text">{{ form.position.help_text }}</div>
+                        </div>
+                        {% endif %}
+
+                        <!-- Bildinformation - endast för StampImage -->
+                        {% if not stamp_image.axe_image %}
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.caption.id_for_label }}" class="form-label">{{ form.caption.label }}</label>
+                                    {{ form.caption }}
+                                    {% if form.caption.errors %}
+                                        <div class="text-danger">{{ form.caption.errors }}</div>
+                                    {% endif %}
+                                    <div class="form-text">{{ form.caption.help_text }}</div>
+                                </div>
+                            </div>
                             <div class="col-md-6">
                                 <div class="mb-3">
                                     <label for="{{ form.quality.id_for_label }}" class="form-label">{{ form.quality.label }}</label>
@@ -55,24 +126,41 @@
                                     <div class="form-text">{{ form.quality.help_text }}</div>
                                 </div>
                             </div>
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="{{ form.order.id_for_label }}" class="form-label">{{ form.order.label }}</label>
-                                    {{ form.order }}
-                                    {% if form.order.errors %}
-                                        <div class="text-danger">{{ form.order.errors }}</div>
-                                    {% endif %}
-                                    <div class="form-text">{{ form.order.help_text }}</div>
-                                </div>
-                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.description.id_for_label }}" class="form-label">{{ form.description.label }}</label>
+                            {{ form.description }}
+                            {% if form.description.errors %}
+                                <div class="text-danger">{{ form.description.errors }}</div>
+                            {% endif %}
+                            <div class="form-text">{{ form.description.help_text }}</div>
+                        </div>
+                        {% endif %}
+
+                        <!-- Kommentar - för båda typerna -->
+                        <div class="mb-3">
+                            <label for="{{ form.comment.id_for_label }}" class="form-label">{{ form.comment.label }}</label>
+                            {{ form.comment }}
+                            {% if form.comment.errors %}
+                                <div class="text-danger">{{ form.comment.errors }}</div>
+                            {% endif %}
+                            <div class="form-text">{{ form.comment.help_text }}</div>
                         </div>
 
                         <div class="d-flex justify-content-between">
-                            <a href="{% url 'stamp_detail' stamp_id=stamp.id %}" class="btn btn-secondary">
-                                <i class="fas fa-arrow-left"></i> Tillbaka
-                            </a>
+                            {% if stamp_image.axe_image %}
+                                <a href="{% url 'axe_detail' stamp_image.axe_image.axe.id %}" class="btn btn-secondary">
+                                    <i class="fas fa-arrow-left"></i> Tillbaka
+                                </a>
+                            {% else %}
+                                <a href="{% url 'stamp_detail' stamp_id=stamp_image.stamp.id %}" class="btn btn-secondary">
+                                    <i class="fas fa-arrow-left"></i> Tillbaka
+                                </a>
+                            {% endif %}
                             <button type="submit" class="btn btn-primary">
-                                <i class="fas fa-upload"></i> Ladda upp bild
+                                <i class="fas fa-{% if stamp_image %}save{% else %}upload{% endif %}"></i> 
+                                {% if stamp_image %}Spara ändringar{% else %}Ladda upp bild{% endif %}
                             </button>
                         </div>
                     </form>
@@ -83,42 +171,179 @@
 </div>
 {% endblock %}
 
-{% block extra_js %}
+{% block scripts %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const form = document.getElementById('stamp-image-form');
     const fileInput = document.querySelector('input[type="file"]');
+    const previewContainer = document.getElementById('imagePreviewContainer');
+    const previewImage = document.getElementById('previewImage');
+    const markingOverlay = document.getElementById('markingOverlay');
+    const imageContainer = document.getElementById('imageContainer');
     
-    // Förhandsvisning av bild
-    fileInput.addEventListener('change', function(e) {
-        const file = e.target.files[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                // Ta bort tidigare förhandsvisning
-                const existingPreview = document.querySelector('.image-preview');
-                if (existingPreview) {
-                    existingPreview.remove();
-                }
+    // Koordinatfält
+    const xCoordInput = document.getElementById('xCoordinate');
+    const yCoordInput = document.getElementById('yCoordinate');
+    const widthInput = document.getElementById('width');
+    const heightInput = document.getElementById('height');
+    
+    let isDrawing = false;
+    let startX, startY;
+    let currentX, currentY;
+    
+    // Kontrollera om vi redigerar en befintlig bild
+    const isEditing = document.getElementById('stamp-image-form').dataset.editing === 'true';
+    const existingImageUrl = document.getElementById('stamp-image-form').dataset.existingImageUrl || '';
+    const existingXCoord = document.getElementById('stamp-image-form').dataset.existingXCoord ? parseInt(document.getElementById('stamp-image-form').dataset.existingXCoord) : null;
+    const existingYCoord = document.getElementById('stamp-image-form').dataset.existingYCoord ? parseInt(document.getElementById('stamp-image-form').dataset.existingYCoord) : null;
+    const existingWidth = document.getElementById('stamp-image-form').dataset.existingWidth ? parseInt(document.getElementById('stamp-image-form').dataset.existingWidth) : null;
+    const existingHeight = document.getElementById('stamp-image-form').dataset.existingHeight ? parseInt(document.getElementById('stamp-image-form').dataset.existingHeight) : null;
+    
+    // Om vi redigerar en befintlig bild, visa den och dess koordinater
+    if (isEditing && existingImageUrl) {
+        previewImage.src = existingImageUrl;
+        previewContainer.style.display = 'block';
+        
+        // Vänta på att bilden laddas innan vi sätter koordinaterna
+        previewImage.onload = function() {
+            // Sätt befintliga koordinater om de finns
+            if (existingXCoord !== null && existingYCoord !== null && existingWidth !== null && existingHeight !== null) {
+                xCoordInput.value = existingXCoord;
+                yCoordInput.value = existingYCoord;
+                widthInput.value = existingWidth;
+                heightInput.value = existingHeight;
                 
-                // Skapa ny förhandsvisning
-                const preview = document.createElement('div');
-                preview.className = 'image-preview mt-3';
-                preview.innerHTML = `
-                    <div class="card">
-                        <div class="card-header">
-                            <h6 class="mb-0">Förhandsvisning</h6>
-                        </div>
-                        <div class="card-body text-center">
-                            <img src="${e.target.result}" class="img-fluid" style="max-height: 300px;" alt="Förhandsvisning">
-                        </div>
-                    </div>
-                `;
-                
-                fileInput.parentNode.appendChild(preview);
-            };
-            reader.readAsDataURL(file);
+                // Vänta lite extra för att säkerställa att bilden är helt laddad
+                setTimeout(function() {
+                    // Beräkna skalning för att visa markeringen korrekt
+                    const scaleX = previewImage.offsetWidth / previewImage.naturalWidth;
+                    const scaleY = previewImage.offsetHeight / previewImage.naturalHeight;
+                    
+                    // Skala koordinaterna för visning
+                    const displayX = Math.round(existingXCoord * scaleX);
+                    const displayY = Math.round(existingYCoord * scaleY);
+                    const displayWidth = Math.round(existingWidth * scaleX);
+                    const displayHeight = Math.round(existingHeight * scaleY);
+                    
+                    // Visa befintlig markering med korrekt skalning
+                    markingOverlay.style.display = 'block';
+                    markingOverlay.style.left = displayX + 'px';
+                    markingOverlay.style.top = displayY + 'px';
+                    markingOverlay.style.width = displayWidth + 'px';
+                    markingOverlay.style.height = displayHeight + 'px';
+                }, 100);
+            }
+        };
+    }
+    
+    // Förhandsvisning av bild - endast för StampImage (när fileInput finns)
+    if (fileInput) {
+        fileInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    previewImage.src = e.target.result;
+                    previewContainer.style.display = 'block';
+                    
+                    // Återställ markering och koordinater när ny bild laddas
+                    markingOverlay.style.display = 'none';
+                    xCoordInput.value = '';
+                    yCoordInput.value = '';
+                    widthInput.value = '';
+                    heightInput.value = '';
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+    }
+    
+    // Markering av stämpelområde
+    imageContainer.addEventListener('mousedown', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        const rect = imageContainer.getBoundingClientRect();
+        startX = e.clientX - rect.left;
+        startY = e.clientY - rect.top;
+        
+        isDrawing = true;
+        markingOverlay.style.display = 'block';
+        markingOverlay.style.left = startX + 'px';
+        markingOverlay.style.top = startY + 'px';
+        markingOverlay.style.width = '0px';
+        markingOverlay.style.height = '0px';
+    });
+    
+    imageContainer.addEventListener('mousemove', function(e) {
+        if (!isDrawing) return;
+        
+        e.preventDefault();
+        e.stopPropagation();
+        
+        const rect = imageContainer.getBoundingClientRect();
+        currentX = e.clientX - rect.left;
+        currentY = e.clientY - rect.top;
+        
+        const left = Math.min(startX, currentX);
+        const top = Math.min(startY, currentY);
+        const width = Math.abs(currentX - startX);
+        const height = Math.abs(currentY - startY);
+        
+        markingOverlay.style.left = left + 'px';
+        markingOverlay.style.top = top + 'px';
+        markingOverlay.style.width = width + 'px';
+        markingOverlay.style.height = height + 'px';
+    });
+    
+    imageContainer.addEventListener('mouseup', function(e) {
+        if (!isDrawing) return;
+        
+        e.preventDefault();
+        e.stopPropagation();
+        
+        isDrawing = false;
+        
+        // Beräkna koordinater relativt till bilden
+        const imageRect = previewImage.getBoundingClientRect();
+        const containerRect = imageContainer.getBoundingClientRect();
+        
+        const scaleX = previewImage.naturalWidth / previewImage.offsetWidth;
+        const scaleY = previewImage.naturalHeight / previewImage.offsetHeight;
+        
+        const left = Math.min(startX, currentX);
+        const top = Math.min(startY, currentY);
+        const width = Math.abs(currentX - startX);
+        const height = Math.abs(currentY - startY);
+        
+        // Konvertera till bildkoordinater
+        const x = Math.round(left * scaleX);
+        const y = Math.round(top * scaleY);
+        const w = Math.round(width * scaleX);
+        const h = Math.round(height * scaleY);
+        
+        // Uppdatera input-fält
+        xCoordInput.value = x;
+        yCoordInput.value = y;
+        widthInput.value = w;
+        heightInput.value = h;
+    });
+    
+    // Global mouseup handler för att avsluta markering
+    document.addEventListener('mouseup', function() {
+        if (isDrawing) {
+            isDrawing = false;
         }
+    });
+    
+    // Återställ markering-knapp
+    const resetMarkingBtn = document.getElementById('resetMarking');
+    resetMarkingBtn.addEventListener('click', function() {
+        markingOverlay.style.display = 'none';
+        xCoordInput.value = '';
+        yCoordInput.value = '';
+        widthInput.value = '';
+        heightInput.value = '';
     });
 });
 </script>

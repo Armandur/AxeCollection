@@ -1159,6 +1159,65 @@ class StampImage(models.Model):
         verbose_name="Ordning",
         help_text="Sorteringsordning för bilderna"
     )
+    
+    # Stämpelmarkering (koordinater)
+    x_coordinate = models.PositiveIntegerField(
+        null=True, 
+        blank=True,
+        verbose_name="X-koordinat",
+        help_text="X-koordinat för stämpelområdet (pixlar från vänster)"
+    )
+    y_coordinate = models.PositiveIntegerField(
+        null=True, 
+        blank=True,
+        verbose_name="Y-koordinat", 
+        help_text="Y-koordinat för stämpelområdet (pixlar från toppen)"
+    )
+    width = models.PositiveIntegerField(
+        null=True, 
+        blank=True,
+        verbose_name="Bredd",
+        help_text="Bredd på stämpelområdet (pixlar)"
+    )
+    height = models.PositiveIntegerField(
+        null=True, 
+        blank=True,
+        verbose_name="Höjd",
+        help_text="Höjd på stämpelområdet (pixlar)"
+    )
+    
+    # Inställningar för visning
+    is_primary = models.BooleanField(
+        default=False,
+        verbose_name="Huvudbild",
+        help_text="Markera som huvudbild för stämpeln"
+    )
+    
+    # Metadata för stämpelmarkering
+    position = models.CharField(
+        max_length=100, 
+        blank=True, 
+        null=True,
+        verbose_name="Position",
+        help_text="Var på bilden stämpeln finns"
+    )
+    comment = models.TextField(
+        blank=True, 
+        null=True,
+        verbose_name="Kommentar",
+        help_text="Anteckningar om stämpelområdet"
+    )
+    uncertainty_level = models.CharField(
+        max_length=20, 
+        choices=[
+            ("certain", "Säker"),
+            ("uncertain", "Osäker"),
+            ("tentative", "Preliminär"),
+        ], 
+        default="certain",
+        verbose_name="Osäkerhetsnivå"
+    )
+    
     cache_busting_timestamp = models.DateTimeField(
         auto_now=True,
         verbose_name="Cache-busting timestamp"
@@ -1219,6 +1278,23 @@ class StampImage(models.Model):
 
     def __str__(self):
         return f"{self.stamp.name} - {self.caption or 'Bild'}"
+    
+    @property
+    def has_coordinates(self):
+        """Returnerar True om bilden har markerade koordinater"""
+        return all([
+            self.x_coordinate is not None,
+            self.y_coordinate is not None,
+            self.width is not None,
+            self.height is not None
+        ])
+    
+    @property
+    def crop_area(self):
+        """Returnerar crop-området som en tuple (x, y, width, height)"""
+        if self.has_coordinates:
+            return (self.x_coordinate, self.y_coordinate, self.width, self.height)
+        return None
 
 
 class AxeStamp(models.Model):
@@ -1389,6 +1465,23 @@ class AxeImageStamp(models.Model):
     )
     
     # Metadata
+    position = models.CharField(
+        max_length=100, 
+        blank=True, 
+        null=True,
+        verbose_name="Position",
+        help_text="Var på yxan stämpeln finns"
+    )
+    uncertainty_level = models.CharField(
+        max_length=20, 
+        choices=[
+            ("certain", "Säker"),
+            ("uncertain", "Osäker"),
+            ("tentative", "Preliminär"),
+        ], 
+        default="certain",
+        verbose_name="Osäkerhetsnivå"
+    )
     comment = models.TextField(
         blank=True, 
         null=True,
@@ -1402,7 +1495,6 @@ class AxeImageStamp(models.Model):
         ordering = ["-is_primary", "-created_at"]
         verbose_name = "Yxbildstämpel"
         verbose_name_plural = "Yxbildstämplar"
-        unique_together = ["axe_image", "stamp"]
     
     def __str__(self):
         return f"{self.stamp.name} på {self.axe_image.axe.display_id}"

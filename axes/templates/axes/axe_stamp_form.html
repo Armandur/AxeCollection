@@ -57,7 +57,7 @@
                                         <select name="stamp" id="stamp" class="form-select" required>
                                             <option value="">-- Välj stämpel --</option>
                                             {% for stamp in available_stamps %}
-                                                <option value="{{ stamp.id }}">
+                                                <option value="{{ stamp.id }}" {% if stamp_mark and stamp_mark.stamp.id == stamp.id %}selected{% endif %}>
                                                     {{ stamp.name }}
                                                     {% if stamp.manufacturer %}
                                                         ({{ stamp.manufacturer.name }})
@@ -71,16 +71,17 @@
                                     <div class="mb-3">
                                         <label for="position" class="form-label">Position på yxan</label>
                                         <input type="text" name="position" id="position" class="form-control" 
-                                               placeholder="Var på yxan stämpeln finns (t.ex. 'på bladet', 'vid nacken')">
+                                               placeholder="Var på yxan stämpeln finns (t.ex. 'på bladet', 'vid nacken')"
+                                               value="{% if stamp_mark %}{{ stamp_mark.position }}{% endif %}">
                                         <div class="form-text">Var på yxan stämpeln finns</div>
                                     </div>
 
                                     <div class="mb-3">
                                         <label for="uncertainty_level" class="form-label">Osäkerhet</label>
                                         <select name="uncertainty_level" id="uncertainty_level" class="form-select">
-                                            <option value="säker">Säker</option>
-                                            <option value="osäker">Osäker</option>
-                                            <option value="preliminär">Preliminär</option>
+                                            <option value="certain" {% if stamp_mark and stamp_mark.uncertainty_level == 'certain' %}selected{% endif %}>Säker</option>
+                                            <option value="uncertain" {% if stamp_mark and stamp_mark.uncertainty_level == 'uncertain' %}selected{% endif %}>Osäker</option>
+                                            <option value="tentative" {% if stamp_mark and stamp_mark.uncertainty_level == 'tentative' %}selected{% endif %}>Preliminär</option>
                                         </select>
                                         <div class="form-text">
                                             <strong>Säker:</strong> Stämpeln är tydligt identifierad<br>
@@ -92,19 +93,21 @@
                                     <div class="mb-3">
                                         <label for="comment" class="form-label">Kommentar</label>
                                         <textarea name="comment" id="comment" class="form-control" rows="3" 
-                                                  placeholder="Lägg till kommentarer om stämpeln (kvalitet, synlighet, etc.)"></textarea>
+                                                  placeholder="Lägg till kommentarer om stämpeln (kvalitet, synlighet, etc.)">{% if stamp_mark %}{{ stamp_mark.comment }}{% endif %}</textarea>
                                         <div class="form-text">Lägg till kommentarer om stämpeln</div>
                                     </div>
 
                                     <!-- Dolda fält för koordinater -->
-                                    <input type="hidden" name="x_coordinate" id="x_coordinate" value="">
-                                    <input type="hidden" name="y_coordinate" id="y_coordinate" value="">
-                                    <input type="hidden" name="width" id="width" value="">
-                                    <input type="hidden" name="height" id="height" value="">
+                                    <input type="hidden" name="x_coordinate" id="x_coordinate" value="{% if stamp_mark %}{{ stamp_mark.x_coordinate }}{% endif %}">
+                                    <input type="hidden" name="y_coordinate" id="y_coordinate" value="{% if stamp_mark %}{{ stamp_mark.y_coordinate }}{% endif %}">
+                                    <input type="hidden" name="width" id="width" value="{% if stamp_mark %}{{ stamp_mark.width }}{% endif %}">
+                                    <input type="hidden" name="height" id="height" value="{% if stamp_mark %}{{ stamp_mark.height }}{% endif %}">
 
                                     <div class="d-flex justify-content-between">
                                         <a href="{% url 'axe_detail' axe.id %}" class="btn btn-secondary">Avbryt</a>
-                                        <button type="submit" class="btn btn-primary">Spara stämpel</button>
+                                        <button type="submit" class="btn btn-primary">
+                                            {% if stamp_mark %}Uppdatera stämpel{% else %}Spara stämpel{% endif %}
+                                        </button>
                                     </div>
                                 </form>
                             </div>
@@ -187,6 +190,46 @@ document.addEventListener('DOMContentLoaded', function() {
     image.addEventListener('load', updateOverlaySize);
     window.addEventListener('resize', updateOverlaySize);
     updateOverlaySize();
+    
+    // Om vi redigerar en befintlig markering, visa den
+    {% if stamp_mark and stamp_mark.x_coordinate and stamp_mark.y_coordinate and stamp_mark.width and stamp_mark.height %}
+    function showExistingMarking() {
+        const x = {{ stamp_mark.x_coordinate }};
+        const y = {{ stamp_mark.y_coordinate }};
+        const width = {{ stamp_mark.width }};
+        const height = {{ stamp_mark.height }};
+        
+        // Vänta tills bilden är laddad och storleken är uppdaterad
+        if (image.complete && image.naturalWidth > 0) {
+            const rect = image.getBoundingClientRect();
+            const scaleX = rect.width / image.naturalWidth;
+            const scaleY = rect.height / image.naturalHeight;
+            
+            const displayX = x * scaleX;
+            const displayY = y * scaleY;
+            const displayWidth = width * scaleX;
+            const displayHeight = height * scaleY;
+            
+            marking.style.left = displayX + 'px';
+            marking.style.top = displayY + 'px';
+            marking.style.width = displayWidth + 'px';
+            marking.style.height = displayHeight + 'px';
+            marking.style.display = 'block';
+            
+            console.log('Existing marking displayed:', displayX, displayY, displayWidth, displayHeight);
+        } else {
+            // Om bilden inte är laddad än, vänta och försök igen
+            setTimeout(showExistingMarking, 100);
+        }
+    }
+    
+    // Visa befintlig markering när bilden laddas
+    image.addEventListener('load', showExistingMarking);
+    // Försök också direkt om bilden redan är laddad
+    if (image.complete) {
+        showExistingMarking();
+    }
+    {% endif %}
     
     // Hantera musinteraktion
     overlay.addEventListener('mousedown', function(e) {

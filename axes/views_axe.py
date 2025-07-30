@@ -10,6 +10,7 @@ from .models import (
     Contact,
     Platform,
     Manufacturer,
+    AxeImageStamp,
 )
 from .forms import AxeForm, MeasurementForm, TransactionForm
 from django.db.models import Sum, Count, Max
@@ -383,23 +384,43 @@ def axe_detail(request, pk):
             return redirect("axe_detail", pk=axe.pk)
     else:
         transaction_form = TransactionForm()
-    # Hämta stämplar för denna yxa
-    axe_stamps = axe.stamps.all().select_related('stamp__manufacturer').prefetch_related('stamp__transcriptions')
     
-    # För varje axe_stamp, hitta den specifika AxeImageStamp för denna yxa (om den finns)
-    for axe_stamp in axe_stamps:
-        # Hitta AxeImageStamp för denna yxa och denna stämpel
-        axe_image_stamp = None
-        for image_mark in axe_stamp.stamp.axe_image_marks.all():
-            if image_mark.axe_image.axe.id == axe.id:
-                axe_image_stamp = image_mark
-                break
-        axe_stamp.axe_specific_image_stamp = axe_image_stamp
+    # Hämta alla AxeImageStamp för denna yxa och skapa kort för varje
+    axe_image_stamps = (
+        AxeImageStamp.objects.filter(axe_image__axe=axe)
+        .select_related('stamp__manufacturer', 'axe_image')
+        .prefetch_related('stamp__transcriptions')
+        .order_by('-created_at')
+    )
+    
+    # För varje AxeImageStamp, hitta motsvarande AxeStamp för att få position, uncertainty_level, etc.
+    for axe_image_stamp in axe_image_stamps:
+        # Hitta motsvarande AxeStamp (ta första om flera finns)
+        try:
+            axe_stamp = axe.stamps.filter(stamp=axe_image_stamp.stamp).first()
+            if axe_stamp:
+                # Kopiera AxeStamp-data till AxeImageStamp-objektet
+                axe_image_stamp.axe_stamp_id = axe_stamp.id
+                axe_image_stamp.position = axe_stamp.position
+                axe_image_stamp.uncertainty_level = axe_stamp.uncertainty_level
+                axe_image_stamp.axe_stamp_comment = axe_stamp.comment
+            else:
+                # Om ingen AxeStamp finns, sätt standardvärden
+                axe_image_stamp.axe_stamp_id = None
+                axe_image_stamp.position = ""
+                axe_image_stamp.uncertainty_level = "certain"
+                axe_image_stamp.axe_stamp_comment = ""
+        except Exception:
+            # Fallback om något går fel
+            axe_image_stamp.axe_stamp_id = None
+            axe_image_stamp.position = ""
+            axe_image_stamp.uncertainty_level = "certain"
+            axe_image_stamp.axe_stamp_comment = ""
     
     context = {
         "axe": axe,
         "transactions": transactions,
-        "axe_stamps": axe_stamps,
+        "axe_stamps": axe_image_stamps,  # Använd axe_image_stamps istället för axe_stamps
         "total_cost": total_cost,
         "total_shipping_cost": total_shipping_cost,
         "total_revenue": total_revenue,

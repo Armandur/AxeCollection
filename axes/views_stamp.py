@@ -4,6 +4,7 @@ from django.http import JsonResponse
 from django.db.models import Q, Count, Prefetch
 from django.core.paginator import Paginator
 from django.contrib import messages
+from django.core.exceptions import MultipleObjectsReturned
 from .models import (
     Stamp, 
     StampTranscription, 
@@ -17,7 +18,7 @@ from .models import (
     Manufacturer,
     AxeImage
 )
-from .forms import StampForm, StampTranscriptionForm, AxeStampForm
+from .forms import StampForm, StampTranscriptionForm, AxeStampForm, StampImageForm, AxeImageStampForm
 import json
 
 
@@ -35,7 +36,7 @@ def stamp_list(request):
     # Basqueryset
     stamps = Stamp.objects.select_related('manufacturer').prefetch_related(
         'transcriptions', 
-        Prefetch('images', queryset=StampImage.objects.order_by('order', '-uploaded_at')),
+        Prefetch('images', queryset=StampImage.objects.order_by('-is_primary', 'order', '-uploaded_at')),
         Prefetch('axe_image_marks', queryset=AxeImageStamp.objects.select_related('axe_image').order_by('-is_primary', '-created_at'))
     )
     
@@ -75,6 +76,29 @@ def stamp_list(request):
     paginator = Paginator(stamps, 25)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
+    
+    # Förbehandla data för att hitta primära bilder
+    for stamp in page_obj:
+        # Försök hitta primär StampImage först
+        stamp_images = list(stamp.images.all())
+        primary_stamp_image = next((img for img in stamp_images if img.is_primary), None)
+        if primary_stamp_image:
+            stamp.primary_image = primary_stamp_image
+            stamp.primary_image_type = 'StampImage'
+        elif stamp_images:
+            # Annars ta första StampImage
+            stamp.primary_image = stamp_images[0]
+            stamp.primary_image_type = 'StampImage'
+        else:
+            # Annars ta första AxeImageStamp
+            axe_image_marks = list(stamp.axe_image_marks.all())
+            if axe_image_marks:
+                stamp.primary_image = axe_image_marks[0]
+                stamp.primary_image_type = 'AxeImageStamp'
+            else:
+                # Om ingen bild finns alls, sätt till None
+                stamp.primary_image = None
+                stamp.primary_image_type = None
     
     # Context för filter
     manufacturers = Manufacturer.objects.all().order_by('name')
@@ -301,6 +325,20 @@ def stamp_image_upload(request, stamp_id):
         if form.is_valid():
             stamp_image = form.save(commit=False)
             stamp_image.stamp = stamp
+            
+            # Hantera koordinater från formuläret
+            x_coord = request.POST.get('x_coordinate')
+            y_coord = request.POST.get('y_coordinate')
+            width = request.POST.get('width')
+            height = request.POST.get('height')
+            
+            if x_coord and y_coord and width and height:
+                stamp_image.x_coordinate = int(x_coord)
+                stamp_image.y_coordinate = int(y_coord)
+                stamp_image.width = int(width)
+                stamp_image.height = int(height)
+            
+            # De nya fälten hanteras automatiskt av form.save() eftersom de finns i Meta.fields
             stamp_image.save()
             
             if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
@@ -353,6 +391,59 @@ def stamp_image_delete(request, stamp_id, image_id):
     }
     
     return render(request, 'axes/stamp_image_delete.html', context)
+
+
+@login_required
+def stamp_image_edit(request, stamp_id, image_id):
+    """Redigera stämpelbild"""
+    
+    stamp = get_object_or_404(Stamp, id=stamp_id)
+    stamp_image = get_object_or_404(StampImage, id=image_id, stamp=stamp)
+    
+    if request.method == 'POST':
+        form = StampImageForm(request.POST, request.FILES, instance=stamp_image)
+        if form.is_valid():
+            # Hantera koordinater från formuläret
+            x_coord = request.POST.get('x_coordinate')
+            y_coord = request.POST.get('y_coordinate')
+            width = request.POST.get('width')
+            height = request.POST.get('height')
+            
+            stamp_image = form.save(commit=False)
+            stamp_image.stamp = stamp
+            
+            # Uppdatera koordinater om de finns
+            if x_coord and y_coord and width and height:
+                stamp_image.x_coordinate = int(x_coord)
+                stamp_image.y_coordinate = int(y_coord)
+                stamp_image.width = int(width)
+                stamp_image.height = int(height)
+            
+            stamp_image.save()
+            
+            # Om det är en AJAX-request, returnera JSON
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({
+                    'success': True,
+                    'message': 'Bild uppdaterades framgångsrikt.',
+                    'image_id': stamp_image.id,
+                    'image_url': stamp_image.image_url_with_cache_busting,
+                    'webp_url': stamp_image.webp_url,
+                })
+            
+            messages.success(request, 'Bild uppdaterades framgångsrikt.')
+            return redirect('stamp_detail', stamp_id=stamp.id)
+    else:
+        form = StampImageForm(instance=stamp_image)
+    
+    context = {
+        'stamp': stamp,
+        'stamp_image': stamp_image,
+        'form': form,
+        'title': f'Redigera bild för {stamp.name}',
+    }
+    
+    return render(request, 'axes/stamp_image_form.html', context)
 
 
 @login_required
@@ -439,17 +530,17 @@ def add_axe_stamp(request, axe_id):
 
 
 @login_required
-def remove_axe_stamp(request, axe_id, stamp_id):
+def remove_axe_stamp(request, axe_id, axe_stamp_id):
     """Ta bort stämpel från yxa"""
     
-    axe_stamp = get_object_or_404(AxeStamp, axe_id=axe_id, stamp_id=stamp_id)
+    axe_stamp = get_object_or_404(AxeStamp, id=axe_stamp_id, axe_id=axe_id)
     stamp_name = axe_stamp.stamp.name
     
     if request.method == 'POST':
         # Ta bort alla stämpelmarkeringar för denna stämpel på denna yxa
         AxeImageStamp.objects.filter(
             axe_image__axe_id=axe_id,
-            stamp_id=stamp_id
+            stamp_id=axe_stamp.stamp_id
         ).delete()
         
         # Ta bort själva stämpelkopplingen
@@ -621,70 +712,92 @@ def unmark_axe_image_stamp(request, axe_id, image_id):
 
 
 @login_required
-def edit_axe_image_stamp(request, axe_id, image_id):
-    """Redigera stämpelmarkering på AxeImage"""
+def edit_axe_image_stamp(request, axe_id, mark_id):
+    """Redigera stämpelmarkering på AxeImage med samma funktionalitet som axe_stamp_form"""
     
-    axe_image = get_object_or_404(AxeImage, id=image_id, axe_id=axe_id)
-    stamp_mark = get_object_or_404(AxeImageStamp, axe_image=axe_image)
+    stamp_mark = get_object_or_404(AxeImageStamp, id=mark_id, axe_image__axe_id=axe_id)
+    axe_image = stamp_mark.axe_image
+    axe = axe_image.axe
     
     if request.method == 'POST':
-        action = request.POST.get('action')
+        # Hantera olika typer av POST-requests
+        action = request.POST.get('action', '')
         
-        if action == 'delete':
-            # Ta bort stämpelmarkeringen
-            stamp_name = stamp_mark.stamp.name
-            stamp_mark.delete()
-            
-            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-                return JsonResponse({
-                    'success': True,
-                    'message': f'Stämpelmarkering borttagen: {stamp_name}'
-                })
-            
-            messages.success(request, f'Stämpelmarkering borttagen: {stamp_name}')
-            return redirect('axe_detail', pk=axe_id)
-        
-        elif action == 'update':
-            # Uppdatera stämpelmarkeringen
+        if action == 'save_stamp':
+            # Användaren har markerat en bild och vill spara stämpeln
             stamp_id = request.POST.get('stamp')
             x_coord = request.POST.get('x_coordinate')
             y_coord = request.POST.get('y_coordinate')
             width = request.POST.get('width')
             height = request.POST.get('height')
+            position = request.POST.get('position', '')
+            uncertainty_level = request.POST.get('uncertainty_level', '')
             comment = request.POST.get('comment', '')
             
             if stamp_id:
                 stamp = get_object_or_404(Stamp, id=stamp_id)
                 
-                # Uppdatera befintlig markering
+                # Uppdatera AxeImageStamp
                 stamp_mark.stamp = stamp
-                stamp_mark.x_coordinate = x_coord if x_coord else None
-                stamp_mark.y_coordinate = y_coord if y_coord else None
-                stamp_mark.width = width if width else None
-                stamp_mark.height = height if height else None
+                stamp_mark.x_coordinate = int(x_coord) if x_coord else None
+                stamp_mark.y_coordinate = int(y_coord) if y_coord else None
+                stamp_mark.width = int(width) if width else None
+                stamp_mark.height = int(height) if height else None
+                stamp_mark.position = position
+                stamp_mark.uncertainty_level = uncertainty_level
                 stamp_mark.comment = comment
                 stamp_mark.save()
                 
+                messages.success(request, f'Stämpelmarkering uppdaterades framgångsrikt.')
+                return redirect('axe_detail', pk=axe_id)
+            else:
+                messages.error(request, 'Stämpel måste väljas.')
+        else:
+            # Hantera vanlig form submission
+            form = AxeImageStampForm(request.POST, instance=stamp_mark)
+            if form.is_valid():
+                # Hantera koordinater från formuläret
+                x_coord = request.POST.get('x_coordinate')
+                y_coord = request.POST.get('y_coordinate')
+                width = request.POST.get('width')
+                height = request.POST.get('height')
+                
+                stamp_mark = form.save(commit=False)
+                
+                # Uppdatera koordinater om de finns
+                if x_coord and y_coord and width and height:
+                    stamp_mark.x_coordinate = int(x_coord)
+                    stamp_mark.y_coordinate = int(y_coord)
+                    stamp_mark.width = int(width)
+                    stamp_mark.height = int(height)
+                
+                stamp_mark.save()
+                
+                # Om det är en AJAX-request, returnera JSON
                 if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
                     return JsonResponse({
                         'success': True,
-                        'message': f'Stämpelmarkering uppdaterad: {stamp.name}'
+                        'message': 'Stämpelmarkering uppdaterades framgångsrikt.',
+                        'mark_id': stamp_mark.id,
                     })
                 
-                messages.success(request, f'Stämpelmarkering uppdaterad: {stamp.name}')
+                messages.success(request, 'Stämpelmarkering uppdaterades framgångsrikt.')
                 return redirect('axe_detail', pk=axe_id)
+    else:
+        form = AxeImageStampForm(instance=stamp_mark)
     
-    # Hämta alla tillgängliga stämplar för dropdown
-    stamps = Stamp.objects.all().order_by('name')
-    
+    # Skapa en kontext som fungerar med axe_stamp_form.html template
+    # Anpassad för redigering av AxeImageStamp
     context = {
-        'axe_image': axe_image,
-        'axe': axe_image.axe,
+        'axe': axe,
+        'selected_image': axe_image,  # Använd selected_image för template-kompatibilitet
+        'available_stamps': Stamp.objects.select_related('manufacturer').order_by('manufacturer__name', 'name'),
+        'title': f'Redigera stämpelmarkering - {axe.display_id}',
         'stamp_mark': stamp_mark,
-        'stamps': stamps,
+        'form': form,  # Lägg till form för att hantera befintliga värden
     }
     
-    return render(request, 'axes/edit_axe_image_stamp.html', context)
+    return render(request, 'axes/axe_stamp_form.html', context)
 
 
 @login_required
@@ -714,21 +827,43 @@ def set_primary_stamp_image(request, stamp_id, mark_id):
     mark = get_object_or_404(AxeImageStamp, id=mark_id, stamp=stamp)
     
     if request.method == 'POST':
-        # Ta bort tidigare huvudbild
-        AxeImageStamp.objects.filter(stamp=stamp, is_primary=True).update(is_primary=False)
-        
-        # Sätt ny huvudbild
-        mark.is_primary = True
-        mark.save()
-        
-        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-            return JsonResponse({
-                'success': True,
-                'message': f'Huvudbild satt för stämpel: {stamp.name}'
-            })
-        
-        messages.success(request, f'Huvudbild satt för stämpel: {stamp.name}')
-        return redirect('stamp_detail', stamp_id=stamp_id)
+        # Hantera JSON-data från AJAX-anrop
+        if request.headers.get('Content-Type') == 'application/json' or request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            try:
+                import json
+                data = json.loads(request.body)
+                is_primary = data.get('is_primary', True)
+                
+                if is_primary:
+                    # Ta bort tidigare huvudbild
+                    AxeImageStamp.objects.filter(stamp=stamp, is_primary=True).update(is_primary=False)
+                    # Sätt ny huvudbild
+                    mark.is_primary = True
+                    mark.save()
+                else:
+                    # Ta bort huvudbildsmarkering
+                    mark.is_primary = False
+                    mark.save()
+                
+                return JsonResponse({
+                    'success': True,
+                    'message': f'Huvudbild uppdaterad för stämpel: {stamp.name}'
+                })
+            except json.JSONDecodeError:
+                return JsonResponse({
+                    'success': False,
+                    'error': 'Ogiltig JSON-data'
+                }, status=400)
+        else:
+            # Hantera vanligt POST-anrop (icke-AJAX)
+            # Ta bort tidigare huvudbild
+            AxeImageStamp.objects.filter(stamp=stamp, is_primary=True).update(is_primary=False)
+            # Sätt ny huvudbild
+            mark.is_primary = True
+            mark.save()
+            
+            messages.success(request, f'Huvudbild satt för stämpel: {stamp.name}')
+            return redirect('stamp_detail', stamp_id=stamp_id)
     
     return redirect('stamp_detail', stamp_id=stamp_id)
 
@@ -873,3 +1008,61 @@ def edit_axe_stamp(request, axe_id, axe_stamp_id):
         context['available_stamps'] = Stamp.objects.all().order_by('name')
     
     return render(request, 'axes/axe_stamp_edit.html', context) 
+
+
+@login_required
+def edit_axe_image_stamp_via_axe_stamp(request, axe_id, image_id):
+    """Redigera stämpelmarkering via AxeStamp-formuläret"""
+    
+    axe_image = get_object_or_404(AxeImage, id=image_id, axe_id=axe_id)
+    stamp_mark = get_object_or_404(AxeImageStamp, axe_image=axe_image)
+    
+    # Hitta motsvarande AxeStamp - använd den första som hittas
+    try:
+        axe_stamp = AxeStamp.objects.filter(axe=axe_id, stamp=stamp_mark.stamp).first()
+        if not axe_stamp:
+            messages.error(request, f'Kunde inte hitta stämpelkoppling för {stamp_mark.stamp.name} på yxan.')
+            return redirect('axe_detail', pk=axe_id)
+    except MultipleObjectsReturned:
+        # Om det finns flera, använd den första
+        axe_stamp = AxeStamp.objects.filter(axe=axe_id, stamp=stamp_mark.stamp).first()
+    
+    # Omdirigera till edit_axe_stamp med rätt parametrar
+    return redirect('edit_axe_stamp', axe_id=axe_id, axe_stamp_id=axe_stamp.id) 
+
+
+@login_required
+def remove_axe_image_stamp(request, axe_id, mark_id):
+    """Ta bort specifik stämpelmarkering från AxeImageStamp"""
+    
+    stamp_mark = get_object_or_404(AxeImageStamp, id=mark_id, axe_image__axe_id=axe_id)
+    
+    if request.method == 'POST':
+        stamp_name = stamp_mark.stamp.name
+        stamp_mark.delete()
+        
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({
+                'success': True,
+                'message': f'Stämpelmarkering borttagen: {stamp_name}'
+            })
+        
+        messages.success(request, f'Stämpelmarkering borttagen: {stamp_name}')
+        return redirect('axe_detail', pk=axe_id)
+    
+    # För AJAX GET-anrop, returnera modal-innehåll
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        context = {
+            'axe_image': stamp_mark.axe_image,
+            'axe': stamp_mark.axe_image.axe,
+            'stamp_mark': stamp_mark,
+        }
+        return render(request, 'axes/unmark_axe_image_stamp_modal.html', context)
+    
+    context = {
+        'axe_image': stamp_mark.axe_image,
+        'axe': stamp_mark.axe_image.axe,
+        'stamp_mark': stamp_mark,
+    }
+    
+    return render(request, 'axes/unmark_axe_image_stamp.html', context) 

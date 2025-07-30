@@ -35,7 +35,7 @@
     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
         <i class="fas fa-times"></i> Avbryt
     </button>
-    <form method="post" class="d-inline" action="{% url 'remove_axe_stamp' axe.id stamp.id %}">
+    <form method="post" class="d-inline" action="{% url 'remove_axe_stamp' axe.id axe_stamp.id %}">
         {% csrf_token %}
         <button type="submit" class="btn btn-danger">
             <i class="fas fa-trash"></i> Ta bort stämpel
