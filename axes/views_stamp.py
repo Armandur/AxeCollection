@@ -10,15 +10,14 @@ from .models import (
     StampTranscription, 
     StampTag, 
     StampImage, 
-    AxeStamp, 
-    AxeImageStamp,
+    AxeStamp,
     StampVariant, 
     StampUncertaintyGroup,
     Axe,
     Manufacturer,
     AxeImage
 )
-from .forms import StampForm, StampTranscriptionForm, AxeStampForm, StampImageForm, AxeImageStampForm
+from .forms import StampForm, StampTranscriptionForm, AxeStampForm, StampImageForm
 import json
 
 
@@ -33,11 +32,11 @@ def stamp_list(request):
     status_filter = request.GET.get('status', '')
     source_filter = request.GET.get('source', '')
     
-    # Basqueryset
+    # Basqueryset med optimerad prestanda
     stamps = Stamp.objects.select_related('manufacturer').prefetch_related(
         'transcriptions', 
         Prefetch('images', queryset=StampImage.objects.order_by('-is_primary', 'order', '-uploaded_at')),
-        Prefetch('axe_image_marks', queryset=AxeImageStamp.objects.select_related('axe_image').order_by('-is_primary', '-created_at'))
+        Prefetch('axes', queryset=Axe.objects.select_related('manufacturer'))
     )
     
     # Applicera filter
@@ -71,34 +70,31 @@ def stamp_list(request):
         stamps = stamps.order_by('-created_at')
     elif sort_by == 'axes_count':
         stamps = stamps.annotate(axes_count=Count('axes')).order_by('-axes_count')
+    elif sort_by == 'images_count':
+        stamps = stamps.annotate(images_count=Count('images')).order_by('-images_count')
     
     # Paginering
     paginator = Paginator(stamps, 25)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
     
-    # Förbehandla data för att hitta primära bilder
+    # Förbehandla data för att hitta primära bilder och räkna objekt
     for stamp in page_obj:
-        # Försök hitta primär StampImage först
+        # Hitta primär StampImage
         stamp_images = list(stamp.images.all())
         primary_stamp_image = next((img for img in stamp_images if img.is_primary), None)
         if primary_stamp_image:
             stamp.primary_image = primary_stamp_image
-            stamp.primary_image_type = 'StampImage'
         elif stamp_images:
             # Annars ta första StampImage
             stamp.primary_image = stamp_images[0]
-            stamp.primary_image_type = 'StampImage'
         else:
-            # Annars ta första AxeImageStamp
-            axe_image_marks = list(stamp.axe_image_marks.all())
-            if axe_image_marks:
-                stamp.primary_image = axe_image_marks[0]
-                stamp.primary_image_type = 'AxeImageStamp'
-            else:
-                # Om ingen bild finns alls, sätt till None
-                stamp.primary_image = None
-                stamp.primary_image_type = None
+            # Om ingen bild finns alls, sätt till None
+            stamp.primary_image = None
+        
+        # Beräkna antal bilder och yxor
+        stamp.total_images = len(stamp_images)
+        stamp.total_axes = stamp.axes.count()
     
     # Context för filter
     manufacturers = Manufacturer.objects.all().order_by('name')
@@ -110,14 +106,12 @@ def stamp_list(request):
         'stamp_types': Stamp.STAMP_TYPE_CHOICES,
         'status_choices': Stamp.STATUS_CHOICES,
         'source_choices': Stamp.SOURCE_CATEGORY_CHOICES,
-        'filters': {
-            'search': search_query,
-            'manufacturer': manufacturer_filter,
-            'stamp_type': stamp_type_filter,
-            'status': status_filter,
-            'source': source_filter,
-            'sort': sort_by,
-        }
+        'search_query': search_query,
+        'manufacturer_filter': manufacturer_filter,
+        'stamp_type_filter': stamp_type_filter,
+        'status_filter': status_filter,
+        'source_filter': source_filter,
+        'sort_by': sort_by,
     }
     
     return render(request, 'axes/stamp_list.html', context)
@@ -138,15 +132,15 @@ def stamp_detail(request, stamp_id):
         Q(uncertainty_groups__stamps=stamp)
     ).distinct()
     
-    # Hämta alla AxeImageStamp-kopplingar för denna stämpel
-    axe_image_marks = AxeImageStamp.objects.filter(
+    # Hämta alla StampImage-kopplingar för denna stämpel
+    stamp_images = StampImage.objects.filter(
         stamp=stamp
-    ).select_related('axe_image__axe').order_by('-is_primary', '-created_at')
+    ).select_related('axe_image__axe').order_by('-is_primary', 'order', '-uploaded_at')
     
     context = {
         'stamp': stamp,
         'related_stamps': related_stamps,
-        'axe_image_marks': axe_image_marks,
+        'stamp_images': stamp_images,
     }
     
     return render(request, 'axes/stamp_detail.html', context)
@@ -492,10 +486,11 @@ def add_axe_stamp(request, axe_id):
                 selected_image = get_object_or_404(AxeImage, id=selected_image_id, axe=axe)
                 stamp = get_object_or_404(Stamp, id=stamp_id)
                 
-                # Skapa AxeImageStamp
-                axe_image_stamp = AxeImageStamp.objects.create(
+                # Skapa StampImage med image_type='axe_mark'
+                stamp_image = StampImage.objects.create(
                     axe_image=selected_image,
                     stamp=stamp,
+                    image_type='axe_mark',
                     x_coordinate=x_coord if x_coord else None,
                     y_coordinate=y_coord if y_coord else None,
                     width=width if width else None,
@@ -538,9 +533,10 @@ def remove_axe_stamp(request, axe_id, axe_stamp_id):
     
     if request.method == 'POST':
         # Ta bort alla stämpelmarkeringar för denna stämpel på denna yxa
-        AxeImageStamp.objects.filter(
+        StampImage.objects.filter(
             axe_image__axe_id=axe_id,
-            stamp_id=axe_stamp.stamp_id
+            stamp_id=axe_stamp.stamp_id,
+            image_type='axe_mark'
         ).delete()
         
         # Ta bort själva stämpelkopplingen
@@ -628,10 +624,11 @@ def mark_axe_image_as_stamp(request, axe_id, image_id):
         if stamp_id:
             stamp = get_object_or_404(Stamp, id=stamp_id)
             
-            # Skapa eller uppdatera AxeImageStamp
-            axe_image_stamp, created = AxeImageStamp.objects.get_or_create(
+            # Skapa eller uppdatera StampImage med image_type='axe_mark'
+            stamp_image, created = StampImage.objects.get_or_create(
                 axe_image=axe_image,
                 stamp=stamp,
+                image_type='axe_mark',
                 defaults={
                     'x_coordinate': x_coord if x_coord else None,
                     'y_coordinate': y_coord if y_coord else None,
@@ -645,12 +642,12 @@ def mark_axe_image_as_stamp(request, axe_id, image_id):
             
             if not created:
                 # Uppdatera befintlig
-                axe_image_stamp.x_coordinate = x_coord if x_coord else None
-                axe_image_stamp.y_coordinate = y_coord if y_coord else None
-                axe_image_stamp.width = width if width else None
-                axe_image_stamp.height = height if height else None
-                axe_image_stamp.comment = comment
-                axe_image_stamp.save()
+                stamp_image.x_coordinate = x_coord if x_coord else None
+                stamp_image.y_coordinate = y_coord if y_coord else None
+                stamp_image.width = width if width else None
+                stamp_image.height = height if height else None
+                stamp_image.comment = comment
+                stamp_image.save()
             
             messages.success(request, f'Bild markerad som stämpel: {stamp.name}')
             return redirect('axe_detail', pk=axe_id)
@@ -661,7 +658,7 @@ def mark_axe_image_as_stamp(request, axe_id, image_id):
     )
     
     # Befintlig markering
-    existing_mark = AxeImageStamp.objects.filter(axe_image=axe_image).first()
+    existing_mark = StampImage.objects.filter(axe_image=axe_image, image_type='axe_mark').first()
     
     context = {
         'axe_image': axe_image,
@@ -678,7 +675,7 @@ def unmark_axe_image_stamp(request, axe_id, image_id):
     """Ta bort markering av stämpel från AxeImage"""
     
     axe_image = get_object_or_404(AxeImage, id=image_id, axe_id=axe_id)
-    stamp_mark = get_object_or_404(AxeImageStamp, axe_image=axe_image)
+    stamp_mark = get_object_or_404(StampImage, axe_image=axe_image, image_type='axe_mark')
     
     if request.method == 'POST':
         stamp_name = stamp_mark.stamp.name
@@ -715,7 +712,7 @@ def unmark_axe_image_stamp(request, axe_id, image_id):
 def edit_axe_image_stamp(request, axe_id, mark_id):
     """Redigera stämpelmarkering på AxeImage med samma funktionalitet som axe_stamp_form"""
     
-    stamp_mark = get_object_or_404(AxeImageStamp, id=mark_id, axe_image__axe_id=axe_id)
+    stamp_mark = get_object_or_404(StampImage, id=mark_id, axe_image__axe_id=axe_id, image_type='axe_mark')
     axe_image = stamp_mark.axe_image
     axe = axe_image.axe
     
@@ -754,7 +751,7 @@ def edit_axe_image_stamp(request, axe_id, mark_id):
                 messages.error(request, 'Stämpel måste väljas.')
         else:
             # Hantera vanlig form submission
-            form = AxeImageStampForm(request.POST, instance=stamp_mark)
+            form = StampImageForm(request.POST, instance=stamp_mark)
             if form.is_valid():
                 # Hantera koordinater från formuläret
                 x_coord = request.POST.get('x_coordinate')
@@ -784,7 +781,7 @@ def edit_axe_image_stamp(request, axe_id, mark_id):
                 messages.success(request, 'Stämpelmarkering uppdaterades framgångsrikt.')
                 return redirect('axe_detail', pk=axe_id)
     else:
-        form = AxeImageStampForm(instance=stamp_mark)
+        form = StampImageForm(instance=stamp_mark)
     
     # Skapa en kontext som fungerar med axe_stamp_form.html template
     # Anpassad för redigering av AxeImageStamp
@@ -806,8 +803,8 @@ def stamp_image_crop(request, stamp_id):
     
     stamp = get_object_or_404(Stamp.objects.select_related('manufacturer'))
     
-    # Hämta alla AxeImageStamp-kopplingar för denna stämpel
-    axe_image_marks = AxeImageStamp.objects.filter(
+    # Hämta alla StampImage-kopplingar för denna stämpel
+    stamp_images = StampImage.objects.filter(
         stamp=stamp
     ).select_related('axe_image__axe').order_by('-is_primary', '-created_at')
     
@@ -824,7 +821,7 @@ def set_primary_stamp_image(request, stamp_id, mark_id):
     """Sätt en AxeImageStamp som huvudbild för stämpeln"""
     
     stamp = get_object_or_404(Stamp, id=stamp_id)
-    mark = get_object_or_404(AxeImageStamp, id=mark_id, stamp=stamp)
+    mark = get_object_or_404(StampImage, id=mark_id, stamp=stamp)
     
     if request.method == 'POST':
         # Hantera JSON-data från AJAX-anrop
@@ -836,7 +833,7 @@ def set_primary_stamp_image(request, stamp_id, mark_id):
                 
                 if is_primary:
                     # Ta bort tidigare huvudbild
-                    AxeImageStamp.objects.filter(stamp=stamp, is_primary=True).update(is_primary=False)
+                    StampImage.objects.filter(stamp=stamp, is_primary=True).update(is_primary=False)
                     # Sätt ny huvudbild
                     mark.is_primary = True
                     mark.save()
@@ -857,7 +854,7 @@ def set_primary_stamp_image(request, stamp_id, mark_id):
         else:
             # Hantera vanligt POST-anrop (icke-AJAX)
             # Ta bort tidigare huvudbild
-            AxeImageStamp.objects.filter(stamp=stamp, is_primary=True).update(is_primary=False)
+            StampImage.objects.filter(stamp=stamp, is_primary=True).update(is_primary=False)
             # Sätt ny huvudbild
             mark.is_primary = True
             mark.save()
@@ -876,7 +873,7 @@ def update_axe_image_stamp_show_full(request, mark_id):
         return JsonResponse({'success': False, 'error': 'Endast POST-anrop tillåtet'})
     
     try:
-        mark = get_object_or_404(AxeImageStamp, id=mark_id)
+        mark = get_object_or_404(StampImage, id=mark_id)
         
         # Läs JSON-data från request body
         import json
@@ -908,10 +905,11 @@ def edit_axe_stamp(request, axe_id, axe_stamp_id):
     # Hämta befintliga bilder för yxan
     existing_images = axe.images.all().order_by('order')
     
-    # Hämta befintlig AxeImageStamp för denna stämpel
-    existing_axe_image_stamp = AxeImageStamp.objects.filter(
+    # Hämta befintlig StampImage för denna stämpel
+    existing_stamp_image = StampImage.objects.filter(
         stamp=axe_stamp.stamp,
-        axe_image__axe=axe
+        axe_image__axe=axe,
+        image_type='axe_mark'
     ).first()
     
     if request.method == 'POST':
@@ -924,10 +922,11 @@ def edit_axe_stamp(request, axe_id, axe_stamp_id):
                 selected_image = get_object_or_404(AxeImage, id=selected_image_id, axe=axe)
                 available_stamps = Stamp.objects.all().order_by('name')
                 
-                # Hämta befintlig AxeImageStamp för den valda bilden
-                selected_image_stamp = AxeImageStamp.objects.filter(
+                # Hämta befintlig StampImage för den valda bilden
+                selected_image_stamp = StampImage.objects.filter(
                     stamp=axe_stamp.stamp,
-                    axe_image=selected_image
+                    axe_image=selected_image,
+                    image_type='axe_mark'
                 ).first()
                 
                 context = {
@@ -935,7 +934,7 @@ def edit_axe_stamp(request, axe_id, axe_stamp_id):
                     'axe_stamp': axe_stamp,
                     'selected_image': selected_image,
                     'available_stamps': available_stamps,
-                    'existing_axe_image_stamp': selected_image_stamp,
+                    'existing_stamp_image': selected_image_stamp,
                     'title': f'Redigera stämpel - {axe.display_id}',
                 }
                 return render(request, 'axes/axe_stamp_edit.html', context)
@@ -952,22 +951,24 @@ def edit_axe_stamp(request, axe_id, axe_stamp_id):
                 if selected_image_id:
                     selected_image = get_object_or_404(AxeImage, id=selected_image_id, axe=axe)
                     
-                    # Ta bort befintlig AxeImageStamp för samma stämpel på samma bild
-                    AxeImageStamp.objects.filter(
+                    # Ta bort befintlig StampImage för samma stämpel på samma bild
+                    StampImage.objects.filter(
                         stamp=axe_stamp.stamp,
-                        axe_image=selected_image
+                        axe_image=selected_image,
+                        image_type='axe_mark'
                     ).delete()
                     
-                    # Skapa ny AxeImageStamp
+                    # Skapa ny StampImage
                     x_coord = request.POST.get('x_coordinate')
                     y_coord = request.POST.get('y_coordinate')
                     width = request.POST.get('width')
                     height = request.POST.get('height')
                     
                     if x_coord and y_coord and width and height:
-                        AxeImageStamp.objects.create(
+                        StampImage.objects.create(
                             axe_image=selected_image,
                             stamp=axe_stamp.stamp,
+                            image_type='axe_mark',
                             x_coordinate=int(x_coord),
                             y_coordinate=int(y_coord),
                             width=int(width),
@@ -975,10 +976,11 @@ def edit_axe_stamp(request, axe_id, axe_stamp_id):
                             comment=request.POST.get('image_comment', '')
                         )
                     else:
-                        # Om inga koordinater finns, ta bort alla AxeImageStamp för denna stämpel
-                        AxeImageStamp.objects.filter(
+                        # Om inga koordinater finns, ta bort alla StampImage för denna stämpel
+                        StampImage.objects.filter(
                             stamp=axe_stamp.stamp,
-                            axe_image__axe=axe
+                            axe_image__axe=axe,
+                            image_type='axe_mark'
                         ).delete()
                 
                 messages.success(request, f'Stämpel "{axe_stamp.stamp.name}" uppdaterades.')
@@ -997,14 +999,14 @@ def edit_axe_stamp(request, axe_id, axe_stamp_id):
         'axe': axe,
         'axe_stamp': axe_stamp,
         'existing_images': existing_images,
-        'existing_axe_image_stamp': existing_axe_image_stamp,
+        'existing_stamp_image': existing_stamp_image,
         'form': form,
         'title': f'Redigera stämpel - {axe.display_id}',
     }
     
-    # Om det finns en befintlig AxeImageStamp, förvalda den aktuella bilden
-    if existing_axe_image_stamp:
-        context['selected_image'] = existing_axe_image_stamp.axe_image
+    # Om det finns en befintlig StampImage, förvalda den aktuella bilden
+    if existing_stamp_image:
+        context['selected_image'] = existing_stamp_image.axe_image
         context['available_stamps'] = Stamp.objects.all().order_by('name')
     
     return render(request, 'axes/axe_stamp_edit.html', context) 
@@ -1015,7 +1017,7 @@ def edit_axe_image_stamp_via_axe_stamp(request, axe_id, image_id):
     """Redigera stämpelmarkering via AxeStamp-formuläret"""
     
     axe_image = get_object_or_404(AxeImage, id=image_id, axe_id=axe_id)
-    stamp_mark = get_object_or_404(AxeImageStamp, axe_image=axe_image)
+    stamp_mark = get_object_or_404(StampImage, axe_image=axe_image, image_type='axe_mark')
     
     # Hitta motsvarande AxeStamp - använd den första som hittas
     try:
@@ -1035,7 +1037,7 @@ def edit_axe_image_stamp_via_axe_stamp(request, axe_id, image_id):
 def remove_axe_image_stamp(request, axe_id, mark_id):
     """Ta bort specifik stämpelmarkering från AxeImageStamp"""
     
-    stamp_mark = get_object_or_404(AxeImageStamp, id=mark_id, axe_image__axe_id=axe_id)
+    stamp_mark = get_object_or_404(StampImage, id=mark_id, axe_image__axe_id=axe_id, image_type='axe_mark')
     
     if request.method == 'POST':
         stamp_name = stamp_mark.stamp.name

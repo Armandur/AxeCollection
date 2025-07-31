@@ -251,7 +251,7 @@ urlpatterns = [
     path("stamplar/<int:stamp_id>/bild/lagg-till/", views_stamp.stamp_image_upload, name="stamp_image_upload"),
     path("stamplar/<int:stamp_id>/bild/<int:image_id>/redigera/", views_stamp.stamp_image_edit, name="stamp_image_edit"),
     path("stamplar/<int:stamp_id>/bild/<int:image_id>/ta-bort/", views_stamp.stamp_image_delete, name="stamp_image_delete"),
-    # AxeImageStamp URL:er
+    # StampImage URL:er (konsoliderade från AxeImageStamp)
     path("yxor/<int:axe_id>/bild/<int:image_id>/markera-stampel/", views_stamp.mark_axe_image_as_stamp, name="mark_axe_image_as_stamp"),
     path("yxor/<int:axe_id>/bild/<int:image_id>/ta-bort-stampel-markering/", views_stamp.unmark_axe_image_stamp, name="unmark_axe_image_stamp"),
     path("yxor/<int:axe_id>/stampel-markering/<int:mark_id>/redigera/", views_stamp.edit_axe_image_stamp, name="edit_axe_image_stamp"),

@@ -18,7 +18,6 @@ from .models import (
     StampTag,
     StampImage,
     AxeStamp,
-    AxeImageStamp,
     StampVariant,
     StampUncertaintyGroup,
 )
@@ -256,21 +255,58 @@ class StampTagAdmin(admin.ModelAdmin):
 
 
 class StampImageAdmin(admin.ModelAdmin):
-    list_display = ("stamp", "caption", "image", "quality", "order", "uploaded_at")
-    list_filter = ("quality", "uploaded_at", "stamp__manufacturer")
-    search_fields = ("stamp__name", "stamp__manufacturer__name", "caption", "description")
-    ordering = ("order", "-uploaded_at",)
-    fieldsets = (
-        ("Bild", {
-            "fields": ("stamp", "image")
-        }),
-        ("Beskrivning", {
-            "fields": ("caption", "description")
-        }),
-        ("Metadata", {
-            "fields": ("quality", "order")
-        }),
+    list_display = (
+        'stamp', 'image_type', 'axe_image', 'caption', 
+        'is_primary', 'has_coordinates', 'show_full_image', 'uploaded_at'
     )
+    list_filter = (
+        'image_type', 'uploaded_at', 'stamp__manufacturer', 
+        'uncertainty_level', 'is_primary', 'show_full_image'
+    )
+    search_fields = (
+        'stamp__name', 'stamp__manufacturer__name', 
+        'caption', 'description', 'comment', 'external_source'
+    )
+    ordering = ('order', '-uploaded_at',)
+    fieldsets = (
+        ('Grundinformation', {
+            'fields': ('stamp', 'image_type', 'image', 'caption', 'description')
+        }),
+        ('Yxbildmarkering', {
+            'fields': ('axe_image', 'show_full_image'),
+            'classes': ('collapse',),
+            'description': 'Inställningar för markering av stämplar på yxbilder'
+        }),
+        ('Koordinater', {
+            'fields': ('x_coordinate', 'y_coordinate', 'width', 'height'),
+            'classes': ('collapse',),
+            'description': 'Procentuella koordinater för stämpelområdet'
+        }),
+        ('Metadata', {
+            'fields': ('position', 'comment', 'uncertainty_level', 'external_source')
+        }),
+        ('Inställningar', {
+            'fields': ('is_primary', 'order')
+        })
+    )
+    
+    def has_coordinates(self, obj):
+        """Kontrollera om bilden har koordinater"""
+        return obj.has_coordinates
+    has_coordinates.boolean = True
+    has_coordinates.short_description = 'Har koordinater'
+    
+    def get_queryset(self, request):
+        """Optimera queryset med select_related"""
+        return super().get_queryset(request).select_related(
+            'stamp', 'stamp__manufacturer', 'axe_image', 'axe_image__axe'
+        )
+    
+    def save_model(self, request, obj, form, change):
+        """Validera data innan sparande"""
+        if obj.image_type == 'axe_mark' and not obj.axe_image:
+            self.message_user(request, 'Varning: Axe_image måste anges för axe_mark-typer', level='WARNING')
+        super().save_model(request, obj, form, change)
 
 
 class AxeStampAdmin(admin.ModelAdmin):
@@ -307,30 +343,6 @@ class StampUncertaintyGroupAdmin(admin.ModelAdmin):
     stamp_count.short_description = "Antal stämplar"
 
 
-class AxeImageStampAdmin(admin.ModelAdmin):
-    list_display = ("axe_image", "stamp", "has_coordinates", "is_primary", "show_full_image", "created_at")
-    list_filter = ("is_primary", "show_full_image", "created_at", "stamp__manufacturer")
-    search_fields = ("axe_image__axe__model", "stamp__name", "comment")
-    ordering = ("-created_at",)
-    fieldsets = (
-        ("Grundinformation", {
-            "fields": ("axe_image", "stamp", "comment")
-        }),
-        ("Bildkoordinater", {
-            "fields": ("x_coordinate", "y_coordinate", "width", "height"),
-            "classes": ("collapse",)
-        }),
-        ("Visningsinställningar", {
-            "fields": ("show_full_image", "is_primary")
-        }),
-    )
-    
-    def has_coordinates(self, obj):
-        return obj.has_coordinates
-    has_coordinates.boolean = True
-    has_coordinates.short_description = "Koordinater"
-
-
 # Registrera admin-klasserna
 admin.site.register(Stamp, StampAdmin)
 admin.site.register(StampTranscription, StampTranscriptionAdmin)
@@ -339,7 +351,6 @@ admin.site.register(StampImage, StampImageAdmin)
 admin.site.register(AxeStamp, AxeStampAdmin)
 admin.site.register(StampVariant, StampVariantAdmin)
 admin.site.register(StampUncertaintyGroup, StampUncertaintyGroupAdmin)
-admin.site.register(AxeImageStamp, AxeImageStampAdmin)
 
 
 # "Registrera" dina modeller så de dyker upp i admin-gränssnittet

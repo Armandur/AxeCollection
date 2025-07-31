@@ -30,7 +30,7 @@
                             <label for="search" class="form-label">Sök</label>
                             <div class="position-relative">
                                 <input type="text" class="form-control" id="stamp-search-input" name="search" 
-                                       value="{{ filters.search }}" placeholder="Sök i namn, beskrivning...">
+                                       value="{{ search_query }}" placeholder="Sök i namn, beskrivning...">
                                 <div id="stamp-search-results" class="dropdown-menu w-100" style="display: none; max-height: 400px; overflow-y: auto;">
                                     <!-- AJAX-resultat kommer här -->
                                 </div>
@@ -42,7 +42,7 @@
                                 <option value="">Alla tillverkare</option>
                                 {% for manufacturer in manufacturers %}
                                     <option value="{{ manufacturer.id }}" 
-                                            {% if filters.manufacturer == manufacturer.id|stringformat:"s" %}selected{% endif %}>
+                                            {% if manufacturer_filter == manufacturer.id|stringformat:"s" %}selected{% endif %}>
                                         {{ manufacturer.name }}
                                     </option>
                                 {% endfor %}
@@ -54,7 +54,7 @@
                                 <option value="">Alla typer</option>
                                 {% for value, label in stamp_types %}
                                     <option value="{{ value }}" 
-                                            {% if filters.stamp_type == value %}selected{% endif %}>
+                                            {% if stamp_type_filter == value %}selected{% endif %}>
                                         {{ label }}
                                     </option>
                                 {% endfor %}
@@ -66,7 +66,7 @@
                                 <option value="">Alla statusar</option>
                                 {% for value, label in status_choices %}
                                     <option value="{{ value }}" 
-                                            {% if filters.status == value %}selected{% endif %}>
+                                            {% if status_filter == value %}selected{% endif %}>
                                         {{ label }}
                                     </option>
                                 {% endfor %}
@@ -78,7 +78,7 @@
                                 <option value="">Alla källor</option>
                                 {% for value, label in source_choices %}
                                     <option value="{{ value }}" 
-                                            {% if filters.source == value %}selected{% endif %}>
+                                            {% if source_filter == value %}selected{% endif %}>
                                         {{ label }}
                                     </option>
                                 {% endfor %}
@@ -87,10 +87,11 @@
                         <div class="col-md-1">
                             <label for="sort" class="form-label">Sortera</label>
                             <select class="form-select" id="sort" name="sort">
-                                <option value="name" {% if filters.sort == 'name' %}selected{% endif %}>Namn</option>
-                                <option value="manufacturer" {% if filters.sort == 'manufacturer' %}selected{% endif %}>Tillverkare</option>
-                                <option value="created" {% if filters.sort == 'created' %}selected{% endif %}>Skapad</option>
-                                <option value="axes_count" {% if filters.sort == 'axes_count' %}selected{% endif %}>Antal yxor</option>
+                                <option value="name" {% if sort_by == 'name' %}selected{% endif %}>Namn</option>
+                                <option value="manufacturer" {% if sort_by == 'manufacturer' %}selected{% endif %}>Tillverkare</option>
+                                <option value="created" {% if sort_by == 'created' %}selected{% endif %}>Skapad</option>
+                                <option value="axes_count" {% if sort_by == 'axes_count' %}selected{% endif %}>Antal yxor</option>
+                                <option value="images_count" {% if sort_by == 'images_count' %}selected{% endif %}>Antal bilder</option>
                             </select>
                         </div>
                         <div class="col-12">
@@ -113,36 +114,38 @@
                         <!-- Bildvisning -->
                         {% if stamp.primary_image %}
                             <div class="position-relative">
-                                {% if stamp.primary_image_type == 'StampImage' %}
+                                {% if stamp.primary_image.image_type == 'axe_mark' %}
+                                    <!-- Visa stämpelmarkering från yxbild -->
                                     {% if stamp.primary_image.has_coordinates %}
-                                        <!-- Visa beskuren StampImage -->
+                                        <!-- Visa beskuren stämpelmarkering -->
                                         <div class="stamp-crop-container" style="height: 200px; overflow: hidden;">
-                                            <img src="{{ stamp.primary_image.image_url_with_cache_busting }}" 
-                                                 class="card-img-top" 
-                                                 alt="{{ stamp.primary_image.caption|default:stamp.name }}" 
-                                                 style="object-fit: cover; object-position: -{{ stamp.primary_image.x_coordinate }}px -{{ stamp.primary_image.y_coordinate }}px; width: {{ stamp.primary_image.image.width }}px; height: {{ stamp.primary_image.image.height }}px; max-width: none; max-height: none;">
+                                                                                         <img src="{{ stamp.primary_image.axe_image.image_url_with_cache_busting }}" 
+                                                  class="card-img-top" 
+                                                  alt="Stämpel från {{ stamp.primary_image.axe_image.axe.display_id }}" 
+                                                  style="object-fit: cover; object-position: -{{ stamp.primary_image.x_coordinate }}% -{{ stamp.primary_image.y_coordinate }}%; width: {{ stamp.primary_image.axe_image.image.width }}px; height: {{ stamp.primary_image.axe_image.image.height }}px; max-width: none; max-height: none;">
                                         </div>
                                     {% else %}
-                                        <!-- Visa hela StampImage -->
-                                        <img src="{% if stamp.primary_image.webp_url %}{{ stamp.primary_image.webp_url }}{% else %}{{ stamp.primary_image.image_url_with_cache_busting }}{% endif %}" 
-                                             class="card-img-top" 
-                                             alt="{{ stamp.primary_image.caption|default:stamp.name }}" 
-                                             style="height: 200px; object-fit: cover;">
-                                    {% endif %}
-                                {% elif stamp.primary_image_type == 'AxeImageStamp' %}
-                                    {% if stamp.primary_image.has_coordinates %}
-                                        <!-- Visa beskuren AxeImageStamp -->
-                                        <div class="stamp-crop-container" style="height: 200px; overflow: hidden;">
-                                            <img src="{{ stamp.primary_image.axe_image.image_url_with_cache_busting }}" 
-                                                 class="card-img-top" 
-                                                 alt="Stämpel från {{ stamp.primary_image.axe_image.axe.display_id }}" 
-                                                 style="object-fit: cover; object-position: -{{ stamp.primary_image.x_coordinate }}px -{{ stamp.primary_image.y_coordinate }}px; width: {{ stamp.primary_image.axe_image.image.width }}px; height: {{ stamp.primary_image.axe_image.image.height }}px; max-width: none; max-height: none;">
-                                        </div>
-                                    {% else %}
-                                        <!-- Visa hela AxeImageStamp -->
+                                        <!-- Visa hela yxbild med stämpelmarkering -->
                                         <img src="{{ stamp.primary_image.axe_image.image_url_with_cache_busting }}" 
                                              class="card-img-top" 
                                              alt="Stämpel från {{ stamp.primary_image.axe_image.axe.display_id }}" 
+                                             style="height: 200px; object-fit: cover;">
+                                    {% endif %}
+                                {% else %}
+                                    <!-- Visa fristående stämpelbild -->
+                                    {% if stamp.primary_image.has_coordinates %}
+                                        <!-- Visa beskuren fristående bild -->
+                                        <div class="stamp-crop-container" style="height: 200px; overflow: hidden;">
+                                                                                         <img src="{{ stamp.primary_image.image_url_with_cache_busting }}" 
+                                                  class="card-img-top" 
+                                                  alt="{{ stamp.primary_image.caption|default:stamp.name }}" 
+                                                  style="object-fit: cover; object-position: -{{ stamp.primary_image.x_coordinate }}% -{{ stamp.primary_image.y_coordinate }}%; width: {{ stamp.primary_image.image.width }}px; height: {{ stamp.primary_image.image.height }}px; max-width: none; max-height: none;">
+                                        </div>
+                                    {% else %}
+                                        <!-- Visa hela fristående bild -->
+                                        <img src="{% if stamp.primary_image.webp_url %}{{ stamp.primary_image.webp_url }}{% else %}{{ stamp.primary_image.image_url_with_cache_busting }}{% endif %}" 
+                                             class="card-img-top" 
+                                             alt="{{ stamp.primary_image.caption|default:stamp.name }}" 
                                              style="height: 200px; object-fit: cover;">
                                     {% endif %}
                                 {% endif %}
@@ -201,10 +204,10 @@
                         <div class="card-footer">
                             <div class="d-flex justify-content-between align-items-center">
                                 <small class="text-muted">
-                                    {% with axes_count=stamp.axes.count images_count=stamp.images.count axe_images_count=stamp.axe_image_marks.count total_images=stamp.images.count|add:stamp.axe_image_marks.count %}
+                                    {% with axes_count=stamp.axes.count images_count=stamp.images.count %}
                                         {{ axes_count }} yx{{ axes_count|pluralize:"a,or" }}
-                                        {% if total_images > 0 %}
-                                            , {{ total_images }} bild{{ total_images|pluralize:"er" }}
+                                        {% if images_count > 0 %}
+                                            , {{ images_count }} bild{{ images_count|pluralize:"er" }}
                                         {% endif %}
                                     {% endwith %}
                                 </small>

@@ -463,76 +463,130 @@ function setPrimaryImage(stampId, markId, isPrimary) {
                     <div class="card">
                         <div class="card-header">
                             <div class="d-flex justify-content-between align-items-center">
-                                <h5 class="mb-0">Bilder ({{ stamp.images.count|add:axe_image_marks.count }})</h5>
+                                <h5 class="mb-0">Bilder ({{ stamp_images.count }})</h5>
                                 <a href="{% url 'stamp_image_upload' stamp.id %}" class="btn btn-primary btn-sm">
                                     <i class="fas fa-plus"></i> Lägg till bild
                                 </a>
                             </div>
                         </div>
                         <div class="card-body">
-                            {% if stamp.images.all or axe_image_marks %}
+                            {% if stamp_images %}
                                 <div class="row">
-                                    <!-- StampImage-bilder -->
-                                    {% for image in stamp.images.all %}
+                                    {% for image in stamp_images %}
                                     <div class="col-md-4 col-lg-3 mb-3">
                                         <div class="card h-100" data-image-id="{{ image.id }}">
                                             <div class="position-relative">
-                                                {% if image.has_coordinates %}
-                                                    <!-- Visa endast den markerade delen -->
-                                                    <div class="stamp-crop-container" style="height: 200px; overflow: hidden; cursor: pointer;" 
-                                                         onclick="showStampModal('{{ image.image_url_with_cache_busting }}', {{ image.x_coordinate }}, {{ image.y_coordinate }}, {{ image.width }}, {{ image.height }}, '{{ stamp.name }}', 'StampImage')">
-                                                        <img src="{{ image.image_url_with_cache_busting }}" 
+                                                {% if image.image_type == 'axe_mark' %}
+                                                    <!-- Visa stämpelmarkering från yxbild -->
+                                                    {% if image.has_coordinates %}
+                                                        <!-- Visa beskuren stämpelmarkering -->
+                                                        <div class="stamp-crop-container" style="height: 200px; overflow: hidden; cursor: pointer;" 
+                                                             onclick="showStampModal('{{ image.axe_image.image_url_with_cache_busting }}', {{ image.x_coordinate }}, {{ image.y_coordinate }}, {{ image.width }}, {{ image.height }}, '{{ stamp.name }}', '{{ image.axe_image.axe.display_id }}')">
+                                                                                                                         <img src="{{ image.axe_image.image_url_with_cache_busting }}" 
+                                                                  class="card-img-top" 
+                                                                  alt="Stämpel från {{ image.axe_image.axe.display_id }}" 
+                                                                  data-crop-x="{{ image.x_coordinate }}"
+                                                                  data-crop-y="{{ image.y_coordinate }}"
+                                                                  style="object-fit: cover; object-position: -{{ image.x_coordinate }}px -{{ image.y_coordinate }}px; width: {{ image.axe_image.image.width }}px; height: {{ image.axe_image.image.height }}px; max-width: none; max-height: none;">
+                                                        </div>
+                                                    {% else %}
+                                                        <!-- Visa hela yxbild med stämpelmarkering -->
+                                                        <img src="{{ image.axe_image.image_url_with_cache_busting }}" 
                                                              class="card-img-top" 
-                                                             alt="{{ image.caption|default:stamp.name }}" 
-                                                             data-crop-x="{{ image.x_coordinate }}"
-                                                             data-crop-y="{{ image.y_coordinate }}"
-                                                             style="object-fit: cover; object-position: -{{ image.x_coordinate }}px -{{ image.y_coordinate }}px; width: {{ image.image.width }}px; height: {{ image.image.height }}px; max-width: none; max-height: none;">
+                                                             alt="Stämpel från {{ image.axe_image.axe.display_id }}" 
+                                                             style="height: 200px; object-fit: cover; cursor: pointer;"
+                                                             onclick="showStampModal('{{ image.axe_image.image_url_with_cache_busting }}', null, null, null, null, '{{ stamp.name }}', '{{ image.axe_image.axe.display_id }}')">
+                                                    {% endif %}
+                                                    
+                                                    <div class="position-absolute top-0 end-0 m-2">
+                                                        <span class="badge bg-info">Från yxa</span>
+                                                        <!-- Huvudbild-stjärna -->
+                                                        <i class="fas fa-star text-warning ms-1 {% if not image.is_primary %}opacity-25{% endif %}" 
+                                                           style="cursor: pointer; font-size: 1.2em;"
+                                                           data-mark-id="{{ image.id }}"
+                                                           onclick="setPrimaryImage({{ stamp.id }}, {{ image.id }}, !{{ image.is_primary|yesno:'true,false' }})"
+                                                           title="{% if image.is_primary %}Ta bort huvudbildsmarkering{% else %}Markera som huvudbild{% endif %}">
+                                                        </i>
                                                     </div>
                                                 {% else %}
-                                                    <!-- Fallback: visa hela bilden -->
-                                                    <img src="{% if image.webp_url %}{{ image.webp_url }}{% else %}{{ image.image_url_with_cache_busting }}{% endif %}" 
-                                                         class="card-img-top" 
-                                                         alt="{{ image.caption|default:stamp.name }}" 
-                                                         style="height: 200px; object-fit: cover; cursor: pointer;"
-                                                         onclick="showStampModal('{% if image.webp_url %}{{ image.webp_url }}{% else %}{{ image.image_url_with_cache_busting }}{% endif %}', null, null, null, null, '{{ stamp.name }}', 'StampImage')">
-                                                {% endif %}
-                                                
-                                                <div class="position-absolute top-0 end-0 m-2">
-                                                    <span class="badge bg-{% if image.quality == 'high' %}success{% elif image.quality == 'medium' %}warning{% else %}danger{% endif %}">
-                                                        {{ image.get_quality_display }}
-                                                    </span>
-                                                    {% if image.is_primary %}
-                                                        <span class="badge bg-warning ms-1">Huvudbild</span>
+                                                    <!-- Visa fristående stämpelbild -->
+                                                    {% if image.has_coordinates %}
+                                                        <!-- Visa beskuren fristående bild -->
+                                                        <div class="stamp-crop-container" style="height: 200px; overflow: hidden; cursor: pointer;" 
+                                                             onclick="showStampModal('{{ image.image_url_with_cache_busting }}', {{ image.x_coordinate }}, {{ image.y_coordinate }}, {{ image.width }}, {{ image.height }}, '{{ stamp.name }}', 'StampImage')">
+                                                                                                                         <img src="{{ image.image_url_with_cache_busting }}" 
+                                                                  class="card-img-top" 
+                                                                  alt="{{ image.caption|default:stamp.name }}" 
+                                                                  data-crop-x="{{ image.x_coordinate }}"
+                                                                  data-crop-y="{{ image.y_coordinate }}"
+                                                                  style="object-fit: cover; object-position: -{{ image.x_coordinate }}px -{{ image.y_coordinate }}px; width: {{ image.image.width }}px; height: {{ image.image.height }}px; max-width: none; max-height: none;">
+                                                        </div>
+                                                    {% else %}
+                                                        <!-- Visa hela fristående bild -->
+                                                        <img src="{% if image.webp_url %}{{ image.webp_url }}{% else %}{{ image.image_url_with_cache_busting }}{% endif %}" 
+                                                             class="card-img-top" 
+                                                             alt="{{ image.caption|default:stamp.name }}" 
+                                                             style="height: 200px; object-fit: cover; cursor: pointer;"
+                                                             onclick="showStampModal('{% if image.webp_url %}{{ image.webp_url }}{% else %}{{ image.image_url_with_cache_busting }}{% endif %}', null, null, null, null, '{{ stamp.name }}', 'StampImage')">
                                                     {% endif %}
-                                                </div>
+                                                    
+                                                    <div class="position-absolute top-0 end-0 m-2">
+                                                        {% if image.is_primary %}
+                                                            <span class="badge bg-warning">Huvudbild</span>
+                                                        {% endif %}
+                                                    </div>
+                                                {% endif %}
                                             </div>
                                             <div class="card-body d-flex flex-column">
-                                                {% if image.caption %}
-                                                    <h6 class="card-title">{{ image.caption }}</h6>
-                                                {% endif %}
-                                                {% if image.description %}
-                                                    <p class="card-text small">{{ image.description|truncatewords:15 }}</p>
-                                                {% endif %}
-                                                {% if image.position %}
-                                                    <p class="card-text small text-muted">
-                                                        <strong>Position:</strong> {{ image.position }}
-                                                    </p>
-                                                {% endif %}
-                                                {% if image.comment %}
-                                                    <p class="card-text small">{{ image.comment|truncatewords:15 }}</p>
-                                                {% endif %}
-                                                {% if image.uncertainty_level %}
-                                                    <p class="card-text small">
-                                                        <span class="badge bg-{% if image.uncertainty_level == 'certain' %}success{% elif image.uncertainty_level == 'uncertain' %}warning{% else %}danger{% endif %}">
-                                                            {{ image.get_uncertainty_level_display }}
-                                                        </span>
-                                                    </p>
+                                                {% if image.image_type == 'axe_mark' %}
+                                                    <h6 class="card-title">
+                                                        <a href="{% url 'axe_detail' image.axe_image.axe.id %}">
+                                                            {{ image.axe_image.axe.display_id }}
+                                                        </a>
+                                                    </h6>
+                                                    {% if image.axe_image.axe.manufacturer %}
+                                                        <p class="card-text small text-muted">
+                                                            <strong>Tillverkare:</strong> 
+                                                            <a href="{% url 'manufacturer_detail' image.axe_image.axe.manufacturer.id %}">
+                                                                {{ image.axe_image.axe.manufacturer.name }}
+                                                            </a>
+                                                        </p>
+                                                    {% endif %}
+                                                    {% if image.comment %}
+                                                        <p class="card-text small">{{ image.comment|truncatewords:15 }}</p>
+                                                    {% endif %}
+                                                    {% if image.axe_image.description %}
+                                                        <p class="card-text small text-muted">{{ image.axe_image.description|truncatewords:10 }}</p>
+                                                    {% endif %}
+                                                {% else %}
+                                                    {% if image.caption %}
+                                                        <h6 class="card-title">{{ image.caption }}</h6>
+                                                    {% endif %}
+                                                    {% if image.description %}
+                                                        <p class="card-text small">{{ image.description|truncatewords:15 }}</p>
+                                                    {% endif %}
+                                                    {% if image.position %}
+                                                        <p class="card-text small text-muted">
+                                                            <strong>Position:</strong> {{ image.position }}
+                                                        </p>
+                                                    {% endif %}
+                                                    {% if image.comment %}
+                                                        <p class="card-text small">{{ image.comment|truncatewords:15 }}</p>
+                                                    {% endif %}
+                                                    {% if image.uncertainty_level %}
+                                                        <p class="card-text small">
+                                                            <span class="badge bg-{% if image.uncertainty_level == 'certain' %}success{% elif image.uncertainty_level == 'uncertain' %}warning{% else %}danger{% endif %}">
+                                                                {{ image.get_uncertainty_level_display }}
+                                                            </span>
+                                                        </p>
+                                                    {% endif %}
                                                 {% endif %}
                                                 <div class="mt-auto">
                                                     <small class="text-muted">
-                                                        {{ image.uploaded_at|date:"Y-m-d" }}
-                                                        {% if image.has_coordinates %}
-                                                            • Beskuren
+                                                        {% if image.image_type == 'axe_mark' %}
+                                                            {{ image.created_at|date:"Y-m-d" }}
+                                                        {% else %}
+                                                            {{ image.uploaded_at|date:"Y-m-d" }}
                                                         {% endif %}
                                                     </small>
                                                     <div class="mt-2">
@@ -541,12 +595,26 @@ function setPrimaryImage(stampId, markId, isPrimary) {
                                                             <!-- Knapp för att visa stämpelbild i modal -->
                                                             <button type="button" 
                                                                     class="btn btn-sm btn-outline-primary"
+                                                                    {% if image.image_type == 'axe_mark' %}
+                                                                    onclick="showStampModal('{{ image.axe_image.image_url_with_cache_busting }}', {{ image.x_coordinate }}, {{ image.y_coordinate }}, {{ image.width }}, {{ image.height }}, '{{ stamp.name }}', '{{ image.axe_image.axe.display_id }}')"
+                                                                    {% else %}
                                                                     onclick="showStampModal('{{ image.image_url_with_cache_busting }}', {{ image.x_coordinate }}, {{ image.y_coordinate }}, {{ image.width }}, {{ image.height }}, '{{ stamp.name }}', 'StampImage')"
+                                                                    {% endif %}
                                                                     title="Visa stämpelbild i större format">
                                                                 <i class="fas fa-expand"></i>
                                                                 Visa stämpel
                                                             </button>
                                                             {% endif %}
+                                                            {% if image.image_type == 'axe_mark' %}
+                                                            <a href="{% url 'edit_axe_image_stamp_via_axe_stamp' image.axe_image.axe.id image.axe_image.id %}" 
+                                                               class="btn btn-sm btn-outline-secondary">
+                                                                <i class="fas fa-edit"></i> Redigera markering
+                                                            </a>
+                                                            <a href="{% url 'unmark_axe_image_stamp' image.axe_image.axe.id image.axe_image.id %}" 
+                                                               class="btn btn-sm btn-outline-danger">
+                                                                <i class="fas fa-unlink"></i> Ta bort markering
+                                                            </a>
+                                                            {% else %}
                                                             <a href="{% url 'stamp_image_edit' stamp.id image.id %}" 
                                                                class="btn btn-sm btn-outline-secondary">
                                                                 <i class="fas fa-edit"></i> Redigera
@@ -555,97 +623,7 @@ function setPrimaryImage(stampId, markId, isPrimary) {
                                                                class="btn btn-sm btn-outline-danger">
                                                                 <i class="fas fa-trash"></i> Ta bort
                                                             </a>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    {% endfor %}
-                                    
-                                    <!-- AxeImageStamp-bilder -->
-                                    {% for mark in axe_image_marks %}
-                                    <div class="col-md-4 col-lg-3 mb-3">
-                                        <div class="card h-100" data-mark-id="{{ mark.id }}">
-                                            <div class="position-relative">
-                                                {% if mark.has_coordinates %}
-                                                    <!-- Visa endast den markerade delen -->
-                                                    <div class="stamp-crop-container" style="height: 200px; overflow: hidden; cursor: pointer;" 
-                                                         onclick="showStampModal('{{ mark.axe_image.image_url_with_cache_busting }}', {{ mark.x_coordinate }}, {{ mark.y_coordinate }}, {{ mark.width }}, {{ mark.height }}, '{{ stamp.name }}', '{{ mark.axe_image.axe.display_id }}')">
-                                                        <img src="{{ mark.axe_image.image_url_with_cache_busting }}" 
-                                                             class="card-img-top" 
-                                                             alt="Stämpel från {{ mark.axe_image.axe.display_id }}" 
-                                                             data-crop-x="{{ mark.x_coordinate }}"
-                                                             data-crop-y="{{ mark.y_coordinate }}"
-                                                             style="object-fit: cover; object-position: -{{ mark.x_coordinate }}px -{{ mark.y_coordinate }}px; width: {{ mark.axe_image.image.width }}px; height: {{ mark.axe_image.image.height }}px; max-width: none; max-height: none;">
-                                                    </div>
-                                                {% else %}
-                                                    <!-- Fallback: visa hela bilden -->
-                                                    <img src="{{ mark.axe_image.image_url_with_cache_busting }}" 
-                                                         class="card-img-top" 
-                                                         alt="Stämpel från {{ mark.axe_image.axe.display_id }}" 
-                                                         style="height: 200px; object-fit: cover; cursor: pointer;"
-                                                         onclick="showStampModal('{{ mark.axe_image.image_url_with_cache_busting }}', null, null, null, null, '{{ stamp.name }}', '{{ mark.axe_image.axe.display_id }}')">
-                                                {% endif %}
-                                                
-                                                <div class="position-absolute top-0 end-0 m-2">
-                                                    <span class="badge bg-info">Från yxa</span>
-                                                    <!-- Huvudbild-stjärna -->
-                                                    <i class="fas fa-star text-warning ms-1 {% if not mark.is_primary %}opacity-25{% endif %}" 
-                                                       style="cursor: pointer; font-size: 1.2em;"
-                                                       data-mark-id="{{ mark.id }}"
-                                                       onclick="setPrimaryImage({{ stamp.id }}, {{ mark.id }}, !{{ mark.is_primary|yesno:'true,false' }})"
-                                                       title="{% if mark.is_primary %}Ta bort huvudbildsmarkering{% else %}Markera som huvudbild{% endif %}">
-                                                    </i>
-                                                </div>
-                                            </div>
-                                            <div class="card-body d-flex flex-column">
-                                                <h6 class="card-title">
-                                                    <a href="{% url 'axe_detail' mark.axe_image.axe.id %}">
-                                                        {{ mark.axe_image.axe.display_id }}
-                                                    </a>
-                                                </h6>
-                                                {% if mark.axe_image.axe.manufacturer %}
-                                                    <p class="card-text small text-muted">
-                                                        <strong>Tillverkare:</strong> 
-                                                        <a href="{% url 'manufacturer_detail' mark.axe_image.axe.manufacturer.id %}">
-                                                            {{ mark.axe_image.axe.manufacturer.name }}
-                                                        </a>
-                                                    </p>
-                                                {% endif %}
-                                                {% if mark.comment %}
-                                                    <p class="card-text small">{{ mark.comment|truncatewords:15 }}</p>
-                                                {% endif %}
-                                                {% if mark.axe_image.description %}
-                                                    <p class="card-text small text-muted">{{ mark.axe_image.description|truncatewords:10 }}</p>
-                                                {% endif %}
-                                                <div class="mt-auto">
-                                                    <small class="text-muted">
-                                                        {{ mark.created_at|date:"Y-m-d" }}
-                                                        {% if mark.has_coordinates %}
-                                                            • Beskuren
-                                                        {% endif %}
-                                                    </small>
-                                                    <div class="mt-2">
-                                                        <div class="btn-group-vertical w-100" role="group">
-                                                            {% if mark.has_coordinates %}
-                                                            <!-- Knapp för att visa stämpelbild i modal -->
-                                                            <button type="button" 
-                                                                    class="btn btn-sm btn-outline-primary"
-                                                                    onclick="showStampModal('{{ mark.axe_image.image_url_with_cache_busting }}', {{ mark.x_coordinate }}, {{ mark.y_coordinate }}, {{ mark.width }}, {{ mark.height }}, '{{ stamp.name }}', '{{ mark.axe_image.axe.display_id }}')"
-                                                                    title="Visa stämpelbild i större format">
-                                                                <i class="fas fa-expand"></i>
-                                                                Visa stämpel
-                                                            </button>
                                                             {% endif %}
-                                                            <a href="{% url 'edit_axe_image_stamp_via_axe_stamp' mark.axe_image.axe.id mark.axe_image.id %}" 
-                                                               class="btn btn-sm btn-outline-secondary">
-                                                                <i class="fas fa-edit"></i> Redigera markering
-                                                            </a>
-                                                            <a href="{% url 'unmark_axe_image_stamp' mark.axe_image.axe.id mark.axe_image.id %}" 
-                                                               class="btn btn-sm btn-outline-danger">
-                                                                <i class="fas fa-unlink"></i> Ta bort markering
-                                                            </a>
                                                         </div>
                                                     </div>
                                                 </div>

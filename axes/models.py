@@ -3,6 +3,7 @@ from PIL import Image
 import os
 from django.conf import settings
 from django.db.models import Sum, Max
+from django.core.exceptions import ValidationError
 
 # Create your models here.
 
@@ -1038,14 +1039,14 @@ class Stamp(models.Model):
 
     @property
     def display_name(self):
-        """Visa namn med tillverkare om tillgänglig"""
+        """Visa namn med tillverkare om tillgängligt"""
         if self.manufacturer:
             return f"{self.name} ({self.manufacturer.name})"
         return self.name
 
     @property
     def year_range(self):
-        """Visa årtalsintervall"""
+        """Formatera årtalsintervall"""
         if self.year_from and self.year_to:
             if self.year_from == self.year_to:
                 return str(self.year_from)
@@ -1056,6 +1057,37 @@ class Stamp(models.Model):
         elif self.year_to:
             return f"till {self.year_to}"
         return "Okänt årtal"
+    
+    @property
+    def primary_image(self):
+        """Hämta primär bild för stämpeln"""
+        return self.images.filter(is_primary=True).first()
+    
+    @property
+    def image_count(self):
+        """Antal bilder kopplade till stämpeln"""
+        return self.images.count()
+    
+    @property
+    def axe_count(self):
+        """Antal yxor med denna stämpel"""
+        return self.axes.count()
+    
+    def clean(self):
+        """Validera stämpeldata"""
+        from django.core.exceptions import ValidationError
+        
+        # Validera årtal
+        if self.year_from and self.year_to and self.year_from > self.year_to:
+            raise ValidationError("Från-år kan inte vara senare än till-år")
+        
+        # Validera att kända stämplar har tillverkare
+        if self.status == "known" and not self.manufacturer:
+            raise ValidationError("Kända stämplar måste ha en tillverkare")
+    
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super().save(*args, **kwargs)
 
 
 class StampTranscription(models.Model):
@@ -1120,12 +1152,19 @@ class StampTag(models.Model):
 
 
 class StampImage(models.Model):
-    """Bilder av stämplar"""
+    """Bilder av stämplar - konsoliderad modell för både fristående och yxbildmarkeringar"""
     
-    QUALITY_CHOICES = [
-        ("high", "Hög"),
-        ("medium", "Medium"),
-        ("low", "Låg"),
+    IMAGE_TYPE_CHOICES = [
+        ('standalone', 'Fristående stämpelbild'),
+        ('axe_mark', 'Yxbildmarkering'),
+        ('reference', 'Referensbild'),
+        ('documentation', 'Dokumentationsbild'),
+    ]
+    
+    UNCERTAINTY_CHOICES = [
+        ('certain', 'Säker'),
+        ('uncertain', 'Osäker'),
+        ('tentative', 'Preliminär'),
     ]
 
     stamp = models.ForeignKey(
@@ -1134,13 +1173,27 @@ class StampImage(models.Model):
         related_name="images",
         verbose_name="Stämpel"
     )
-    image = models.ImageField(upload_to="stamps/", verbose_name="Bild")
-    quality = models.CharField(
-        max_length=20, 
-        choices=QUALITY_CHOICES,
-        default="medium",
-        verbose_name="Kvalitet"
+    
+    # Bildtyp för att skilja mellan olika källor
+    image_type = models.CharField(
+        max_length=20,
+        choices=IMAGE_TYPE_CHOICES,
+        default='standalone',
+        verbose_name="Bildtyp"
     )
+    
+    # Koppling till yxbild (om det är en markering)
+    axe_image = models.ForeignKey(
+        AxeImage, 
+        on_delete=models.CASCADE,
+        null=True, 
+        blank=True,
+        related_name='stamp_markings',
+        verbose_name="Yxbild",
+        help_text="Koppling till yxbild om detta är en markering"
+    )
+    
+    image = models.ImageField(upload_to="stamps/", verbose_name="Bild")
     caption = models.CharField(
         max_length=255, 
         blank=True, 
@@ -1160,30 +1213,38 @@ class StampImage(models.Model):
         help_text="Sorteringsordning för bilderna"
     )
     
-    # Stämpelmarkering (koordinater)
-    x_coordinate = models.PositiveIntegerField(
+    # Stämpelmarkering (koordinater) - procentuella värden för bästa visning
+    x_coordinate = models.DecimalField(
+        max_digits=5, 
+        decimal_places=2,
         null=True, 
         blank=True,
-        verbose_name="X-koordinat",
-        help_text="X-koordinat för stämpelområdet (pixlar från vänster)"
+        verbose_name="X-koordinat (%)",
+        help_text="X-koordinat för stämpelområdet (procent från vänster)"
     )
-    y_coordinate = models.PositiveIntegerField(
+    y_coordinate = models.DecimalField(
+        max_digits=5, 
+        decimal_places=2,
         null=True, 
         blank=True,
-        verbose_name="Y-koordinat", 
-        help_text="Y-koordinat för stämpelområdet (pixlar från toppen)"
+        verbose_name="Y-koordinat (%)", 
+        help_text="Y-koordinat för stämpelområdet (procent från toppen)"
     )
-    width = models.PositiveIntegerField(
+    width = models.DecimalField(
+        max_digits=5, 
+        decimal_places=2,
         null=True, 
         blank=True,
-        verbose_name="Bredd",
-        help_text="Bredd på stämpelområdet (pixlar)"
+        verbose_name="Bredd (%)",
+        help_text="Bredd på stämpelområdet (procent av bildbredd)"
     )
-    height = models.PositiveIntegerField(
+    height = models.DecimalField(
+        max_digits=5, 
+        decimal_places=2,
         null=True, 
         blank=True,
-        verbose_name="Höjd",
-        help_text="Höjd på stämpelområdet (pixlar)"
+        verbose_name="Höjd (%)",
+        help_text="Höjd på stämpelområdet (procent av bildhöjd)"
     )
     
     # Inställningar för visning
@@ -1199,7 +1260,7 @@ class StampImage(models.Model):
         blank=True, 
         null=True,
         verbose_name="Position",
-        help_text="Var på bilden stämpeln finns"
+        help_text="Var på bilden/yxan stämpeln finns (t.ex. 'på bladet - vänstra sidan')"
     )
     comment = models.TextField(
         blank=True, 
@@ -1209,13 +1270,25 @@ class StampImage(models.Model):
     )
     uncertainty_level = models.CharField(
         max_length=20, 
-        choices=[
-            ("certain", "Säker"),
-            ("uncertain", "Osäker"),
-            ("tentative", "Preliminär"),
-        ], 
+        choices=UNCERTAINTY_CHOICES, 
         default="certain",
         verbose_name="Osäkerhetsnivå"
+    )
+    
+    # Visningsinställningar
+    show_full_image = models.BooleanField(
+        default=False,
+        verbose_name="Visa hela bilden",
+        help_text="Visa hela yxbilden istället för bara stämpelområdet"
+    )
+    
+    # Extern källinformation
+    external_source = models.CharField(
+        max_length=200,
+        blank=True,
+        null=True,
+        verbose_name="Extern källa",
+        help_text="Källa för extern bild (t.ex. 'Museum X', 'Bok Y')"
     )
     
     cache_busting_timestamp = models.DateTimeField(
@@ -1223,65 +1296,52 @@ class StampImage(models.Model):
         verbose_name="Cache-busting timestamp"
     )
     uploaded_at = models.DateTimeField(auto_now_add=True)
-
+    
     class Meta:
         ordering = ["order", "-uploaded_at"]
         verbose_name = "Stämpelbild"
         verbose_name_plural = "Stämpelbilder"
-
+    
+    def __str__(self):
+        if self.axe_image:
+            return f"{self.stamp.name} på {self.axe_image.axe.display_id}"
+        return f"{self.stamp.name} - {self.get_image_type_display()}"
+    
     @property
     def webp_url(self):
-        """Returnerar WebP-version av bilden om den finns"""
-        if self.image and self.image.name:
-            webp_path = os.path.splitext(self.image.path)[0] + ".webp"
-            if os.path.exists(webp_path):
-                rel_path = os.path.relpath(webp_path, settings.MEDIA_ROOT)
-                base_url = settings.MEDIA_URL + rel_path.replace("\\", "/")
-                # Lägg till cache-busting parameter
-                timestamp = int(self.cache_busting_timestamp.timestamp())
-                return f"{base_url}?v={timestamp}"
+        """Returnerar URL för WebP-version av bilden"""
+        if self.image:
+            # Skapa WebP-version om den inte finns
+            image_path = self.image.path
+            webp_path = image_path.rsplit('.', 1)[0] + '.webp'
+            
+            if not os.path.exists(webp_path):
+                try:
+                    with Image.open(image_path) as img:
+                        # Konvertera till RGB om nödvändigt
+                        if img.mode in ('RGBA', 'LA', 'P'):
+                            img = img.convert('RGB')
+                        img.save(webp_path, 'WEBP', quality=85)
+                except Exception as e:
+                    # Om WebP-konvertering misslyckas, returnera original
+                    return self.image.url
+            
+            # Returnera WebP-URL
+            webp_url = self.image.url.rsplit('.', 1)[0] + '.webp'
+            return webp_url
         return None
-
+    
     @property
     def image_url_with_cache_busting(self):
-        """Returnerar bildens URL med cache-busting parameter"""
-        if self.image and self.image.name:
-            base_url = self.image.url
+        """Returnerar bild-URL med cache-busting"""
+        if self.image:
             timestamp = int(self.cache_busting_timestamp.timestamp())
-            return f"{base_url}?v={timestamp}"
+            return f"{self.image.url}?v={timestamp}"
         return None
-
-    def save(self, *args, **kwargs):
-        super().save(*args, **kwargs)
-        if self.image and self.image.name:
-            img_path = self.image.path
-            webp_path = os.path.splitext(img_path)[0] + ".webp"
-            try:
-                img = Image.open(img_path)
-                img.save(webp_path, "WEBP", quality=85)
-            except Exception:
-                pass  # Kan logga fel om så önskas
-
-    def delete(self, *args, **kwargs):
-        # Ta bort både originalfilen och .webp-filen
-        if self.image and self.image.name:
-            img_path = self.image.path
-            webp_path = os.path.splitext(img_path)[0] + ".webp"
-            try:
-                if os.path.exists(img_path):
-                    os.remove(img_path)
-                if os.path.exists(webp_path):
-                    os.remove(webp_path)
-            except Exception:
-                pass  # Kan logga fel om så önskas
-        super().delete(*args, **kwargs)
-
-    def __str__(self):
-        return f"{self.stamp.name} - {self.caption or 'Bild'}"
     
     @property
     def has_coordinates(self):
-        """Returnerar True om bilden har markerade koordinater"""
+        """Returnerar True om koordinater är definierade"""
         return all([
             self.x_coordinate is not None,
             self.y_coordinate is not None,
@@ -1291,10 +1351,76 @@ class StampImage(models.Model):
     
     @property
     def crop_area(self):
-        """Returnerar crop-området som en tuple (x, y, width, height)"""
+        """Returnerar beskärningsområdet som en tuple (x%, y%, width%, height%)"""
         if self.has_coordinates:
             return (self.x_coordinate, self.y_coordinate, self.width, self.height)
         return None
+    
+    def save(self, *args, **kwargs):
+        # Validering för att säkerställa att axe_image finns för axe_mark-typer
+        if self.image_type == 'axe_mark' and not self.axe_image:
+            raise ValidationError("Axe_image måste anges för axe_mark-typer")
+        
+        # Validera koordinater om de finns
+        if any([self.x_coordinate, self.y_coordinate, self.width, self.height]):
+            if not all([self.x_coordinate, self.y_coordinate, self.width, self.height]):
+                raise ValidationError("Alla koordinater måste anges tillsammans")
+            
+            # Kontrollera att värdena är inom rimliga gränser
+            if (self.x_coordinate < 0 or self.y_coordinate < 0 or 
+                self.width <= 0 or self.height <= 0 or
+                self.x_coordinate + self.width > 100 or 
+                self.y_coordinate + self.height > 100):
+                raise ValidationError("Koordinater måste vara inom 0-100%")
+        
+        # Om detta är den första bilden för stämpeln, gör den till primär
+        if not self.pk and not self.stamp.images.exists():
+            self.is_primary = True
+        
+        # Om denna bild är markerad som primär, ta bort primär från andra bilder
+        if self.is_primary:
+            self.stamp.images.filter(is_primary=True).exclude(pk=self.pk).update(is_primary=False)
+        
+        super().save(*args, **kwargs)
+        
+        # Skapa WebP-version om det är en ny bild
+        if not hasattr(self, '_webp_created'):
+            self._create_webp_version()
+            self._webp_created = True
+    
+    def _create_webp_version(self):
+        """Skapa WebP-version av bilden"""
+        if self.image:
+            try:
+                image_path = self.image.path
+                webp_path = image_path.rsplit('.', 1)[0] + '.webp'
+                
+                if not os.path.exists(webp_path):
+                    with Image.open(image_path) as img:
+                        if img.mode in ('RGBA', 'LA', 'P'):
+                            img = img.convert('RGB')
+                        img.save(webp_path, 'WEBP', quality=85)
+            except Exception:
+                # Ignorera fel vid WebP-konvertering
+                pass
+    
+    def delete(self, *args, **kwargs):
+        # Ta bort både originalfilen och .webp-filen
+        if self.image:
+            try:
+                # Ta bort originalfil
+                if os.path.exists(self.image.path):
+                    os.remove(self.image.path)
+                
+                # Ta bort WebP-fil
+                webp_path = self.image.path.rsplit('.', 1)[0] + '.webp'
+                if os.path.exists(webp_path):
+                    os.remove(webp_path)
+            except Exception:
+                # Ignorera fel vid filborttagning
+                pass
+        
+        super().delete(*args, **kwargs)
 
 
 class AxeStamp(models.Model):
@@ -1408,110 +1534,3 @@ class StampUncertaintyGroup(models.Model):
 
     def __str__(self):
         return self.name
-
-
-class AxeImageStamp(models.Model):
-    """Koppling mellan AxeImage och Stamp för att markera stämplar på yxbilder"""
-    
-    axe_image = models.ForeignKey(
-        AxeImage, 
-        on_delete=models.CASCADE, 
-        related_name="stamp_marks",
-        verbose_name="Yxbild"
-    )
-    stamp = models.ForeignKey(
-        Stamp, 
-        on_delete=models.CASCADE, 
-        related_name="axe_image_marks",
-        verbose_name="Stämpel"
-    )
-    
-    # Bildkoordinater för stämpelområdet
-    x_coordinate = models.PositiveIntegerField(
-        null=True, 
-        blank=True,
-        verbose_name="X-koordinat",
-        help_text="X-koordinat för stämpelområdet (pixlar från vänster)"
-    )
-    y_coordinate = models.PositiveIntegerField(
-        null=True, 
-        blank=True,
-        verbose_name="Y-koordinat", 
-        help_text="Y-koordinat för stämpelområdet (pixlar från toppen)"
-    )
-    width = models.PositiveIntegerField(
-        null=True, 
-        blank=True,
-        verbose_name="Bredd",
-        help_text="Bredd på stämpelområdet (pixlar)"
-    )
-    height = models.PositiveIntegerField(
-        null=True, 
-        blank=True,
-        verbose_name="Höjd",
-        help_text="Höjd på stämpelområdet (pixlar)"
-    )
-    
-    # Inställningar för visning
-    show_full_image = models.BooleanField(
-        default=False,
-        verbose_name="Visa hela bilden",
-        help_text="Visa hela yxbilden istället för bara stämpelområdet"
-    )
-    is_primary = models.BooleanField(
-        default=False,
-        verbose_name="Huvudbild",
-        help_text="Markera som huvudbild för stämpeln"
-    )
-    
-    # Metadata
-    position = models.CharField(
-        max_length=100, 
-        blank=True, 
-        null=True,
-        verbose_name="Position",
-        help_text="Var på yxan stämpeln finns"
-    )
-    uncertainty_level = models.CharField(
-        max_length=20, 
-        choices=[
-            ("certain", "Säker"),
-            ("uncertain", "Osäker"),
-            ("tentative", "Preliminär"),
-        ], 
-        default="certain",
-        verbose_name="Osäkerhetsnivå"
-    )
-    comment = models.TextField(
-        blank=True, 
-        null=True,
-        verbose_name="Kommentar",
-        help_text="Anteckningar om stämpelområdet"
-    )
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    
-    class Meta:
-        ordering = ["-is_primary", "-created_at"]
-        verbose_name = "Yxbildstämpel"
-        verbose_name_plural = "Yxbildstämplar"
-    
-    def __str__(self):
-        return f"{self.stamp.name} på {self.axe_image.axe.display_id}"
-    
-    @property
-    def has_coordinates(self):
-        """Returnerar True om koordinater är definierade"""
-        return all([
-            self.x_coordinate is not None,
-            self.y_coordinate is not None,
-            self.width is not None,
-            self.height is not None
-        ])
-    
-    @property
-    def crop_area(self):
-        """Returnerar beskärningsområdet som en tuple (x, y, width, height)"""
-        if self.has_coordinates:
-            return (self.x_coordinate, self.y_coordinate, self.width, self.height)
-        return None

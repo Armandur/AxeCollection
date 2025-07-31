@@ -10,7 +10,17 @@ from .models import (
     Contact,
     Platform,
     Manufacturer,
-    AxeImageStamp,
+    ManufacturerImage,
+    ManufacturerLink,
+    MeasurementType,
+    MeasurementTemplateItem,
+    Stamp,
+    StampTranscription,
+    StampTag,
+    StampImage,
+    AxeStamp,
+    StampVariant,
+    StampUncertaintyGroup,
 )
 from .forms import AxeForm, MeasurementForm, TransactionForm
 from django.db.models import Sum, Count, Max
@@ -303,9 +313,8 @@ def axe_list(request):
 def axe_detail(request, pk):
     axe = get_object_or_404(
         Axe.objects.select_related("manufacturer")
-        .prefetch_related("measurements", "images", "images__stamp_marks__stamp__manufacturer")
-        .prefetch_related("stamps__stamp__manufacturer", "stamps__stamp__transcriptions", "stamps__stamp__images")
-        .prefetch_related("stamps__stamp__axe_image_marks__axe_image"),
+        .prefetch_related("measurements", "images", "images__stamp_markings__stamp__manufacturer")
+        .prefetch_related("stamps__stamp__manufacturer", "stamps__stamp__transcriptions", "stamps__stamp__images"),
         pk=pk,
     )
     # Hämta transaktioner för denna yxa
@@ -385,42 +394,42 @@ def axe_detail(request, pk):
     else:
         transaction_form = TransactionForm()
     
-    # Hämta alla AxeImageStamp för denna yxa och skapa kort för varje
-    axe_image_stamps = (
-        AxeImageStamp.objects.filter(axe_image__axe=axe)
+    # Hämta alla StampImage för denna yxa och skapa kort för varje
+    stamp_images = (
+        StampImage.objects.filter(axe_image__axe=axe, image_type='axe_mark')
         .select_related('stamp__manufacturer', 'axe_image')
         .prefetch_related('stamp__transcriptions')
-        .order_by('-created_at')
+        .order_by('-uploaded_at')
     )
     
-    # För varje AxeImageStamp, hitta motsvarande AxeStamp för att få position, uncertainty_level, etc.
-    for axe_image_stamp in axe_image_stamps:
+    # För varje StampImage, hitta motsvarande AxeStamp för att få position, uncertainty_level, etc.
+    for stamp_image in stamp_images:
         # Hitta motsvarande AxeStamp (ta första om flera finns)
         try:
-            axe_stamp = axe.stamps.filter(stamp=axe_image_stamp.stamp).first()
+            axe_stamp = axe.stamps.filter(stamp=stamp_image.stamp).first()
             if axe_stamp:
-                # Kopiera AxeStamp-data till AxeImageStamp-objektet
-                axe_image_stamp.axe_stamp_id = axe_stamp.id
-                axe_image_stamp.position = axe_stamp.position
-                axe_image_stamp.uncertainty_level = axe_stamp.uncertainty_level
-                axe_image_stamp.axe_stamp_comment = axe_stamp.comment
+                # Kopiera AxeStamp-data till StampImage-objektet
+                stamp_image.axe_stamp_id = axe_stamp.id
+                stamp_image.position = axe_stamp.position
+                stamp_image.uncertainty_level = axe_stamp.uncertainty_level
+                stamp_image.axe_stamp_comment = axe_stamp.comment
             else:
                 # Om ingen AxeStamp finns, sätt standardvärden
-                axe_image_stamp.axe_stamp_id = None
-                axe_image_stamp.position = ""
-                axe_image_stamp.uncertainty_level = "certain"
-                axe_image_stamp.axe_stamp_comment = ""
+                stamp_image.axe_stamp_id = None
+                stamp_image.position = ""
+                stamp_image.uncertainty_level = "certain"
+                stamp_image.axe_stamp_comment = ""
         except Exception:
             # Fallback om något går fel
-            axe_image_stamp.axe_stamp_id = None
-            axe_image_stamp.position = ""
-            axe_image_stamp.uncertainty_level = "certain"
-            axe_image_stamp.axe_stamp_comment = ""
+            stamp_image.axe_stamp_id = None
+            stamp_image.position = ""
+            stamp_image.uncertainty_level = "certain"
+            stamp_image.axe_stamp_comment = ""
     
     context = {
         "axe": axe,
         "transactions": transactions,
-        "axe_stamps": axe_image_stamps,  # Använd axe_image_stamps istället för axe_stamps
+        "axe_stamps": stamp_images,  # Använd stamp_images istället för axe_image_stamps
         "total_cost": total_cost,
         "total_shipping_cost": total_shipping_cost,
         "total_revenue": total_revenue,
