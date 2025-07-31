@@ -1119,6 +1119,14 @@ class StampTranscription(models.Model):
         verbose_name="Skapad av",
     )
     created_at = models.DateTimeField(auto_now_add=True)
+    
+    # Koppling till symboler
+    symbols = models.ManyToManyField(
+        "StampSymbol",
+        blank=True,
+        verbose_name="Symboler",
+        help_text="Symboler som förekommer i denna transkribering",
+    )
 
     class Meta:
         ordering = ["-created_at"]
@@ -1127,6 +1135,22 @@ class StampTranscription(models.Model):
 
     def __str__(self):
         return f"{self.stamp.name}: {self.text}"
+    
+    @property
+    def symbols_display(self):
+        """Returnerar en formaterad sträng av alla symboler (utan kategorier)"""
+        if self.symbols.exists():
+            return ", ".join([symbol.name for symbol in self.symbols.all()])
+        return ""
+    
+    @property
+    def full_transcription(self):
+        """Returnerar komplett transkribering med text och symboler (utan kategorier)"""
+        parts = [self.text]
+        if self.symbols.exists():
+            symbols_part = " + ".join([symbol.name for symbol in self.symbols.all()])
+            parts.append(symbols_part)
+        return " + ".join(parts)
 
 
 class StampTag(models.Model):
@@ -1563,3 +1587,53 @@ class StampUncertaintyGroup(models.Model):
 
     def __str__(self):
         return self.name
+
+
+class StampSymbol(models.Model):
+    """Symboler som kan förekomma i stämplar"""
+
+    SYMBOL_TYPE_CHOICES = [
+        ("crown", "Krona"),
+        ("cannon", "Kanon"),
+        ("star", "Stjärna"),
+        ("cross", "Kors"),
+        ("shield", "Sköld"),
+        ("anchor", "Ankare"),
+        ("flower", "Blomma"),
+        ("leaf", "Löv"),
+        ("other", "Övrigt"),
+    ]
+
+    name = models.CharField(max_length=100, verbose_name="Namn")
+    symbol_type = models.CharField(
+        max_length=20,
+        choices=SYMBOL_TYPE_CHOICES,
+        default="other",
+        verbose_name="Symboltyp",
+    )
+    description = models.TextField(
+        blank=True, null=True, verbose_name="Beskrivning"
+    )
+    is_predefined = models.BooleanField(
+        default=False,
+        verbose_name="Fördefinierad",
+        help_text="Om symbolen är fördefinierad eller skapad av användare",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["symbol_type", "name"]
+        verbose_name = "Stämpelsymbol"
+        verbose_name_plural = "Stämpelsymboler"
+        unique_together = ["name", "symbol_type"]
+
+    def __str__(self):
+        return f"{self.get_symbol_type_display()}: {self.name}"
+
+    @property
+    def display_name(self):
+        """Returnerar visningsnamn för symbolen"""
+        if self.symbol_type == "other":
+            return self.name
+        return f"{self.get_symbol_type_display()}: {self.name}"

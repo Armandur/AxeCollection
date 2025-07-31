@@ -1,6 +1,7 @@
 from django import forms
-from django.utils import timezone
 from django.utils.safestring import mark_safe
+from django.utils import timezone
+from django.utils.html import format_html
 from .models import (
     Manufacturer,
     Axe,
@@ -18,6 +19,7 @@ from .models import (
     AxeStamp,
     StampVariant,
     StampUncertaintyGroup,
+    StampSymbol,
     AxeImage,
 )
 from .templatetags.axe_filters import country_flag
@@ -920,17 +922,154 @@ class StampForm(forms.ModelForm):
         return cleaned_data
 
 
+class SymbolSearchWidget(forms.Widget):
+    """Anpassad widget för symbolsökning med badge-visning"""
+    
+    template_name = 'axes/widgets/symbol_search_widget.html'
+    
+    def __init__(self, attrs=None):
+        super().__init__(attrs)
+        if attrs is None:
+            attrs = {}
+        self.attrs = attrs.copy()
+        self.attrs.setdefault('class', 'form-control')
+        self.attrs.setdefault('placeholder', 'Sök efter symboler...')
+    
+    def get_context(self, name, value, attrs):
+        context = super().get_context(name, value, attrs)
+        
+        # Merge self.attrs into context['widget']['attrs']
+        # This ensures any default attrs set in __init__ are applied,
+        # but allows Django's default ID generation to take precedence if it exists.
+        # We also ensure a fallback ID if Django doesn't provide one.
+        final_attrs = self.attrs.copy()
+        final_attrs.update(context['widget']['attrs']) # Django's generated attrs (including id)
+        
+        # Ensure an ID is always present
+        if 'id' not in final_attrs or not final_attrs['id']:
+            final_attrs['id'] = f"id_{name}"
+            
+        context['widget']['attrs'] = final_attrs
+        # Use mark_safe to prevent HTML escaping of the value
+        context['widget']['value'] = mark_safe(value) if value else ""
+        return context
+
+
 class StampTranscriptionForm(forms.ModelForm):
     """Formulär för att lägga till transkriberingar"""
 
+    def __init__(self, *args, **kwargs):
+        self.pre_selected_stamp = kwargs.pop('pre_selected_stamp', None)
+        super().__init__(*args, **kwargs)
+        
+        # Om stämpel är förvald, ta bort stamp-fältet från formuläret
+        if self.pre_selected_stamp:
+            if 'stamp' in self.fields:
+                del self.fields['stamp']
+        
+        # Ersätt symbols-fältet med en sökfält
+        if 'symbols' in self.fields:
+            # Om detta är en redigering av befintlig transkribering, hämta befintliga symboler
+            initial_symbols = ""
+            if self.instance and self.instance.pk:
+                existing_symbols = self.instance.symbols.all()
+                if existing_symbols:
+                    initial_symbols = ", ".join([symbol.name for symbol in existing_symbols])
+            
+            self.fields['symbols'] = forms.CharField(
+                required=False,
+                initial=initial_symbols,
+                widget=SymbolSearchWidget(),
+                label="Symboler",
+                help_text="Sök och lägg till symboler som förekommer i stämpeln",
+            )
+            
+            # Lägg till dold fält för att lagra valda symboler
+            self.fields['symbols_selected'] = forms.CharField(
+                required=False,
+                initial=initial_symbols,  # Sätt samma initial värde för dold fält
+                widget=forms.HiddenInput(),
+            )
+
+    def clean(self):
+        cleaned_data = super().clean()
+        
+        # Om stämpel är förvald, sätt den i cleaned_data
+        if self.pre_selected_stamp:
+            cleaned_data['stamp'] = self.pre_selected_stamp
+        
+        # Hantera symboler från dold input (symbols_selected)
+        symbols_text = cleaned_data.get('symbols_selected', '')
+        if symbols_text:
+            # Rensa bort eventuella Django-repräsentationer från strängen
+            clean_symbols_text = symbols_text
+            
+            # Hantera HTML-entiteter först
+            import html
+            clean_symbols_text = html.unescape(clean_symbols_text)
+            
+            # Ta bort Django-repräsentationer som [<StampSymbol: Name: Name>]
+            if '<StampSymbol:' in clean_symbols_text:
+                import re
+                # Försök extrahera bara symbolnamnen
+                pattern = r'<StampSymbol:\s*([^:>]+):\s*([^>]+)>'
+                matches = re.findall(pattern, clean_symbols_text)
+                if matches:
+                    # Ta första gruppen (symbolnamnet)
+                    symbol_names = [match[0].strip() for match in matches]
+                    clean_symbols_text = ', '.join(symbol_names)
+                else:
+                    # Fallback: försök extrahera från andra format
+                    pattern2 = r'<StampSymbol:\s*([^>]+)>'
+                    matches2 = re.findall(pattern2, clean_symbols_text)
+                    if matches2:
+                        clean_symbols_text = ', '.join([name.strip() for name in matches2])
+                    else:
+                        # Om vi inte kan parsa, använd hela strängen som en symbol
+                        clean_symbols_text = clean_symbols_text.strip()
+            
+            # Dela upp symbolerna (kommaseparerade)
+            symbol_names = [name.strip() for name in clean_symbols_text.split(',') if name.strip()]
+            symbols = []
+            for name in symbol_names:
+                if name and not name.startswith('<StampSymbol:'):  # Undvik att skapa symboler från malformade strängar
+                    symbol, created = StampSymbol.objects.get_or_create(
+                        name=name,
+                        defaults={
+                            'symbol_type': 'other',
+                            'description': name,
+                            'is_predefined': False
+                        }
+                    )
+                    symbols.append(symbol)
+            cleaned_data['symbols'] = symbols
+        else:
+            cleaned_data['symbols'] = []
+            
+        return cleaned_data
+    
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        
+        if commit:
+            instance.save()
+            # Hantera ManyToManyField för symboler
+            if hasattr(self, 'cleaned_data') and 'symbols' in self.cleaned_data:
+                instance.symbols.set(self.cleaned_data['symbols'])
+        
+        return instance
+
     class Meta:
         model = StampTranscription
-        fields = ["text", "quality"]
+        fields = ["stamp", "text", "quality", "symbols"]
         labels = {
+            "stamp": "Stämpel",
             "text": "Text",
             "quality": "Kvalitet",
+            "symbols": "Symboler",
         }
         widgets = {
+            "stamp": forms.Select(attrs={"class": "form-control"}),
             "text": forms.TextInput(
                 attrs={
                     "class": "form-control",
@@ -940,8 +1079,10 @@ class StampTranscriptionForm(forms.ModelForm):
             "quality": forms.Select(attrs={"class": "form-control"}),
         }
         help_texts = {
+            "stamp": "Välj stämpel som transkriberingen tillhör",
             "text": "Textbaserad beskrivning av stämpeln",
             "quality": "Bedömning av hur säker transkriberingen är",
+            "symbols": "Sök och lägg till symboler som förekommer i stämpeln",
         }
 
 

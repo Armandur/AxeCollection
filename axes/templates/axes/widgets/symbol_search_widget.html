@@ -1,0 +1,359 @@
+{% load static %}
+
+<div class="symbol-search-container" data-widget-id="{{ widget.attrs.id|default:'symbols' }}">
+    <div class="input-group">
+        <input type="text" 
+               name="{{ widget.name }}" 
+               id="{{ widget.attrs.id|default:'symbols' }}" 
+               class="form-control symbol-search-input" 
+               placeholder="Sök efter symboler..."
+               autocomplete="off">
+        <button class="btn btn-outline-secondary" type="button" id="symbol-search-dropdown-toggle-{{ widget.attrs.id|default:'symbols' }}">
+            <i class="fas fa-search"></i>
+        </button>
+    </div>
+    
+    <!-- Dropdown för sökresultat -->
+    <div class="dropdown-menu symbol-search-dropdown" id="symbol-search-dropdown-{{ widget.attrs.id|default:'symbols' }}" style="display: none; width: 100%; max-height: 200px; overflow-y: auto;">
+        <!-- Sökresultat visas här -->
+    </div>
+    
+    <!-- Valda symboler som badges -->
+    <div class="selected-symbols-container mt-2" id="selected-symbols-container-{{ widget.attrs.id|default:'symbols' }}">
+        <!-- Valda symboler visas här som badges -->
+    </div>
+    
+    <!-- Dold input för att lagra valda symboler -->
+    <input type="hidden" name="symbols_selected" id="{{ widget.attrs.id|default:'symbols' }}_selected" value="">
+</div>
+
+<script>
+(function() {
+    const widgetId = '{{ widget.attrs.id|default:"symbols" }}';
+    console.log('SymbolSearchWidget initialized with ID:', widgetId);
+    
+    function initializeSymbolSearch() {
+        const searchInput = document.getElementById(widgetId);
+        const dropdown = document.getElementById('symbol-search-dropdown-' + widgetId);
+        const selectedContainer = document.getElementById('selected-symbols-container-' + widgetId);
+        const hiddenInput = document.getElementById(widgetId + '_selected');
+        const toggleButton = document.getElementById('symbol-search-dropdown-toggle-' + widgetId);
+        
+        console.log('Looking for elements with ID:', widgetId);
+        console.log('searchInput found:', !!searchInput);
+        console.log('dropdown found:', !!dropdown);
+        console.log('selectedContainer found:', !!selectedContainer);
+        console.log('hiddenInput found:', !!hiddenInput);
+        console.log('toggleButton found:', !!toggleButton);
+        
+        // Kontrollera att alla element finns
+        if (!searchInput || !dropdown || !selectedContainer || !hiddenInput || !toggleButton) {
+            console.error('Symbol search elements not found for widget:', widgetId);
+            console.error('searchInput:', searchInput);
+            console.error('dropdown:', dropdown);
+            console.error('selectedContainer:', selectedContainer);
+            console.error('hiddenInput:', hiddenInput);
+            console.error('toggleButton:', toggleButton);
+            return;
+        }
+        
+        let selectedSymbols = [];
+        let allSymbols = [];
+        
+        // Ladda alla symboler från servern
+        fetch('/api/stamp-symbols/')
+            .then(response => response.json())
+            .then(data => {
+                allSymbols = data.symbols;
+                console.log('Loaded symbols:', allSymbols.length);
+                
+                // Ladda befintliga symboler om de finns
+                const initialValue = '{{ widget.value|safe }}';
+                console.log('Initial value:', initialValue);
+                
+                if (initialValue && initialValue.trim()) {
+                    // Rensa initialValue från eventuella Django-repräsentationer
+                    let cleanValue = initialValue;
+                    
+                    // Dekoda HTML-entiteter först
+                    function decodeHtmlEntities(text) {
+                        const textarea = document.createElement('textarea');
+                        textarea.innerHTML = text;
+                        return textarea.value;
+                    }
+                    
+                    cleanValue = decodeHtmlEntities(cleanValue);
+                    console.log('Decoded initial value:', cleanValue);
+                    
+                    // Ta bort Django-repräsentationer som [<StampSymbol: Övrigt: Krona>]
+                    if (cleanValue.includes('<StampSymbol:')) {
+                        // Förbättrad regex för att hantera Django-repräsentationer
+                        const matches = cleanValue.match(/<StampSymbol:\s*([^>]+)>/g);
+                        if (matches) {
+                            const symbolNames = matches.map(match => {
+                                // Extrahera innehållet mellan <StampSymbol: och >
+                                const contentMatch = match.match(/<StampSymbol:\s*([^>]+)>/);
+                                if (contentMatch) {
+                                    const content = contentMatch[1].trim();
+                                    // Om innehållet har format "Kategori: Namn", ta bara namnet
+                                    const parts = content.split(':');
+                                    if (parts.length >= 2) {
+                                        return parts[parts.length - 1].trim(); // Ta sista delen som är namnet
+                                    } else {
+                                        return content; // Om ingen kolon finns, använd hela innehållet
+                                    }
+                                }
+                                return '';
+                            }).filter(name => name);
+                            cleanValue = symbolNames.join(', ');
+                        }
+                    }
+                    
+                    console.log('Cleaned initial value:', cleanValue);
+                    
+                    const symbolNames = cleanValue.split(',').map(name => name.trim()).filter(name => name);
+                    console.log('Symbol names to load:', symbolNames);
+                    
+                    symbolNames.forEach(name => {
+                        if (name) {
+                            // Hitta symbolen i listan eller skapa en ny
+                            let symbol = allSymbols.find(s => s.name === name);
+                            if (!symbol) {
+                                symbol = {
+                                    id: 'new_' + Date.now() + Math.random(),
+                                    name: name,
+                                    symbol_type: 'other',
+                                    is_predefined: false
+                                };
+                            }
+                            selectedSymbols.push(symbol);
+                        }
+                    });
+                    updateSelectedSymbolsDisplay();
+                    updateHiddenInput();
+                }
+            })
+            .catch(error => {
+                console.error('Error loading symbols:', error);
+            });
+        
+        // Sökfunktion
+        function searchSymbols(query) {
+            if (!query.trim()) {
+                dropdown.style.display = 'none';
+                return;
+            }
+            
+            const filteredSymbols = allSymbols.filter(symbol => 
+                symbol.name.toLowerCase().includes(query.toLowerCase())
+            );
+            
+            displaySearchResults(filteredSymbols);
+        }
+        
+        // Visa sökresultat
+        function displaySearchResults(symbols) {
+            dropdown.innerHTML = '';
+            
+            if (symbols.length === 0) {
+                dropdown.innerHTML = '<div class="dropdown-item text-muted">Inga symboler hittades</div>';
+            } else {
+                symbols.forEach(symbol => {
+                    const item = document.createElement('div');
+                    item.className = 'dropdown-item symbol-item';
+                    item.textContent = symbol.name;
+                    item.onclick = () => addSymbol(symbol);
+                    dropdown.appendChild(item);
+                });
+            }
+            
+            dropdown.style.display = 'block';
+        }
+        
+        // Lägg till symbol
+        function addSymbol(symbol) {
+            if (!selectedSymbols.find(s => s.id === symbol.id)) {
+                selectedSymbols.push(symbol);
+                updateSelectedSymbolsDisplay();
+                updateHiddenInput();
+            }
+            
+            searchInput.value = '';
+            dropdown.style.display = 'none';
+            searchInput.focus();
+        }
+        
+                 // Ta bort symbol - lokal funktion som använder selectedSymbols array
+         function removeSymbolLocal(symbolId) {
+             console.log('removeSymbolLocal called with symbolId:', symbolId);
+             console.log('selectedSymbols before removal:', selectedSymbols.map(s => ({id: s.id, name: s.name})));
+             
+             // Försök hitta symbolen med exakt ID match
+             const symbolToRemove = selectedSymbols.find(s => s.id == symbolId);
+             if (symbolToRemove) {
+                 console.log('Found symbol to remove:', symbolToRemove);
+                 selectedSymbols = selectedSymbols.filter(s => s.id != symbolId);
+                 console.log('selectedSymbols after removal:', selectedSymbols.map(s => ({id: s.id, name: s.name})));
+                 updateSelectedSymbolsDisplay();
+                 updateHiddenInput();
+             } else {
+                 console.log('Symbol not found with ID:', symbolId);
+                 // Fallback: försök hitta med namn istället
+                 const symbolName = symbolId.toString();
+                 const symbolByName = selectedSymbols.find(s => s.name === symbolName);
+                 if (symbolByName) {
+                     console.log('Found symbol by name:', symbolByName);
+                     selectedSymbols = selectedSymbols.filter(s => s.name !== symbolName);
+                     updateSelectedSymbolsDisplay();
+                     updateHiddenInput();
+                 } else {
+                     console.log('Symbol not found by name either:', symbolName);
+                 }
+             }
+         }
+        
+        // Uppdatera visning av valda symboler
+        function updateSelectedSymbolsDisplay() {
+            selectedContainer.innerHTML = '';
+            
+                         selectedSymbols.forEach(symbol => {
+                 const badge = document.createElement('span');
+                 badge.className = 'badge bg-primary me-1 mb-1';
+                 badge.innerHTML = `
+                     ${symbol.name}
+                     <button type="button" class="btn-close ms-1" 
+                             onclick="${functionName}('${symbol.id}')" 
+                             aria-label="Ta bort ${symbol.name}"></button>
+                 `;
+                 selectedContainer.appendChild(badge);
+             });
+        }
+        
+        // Uppdatera dold input
+        function updateHiddenInput() {
+            const symbolNames = selectedSymbols.map(s => s.name);
+            hiddenInput.value = symbolNames.join(', ');
+            console.log('Updated hidden input:', hiddenInput.value);
+        }
+        
+        // Event listeners
+        searchInput.addEventListener('input', function() {
+            searchSymbols(this.value);
+        });
+        
+        searchInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                const query = this.value.trim();
+                if (query) {
+                    // Skapa ny symbol om den inte finns
+                    const newSymbol = {
+                        id: 'new_' + Date.now(),
+                        name: query,
+                        symbol_type: 'other',
+                        is_predefined: false
+                    };
+                    addSymbol(newSymbol);
+                }
+            }
+        });
+        
+        toggleButton.addEventListener('click', function() {
+            if (dropdown.style.display === 'none') {
+                searchSymbols(searchInput.value);
+            } else {
+                dropdown.style.display = 'none';
+            }
+        });
+        
+        // Stäng dropdown när man klickar utanför
+        document.addEventListener('click', function(e) {
+            if (!searchInput.contains(e.target) && !dropdown.contains(e.target) && !toggleButton.contains(e.target)) {
+                dropdown.style.display = 'none';
+            }
+        });
+        
+                 // Skapa en unik funktion för denna widget-instans och gör den global
+         const functionName = 'removeSymbol_' + widgetId.replace(/[^a-zA-Z0-9]/g, '_');
+         window[functionName] = function(symbolId) {
+             console.log(functionName + ' called with symbolId:', symbolId);
+             removeSymbolLocal(symbolId);
+         };
+    }
+    
+    // Vänta på att DOM är redo
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initializeSymbolSearch);
+    } else {
+        // DOM är redan redo
+        initializeSymbolSearch();
+    }
+})();
+</script>
+
+<style>
+.symbol-search-container {
+    position: relative;
+}
+
+.symbol-search-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    border: 1px solid #ced4da;
+    border-radius: 0.375rem;
+    background-color: var(--bs-body-bg, white);
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+
+.symbol-item {
+    cursor: pointer;
+    padding: 0.5rem 1rem;
+}
+
+.symbol-item:hover {
+    background-color: var(--bs-secondary-bg, #f8f9fa);
+}
+
+.selected-symbols-container {
+    min-height: 2rem;
+}
+
+.badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.badge .btn-close {
+    padding: 0;
+    margin: 0;
+    background: none;
+    border: none;
+    color: white;
+    opacity: 0.8;
+    font-size: 1.5em;
+    line-height: 1;
+    vertical-align: middle;
+    width: 12px;
+    height: 12px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.badge .btn-close:hover {
+    opacity: 1;
+    color: white;
+    background-color: rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+}
+
+.badge .btn-close::before {
+    content: "×";
+    font-size: 14px;
+    font-weight: bold;
+}
+</style> 

@@ -1,0 +1,74 @@
+{% extends "axes/base.html" %}
+
+{% block title %}Transkriberingar för {{ stamp.name }} - {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h1>Transkriberingar för {{ stamp.name }}</h1>
+                <div class="btn-group" role="group">
+                    <a href="{% url 'stamp_transcription_create' stamp.id %}" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> Lägg till transkribering
+                    </a>
+                    <a href="{% url 'stamp_detail' stamp.id %}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i> Tillbaka till stämpel
+                    </a>
+                </div>
+            </div>
+
+            {% if transcriptions %}
+            <div class="row">
+                {% for transcription in transcriptions %}
+                <div class="col-md-6 col-lg-4 mb-3">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <h6 class="card-title mb-0">
+                                    <span class="text-decoration-none">
+                                        {{ transcription.full_transcription|truncatechars:50 }}
+                                    </span>
+                                </h6>
+                                <span class="badge {% if transcription.quality == 'high' %}bg-success{% elif transcription.quality == 'medium' %}bg-warning{% else %}bg-secondary{% endif %}">
+                                    {{ transcription.get_quality_display }}
+                                </span>
+                            </div>
+                            
+                            <p class="card-text small text-muted mb-3">
+                                <strong>Skapad:</strong> {{ transcription.created_at|date:"Y-m-d H:i" }}
+                                {% if transcription.created_by %}
+                                av {{ transcription.created_by.username }}
+                                {% endif %}
+                            </p>
+                            
+                            <div class="btn-group btn-group-sm" role="group">
+                                <a href="{% url 'stamp_transcription_edit' stamp.id transcription.id %}" class="btn btn-outline-secondary">
+                                    <i class="fas fa-edit"></i> Redigera
+                                </a>
+                                <a href="{% url 'stamp_transcription_delete' stamp.id transcription.id %}" class="btn btn-outline-danger">
+                                    <i class="fas fa-trash"></i> Ta bort
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <div class="mt-3">
+                <a href="{% url 'stamp_detail' stamp.id %}" class="btn btn-outline-info">
+                    <i class="fas fa-arrow-left"></i> Tillbaka till stämpel
+                </a>
+            </div>
+
+            {% else %}
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle"></i> Inga transkriberingar finns för denna stämpel ännu.
+                <a href="{% url 'stamp_transcription_create' stamp.id %}" class="alert-link">Lägg till den första transkriberingen</a>.
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %} 

@@ -322,4 +322,31 @@ urlpatterns = [
         views_stamp.update_axe_image_stamp_show_full,
         name="update_axe_image_stamp_show_full",
     ),
+    # StampTranscription URL:er (endast kopplade till stämplar)
+    path(
+        "stamplar/<int:stamp_id>/transkriberingar/",
+        views_stamp.stamp_transcriptions,
+        name="stamp_transcriptions",
+    ),
+    path(
+        "stamplar/<int:stamp_id>/transkriberingar/ny/",
+        views_stamp.transcription_create,
+        name="stamp_transcription_create",
+    ),
+    path(
+        "stamplar/<int:stamp_id>/transkriberingar/<int:transcription_id>/redigera/",
+        views_stamp.transcription_edit,
+        name="stamp_transcription_edit",
+    ),
+    path(
+        "stamplar/<int:stamp_id>/transkriberingar/<int:transcription_id>/ta-bort/",
+        views_stamp.transcription_delete,
+        name="stamp_transcription_delete",
+    ),
+    # API endpoints
+    path(
+        "api/stamp-symbols/",
+        views_stamp.stamp_symbols_api,
+        name="stamp_symbols_api",
+    ),
 ]

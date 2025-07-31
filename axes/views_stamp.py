@@ -16,6 +16,7 @@ from .models import (
     Axe,
     Manufacturer,
     AxeImage,
+    StampSymbol,
 )
 from .forms import (
     StampForm,
@@ -1219,3 +1220,139 @@ def remove_axe_image_stamp(request, axe_id, mark_id):
     }
 
     return render(request, "axes/unmark_axe_image_stamp.html", context)
+
+
+# StampTranscription views
+
+
+
+@login_required
+def transcription_create(request, stamp_id=None):
+    """Skapa ny transkribering"""
+    
+    stamp = None
+    stamp_images = []
+    if stamp_id:
+        stamp = get_object_or_404(Stamp, id=stamp_id)
+        # Hämta stämpelbilder för galleriet
+        stamp_images = (
+            StampImage.objects.filter(stamp=stamp)
+            .select_related("axe_image__axe")
+            .order_by("-is_primary", "order", "-uploaded_at")
+        )
+    
+    if request.method == "POST":
+        form = StampTranscriptionForm(request.POST, pre_selected_stamp=stamp)
+        if form.is_valid():
+            transcription = form.save(commit=False)
+            transcription.created_by = request.user
+            transcription.save()
+            messages.success(request, "Transkribering skapad!")
+            return redirect("stamp_detail", stamp_id=transcription.stamp.id)
+        else:
+            # Lägg till debug-information för valideringsfel
+            print("Form validation errors:", form.errors)
+            messages.error(request, "Det uppstod fel i formuläret. Kontrollera dina uppgifter.")
+    else:
+        initial = {}
+        if stamp:
+            initial["stamp"] = stamp
+        form = StampTranscriptionForm(initial=initial, pre_selected_stamp=stamp)
+    
+    context = {
+        "form": form,
+        "stamp": stamp,
+        "stamp_images": stamp_images,
+    }
+    
+    return render(request, "axes/transcription_form.html", context)
+
+
+@login_required
+def transcription_edit(request, stamp_id, transcription_id):
+    """Redigera befintlig transkribering"""
+    
+    transcription = get_object_or_404(StampTranscription, id=transcription_id, stamp_id=stamp_id)
+    
+    # Hämta stämpelbilder för galleriet
+    stamp_images = (
+        StampImage.objects.filter(stamp=transcription.stamp)
+        .select_related("axe_image__axe")
+        .order_by("-is_primary", "order", "-uploaded_at")
+    )
+    
+    if request.method == "POST":
+        form = StampTranscriptionForm(request.POST, instance=transcription, pre_selected_stamp=transcription.stamp)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Transkribering uppdaterad!")
+            return redirect("stamp_detail", stamp_id=transcription.stamp.id)
+    else:
+        form = StampTranscriptionForm(instance=transcription, pre_selected_stamp=transcription.stamp)
+    
+    context = {
+        "form": form,
+        "transcription": transcription,
+        "stamp": transcription.stamp,
+        "stamp_images": stamp_images,
+    }
+    
+    return render(request, "axes/transcription_form.html", context)
+
+
+@login_required
+def transcription_delete(request, stamp_id, transcription_id):
+    """Ta bort transkribering"""
+    
+    transcription = get_object_or_404(StampTranscription, id=transcription_id, stamp_id=stamp_id)
+    
+    if request.method == "POST":
+        stamp_id = transcription.stamp.id
+        transcription.delete()
+        messages.success(request, "Transkribering borttagen!")
+        return redirect("stamp_detail", stamp_id=stamp_id)
+    
+    context = {
+        "transcription": transcription,
+    }
+    
+    return render(request, "axes/transcription_confirm_delete.html", context)
+
+
+@login_required
+def stamp_transcriptions(request, stamp_id):
+    """Visa alla transkriberingar för en specifik stämpel"""
+    
+    stamp = get_object_or_404(
+        Stamp.objects.prefetch_related("transcriptions__created_by"),
+        id=stamp_id
+    )
+    
+    transcriptions = stamp.transcriptions.all().order_by("-created_at")
+    
+    context = {
+        "stamp": stamp,
+        "transcriptions": transcriptions,
+    }
+    
+    return render(request, "axes/stamp_transcriptions.html", context)
+
+
+@login_required
+def stamp_symbols_api(request):
+    """API endpoint för att hämta alla stämpelsymboler"""
+    symbols = StampSymbol.objects.all().order_by('symbol_type', 'name')
+    
+    symbols_data = []
+    for symbol in symbols:
+        symbols_data.append({
+            'id': symbol.id,
+            'name': symbol.name,
+            'symbol_type': symbol.symbol_type,
+            'description': symbol.description,
+            'is_predefined': symbol.is_predefined,
+        })
+    
+    return JsonResponse({
+        'symbols': symbols_data
+    })

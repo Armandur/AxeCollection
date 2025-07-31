@@ -27,9 +27,18 @@ Många yxor har stämplar som innehåller viktig information om tillverkare, kva
 
 #### StampTranscription (Stämpeltranskribering)
 - **Text**: Textbaserad beskrivning av stämpeln (t.ex. 'GRÄNSFORS', 'MADE IN SWEDEN', 'HULTS BRUK')
-- **Sökbarhet**: Fulltextsökning i transkriberingar
+- **Symboler**: Koppling till fördefinierade eller användardefinierade symboler (t.ex. Krona, Kanon, Stjärna)
+- **Sökbarhet**: Fulltextsökning i transkriberingar och symboler
 - **Kvalitet**: Bedömning av hur säker transkriberingen är
 - **Obligatorisk**: Transkribering krävs för alla stämplar
+- **Komplett transkribering**: Kombinerar text och symboler för fullständig beskrivning
+
+#### StampSymbol (Stämpelsymbol)
+- **Namn**: Unikt namn för symbolen
+- **Typ**: Kategorisering av symboltyp (krona, kanon, stjärna, kors, sköld, ankare, blomma, löv, övrigt)
+- **Beskrivning**: Detaljerad beskrivning av symbolen
+- **Fördefinierad**: Flagga för systemdefinierade vs användardefinierade symboler
+- **Visningsnamn**: Automatisk formatering med symboltyp och namn
 
 #### StampTag (Stämpeltagg)
 - **Namn**: Kategorinamn (t.ex. 'tillverkarnamn', 'land', 'kvalitet', 'år', 'serienummer')
@@ -181,8 +190,63 @@ class StampTranscription(models.Model):
     stamp = models.ForeignKey(Stamp, on_delete=models.CASCADE, related_name='transcriptions')
     text = models.CharField(max_length=500)
     quality = models.CharField(max_length=20, choices=[('high', 'Hög'), ('medium', 'Medium'), ('low', 'Låg')])
+    symbols = models.ManyToManyField('StampSymbol', blank=True, verbose_name='Symboler')
     created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    
+    @property
+    def symbols_display(self):
+        """Returnerar en formaterad sträng av alla symboler"""
+        if self.symbols.exists():
+            return ", ".join([symbol.display_name for symbol in self.symbols.all()])
+        return ""
+    
+    @property
+    def full_transcription(self):
+        """Returnerar komplett transkribering med text och symboler"""
+        parts = [self.text]
+        if self.symbols.exists():
+            symbols_part = " + ".join([symbol.display_name for symbol in self.symbols.all()])
+            parts.append(symbols_part)
+        return " + ".join(parts)
+
+class StampSymbol(models.Model):
+    """Symboler som kan förekomma i stämplar"""
+    
+    SYMBOL_TYPE_CHOICES = [
+        ("crown", "Krona"),
+        ("cannon", "Kanon"),
+        ("star", "Stjärna"),
+        ("cross", "Kors"),
+        ("shield", "Sköld"),
+        ("anchor", "Ankare"),
+        ("flower", "Blomma"),
+        ("leaf", "Löv"),
+        ("other", "Övrigt"),
+    ]
+    
+    name = models.CharField(max_length=100, verbose_name="Namn")
+    symbol_type = models.CharField(max_length=20, choices=SYMBOL_TYPE_CHOICES, default="other")
+    description = models.TextField(blank=True, null=True, verbose_name="Beskrivning")
+    is_predefined = models.BooleanField(default=False, verbose_name="Fördefinierad")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ["symbol_type", "name"]
+        verbose_name = "Stämpelsymbol"
+        verbose_name_plural = "Stämpelsymboler"
+        unique_together = ["name", "symbol_type"]
+    
+    def __str__(self):
+        return f"{self.get_symbol_type_display()}: {self.name}"
+    
+    @property
+    def display_name(self):
+        """Returnerar visningsnamn för symbolen"""
+        if self.symbol_type == "other":
+            return self.name
+        return f"{self.get_symbol_type_display()}: {self.name}"
 
 class StampTag(models.Model):
     name = models.CharField(max_length=100)
@@ -256,11 +320,39 @@ class StampUncertaintyGroup(models.Model):
 - [x] 105.10 Skapa admin-gränssnitt för att hantera stämplar, transkriberingar, taggar, och kopplingar mellan stämplar och yxor
 - [ ] 105.11 Implementera import/export-funktionalitet för stämpeldata (CSV/JSON) för att dela stämpelregister med andra samlare
 
+### Fas 4: Saknade användargränssnitt (upptäckt 2025-01-27)
+- [ ] 105.13 Implementera användargränssnitt för StampTranscription-hantering (views, templates, URLs)
+- [ ] 105.14 Implementera användargränssnitt för StampTag-hantering (views, templates, URLs)
+- [ ] 105.15 Implementera användargränssnitt för StampVariant-hantering (views, templates, URLs)
+- [ ] 105.16 Implementera användargränssnitt för StampUncertaintyGroup-hantering (views, templates, URLs)
+
 ## Prioritering
 
 1. **Hög prioritet**: Grundläggande datamodeller och enkel stämpelregistrering
 2. **Medium prioritet**: Sökfunktioner och användargränssnitt
 3. **Låg prioritet**: AI-funktioner och avancerad sökning
+
+## Aktuell status (2025-01-27)
+
+### Implementerat
+- ✅ **Grundläggande stämpelfunktionalitet**: Stamp-modell, admin, views, templates
+- ✅ **Stämpelkoppling**: Koppla stämplar till yxor med bildmarkering
+- ✅ **Stämpelredigering**: Redigera befintliga stämplar med bildmarkering
+- ✅ **Kortbaserad visning**: Visuell stämpelvisning på yxdetaljsidan
+- ✅ **AJAX-sökning**: Realtidssökning i stämplar
+- ✅ **Bildmarkering**: Integrerad stämpelmarkering på yxbilder med koordinater
+
+### Saknat användargränssnitt
+- ❌ **StampTranscription**: Modell finns men saknar användarvyer för hantering
+- ❌ **StampTag**: Modell finns men saknar användarvyer för hantering  
+- ❌ **StampVariant**: Modell finns men saknar användarvyer för hantering
+- ❌ **StampUncertaintyGroup**: Modell finns men saknar användarvyer för hantering
+
+### Prioriterade nästa steg
+1. **StampTranscription-hantering** - Högst prioritet (obligatorisk för stämplar)
+2. **StampTag-hantering** - Medium prioritet (för kategorisering)
+3. **StampVariant-hantering** - Låg prioritet (avancerad funktion)
+4. **StampUncertaintyGroup-hantering** - Låg prioritet (avancerad funktion)
 
 ## Framtida utveckling
 
@@ -308,6 +400,18 @@ class StampUncertaintyGroup(models.Model):
 - **Stämpelarkiv**: Arkivering av gamla eller ersatta stämplar (ej prioriterat)
 
 ## Implementation Status
+
+### Genomfört (2025-07-31)
+
+#### Symbolfunktionalitet för stämplar (2025-07-31)
+- [x] **StampSymbol-modell**: Skapad med symboltyper (krona, kanon, stjärna, kors, sköld, ankare, blomma, löv, övrigt)
+- [x] **Fördefinierade symboler**: 22 fördefinierade symboler skapade via management command
+- [x] **Transkribering-symbol koppling**: ManyToManyField mellan StampTranscription och StampSymbol
+- [x] **Formulärintegration**: StampTranscriptionForm uppdaterad med symbolval
+- [x] **Grupperad visning**: Symboler grupperade efter typ i dropdown
+- [x] **Komplett transkribering**: Property som kombinerar text och symboler
+- [x] **Databasmigrationer**: Migrationer skapade och applicerade för symbolfunktionalitet
+- [x] **Management command**: `init_stamp_symbols` för att skapa fördefinierade symboler
 
 ### Genomfört (2025-07-29)
 
@@ -360,7 +464,16 @@ class StampUncertaintyGroup(models.Model):
 - [x] **Yxdetaljsida-integration**: Visa stämplar på yxdetaljsidan
 - [x] **Stämpelkoppling**: Möjlighet att koppla/avkoppla stämplar från yxdetaljsidan
 - [x] **AJAX-sökning**: Implementera AJAX-funktionalitet för stämpelsökning
-- [ ] **Mottagningsflöde-integration**: Integrera stämpeldefinition i mottagningsarbetsflödet
+- [x] **Bildmarkering**: Integrerad stämpelmarkering på yxbilder med koordinater
+- [x] **Stämpelredigering**: Möjlighet att redigera befintliga stämplar med bildmarkering
+- [x] **Kortbaserad stämpelvisning**: Visuell stämpelvisning med bilder på yxdetaljsidan
+- [ ] **Mottagningsflöde-integration**: Integrera stämpeldefinition i mottagningsarbetsflödet (SKIPPAD - fungerar bra som separat process)
+
+#### Saknade användargränssnitt (upptäckt 2025-01-27)
+- [ ] **StampTranscription-hantering**: Views, templates och URLs för att hantera stämpeltranskriberingar
+- [ ] **StampTag-hantering**: Views, templates och URLs för att hantera stämpeltaggar
+- [ ] **StampVariant-hantering**: Views, templates och URLs för att hantera stämpelvarianter
+- [ ] **StampUncertaintyGroup-hantering**: Views, templates och URLs för att hantera osäkerhetsgrupper
 
 #### Tekniska detaljer
 - **Branch**: `feature/stamp-register`
@@ -376,8 +489,8 @@ class StampUncertaintyGroup(models.Model):
 
 ### Kända begränsningar
 - **Ingen data**: Databasen är tom för stämplar (förväntat)
-- **Ingen AJAX**: Sökfunktionalitet är inte AJAX-baserad än
-- **Ingen mottagningsintegration**: Stämpeldefinition är inte integrerad i mottagningsflödet än
+- **Saknade användargränssnitt**: Flera stämpelmodeller har bara admin-gränssnitt men saknar användarvyer
+- **Ingen mottagningsintegration**: Stämpeldefinition är inte integrerad i mottagningsflödet (medvetet val)
 
 ### Nyligen implementerat (2025-07-29)
 
@@ -445,6 +558,12 @@ class StampUncertaintyGroup(models.Model):
 
 ### Kommande funktioner (TODO)
 
+#### Saknade användargränssnitt (högsta prioritet)
+- [ ] **StampTranscription-hantering**: Views, templates och URLs för att hantera stämpeltranskriberingar
+- [ ] **StampTag-hantering**: Views, templates och URLs för att hantera stämpeltaggar
+- [ ] **StampVariant-hantering**: Views, templates och URLs för att hantera stämpelvarianter
+- [ ] **StampUncertaintyGroup-hantering**: Views, templates och URLs för att hantera osäkerhetsgrupper
+
 #### Avancerad bildhantering
 - [x] **Markera AxeImage som StampImage**: Möjlighet att markera befintliga AxeImage som StampImage för specifika stämplar
 - [x] **Huvudbildsval**: På stämpeldetaljsidan kunna välja "bästa" bilden som stämpelns huvudbild
@@ -453,11 +572,11 @@ class StampUncertaintyGroup(models.Model):
 - [x] **Bildkoordinater**: Spara x,y-koordinater för stämpelområdet inom bilden
 - [ ] **Zoom-funktionalitet**: Möjlighet att zooma in på stämpelområdet
 
-#### Mottagningsflöde-integration
-- [ ] **Stämpeldefinition i mottagningsflödet**: Integrera stämpeldefinition i receiving_workflow
-- [ ] **Realtidsfotografering**: Möjlighet att fota stämplar direkt i mottagningsflödet
-- [ ] **Snabbidentifiering**: Automatiska förslag på stämplar baserat på tillverkare/transkription
-- [ ] **Bulk-operationer**: Markera flera yxor för stämpeldefinition samtidigt
+#### Mottagningsflöde-integration (SKIPPAD)
+- [x] **Stämpeldefinition som separat process**: Stämpeldefinition fungerar bra som separat process efter mottagning
+- [x] **Bildmarkering**: Integrerad stämpelmarkering på yxbilder med koordinater
+- [x] **Stämpelredigering**: Möjlighet att redigera befintliga stämplar med bildmarkering
+- [x] **Kortbaserad visning**: Visuell stämpelvisning på yxdetaljsidan
 
 #### Avancerad sökning och filtrering
 - [ ] **Visuell stämpelsökning**: Sök stämplar baserat på visuell likhet

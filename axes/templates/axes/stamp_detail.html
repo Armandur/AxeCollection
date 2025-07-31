@@ -462,41 +462,68 @@ function setPrimaryImage(stampId, markId, isPrimary) {
             </div>
 
             <!-- Transkriberingar -->
-            {% if stamp.transcriptions.all %}
             <div class="row mt-4">
                 <div class="col-12">
                     <div class="card">
-                        <div class="card-header">
+                        <div class="card-header d-flex justify-content-between align-items-center">
                             <h5 class="mb-0">Transkriberingar</h5>
+                            <div class="btn-group btn-group-sm" role="group">
+                                <a href="{% url 'stamp_transcription_create' stamp.id %}" class="btn btn-primary btn-sm">
+                                    <i class="fas fa-plus"></i> Lägg till
+                                </a>
+                                <a href="{% url 'stamp_transcriptions' stamp.id %}" class="btn btn-outline-secondary btn-sm">
+                                    <i class="fas fa-list"></i> Visa alla
+                                </a>
+                            </div>
                         </div>
                         <div class="card-body">
+                            {% if stamp.transcriptions.all %}
                             <div class="row">
                                 {% for transcription in stamp.transcriptions.all %}
                                 <div class="col-md-6 col-lg-4 mb-3">
-                                    <div class="card">
+                                    <div class="card h-100">
                                         <div class="card-body">
-                                            <h6 class="card-title">{{ transcription.text }}</h6>
-                                            <p class="card-text">
-                                                <span class="badge bg-{% if transcription.quality == 'high' %}success{% elif transcription.quality == 'medium' %}warning{% else %}danger{% endif %}">
+                                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                                <h6 class="card-title mb-0">
+                                                    <span class="text-decoration-none">
+                                                        {{ transcription.full_transcription|truncatechars:50 }}
+                                                    </span>
+                                                </h6>
+                                                <span class="badge {% if transcription.quality == 'high' %}bg-success{% elif transcription.quality == 'medium' %}bg-warning{% else %}bg-secondary{% endif %}">
                                                     {{ transcription.get_quality_display }}
                                                 </span>
-                                            </p>
-                                            <small class="text-muted">
-                                                Skapad {{ transcription.created_at|date:"Y-m-d" }}
+                                            </div>
+                                            <p class="card-text small text-muted mb-3">
+                                                <strong>Skapad:</strong> {{ transcription.created_at|date:"Y-m-d H:i" }}
                                                 {% if transcription.created_by %}
-                                                    av {{ transcription.created_by }}
+                                                av {{ transcription.created_by.username }}
                                                 {% endif %}
-                                            </small>
+                                            </p>
+                                            <div class="btn-group btn-group-sm" role="group">
+                                                <a href="{% url 'stamp_transcription_edit' stamp.id transcription.id %}" class="btn btn-outline-secondary btn-sm">
+                                                    <i class="fas fa-edit"></i> Redigera
+                                                </a>
+                                                <a href="{% url 'stamp_transcription_delete' stamp.id transcription.id %}" class="btn btn-outline-danger btn-sm">
+                                                    <i class="fas fa-trash"></i> Ta bort
+                                                </a>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
                                 {% endfor %}
                             </div>
+                            {% else %}
+                            <div class="text-center py-4">
+                                <p class="text-muted">Inga transkriberingar finns för denna stämpel ännu.</p>
+                                <a href="{% url 'stamp_transcription_create' stamp.id %}" class="btn btn-primary">
+                                    <i class="fas fa-plus"></i> Lägg till första transkriberingen
+                                </a>
+                            </div>
+                            {% endif %}
                         </div>
                     </div>
                 </div>
             </div>
-            {% endif %}
 
             <!-- Bilder -->
             <div class="row mt-4">
