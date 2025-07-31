@@ -25,7 +25,13 @@ class Command(BaseCommand):
             return
 
         media_root = settings.MEDIA_ROOT
-        media_dirs = ["axe_images", "manufacturer_images", "stamps", "unlinked_images", "stamp_images"]
+        media_dirs = [
+            "axe_images",
+            "manufacturer_images",
+            "stamps",
+            "unlinked_images",
+            "stamp_images",
+        ]
 
         total_removed = 0
 
@@ -54,12 +60,8 @@ class Command(BaseCommand):
                         self.style.ERROR(f"Fel vid rensning av {dir_name}/: {e}")
                     )
             else:
-                self.stdout.write(
-                    self.style.WARNING(f"Mappen {dir_name}/ finns inte")
-                )
+                self.stdout.write(self.style.WARNING(f"Mappen {dir_name}/ finns inte"))
 
         self.stdout.write(
-            self.style.SUCCESS(
-                f"\nTotalt borttagna filer: {total_removed}"
-            )
-        ) 
+            self.style.SUCCESS(f"\nTotalt borttagna filer: {total_removed}")
+        )

@@ -907,6 +907,18 @@ class StampForm(forms.ModelForm):
             "source_reference": "Specifik hänvisning till källan",
         }
 
+    def clean(self):
+        """Validera formuläret"""
+        cleaned_data = super().clean()
+        status = cleaned_data.get("status")
+        manufacturer = cleaned_data.get("manufacturer")
+
+        # Validera att kända stämplar har tillverkare
+        if status == "known" and not manufacturer:
+            raise forms.ValidationError("Kända stämplar måste ha en tillverkare")
+
+        return cleaned_data
+
 
 class StampTranscriptionForm(forms.ModelForm):
     """Formulär för att lägga till transkriberingar"""
@@ -1017,6 +1029,19 @@ class AxeStampForm(forms.ModelForm):
             "uncertainty_level": "Hur säker är identifieringen av stämpeln",
         }
 
+    def clean_stamp(self):
+        """Konvertera stamp ID till Stamp-objekt"""
+        stamp_id = self.cleaned_data.get("stamp")
+        if stamp_id:
+            try:
+                from .models import Stamp
+
+                return Stamp.objects.get(id=stamp_id)
+            except Stamp.DoesNotExist:
+                raise forms.ValidationError("Vald stämpel finns inte.")
+        else:
+            raise forms.ValidationError("Stämpel måste väljas.")
+
 
 class StampTagForm(forms.ModelForm):
     """Formulär för att skapa stämpeltaggar"""
@@ -1065,8 +1090,8 @@ class StampImageForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
 
         # Sätt initial image_type till standalone för nya bilder
-        if not self.initial.get('image_type'):
-            self.initial['image_type'] = 'standalone'
+        if not self.initial.get("image_type"):
+            self.initial["image_type"] = "standalone"
 
     class Meta:
         model = StampImage
@@ -1202,7 +1227,7 @@ class StampImageForm(forms.ModelForm):
         # Validera att axe_image finns för axe_mark-typer
         if image_type == "axe_mark" and not axe_image:
             raise forms.ValidationError("Yxbild måste väljas för yxbildmarkeringar")
-        
+
         # För standalone-bilder, säkerställ att axe_image är None
         if image_type == "standalone":
             cleaned_data["axe_image"] = None
@@ -1226,10 +1251,10 @@ class StampImageMarkForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        
+
         # Sätt initial image_type till axe_mark för stämpelmarkeringar
-        if not self.initial.get('image_type'):
-            self.initial['image_type'] = 'axe_mark'
+        if not self.initial.get("image_type"):
+            self.initial["image_type"] = "axe_mark"
 
     class Meta:
         model = StampImage
@@ -1268,9 +1293,7 @@ class StampImageMarkForm(forms.ModelForm):
                     "onchange": "updateAxeImageField(this.value)",
                 }
             ),
-            "axe_image": forms.Select(
-                attrs={"class": "form-control"}
-            ),
+            "axe_image": forms.Select(attrs={"class": "form-control"}),
             "caption": forms.TextInput(
                 attrs={
                     "class": "form-control",

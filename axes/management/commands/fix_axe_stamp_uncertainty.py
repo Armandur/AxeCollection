@@ -11,8 +11,11 @@ class Command(BaseCommand):
         # Mappning från svenska till engelska värden
         swedish_to_english = {
             "säker": "certain",
+            "Säker": "certain",
             "osäker": "uncertain",
+            "Osäker": "uncertain",
             "preliminär": "tentative",
+            "Preliminär": "tentative",
         }
 
         # Hämta alla AxeStamp-objekt med ogiltiga värden

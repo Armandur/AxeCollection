@@ -1,5 +1,5 @@
 from django.core.management.base import BaseCommand
-from axes.models import AxeImageStamp
+from axes.models import StampImage
 
 
 class Command(BaseCommand):
@@ -14,7 +14,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         # Räkna antal poster
-        count = AxeImageStamp.objects.count()
+        count = StampImage.objects.count()
 
         if count == 0:
             self.stdout.write(
@@ -33,7 +33,7 @@ class Command(BaseCommand):
             return
 
         # Ta bort alla poster
-        deleted_count = AxeImageStamp.objects.all().delete()[0]
+        deleted_count = StampImage.objects.all().delete()[0]
 
         self.stdout.write(
             self.style.SUCCESS(

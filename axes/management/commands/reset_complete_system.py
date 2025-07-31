@@ -71,4 +71,4 @@ class Command(BaseCommand):
                 "\n✅ Komplett nollställning slutförd!\n"
                 "Systemet har återställts med ny testdata."
             )
-        ) 
+        )

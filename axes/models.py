@@ -1356,11 +1356,11 @@ class StampImage(models.Model):
         # Säkerställ att image_type är satt
         if not self.image_type:
             self.image_type = "standalone"
-        
+
         # Validering för att säkerställa att axe_image finns för axe_mark-typer
         if self.image_type == "axe_mark" and not self.axe_image:
             raise ValidationError("Axe_image måste anges för axe_mark-typer")
-        
+
         # För standalone-bilder, säkerställ att axe_image är None
         if self.image_type == "standalone":
             self.axe_image = None
@@ -1368,17 +1368,25 @@ class StampImage(models.Model):
         # Säkerställ att stamp är satt
         if not self.stamp:
             raise ValidationError("Stamp måste anges")
-        
+
         # Säkerställ att image är satt (endast för standalone, reference och documentation typer)
-        if self.image_type in ["standalone", "reference", "documentation"] and not self.image:
+        if (
+            self.image_type in ["standalone", "reference", "documentation"]
+            and not self.image
+        ):
             raise ValidationError("Bild måste anges")
 
         # Konvertera koordinater till Decimal om de är strängar
         from decimal import Decimal
+
         if isinstance(self.x_coordinate, str):
-            self.x_coordinate = Decimal(self.x_coordinate) if self.x_coordinate else None
+            self.x_coordinate = (
+                Decimal(self.x_coordinate) if self.x_coordinate else None
+            )
         if isinstance(self.y_coordinate, str):
-            self.y_coordinate = Decimal(self.y_coordinate) if self.y_coordinate else None
+            self.y_coordinate = (
+                Decimal(self.y_coordinate) if self.y_coordinate else None
+            )
         if isinstance(self.width, str):
             self.width = Decimal(self.width) if self.width else None
         if isinstance(self.height, str):

@@ -82,7 +82,7 @@ class Command(BaseCommand):
 
         # Skapa tillverkarlänkar och bilder
         self.create_manufacturer_links(manufacturers)
-        
+
         if not options["no_images"]:
             self.create_manufacturer_images(manufacturers)
             # Skapa yxbilder
@@ -107,8 +107,16 @@ class Command(BaseCommand):
     def clear_data(self):
         """Rensa all befintlig data"""
         # Rensa stämpel-relaterad data först
-        from axes.models import StampImage, AxeStamp, Stamp, StampTranscription, StampTag, StampVariant, StampUncertaintyGroup
-        
+        from axes.models import (
+            StampImage,
+            AxeStamp,
+            Stamp,
+            StampTranscription,
+            StampTag,
+            StampVariant,
+            StampUncertaintyGroup,
+        )
+
         StampImage.objects.all().delete()
         AxeStamp.objects.all().delete()
         StampTranscription.objects.all().delete()
@@ -116,7 +124,7 @@ class Command(BaseCommand):
         StampVariant.objects.all().delete()
         StampUncertaintyGroup.objects.all().delete()
         Stamp.objects.all().delete()
-        
+
         # Rensa övrig data
         Transaction.objects.all().delete()
         Measurement.objects.all().delete()

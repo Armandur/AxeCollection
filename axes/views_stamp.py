@@ -17,7 +17,13 @@ from .models import (
     Manufacturer,
     AxeImage,
 )
-from .forms import StampForm, StampTranscriptionForm, AxeStampForm, StampImageForm, StampImageMarkForm
+from .forms import (
+    StampForm,
+    StampTranscriptionForm,
+    AxeStampForm,
+    StampImageForm,
+    StampImageMarkForm,
+)
 import json
 
 
@@ -354,10 +360,10 @@ def stamp_image_upload(request, stamp_id):
             try:
                 stamp_image = form.save(commit=False)
                 stamp_image.stamp = stamp
-                
+
                 # Sätt image_type automatiskt till standalone för nya bilder
                 stamp_image.image_type = "standalone"
-                
+
                 # Hantera koordinater från formuläret
                 x_coord = request.POST.get("x_coordinate")
                 y_coord = request.POST.get("y_coordinate")
@@ -366,6 +372,7 @@ def stamp_image_upload(request, stamp_id):
 
                 if x_coord and y_coord and width and height:
                     from decimal import Decimal
+
                     stamp_image.x_coordinate = Decimal(x_coord)
                     stamp_image.y_coordinate = Decimal(y_coord)
                     stamp_image.width = Decimal(width)
@@ -398,7 +405,9 @@ def stamp_image_upload(request, stamp_id):
                 }
                 return render(request, "axes/stamp_image_form.html", context)
         else:
-            messages.error(request, "Formuläret innehåller fel. Kontrollera dina indata.")
+            messages.error(
+                request, "Formuläret innehåller fel. Kontrollera dina indata."
+            )
             # Rendera formuläret igen med fel
             context = {
                 "stamp": stamp,
@@ -457,7 +466,11 @@ def stamp_image_edit(request, stamp_id, image_id):
 
     # Om det är en axe_mark-bild, omdirigera till edit_axe_image_stamp
     if stamp_image.image_type == "axe_mark" and stamp_image.axe_image:
-        return redirect("edit_axe_image_stamp", axe_id=stamp_image.axe_image.axe.id, mark_id=stamp_image.id)
+        return redirect(
+            "edit_axe_image_stamp",
+            axe_id=stamp_image.axe_image.axe.id,
+            mark_id=stamp_image.id,
+        )
 
     if request.method == "POST":
         form = StampImageForm(request.POST, request.FILES, instance=stamp_image)
@@ -470,13 +483,14 @@ def stamp_image_edit(request, stamp_id, image_id):
 
             stamp_image = form.save(commit=False)
             stamp_image.stamp = stamp
-            
+
             # Behåll befintlig image_type för redigering
             # (formuläret innehåller inte image_type längre, så vi behåller det befintliga)
 
             # Uppdatera koordinater om de finns
             if x_coord and y_coord and width and height:
                 from decimal import Decimal
+
                 stamp_image.x_coordinate = Decimal(x_coord)
                 stamp_image.y_coordinate = Decimal(y_coord)
                 stamp_image.width = Decimal(width)
@@ -568,6 +582,7 @@ def add_axe_stamp(request, axe_id):
 
                 # Konvertera koordinater till Decimal om de finns
                 from decimal import Decimal
+
                 x_coord_decimal = Decimal(x_coord) if x_coord else None
                 y_coord_decimal = Decimal(y_coord) if y_coord else None
                 width_decimal = Decimal(width) if width else None
@@ -720,6 +735,7 @@ def mark_axe_image_as_stamp(request, axe_id, image_id):
 
             # Konvertera koordinater till Decimal om de finns
             from decimal import Decimal
+
             x_coord_decimal = Decimal(x_coord) if x_coord else None
             y_coord_decimal = Decimal(y_coord) if y_coord else None
             width_decimal = Decimal(width) if width else None
@@ -845,6 +861,7 @@ def edit_axe_image_stamp(request, axe_id, mark_id):
 
                 # Konvertera koordinater till Decimal
                 from decimal import Decimal
+
                 x_coord_decimal = Decimal(x_coord) if x_coord else None
                 y_coord_decimal = Decimal(y_coord) if y_coord else None
                 width_decimal = Decimal(width) if width else None
@@ -882,6 +899,7 @@ def edit_axe_image_stamp(request, axe_id, mark_id):
                 # Uppdatera koordinater om de finns
                 if x_coord and y_coord and width and height:
                     from decimal import Decimal
+
                     stamp_mark.x_coordinate = Decimal(x_coord)
                     stamp_mark.y_coordinate = Decimal(y_coord)
                     stamp_mark.width = Decimal(width)
@@ -1097,6 +1115,7 @@ def edit_axe_stamp(request, axe_id, axe_stamp_id):
                     if x_coord and y_coord and width and height:
                         # Konvertera koordinater till Decimal
                         from decimal import Decimal
+
                         StampImage.objects.create(
                             axe_image=selected_image,
                             stamp=axe_stamp.stamp,
