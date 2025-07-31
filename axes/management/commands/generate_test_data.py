@@ -53,6 +53,11 @@ class Command(BaseCommand):
             default=25,
             help="Antal kontakter att generera (default: 25)",
         )
+        parser.add_argument(
+            "--no-images",
+            action="store_true",
+            help="Generera testdata utan bildfiler",
+        )
 
     def handle(self, *args, **options):
         if options["clear"]:
@@ -77,10 +82,11 @@ class Command(BaseCommand):
 
         # Skapa tillverkarlänkar och bilder
         self.create_manufacturer_links(manufacturers)
-        self.create_manufacturer_images(manufacturers)
-
-        # Skapa yxbilder
-        self.create_axe_images(axes)
+        
+        if not options["no_images"]:
+            self.create_manufacturer_images(manufacturers)
+            # Skapa yxbilder
+            self.create_axe_images(axes)
 
         # Skapa standardinställningar
         self.create_settings()
@@ -100,6 +106,18 @@ class Command(BaseCommand):
 
     def clear_data(self):
         """Rensa all befintlig data"""
+        # Rensa stämpel-relaterad data först
+        from axes.models import StampImage, AxeStamp, Stamp, StampTranscription, StampTag, StampVariant, StampUncertaintyGroup
+        
+        StampImage.objects.all().delete()
+        AxeStamp.objects.all().delete()
+        StampTranscription.objects.all().delete()
+        StampTag.objects.all().delete()
+        StampVariant.objects.all().delete()
+        StampUncertaintyGroup.objects.all().delete()
+        Stamp.objects.all().delete()
+        
+        # Rensa övrig data
         Transaction.objects.all().delete()
         Measurement.objects.all().delete()
         AxeImage.objects.all().delete()

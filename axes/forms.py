@@ -1064,26 +1064,14 @@ class StampImageForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        # Gör axe_image-fältet dynamiskt baserat på image_type
-        if self.instance and self.instance.pk:
-            # Redigering av befintlig bild
-            if self.instance.image_type == "axe_mark":
-                self.fields["axe_image"].queryset = AxeImage.objects.all()
-                self.fields["axe_image"].required = True
-            else:
-                self.fields["axe_image"].queryset = AxeImage.objects.none()
-                self.fields["axe_image"].required = False
-        else:
-            # Ny bild - dölj axe_image initialt
-            self.fields["axe_image"].queryset = AxeImage.objects.none()
-            self.fields["axe_image"].required = False
+        # Sätt initial image_type till standalone för nya bilder
+        if not self.initial.get('image_type'):
+            self.initial['image_type'] = 'standalone'
 
     class Meta:
         model = StampImage
         fields = [
             "image",
-            "image_type",
-            "axe_image",
             "caption",
             "description",
             "x_coordinate",
@@ -1097,8 +1085,6 @@ class StampImageForm(forms.ModelForm):
         ]
         labels = {
             "image": "Bild",
-            "image_type": "Bildtyp",
-            "axe_image": "Yxbild",
             "caption": "Bildtext",
             "description": "Beskrivning",
             "x_coordinate": "X-koordinat (%)",
@@ -1113,15 +1099,6 @@ class StampImageForm(forms.ModelForm):
         widgets = {
             "image": forms.FileInput(
                 attrs={"class": "form-control", "accept": "image/*"}
-            ),
-            "image_type": forms.Select(
-                attrs={
-                    "class": "form-control",
-                    "onchange": "updateAxeImageField(this.value)",
-                }
-            ),
-            "axe_image": forms.Select(
-                attrs={"class": "form-control", "style": "display: none;"}
             ),
             "caption": forms.TextInput(
                 attrs={
@@ -1198,10 +1175,8 @@ class StampImageForm(forms.ModelForm):
             ),
         }
         help_texts = {
-            "image": "Ladda upp bild av stämpeln",
-            "image_type": "Välj typ av bild",
-            "axe_image": "Välj yxbild om detta är en markering",
-            "caption": "Kort beskrivning av bilden",
+            "image": "Ladda upp en bild av stämpeln",
+            "caption": "Kort beskrivning som visas under bilden",
             "description": "Detaljerad beskrivning av vad bilden visar",
             "x_coordinate": "X-koordinat för stämpelområdet (procent från vänster)",
             "y_coordinate": "Y-koordinat för stämpelområdet (procent från toppen)",
@@ -1209,7 +1184,7 @@ class StampImageForm(forms.ModelForm):
             "height": "Höjd på stämpelområdet (procent av bildhöjd)",
             "position": "Var på bilden/yxan stämpeln finns",
             "comment": "Anteckningar om stämpelområdet",
-            "uncertainty_level": "Hur säker är identifieringen",
+            "uncertainty_level": "Hur säker identifieringen av stämpeln är",
             "external_source": "Källa för extern bild",
         }
 
@@ -1219,9 +1194,18 @@ class StampImageForm(forms.ModelForm):
         image_type = cleaned_data.get("image_type")
         axe_image = cleaned_data.get("axe_image")
 
+        # Säkerställ att image_type är satt
+        if not image_type:
+            image_type = "standalone"
+            cleaned_data["image_type"] = image_type
+
         # Validera att axe_image finns för axe_mark-typer
         if image_type == "axe_mark" and not axe_image:
             raise forms.ValidationError("Yxbild måste väljas för yxbildmarkeringar")
+        
+        # För standalone-bilder, säkerställ att axe_image är None
+        if image_type == "standalone":
+            cleaned_data["axe_image"] = None
 
         # Validera koordinater
         coords = [
@@ -1235,3 +1219,143 @@ class StampImageForm(forms.ModelForm):
             raise forms.ValidationError("Alla koordinater måste anges tillsammans")
 
         return cleaned_data
+
+
+class StampImageMarkForm(forms.ModelForm):
+    """Formulär för redigering av stämpelmarkeringar på yxbilder"""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        
+        # Sätt initial image_type till axe_mark för stämpelmarkeringar
+        if not self.initial.get('image_type'):
+            self.initial['image_type'] = 'axe_mark'
+
+    class Meta:
+        model = StampImage
+        fields = [
+            "image_type",
+            "axe_image",
+            "caption",
+            "description",
+            "x_coordinate",
+            "y_coordinate",
+            "width",
+            "height",
+            "position",
+            "comment",
+            "uncertainty_level",
+            "external_source",
+        ]
+        labels = {
+            "image_type": "Bildtyp",
+            "axe_image": "Yxbild",
+            "caption": "Bildtext",
+            "description": "Beskrivning",
+            "x_coordinate": "X-koordinat (%)",
+            "y_coordinate": "Y-koordinat (%)",
+            "width": "Bredd (%)",
+            "height": "Höjd (%)",
+            "position": "Position",
+            "comment": "Kommentar",
+            "uncertainty_level": "Osäkerhetsnivå",
+            "external_source": "Extern källa",
+        }
+        widgets = {
+            "image_type": forms.Select(
+                attrs={
+                    "class": "form-control",
+                    "onchange": "updateAxeImageField(this.value)",
+                }
+            ),
+            "axe_image": forms.Select(
+                attrs={"class": "form-control"}
+            ),
+            "caption": forms.TextInput(
+                attrs={
+                    "class": "form-control",
+                    "placeholder": "Kort beskrivning av bilden",
+                }
+            ),
+            "description": forms.Textarea(
+                attrs={
+                    "class": "form-control",
+                    "rows": 3,
+                    "placeholder": "Detaljerad beskrivning av vad bilden visar",
+                }
+            ),
+            "x_coordinate": forms.NumberInput(
+                attrs={
+                    "class": "form-control",
+                    "readonly": "readonly",
+                    "placeholder": "Markera på bilden",
+                    "step": "0.01",
+                    "min": "0",
+                    "max": "100",
+                }
+            ),
+            "y_coordinate": forms.NumberInput(
+                attrs={
+                    "class": "form-control",
+                    "readonly": "readonly",
+                    "placeholder": "Markera på bilden",
+                    "step": "0.01",
+                    "min": "0",
+                    "max": "100",
+                }
+            ),
+            "width": forms.NumberInput(
+                attrs={
+                    "class": "form-control",
+                    "readonly": "readonly",
+                    "placeholder": "Markera på bilden",
+                    "step": "0.01",
+                    "min": "0",
+                    "max": "100",
+                }
+            ),
+            "height": forms.NumberInput(
+                attrs={
+                    "class": "form-control",
+                    "readonly": "readonly",
+                    "placeholder": "Markera på bilden",
+                    "step": "0.01",
+                    "min": "0",
+                    "max": "100",
+                }
+            ),
+            "position": forms.TextInput(
+                attrs={
+                    "class": "form-control",
+                    "placeholder": 'Var på bilden/yxan stämpeln finns (t.ex. "på bladet - vänstra sidan")',
+                }
+            ),
+            "comment": forms.Textarea(
+                attrs={
+                    "class": "form-control",
+                    "rows": 3,
+                    "placeholder": "Lägg till kommentar om stämpeln...",
+                }
+            ),
+            "uncertainty_level": forms.Select(attrs={"class": "form-control"}),
+            "external_source": forms.TextInput(
+                attrs={
+                    "class": "form-control",
+                    "placeholder": 'Källa för extern bild (t.ex. "Museum X", "Bok Y")',
+                }
+            ),
+        }
+        help_texts = {
+            "image_type": "Välj typ av bild",
+            "axe_image": "Välj yxbild om detta är en markering på en befintlig yxbild",
+            "caption": "Kort beskrivning som visas under bilden",
+            "description": "Detaljerad beskrivning av vad bilden visar",
+            "x_coordinate": "X-koordinat för stämpelområdet (procent från vänster)",
+            "y_coordinate": "Y-koordinat för stämpelområdet (procent från toppen)",
+            "width": "Bredd på stämpelområdet (procent av bildbredd)",
+            "height": "Höjd på stämpelområdet (procent av bildhöjd)",
+            "position": "Var på bilden/yxan stämpeln finns",
+            "comment": "Anteckningar om stämpelområdet",
+            "uncertainty_level": "Hur säker identifieringen av stämpeln är",
+            "external_source": "Källa för extern bild",
+        }

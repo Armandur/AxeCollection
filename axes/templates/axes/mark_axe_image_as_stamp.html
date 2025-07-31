@@ -59,27 +59,27 @@
 
                                 <div class="row">
                                     <div class="col-md-6">
-                                        <label for="x_coordinate" class="form-label">X-koordinat</label>
+                                        <label for="x_coordinate" class="form-label">X-koordinat (%)</label>
                                         <input type="number" name="x_coordinate" id="x_coordinate" class="form-control" 
-                                               value="{{ existing_mark.x_coordinate|default:'' }}" min="0">
+                                               value="{{ existing_mark.x_coordinate|default:'' }}" min="0" max="100" step="0.01">
                                     </div>
                                     <div class="col-md-6">
-                                        <label for="y_coordinate" class="form-label">Y-koordinat</label>
+                                        <label for="y_coordinate" class="form-label">Y-koordinat (%)</label>
                                         <input type="number" name="y_coordinate" id="y_coordinate" class="form-control" 
-                                               value="{{ existing_mark.y_coordinate|default:'' }}" min="0">
+                                               value="{{ existing_mark.y_coordinate|default:'' }}" min="0" max="100" step="0.01">
                                     </div>
                                 </div>
 
                                 <div class="row mt-2">
                                     <div class="col-md-6">
-                                        <label for="width" class="form-label">Bredd</label>
+                                        <label for="width" class="form-label">Bredd (%)</label>
                                         <input type="number" name="width" id="width" class="form-control" 
-                                               value="{{ existing_mark.width|default:'' }}" min="1">
+                                               value="{{ existing_mark.width|default:'' }}" min="0" max="100" step="0.01">
                                     </div>
                                     <div class="col-md-6">
-                                        <label for="height" class="form-label">Höjd</label>
+                                        <label for="height" class="form-label">Höjd (%)</label>
                                         <input type="number" name="height" id="height" class="form-control" 
-                                               value="{{ existing_mark.height|default:'' }}" min="1">
+                                               value="{{ existing_mark.height|default:'' }}" min="0" max="100" step="0.01">
                                     </div>
                                 </div>
 
@@ -115,16 +115,22 @@ document.addEventListener('DOMContentLoaded', function() {
     let startX, startY;
     
     function updateOverlay() {
-        const x = parseInt(xInput.value) || 0;
-        const y = parseInt(yInput.value) || 0;
-        const width = parseInt(widthInput.value) || 0;
-        const height = parseInt(heightInput.value) || 0;
+        const x = parseFloat(xInput.value) || 0;
+        const y = parseFloat(yInput.value) || 0;
+        const width = parseFloat(widthInput.value) || 0;
+        const height = parseFloat(heightInput.value) || 0;
         
         if (x > 0 && y > 0 && width > 0 && height > 0) {
-            overlay.style.left = x + 'px';
-            overlay.style.top = y + 'px';
-            overlay.style.width = width + 'px';
-            overlay.style.height = height + 'px';
+            const rect = image.getBoundingClientRect();
+            const pixelX = (x / 100) * rect.width;
+            const pixelY = (y / 100) * rect.height;
+            const pixelWidth = (width / 100) * rect.width;
+            const pixelHeight = (height / 100) * rect.height;
+            
+            overlay.style.left = pixelX + 'px';
+            overlay.style.top = pixelY + 'px';
+            overlay.style.width = pixelWidth + 'px';
+            overlay.style.height = pixelHeight + 'px';
             overlay.style.display = 'block';
         } else {
             overlay.style.display = 'none';
@@ -133,9 +139,14 @@ document.addEventListener('DOMContentLoaded', function() {
     
     function getImageCoordinates(clientX, clientY) {
         const rect = image.getBoundingClientRect();
-        const x = Math.max(0, Math.min(clientX - rect.left, rect.width));
-        const y = Math.max(0, Math.min(clientY - rect.top, rect.height));
-        return { x: Math.round(x), y: Math.round(y) };
+        const pixelX = Math.max(0, Math.min(clientX - rect.left, rect.width));
+        const pixelY = Math.max(0, Math.min(clientY - rect.top, rect.height));
+        
+        // Konvertera till procent
+        const percentX = Math.round((pixelX / rect.width) * 100);
+        const percentY = Math.round((pixelY / rect.height) * 100);
+        
+        return { x: percentX, y: percentY };
     }
     
     image.addEventListener('mousedown', function(e) {

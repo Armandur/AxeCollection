@@ -17,7 +17,7 @@ from .models import (
     Manufacturer,
     AxeImage,
 )
-from .forms import StampForm, StampTranscriptionForm, AxeStampForm, StampImageForm
+from .forms import StampForm, StampTranscriptionForm, AxeStampForm, StampImageForm, StampImageMarkForm
 import json
 
 
@@ -41,7 +41,7 @@ def stamp_list(request):
                 "-is_primary", "order", "-uploaded_at"
             ),
         ),
-        Prefetch("axes", queryset=Axe.objects.select_related("manufacturer")),
+        Prefetch("axes", queryset=AxeStamp.objects.select_related("axe__manufacturer")),
     )
 
     # Applicera filter
@@ -91,13 +91,13 @@ def stamp_list(request):
             (img for img in stamp_images if img.is_primary), None
         )
         if primary_stamp_image:
-            stamp.primary_image = primary_stamp_image
+            stamp._primary_image = primary_stamp_image
         elif stamp_images:
             # Annars ta första StampImage
-            stamp.primary_image = stamp_images[0]
+            stamp._primary_image = stamp_images[0]
         else:
             # Om ingen bild finns alls, sätt till None
-            stamp.primary_image = None
+            stamp._primary_image = None
 
         # Beräkna antal bilder och yxor
         stamp.total_images = len(stamp_images)
@@ -130,7 +130,7 @@ def stamp_detail(request, stamp_id):
 
     stamp = get_object_or_404(
         Stamp.objects.select_related("manufacturer").prefetch_related(
-            "transcriptions", "images", "axes", "axes__axe"
+            "transcriptions", "images", "axes"
         ),
         id=stamp_id,
     )
@@ -351,42 +351,68 @@ def stamp_image_upload(request, stamp_id):
     if request.method == "POST":
         form = StampImageForm(request.POST, request.FILES)
         if form.is_valid():
-            stamp_image = form.save(commit=False)
-            stamp_image.stamp = stamp
+            try:
+                stamp_image = form.save(commit=False)
+                stamp_image.stamp = stamp
+                
+                # Sätt image_type automatiskt till standalone för nya bilder
+                stamp_image.image_type = "standalone"
+                
+                # Hantera koordinater från formuläret
+                x_coord = request.POST.get("x_coordinate")
+                y_coord = request.POST.get("y_coordinate")
+                width = request.POST.get("width")
+                height = request.POST.get("height")
 
-            # Hantera koordinater från formuläret
-            x_coord = request.POST.get("x_coordinate")
-            y_coord = request.POST.get("y_coordinate")
-            width = request.POST.get("width")
-            height = request.POST.get("height")
+                if x_coord and y_coord and width and height:
+                    from decimal import Decimal
+                    stamp_image.x_coordinate = Decimal(x_coord)
+                    stamp_image.y_coordinate = Decimal(y_coord)
+                    stamp_image.width = Decimal(width)
+                    stamp_image.height = Decimal(height)
 
-            if x_coord and y_coord and width and height:
-                stamp_image.x_coordinate = int(x_coord)
-                stamp_image.y_coordinate = int(y_coord)
-                stamp_image.width = int(width)
-                stamp_image.height = int(height)
+                # De nya fälten hanteras automatiskt av form.save() eftersom de finns i Meta.fields
+                stamp_image.save()
 
-            # De nya fälten hanteras automatiskt av form.save() eftersom de finns i Meta.fields
-            stamp_image.save()
+                if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+                    return JsonResponse(
+                        {
+                            "success": True,
+                            "message": "Bild laddades upp framgångsrikt.",
+                            "image_id": stamp_image.id,
+                            "image_url": stamp_image.image_url_with_cache_busting,
+                            "webp_url": stamp_image.webp_url,
+                        }
+                    )
 
-            if request.headers.get("X-Requested-With") == "XMLHttpRequest":
-                return JsonResponse(
-                    {
-                        "success": True,
-                        "message": "Bild laddades upp framgångsrikt.",
-                        "image_id": stamp_image.id,
-                        "image_url": stamp_image.image_url_with_cache_busting,
-                        "webp_url": stamp_image.webp_url,
-                    }
-                )
-
-            messages.success(request, "Bild laddades upp framgångsrikt.")
-            return redirect("stamp_detail", stamp_id=stamp.id)
+                messages.success(request, "Bild laddades upp framgångsrikt.")
+                return redirect("stamp_detail", stamp_id=stamp.id)
+            except Exception as e:
+                messages.error(request, f"Fel vid uppladdning av bild: {e}")
+                # Rendera formuläret igen med fel
+                context = {
+                    "stamp": stamp,
+                    "stamp_image": None,
+                    "form": form,
+                    "title": f"Ladda upp bild för {stamp.name}",
+                }
+                return render(request, "axes/stamp_image_form.html", context)
+        else:
+            messages.error(request, "Formuläret innehåller fel. Kontrollera dina indata.")
+            # Rendera formuläret igen med fel
+            context = {
+                "stamp": stamp,
+                "stamp_image": None,
+                "form": form,
+                "title": f"Ladda upp bild för {stamp.name}",
+            }
+            return render(request, "axes/stamp_image_form.html", context)
     else:
         form = StampImageForm()
 
     context = {
         "stamp": stamp,
+        "stamp_image": None,  # För nya bilder finns ingen stamp_image än
         "form": form,
         "title": f"Ladda upp bild för {stamp.name}",
     }
@@ -429,6 +455,10 @@ def stamp_image_edit(request, stamp_id, image_id):
     stamp = get_object_or_404(Stamp, id=stamp_id)
     stamp_image = get_object_or_404(StampImage, id=image_id, stamp=stamp)
 
+    # Om det är en axe_mark-bild, omdirigera till edit_axe_image_stamp
+    if stamp_image.image_type == "axe_mark" and stamp_image.axe_image:
+        return redirect("edit_axe_image_stamp", axe_id=stamp_image.axe_image.axe.id, mark_id=stamp_image.id)
+
     if request.method == "POST":
         form = StampImageForm(request.POST, request.FILES, instance=stamp_image)
         if form.is_valid():
@@ -440,13 +470,17 @@ def stamp_image_edit(request, stamp_id, image_id):
 
             stamp_image = form.save(commit=False)
             stamp_image.stamp = stamp
+            
+            # Behåll befintlig image_type för redigering
+            # (formuläret innehåller inte image_type längre, så vi behåller det befintliga)
 
             # Uppdatera koordinater om de finns
             if x_coord and y_coord and width and height:
-                stamp_image.x_coordinate = int(x_coord)
-                stamp_image.y_coordinate = int(y_coord)
-                stamp_image.width = int(width)
-                stamp_image.height = int(height)
+                from decimal import Decimal
+                stamp_image.x_coordinate = Decimal(x_coord)
+                stamp_image.y_coordinate = Decimal(y_coord)
+                stamp_image.width = Decimal(width)
+                stamp_image.height = Decimal(height)
 
             stamp_image.save()
 
@@ -532,15 +566,22 @@ def add_axe_stamp(request, axe_id):
                 )
                 stamp = get_object_or_404(Stamp, id=stamp_id)
 
+                # Konvertera koordinater till Decimal om de finns
+                from decimal import Decimal
+                x_coord_decimal = Decimal(x_coord) if x_coord else None
+                y_coord_decimal = Decimal(y_coord) if y_coord else None
+                width_decimal = Decimal(width) if width else None
+                height_decimal = Decimal(height) if height else None
+
                 # Skapa StampImage med image_type='axe_mark'
                 stamp_image = StampImage.objects.create(
                     axe_image=selected_image,
                     stamp=stamp,
                     image_type="axe_mark",
-                    x_coordinate=x_coord if x_coord else None,
-                    y_coordinate=y_coord if y_coord else None,
-                    width=width if width else None,
-                    height=height if height else None,
+                    x_coordinate=x_coord_decimal,
+                    y_coordinate=y_coord_decimal,
+                    width=width_decimal,
+                    height=height_decimal,
                     show_full_image=False,
                     is_primary=False,
                     comment=comment,
@@ -677,16 +718,23 @@ def mark_axe_image_as_stamp(request, axe_id, image_id):
         if stamp_id:
             stamp = get_object_or_404(Stamp, id=stamp_id)
 
+            # Konvertera koordinater till Decimal om de finns
+            from decimal import Decimal
+            x_coord_decimal = Decimal(x_coord) if x_coord else None
+            y_coord_decimal = Decimal(y_coord) if y_coord else None
+            width_decimal = Decimal(width) if width else None
+            height_decimal = Decimal(height) if height else None
+
             # Skapa eller uppdatera StampImage med image_type='axe_mark'
             stamp_image, created = StampImage.objects.get_or_create(
                 axe_image=axe_image,
                 stamp=stamp,
                 image_type="axe_mark",
                 defaults={
-                    "x_coordinate": x_coord if x_coord else None,
-                    "y_coordinate": y_coord if y_coord else None,
-                    "width": width if width else None,
-                    "height": height if height else None,
+                    "x_coordinate": x_coord_decimal,
+                    "y_coordinate": y_coord_decimal,
+                    "width": width_decimal,
+                    "height": height_decimal,
                     "show_full_image": False,  # Standardvärde
                     "is_primary": False,  # Standardvärde
                     "comment": comment,
@@ -695,10 +743,10 @@ def mark_axe_image_as_stamp(request, axe_id, image_id):
 
             if not created:
                 # Uppdatera befintlig
-                stamp_image.x_coordinate = x_coord if x_coord else None
-                stamp_image.y_coordinate = y_coord if y_coord else None
-                stamp_image.width = width if width else None
-                stamp_image.height = height if height else None
+                stamp_image.x_coordinate = x_coord_decimal
+                stamp_image.y_coordinate = y_coord_decimal
+                stamp_image.width = width_decimal
+                stamp_image.height = height_decimal
                 stamp_image.comment = comment
                 stamp_image.save()
 
@@ -795,12 +843,19 @@ def edit_axe_image_stamp(request, axe_id, mark_id):
             if stamp_id:
                 stamp = get_object_or_404(Stamp, id=stamp_id)
 
+                # Konvertera koordinater till Decimal
+                from decimal import Decimal
+                x_coord_decimal = Decimal(x_coord) if x_coord else None
+                y_coord_decimal = Decimal(y_coord) if y_coord else None
+                width_decimal = Decimal(width) if width else None
+                height_decimal = Decimal(height) if height else None
+
                 # Uppdatera AxeImageStamp
                 stamp_mark.stamp = stamp
-                stamp_mark.x_coordinate = int(x_coord) if x_coord else None
-                stamp_mark.y_coordinate = int(y_coord) if y_coord else None
-                stamp_mark.width = int(width) if width else None
-                stamp_mark.height = int(height) if height else None
+                stamp_mark.x_coordinate = x_coord_decimal
+                stamp_mark.y_coordinate = y_coord_decimal
+                stamp_mark.width = width_decimal
+                stamp_mark.height = height_decimal
                 stamp_mark.position = position
                 stamp_mark.uncertainty_level = uncertainty_level
                 stamp_mark.comment = comment
@@ -814,7 +869,7 @@ def edit_axe_image_stamp(request, axe_id, mark_id):
                 messages.error(request, "Stämpel måste väljas.")
         else:
             # Hantera vanlig form submission
-            form = StampImageForm(request.POST, instance=stamp_mark)
+            form = StampImageMarkForm(request.POST, instance=stamp_mark)
             if form.is_valid():
                 # Hantera koordinater från formuläret
                 x_coord = request.POST.get("x_coordinate")
@@ -826,10 +881,11 @@ def edit_axe_image_stamp(request, axe_id, mark_id):
 
                 # Uppdatera koordinater om de finns
                 if x_coord and y_coord and width and height:
-                    stamp_mark.x_coordinate = int(x_coord)
-                    stamp_mark.y_coordinate = int(y_coord)
-                    stamp_mark.width = int(width)
-                    stamp_mark.height = int(height)
+                    from decimal import Decimal
+                    stamp_mark.x_coordinate = Decimal(x_coord)
+                    stamp_mark.y_coordinate = Decimal(y_coord)
+                    stamp_mark.width = Decimal(width)
+                    stamp_mark.height = Decimal(height)
 
                 stamp_mark.save()
 
@@ -848,29 +904,24 @@ def edit_axe_image_stamp(request, axe_id, mark_id):
                 )
                 return redirect("axe_detail", pk=axe_id)
     else:
-        form = StampImageForm(instance=stamp_mark)
+        form = StampImageMarkForm(instance=stamp_mark)
 
-    # Skapa en kontext som fungerar med axe_stamp_form.html template
-    # Anpassad för redigering av AxeImageStamp
+    # Skapa en kontext för den nya stamp_image_mark_form.html template
     context = {
         "axe": axe,
-        "selected_image": axe_image,  # Använd selected_image för template-kompatibilitet
-        "available_stamps": Stamp.objects.select_related("manufacturer").order_by(
-            "manufacturer__name", "name"
-        ),
+        "selected_image": axe_image,
         "title": f"Redigera stämpelmarkering - {axe.display_id}",
-        "stamp_mark": stamp_mark,
-        "form": form,  # Lägg till form för att hantera befintliga värden
+        "form": form,
     }
 
-    return render(request, "axes/axe_stamp_form.html", context)
+    return render(request, "axes/stamp_image_mark_form.html", context)
 
 
 @login_required
 def stamp_image_crop(request, stamp_id):
     """Visa och hantera beskärning av stämpelbilder"""
 
-    stamp = get_object_or_404(Stamp.objects.select_related("manufacturer"))
+    stamp = get_object_or_404(Stamp.objects.select_related("manufacturer"), id=stamp_id)
 
     # Hämta alla StampImage-kopplingar för denna stämpel
     stamp_images = (
@@ -881,7 +932,7 @@ def stamp_image_crop(request, stamp_id):
 
     context = {
         "stamp": stamp,
-        "axe_image_marks": axe_image_marks,
+        "axe_image_marks": stamp_images,
     }
 
     return render(request, "axes/stamp_image_crop.html", context)
@@ -1044,14 +1095,16 @@ def edit_axe_stamp(request, axe_id, axe_stamp_id):
                     height = request.POST.get("height")
 
                     if x_coord and y_coord and width and height:
+                        # Konvertera koordinater till Decimal
+                        from decimal import Decimal
                         StampImage.objects.create(
                             axe_image=selected_image,
                             stamp=axe_stamp.stamp,
                             image_type="axe_mark",
-                            x_coordinate=int(x_coord),
-                            y_coordinate=int(y_coord),
-                            width=int(width),
-                            height=int(height),
+                            x_coordinate=Decimal(x_coord),
+                            y_coordinate=Decimal(y_coord),
+                            width=Decimal(width),
+                            height=Decimal(height),
                             comment=request.POST.get("image_comment", ""),
                         )
                     else:
@@ -1104,21 +1157,8 @@ def edit_axe_image_stamp_via_axe_stamp(request, axe_id, image_id):
         StampImage, axe_image=axe_image, image_type="axe_mark"
     )
 
-    # Hitta motsvarande AxeStamp - använd den första som hittas
-    try:
-        axe_stamp = AxeStamp.objects.filter(axe=axe_id, stamp=stamp_mark.stamp).first()
-        if not axe_stamp:
-            messages.error(
-                request,
-                f"Kunde inte hitta stämpelkoppling för {stamp_mark.stamp.name} på yxan.",
-            )
-            return redirect("axe_detail", pk=axe_id)
-    except MultipleObjectsReturned:
-        # Om det finns flera, använd den första
-        axe_stamp = AxeStamp.objects.filter(axe=axe_id, stamp=stamp_mark.stamp).first()
-
-    # Omdirigera till edit_axe_stamp med rätt parametrar
-    return redirect("edit_axe_stamp", axe_id=axe_id, axe_stamp_id=axe_stamp.id)
+    # Omdirigera till edit_axe_image_stamp med rätt parametrar
+    return redirect("edit_axe_image_stamp", axe_id=axe_id, mark_id=stamp_mark.id)
 
 
 @login_required

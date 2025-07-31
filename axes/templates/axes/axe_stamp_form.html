@@ -202,13 +202,12 @@ document.addEventListener('DOMContentLoaded', function() {
         // Vänta tills bilden är laddad och storleken är uppdaterad
         if (image.complete && image.naturalWidth > 0) {
             const rect = image.getBoundingClientRect();
-            const scaleX = rect.width / image.naturalWidth;
-            const scaleY = rect.height / image.naturalHeight;
             
-            const displayX = x * scaleX;
-            const displayY = y * scaleY;
-            const displayWidth = width * scaleX;
-            const displayHeight = height * scaleY;
+            // Konvertera procent till pixlar för visning
+            const displayX = (x / 100) * rect.width;
+            const displayY = (y / 100) * rect.height;
+            const displayWidth = (width / 100) * rect.width;
+            const displayHeight = (height / 100) * rect.height;
             
             marking.style.left = displayX + 'px';
             marking.style.top = displayY + 'px';
@@ -278,16 +277,17 @@ document.addEventListener('DOMContentLoaded', function() {
         e.stopPropagation();
         isDrawing = false;
         
-        // Uppdatera koordinatfält
+        // Uppdatera koordinatfält - konvertera till procent
         const rect = image.getBoundingClientRect();
         const markingRect = marking.getBoundingClientRect();
         
-        const x = Math.round((markingRect.left - rect.left) / rect.width * image.naturalWidth);
-        const y = Math.round((markingRect.top - rect.top) / rect.height * image.naturalHeight);
-        const width = Math.round(markingRect.width / rect.width * image.naturalWidth);
-        const height = Math.round(markingRect.height / rect.height * image.naturalHeight);
+        // Beräkna koordinater som procent av bildens naturliga storlek
+        const x = Math.round(((markingRect.left - rect.left) / rect.width) * 100);
+        const y = Math.round(((markingRect.top - rect.top) / rect.height) * 100);
+        const width = Math.round((markingRect.width / rect.width) * 100);
+        const height = Math.round((markingRect.height / rect.height) * 100);
         
-        console.log('Coordinates:', x, y, width, height);
+        console.log('Coordinates (percentages):', x, y, width, height);
         
         document.getElementById('x_coordinate').value = x;
         document.getElementById('y_coordinate').value = y;
@@ -347,10 +347,11 @@ document.addEventListener('DOMContentLoaded', function() {
         const rect = image.getBoundingClientRect();
         const markingRect = marking.getBoundingClientRect();
         
-        const x = Math.round((markingRect.left - rect.left) / rect.width * image.naturalWidth);
-        const y = Math.round((markingRect.top - rect.top) / rect.height * image.naturalHeight);
-        const width = Math.round(markingRect.width / rect.width * image.naturalWidth);
-        const height = Math.round(markingRect.height / rect.height * image.naturalHeight);
+        // Beräkna koordinater som procent av bildens naturliga storlek
+        const x = Math.round(((markingRect.left - rect.left) / rect.width) * 100);
+        const y = Math.round(((markingRect.top - rect.top) / rect.height) * 100);
+        const width = Math.round((markingRect.width / rect.width) * 100);
+        const height = Math.round((markingRect.height / rect.height) * 100);
         
         document.getElementById('x_coordinate').value = x;
         document.getElementById('y_coordinate').value = y;

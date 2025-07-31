@@ -156,22 +156,22 @@
                                         <!-- Koordinatfält -->
                                         <div class="row mt-3">
                                             <div class="col-md-3">
-                                                <label for="x_coordinate" class="form-label">X-koordinat</label>
+                                                <label for="x_coordinate" class="form-label">X-koordinat (%)</label>
                                                 <input type="number" id="x_coordinate" name="x_coordinate" class="form-control" readonly 
                                                        value="{% if existing_axe_image_stamp %}{{ existing_axe_image_stamp.x_coordinate }}{% endif %}">
                                             </div>
                                             <div class="col-md-3">
-                                                <label for="y_coordinate" class="form-label">Y-koordinat</label>
+                                                <label for="y_coordinate" class="form-label">Y-koordinat (%)</label>
                                                 <input type="number" id="y_coordinate" name="y_coordinate" class="form-control" readonly
                                                        value="{% if existing_axe_image_stamp %}{{ existing_axe_image_stamp.y_coordinate }}{% endif %}">
                                             </div>
                                             <div class="col-md-3">
-                                                <label for="width" class="form-label">Bredd</label>
+                                                <label for="width" class="form-label">Bredd (%)</label>
                                                 <input type="number" id="width" name="width" class="form-control" readonly
                                                        value="{% if existing_axe_image_stamp %}{{ existing_axe_image_stamp.width }}{% endif %}">
                                             </div>
                                             <div class="col-md-3">
-                                                <label for="height" class="form-label">Höjd</label>
+                                                <label for="height" class="form-label">Höjd (%)</label>
                                                 <input type="number" id="height" name="height" class="form-control" readonly
                                                        value="{% if existing_axe_image_stamp %}{{ existing_axe_image_stamp.height }}{% endif %}">
                                             </div>
@@ -285,10 +285,11 @@ document.addEventListener('DOMContentLoaded', function() {
         
         if (xCoord && yCoord && width && height) {
             const rect = image.getBoundingClientRect();
-            const x = (parseInt(xCoord) / image.naturalWidth) * rect.width;
-            const y = (parseInt(yCoord) / image.naturalHeight) * rect.height;
-            const w = (parseInt(width) / image.naturalWidth) * rect.width;
-            const h = (parseInt(height) / image.naturalHeight) * rect.height;
+            // Konvertera procent till pixlar för visning
+            const x = (parseFloat(xCoord) / 100) * rect.width;
+            const y = (parseFloat(yCoord) / 100) * rect.height;
+            const w = (parseFloat(width) / 100) * rect.width;
+            const h = (parseFloat(height) / 100) * rect.height;
             
             marking.style.left = x + 'px';
             marking.style.top = y + 'px';
@@ -354,14 +355,14 @@ document.addEventListener('DOMContentLoaded', function() {
         e.preventDefault();
         isDrawing = false;
         
-        // Uppdatera koordinatfält
+        // Uppdatera koordinatfält - konvertera till procent
         const rect = image.getBoundingClientRect();
         const markingRect = marking.getBoundingClientRect();
         
-        const x = Math.round((markingRect.left - rect.left) / rect.width * image.naturalWidth);
-        const y = Math.round((markingRect.top - rect.top) / rect.height * image.naturalHeight);
-        const width = Math.round(markingRect.width / rect.width * image.naturalWidth);
-        const height = Math.round(markingRect.height / rect.height * image.naturalHeight);
+        const x = Math.round(((markingRect.left - rect.left) / rect.width) * 100);
+        const y = Math.round(((markingRect.top - rect.top) / rect.height) * 100);
+        const width = Math.round((markingRect.width / rect.width) * 100);
+        const height = Math.round((markingRect.height / rect.height) * 100);
         
         document.getElementById('x_coordinate').value = x;
         document.getElementById('y_coordinate').value = y;

@@ -24,7 +24,7 @@
                         {% csrf_token %}
                         
                         <!-- Bilduppladdning - endast för StampImage, inte för AxeImageStamp -->
-                        {% if not stamp_image.axe_image %}
+                        {% if not stamp_image or not stamp_image.axe_image %}
                         <div class="mb-4">
                             <label for="{{ form.image.id_for_label }}" class="form-label">{{ form.image.label }} *</label>
                             {{ form.image }}
@@ -79,7 +79,7 @@
                         </div>
 
                         <!-- Stämpelinformation - endast för StampImage -->
-                        {% if not stamp_image.axe_image %}
+                        {% if not stamp_image or not stamp_image.axe_image %}
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="mb-3">
@@ -104,7 +104,7 @@
                         {% endif %}
 
                         <!-- Bildinformation - endast för StampImage -->
-                        {% if not stamp_image.axe_image %}
+                        {% if not stamp_image or not stamp_image.axe_image %}
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="mb-3">
@@ -149,12 +149,16 @@
                         </div>
 
                         <div class="d-flex justify-content-between">
-                            {% if stamp_image.axe_image %}
+                            {% if stamp_image and stamp_image.axe_image %}
                                 <a href="{% url 'axe_detail' stamp_image.axe_image.axe.id %}" class="btn btn-secondary">
                                     <i class="fas fa-arrow-left"></i> Tillbaka
                                 </a>
-                            {% else %}
+                            {% elif stamp_image and stamp_image.stamp %}
                                 <a href="{% url 'stamp_detail' stamp_id=stamp_image.stamp.id %}" class="btn btn-secondary">
+                                    <i class="fas fa-arrow-left"></i> Tillbaka
+                                </a>
+                            {% else %}
+                                <a href="{% url 'stamp_detail' stamp_id=stamp.id %}" class="btn btn-secondary">
                                     <i class="fas fa-arrow-left"></i> Tillbaka
                                 </a>
                             {% endif %}
@@ -175,6 +179,11 @@
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const form = document.getElementById('stamp-image-form');
+    if (!form) {
+        console.error('Form element not found');
+        return;
+    }
+    
     const fileInput = document.querySelector('input[type="file"]');
     const previewContainer = document.getElementById('imagePreviewContainer');
     const previewImage = document.getElementById('previewImage');
@@ -187,17 +196,44 @@ document.addEventListener('DOMContentLoaded', function() {
     const widthInput = document.getElementById('width');
     const heightInput = document.getElementById('height');
     
+    // Validera att alla nödvändiga element finns
+    if (!previewContainer || !previewImage || !markingOverlay || !imageContainer) {
+        console.error('Required elements not found:', {
+            previewContainer: !!previewContainer,
+            previewImage: !!previewImage,
+            markingOverlay: !!markingOverlay,
+            imageContainer: !!imageContainer
+        });
+        return;
+    }
+    
+    if (!xCoordInput || !yCoordInput || !widthInput || !heightInput) {
+        console.error('Coordinate input elements not found:', {
+            xCoordInput: !!xCoordInput,
+            yCoordInput: !!yCoordInput,
+            widthInput: !!widthInput,
+            heightInput: !!heightInput
+        });
+        return;
+    }
+    
     let isDrawing = false;
     let startX, startY;
     let currentX, currentY;
     
     // Kontrollera om vi redigerar en befintlig bild
-    const isEditing = document.getElementById('stamp-image-form').dataset.editing === 'true';
-    const existingImageUrl = document.getElementById('stamp-image-form').dataset.existingImageUrl || '';
-    const existingXCoord = document.getElementById('stamp-image-form').dataset.existingXCoord ? parseInt(document.getElementById('stamp-image-form').dataset.existingXCoord) : null;
-    const existingYCoord = document.getElementById('stamp-image-form').dataset.existingYCoord ? parseInt(document.getElementById('stamp-image-form').dataset.existingYCoord) : null;
-    const existingWidth = document.getElementById('stamp-image-form').dataset.existingWidth ? parseInt(document.getElementById('stamp-image-form').dataset.existingWidth) : null;
-    const existingHeight = document.getElementById('stamp-image-form').dataset.existingHeight ? parseInt(document.getElementById('stamp-image-form').dataset.existingHeight) : null;
+    const formElement = document.getElementById('stamp-image-form');
+    if (!formElement) {
+        console.error('stamp-image-form element not found');
+        return;
+    }
+    
+    const isEditing = formElement.dataset.editing === 'true';
+    const existingImageUrl = formElement.dataset.existingImageUrl || '';
+    const existingXCoord = formElement.dataset.existingXCoord ? parseInt(formElement.dataset.existingXCoord) : null;
+    const existingYCoord = formElement.dataset.existingYCoord ? parseInt(formElement.dataset.existingYCoord) : null;
+    const existingWidth = formElement.dataset.existingWidth ? parseInt(formElement.dataset.existingWidth) : null;
+    const existingHeight = formElement.dataset.existingHeight ? parseInt(formElement.dataset.existingHeight) : null;
     
     // Om vi redigerar en befintlig bild, visa den och dess koordinater
     if (isEditing && existingImageUrl) {
@@ -206,7 +242,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Vänta på att bilden laddas innan vi sätter koordinaterna
         previewImage.onload = function() {
-            // Sätt befintliga koordinater om de finns
+            // Sätt befintliga koordinater om de finns (de är redan i procent)
             if (existingXCoord !== null && existingYCoord !== null && existingWidth !== null && existingHeight !== null) {
                 xCoordInput.value = existingXCoord;
                 yCoordInput.value = existingYCoord;
@@ -219,11 +255,11 @@ document.addEventListener('DOMContentLoaded', function() {
                     const scaleX = previewImage.offsetWidth / previewImage.naturalWidth;
                     const scaleY = previewImage.offsetHeight / previewImage.naturalHeight;
                     
-                    // Skala koordinaterna för visning
-                    const displayX = Math.round(existingXCoord * scaleX);
-                    const displayY = Math.round(existingYCoord * scaleY);
-                    const displayWidth = Math.round(existingWidth * scaleX);
-                    const displayHeight = Math.round(existingHeight * scaleY);
+                    // Konvertera procent till pixlar för visning
+                    const displayX = Math.round((existingXCoord / 100) * previewImage.offsetWidth);
+                    const displayY = Math.round((existingYCoord / 100) * previewImage.offsetHeight);
+                    const displayWidth = Math.round((existingWidth / 100) * previewImage.offsetWidth);
+                    const displayHeight = Math.round((existingHeight / 100) * previewImage.offsetHeight);
                     
                     // Visa befintlig markering med korrekt skalning
                     markingOverlay.style.display = 'block';
@@ -316,17 +352,29 @@ document.addEventListener('DOMContentLoaded', function() {
         const width = Math.abs(currentX - startX);
         const height = Math.abs(currentY - startY);
         
-        // Konvertera till bildkoordinater
+        // Konvertera till bildkoordinater (pixlar)
         const x = Math.round(left * scaleX);
         const y = Math.round(top * scaleY);
         const w = Math.round(width * scaleX);
         const h = Math.round(height * scaleY);
         
-        // Uppdatera input-fält
-        xCoordInput.value = x;
-        yCoordInput.value = y;
-        widthInput.value = w;
-        heightInput.value = h;
+        // Konvertera till procent (0-100)
+        const xPercent = Math.round((x / previewImage.naturalWidth) * 100);
+        const yPercent = Math.round((y / previewImage.naturalHeight) * 100);
+        const wPercent = Math.round((w / previewImage.naturalWidth) * 100);
+        const hPercent = Math.round((h / previewImage.naturalHeight) * 100);
+        
+        // Validera att koordinaterna är inom gränserna (0-100)
+        const validX = Math.max(0, Math.min(100, xPercent));
+        const validY = Math.max(0, Math.min(100, yPercent));
+        const validW = Math.max(0, Math.min(100 - validX, wPercent));
+        const validH = Math.max(0, Math.min(100 - validY, hPercent));
+        
+        // Uppdatera input-fält med validerade procentvärden
+        xCoordInput.value = validX;
+        yCoordInput.value = validY;
+        widthInput.value = validW;
+        heightInput.value = validH;
     });
     
     // Global mouseup handler för att avsluta markering
@@ -338,12 +386,35 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Återställ markering-knapp
     const resetMarkingBtn = document.getElementById('resetMarking');
-    resetMarkingBtn.addEventListener('click', function() {
-        markingOverlay.style.display = 'none';
-        xCoordInput.value = '';
-        yCoordInput.value = '';
-        widthInput.value = '';
-        heightInput.value = '';
+    if (resetMarkingBtn) {
+        resetMarkingBtn.addEventListener('click', function() {
+            markingOverlay.style.display = 'none';
+            xCoordInput.value = '';
+            yCoordInput.value = '';
+            widthInput.value = '';
+            heightInput.value = '';
+        });
+    }
+    
+    // Validera formulärsubmission
+    form.addEventListener('submit', function(e) {
+        // Validera att koordinaterna är giltiga innan submission
+        const x = parseFloat(xCoordInput.value) || 0;
+        const y = parseFloat(yCoordInput.value) || 0;
+        const w = parseFloat(widthInput.value) || 0;
+        const h = parseFloat(heightInput.value) || 0;
+        
+        if (x < 0 || x > 100 || y < 0 || y > 100 || w <= 0 || w > 100 || h <= 0 || h > 100) {
+            alert('Koordinaterna är ogiltiga. Vänligen kontrollera markeringen.');
+            e.preventDefault();
+            return false;
+        }
+        
+        if (x + w > 100 || y + h > 100) {
+            alert('Markeringen går utanför bildens gränser. Vänligen justera markeringen.');
+            e.preventDefault();
+            return false;
+        }
     });
 });
 </script>

@@ -13,7 +13,6 @@ from axes.models import (
     StampUncertaintyGroup,
     Axe,
     AxeImage,
-    AxeImageStamp,
 )
 from decimal import Decimal
 import json
@@ -59,9 +58,14 @@ class StampViewTestBase(TestCase):
         self.axe = Axe.objects.create(
             id=1,
             manufacturer=self.manufacturer,
-            condition="Bra",
-            price=Decimal("150.00"),
-            weight=800,
+            model="Test Yxa",
+        )
+
+        # Skapa en bild för yxan (krävs för add_axe_stamp)
+        self.axe_image = AxeImage.objects.create(
+            axe=self.axe,
+            image="test_images/test.jpg",
+            description="Test bild",
         )
 
         # Skapa axe stamp
@@ -338,7 +342,13 @@ class AxeStampViewTest(StampViewTestBase):
         self.client.login(username="testuser", password="testpass123")
 
         data = {
+            "action": "save_stamp",
+            "selected_image": self.axe_image.id,
             "stamp": self.stamp2.id,
+            "x_coordinate": "10.5",
+            "y_coordinate": "20.3",
+            "width": "15.2",
+            "height": "12.8",
             "position": "Skaftets sida",
             "comment": "Ny stämpel på yxan",
             "uncertainty_level": "uncertain",
@@ -397,7 +407,7 @@ class StampStatisticsViewTest(StampViewTestBase):
 
         if response.status_code == 200:
             # Kontrollera att sidan innehåller statistik
-            self.assertContains(response, "statistik", case_sensitive=False)
+            self.assertContains(response, "statistik")
 
 
 class AxesWithoutStampsViewTest(StampViewTestBase):
@@ -420,9 +430,7 @@ class AxesWithoutStampsViewTest(StampViewTestBase):
         unstamped_axe = Axe.objects.create(
             id=2,
             manufacturer=self.manufacturer,
-            condition="Utmärkt",
-            price=Decimal("200.00"),
-            weight=900,
+            model="Yxa utan stämpel",
         )
 
         self.client.login(username="testuser", password="testpass123")

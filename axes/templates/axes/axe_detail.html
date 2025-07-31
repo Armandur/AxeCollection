@@ -1,4 +1,5 @@
 {% extends 'axes/base.html' %}
+{% load static %}
 {% load axe_filters %}
 
 {% block title %}{{ axe.manufacturer.name }} - {{ axe.model }} - {{ block.super }}{% endblock %}
@@ -234,22 +235,24 @@
                                     <div class="card-body p-3">
                                         <!-- Stämpelbilder -->
                                         <div class="text-center mb-3 stamp-image-container">
-                                            {% if axe_stamp.has_coordinates %}
-                                                <!-- Visa endast den markerade delen -->
-                                                <div class="stamp-crop-container" style="width: 100%; height: 150px; overflow: hidden; border-radius: 0.375rem; cursor: pointer;" 
+                                            {% if axe_stamp.has_coordinates and axe_stamp.axe_image.image %}
+                                                <!-- Visa beskuren stämpelmarkering -->
+                                                <div class="stamp-crop-container" style="height: 200px; overflow: hidden; cursor: pointer;" 
                                                      onclick="showStampModal('{{ axe_stamp.axe_image.image_url_with_cache_busting }}', {{ axe_stamp.x_coordinate }}, {{ axe_stamp.y_coordinate }}, {{ axe_stamp.width }}, {{ axe_stamp.height }}, '{{ axe_stamp.stamp.name }}', '{{ axe_stamp.axe_image.axe.display_id }}')">
-                                                    <img src="{{ axe_stamp.axe_image.image_url_with_cache_busting }}" 
-                                                         class="img-fluid" 
+                                                    <img src="{{ axe_stamp.axe_image.image_url_with_cache_busting }}"
+                                                         class="card-img-top"
                                                          data-crop-x="{{ axe_stamp.x_coordinate }}"
                                                          data-crop-y="{{ axe_stamp.y_coordinate }}"
-                                                         style="object-fit: cover; object-position: -{{ axe_stamp.x_coordinate }}px -{{ axe_stamp.y_coordinate }}px; width: {{ axe_stamp.axe_image.image.width }}px; height: {{ axe_stamp.axe_image.image.height }}px; max-width: none; max-height: none;"
+                                                         data-stamp-width="{{ axe_stamp.width }}"
+                                                         data-stamp-height="{{ axe_stamp.height }}"
+                                                         style="object-fit: cover; object-position: -{{ axe_stamp.x_coordinate }}% -{{ axe_stamp.y_coordinate }}%; width: 100%; height: 100%;"
                                                          alt="{{ axe_stamp.stamp.name }}">
                                                 </div>
                                             {% else %}
-                                                <!-- Fallback: visa hela bilden -->
-                                                <img src="{{ axe_stamp.axe_image.image_url_with_cache_busting }}" 
-                                                     class="img-fluid rounded" 
-                                                     style="max-height: 150px; object-fit: contain; cursor: pointer;"
+                                                <!-- Visa hela yxbild med stämpelmarkering -->
+                                                <img src="{{ axe_stamp.axe_image.image_url_with_cache_busting }}"
+                                                     class="card-img-top"
+                                                     style="height: 200px; object-fit: cover; cursor: pointer;"
                                                      onclick="showStampModal('{{ axe_stamp.axe_image.image_url_with_cache_busting }}', null, null, null, null, '{{ axe_stamp.stamp.name }}', '{{ axe_stamp.axe_image.axe.display_id }}')"
                                                      alt="{{ axe_stamp.stamp.name }}">
                                             {% endif %}
@@ -317,7 +320,7 @@
                                         {% if user.is_authenticated %}
                                             <div class="mt-auto">
                                                 <div class="btn-group btn-group-sm w-100" role="group">
-                                                    <a href="{% url 'edit_axe_image_stamp' axe.id axe_stamp.id %}" class="btn btn-outline-primary" title="Redigera markering">
+                                                    <a href="{% url 'edit_axe_image_stamp' axe.id axe_stamp.id %}" class="btn btn-outline-primary" title="Redigera">
                                                         <i class="fas fa-edit"></i>
                                                     </a>
                                                     <a href="{% url 'stamp_detail' axe_stamp.stamp.id %}" class="btn btn-outline-info" title="Visa stämpel">
@@ -563,6 +566,7 @@
 {% endblock %}
 
 {% block scripts %}
+<script src="{% static 'js/stamp_crop_canvas.js' %}?v={{ request.GET.v|default:'1.0' }}"></script>
 <script type="module">
 import PhotoSwipeLightbox from 'https://unpkg.com/photoswipe@5.4.4/dist/photoswipe-lightbox.esm.js';
 import PhotoSwipe from 'https://unpkg.com/photoswipe@5.4.4/dist/photoswipe.esm.js';
@@ -1185,7 +1189,14 @@ function showStampModal(imageUrl, xCoord, yCoord, width, height, stampName, axeI
         
         canvasImage.onload = function() {
             console.log('Canvas image loaded, dimensions:', { width: this.width, height: this.height });
-            console.log('Crop coordinates:', { x: xCoord, y: yCoord, width, height });
+            
+            // Konvertera procentkoordinater till pixlar
+            const pixelX = Math.round((xCoord / 100) * this.width);
+            const pixelY = Math.round((yCoord / 100) * this.height);
+            const pixelWidth = Math.round((width / 100) * this.width);
+            const pixelHeight = Math.round((height / 100) * this.height);
+            
+            console.log('Crop coordinates (pixels):', { x: pixelX, y: pixelY, width: pixelWidth, height: pixelHeight });
             
             try {
                 // Skapa canvas för att extrahera den beskurna delen
@@ -1193,11 +1204,11 @@ function showStampModal(imageUrl, xCoord, yCoord, width, height, stampName, axeI
                 const ctx = canvas.getContext('2d');
                 
                 // Sätt canvas-storlek till crop-området
-                canvas.width = width;
-                canvas.height = height;
+                canvas.width = pixelWidth;
+                canvas.height = pixelHeight;
                 
                 // Rita den beskurna delen på canvas
-                ctx.drawImage(this, xCoord, yCoord, width, height, 0, 0, width, height);
+                ctx.drawImage(this, pixelX, pixelY, pixelWidth, pixelHeight, 0, 0, pixelWidth, pixelHeight);
                 
                 // Konvertera canvas till data URL
                 const croppedImageUrl = canvas.toDataURL('image/jpeg', 0.9);
@@ -1289,8 +1300,15 @@ function toggleStampModalView() {
             canvasImage.crossOrigin = 'anonymous';
             
             canvasImage.onload = function() {
+                // Konvertera procentkoordinater till pixlar
+                const pixelX = Math.round((x / 100) * this.width);
+                const pixelY = Math.round((y / 100) * this.height);
+                const pixelWidth = Math.round((width / 100) * this.width);
+                const pixelHeight = Math.round((height / 100) * this.height);
+                
                 console.log('Toggle cropping with:', { 
                     original: { x, y, width, height },
+                    converted: { x: pixelX, y: pixelY, width: pixelWidth, height: pixelHeight },
                     imageSize: { width: this.width, height: this.height }
                 });
                 
@@ -1300,11 +1318,11 @@ function toggleStampModalView() {
                     const ctx = canvas.getContext('2d');
                     
                     // Sätt canvas-storlek till crop-området
-                    canvas.width = width;
-                    canvas.height = height;
+                    canvas.width = pixelWidth;
+                    canvas.height = pixelHeight;
                     
                     // Rita den beskurna delen på canvas
-                    ctx.drawImage(this, x, y, width, height, 0, 0, width, height);
+                    ctx.drawImage(this, pixelX, pixelY, pixelWidth, pixelHeight, 0, 0, pixelWidth, pixelHeight);
                     
                     // Konvertera canvas till data URL
                     const croppedImageUrl = canvas.toDataURL('image/jpeg', 0.9);
@@ -1349,6 +1367,8 @@ function toggleStampModalView() {
         toggleButton.textContent = 'Visa hela bilden';
     }
 }
+
+// Canvas-funktionen för beskurna stämpelbilder laddas från extern fil
 </script>
 
 <!-- Modal för stämpelbilder -->

@@ -1,4 +1,5 @@
 {% extends 'axes/base.html' %}
+{% load static %}
 {% load axe_filters %}
 
 {% block title %}{{ manufacturer.name }} - {{ block.super }}{% endblock %}
@@ -460,19 +461,72 @@
                         <div class="col-md-6 col-lg-4 mb-3">
                             <div class="card h-100">
                                 <div class="position-relative">
-                                    {% if stamp.images.all %}
-                                        {% with first_image=stamp.images.first %}
-                                        <picture>
-                                            {% if first_image.webp_url %}
-                                                <source srcset="{{ first_image.webp_url }}" type="image/webp">
+                                    {% if stamp.primary_image %}
+                                        {% if stamp.primary_image.image_type == 'axe_mark' %}
+                                            {% if stamp.primary_image.axe_image %}
+                                                {% if stamp.primary_image.has_coordinates and stamp.primary_image.axe_image.image %}
+                                                    <!-- Visa beskuren stämpelmarkering -->
+                                                    <div class="stamp-crop-container" style="height: 200px; overflow: hidden;">
+                                                        <img src="{{ stamp.primary_image.axe_image.image_url_with_cache_busting }}"
+                                                             class="card-img-top"
+                                                             alt="Stämpel från {{ stamp.primary_image.axe_image.axe.display_id }}"
+                                                             data-crop-x="{{ stamp.primary_image.x_coordinate }}"
+                                                             data-crop-y="{{ stamp.primary_image.y_coordinate }}"
+                                                             data-stamp-width="{{ stamp.primary_image.width }}"
+                                                             data-stamp-height="{{ stamp.primary_image.height }}"
+                                                             style="object-fit: contain; object-position: center; width: {{ stamp.primary_image.axe_image.image.width }}px; height: {{ stamp.primary_image.axe_image.image.height }}px; max-width: none; max-height: none;">
+                                                    </div>
+                                                {% else %}
+                                                    <!-- Visa hela yxbild med stämpelmarkering -->
+                                                    <img src="{{ stamp.primary_image.axe_image.image_url_with_cache_busting }}"
+                                                         class="card-img-top"
+                                                         alt="Stämpel från {{ stamp.primary_image.axe_image.axe.display_id }}"
+                                                         style="height: 200px; object-fit: contain; object-position: center;">
+                                                {% endif %}
+                                            {% else %}
+                                                <!-- Visa fristående stämpelbild -->
+                                                {% if stamp.primary_image.has_coordinates and stamp.primary_image.image %}
+                                                    <!-- Visa beskuren fristående bild -->
+                                                    <div class="stamp-crop-container" style="height: 200px; overflow: hidden;">
+                                                        <img src="{{ stamp.primary_image.image_url_with_cache_busting }}"
+                                                             class="card-img-top"
+                                                             alt="{{ stamp.primary_image.caption|default:stamp.name }}"
+                                                             data-crop-x="{{ stamp.primary_image.x_coordinate }}"
+                                                             data-crop-y="{{ stamp.primary_image.y_coordinate }}"
+                                                             data-stamp-width="{{ stamp.primary_image.width }}"
+                                                             data-stamp-height="{{ stamp.primary_image.height }}"
+                                                             style="object-fit: contain; object-position: center; width: {{ stamp.primary_image.image.width }}px; height: {{ stamp.primary_image.image.height }}px; max-width: none; max-height: none;">
+                                                    </div>
+                                                {% else %}
+                                                    <!-- Visa hela fristående bild -->
+                                                    <img src="{% if stamp.primary_image.webp_url %}{{ stamp.primary_image.webp_url }}{% else %}{{ stamp.primary_image.image_url_with_cache_busting }}{% endif %}"
+                                                         class="card-img-top"
+                                                         alt="{{ stamp.primary_image.caption|default:stamp.name }}"
+                                                         style="height: 200px; object-fit: contain; object-position: center;">
+                                                {% endif %}
                                             {% endif %}
-                                            <img src="{{ first_image.image_url_with_cache_busting }}" 
-                                                 class="card-img-top" 
-                                                 alt="{{ stamp.name }}" 
-                                                 style="max-height: 200px; object-fit: contain;" 
-                                                 loading="lazy">
-                                        </picture>
-                                        {% endwith %}
+                                        {% else %}
+                                            <!-- Visa fristående stämpelbild -->
+                                            {% if stamp.primary_image.has_coordinates %}
+                                                <!-- Visa beskuren fristående bild -->
+                                                <div class="stamp-crop-container" style="height: 200px; overflow: hidden;">
+                                                    <img src="{{ stamp.primary_image.image_url_with_cache_busting }}"
+                                                         class="card-img-top"
+                                                         alt="{{ stamp.primary_image.caption|default:stamp.name }}"
+                                                         data-crop-x="{{ stamp.primary_image.x_coordinate }}"
+                                                         data-crop-y="{{ stamp.primary_image.y_coordinate }}"
+                                                         data-stamp-width="{{ stamp.primary_image.width }}"
+                                                         data-stamp-height="{{ stamp.primary_image.height }}"
+                                                         style="object-fit: contain; object-position: center; width: {{ stamp.primary_image.image.width }}px; height: {{ stamp.primary_image.image.height }}px; max-width: none; max-height: none;">
+                                                </div>
+                                            {% else %}
+                                                <!-- Visa hela fristående bild -->
+                                                <img src="{% if stamp.primary_image.webp_url %}{{ stamp.primary_image.webp_url }}{% else %}{{ stamp.primary_image.image_url_with_cache_busting }}{% endif %}"
+                                                     class="card-img-top"
+                                                     alt="{{ stamp.primary_image.caption|default:stamp.name }}"
+                                                     style="height: 200px; object-fit: contain; object-position: center;">
+                                            {% endif %}
+                                        {% endif %}
                                     {% else %}
                                         <div class="card-img-top d-flex align-items-center justify-content-center" 
                                              style="height: 200px; background-color: #f8f9fa;">
@@ -520,7 +574,7 @@
                                 <div class="card-footer">
                                     <div class="d-flex justify-content-between align-items-center">
                                         <small class="text-muted">
-                                            {{ stamp.axes.count }} yxa{{ stamp.axes.count|pluralize:"r,or" }}
+                                            {{ stamp.axes.count }} yx{{ stamp.axes.count|pluralize:"a,or" }}
                                             {% if stamp.images.count %}
                                                 • {{ stamp.images.count }} bild{{ stamp.images.count|pluralize:"er" }}
                                             {% endif %}
@@ -990,6 +1044,7 @@
 {% endblock %}
 
 {% block scripts %}
+<script src="{% static 'js/stamp_crop_canvas.js' %}?v={{ request.GET.v|default:'1.0' }}"></script>
 <script>
 let easyMDE = null;
 

@@ -8,32 +8,26 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         self.stdout.write("Skapar standardplattformar...")
 
+        # Rensa befintliga plattformar först
+        Platform.objects.filter(name__in=["Tradera", "eBay"]).delete()
+        self.stdout.write("Rensade befintliga plattformar...")
+
         # Skapa Tradera-plattform
-        tradera_platform, created = Platform.objects.get_or_create(
+        tradera_platform = Platform.objects.create(
             name="Tradera",
-            defaults={
-                "url": "https://www.tradera.com",
-                "comment": "Tradera-auktionsplattform",
-                "color_class": "bg-primary",
-            },
+            url="https://www.tradera.com",
+            comment="Tradera-auktionsplattform",
+            color_class="bg-primary",
         )
-        if created:
-            self.stdout.write(self.style.SUCCESS("✅ Tradera-plattform skapad"))
-        else:
-            self.stdout.write("ℹ️ Tradera-plattform fanns redan")
+        self.stdout.write(self.style.SUCCESS("✅ Tradera-plattform skapad"))
 
         # Skapa eBay-plattform
-        ebay_platform, created = Platform.objects.get_or_create(
+        ebay_platform = Platform.objects.create(
             name="eBay",
-            defaults={
-                "url": "https://www.ebay.com",
-                "comment": "eBay-auktionsplattform",
-                "color_class": "bg-success",
-            },
+            url="https://www.ebay.com",
+            comment="eBay-auktionsplattform",
+            color_class="bg-success",
         )
-        if created:
-            self.stdout.write(self.style.SUCCESS("✅ eBay-plattform skapad"))
-        else:
-            self.stdout.write("ℹ️ eBay-plattform fanns redan")
+        self.stdout.write(self.style.SUCCESS("✅ eBay-plattform skapad"))
 
         self.stdout.write(self.style.SUCCESS("✅ Standardplattformar initierade!"))

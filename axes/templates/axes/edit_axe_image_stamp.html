@@ -43,28 +43,28 @@
                                 <!-- Koordinater -->
                                 <div class="row">
                                     <div class="col-md-3">
-                                        <label for="x_coordinate" class="form-label">X-koordinat</label>
+                                        <label for="x_coordinate" class="form-label">X-koordinat (%)</label>
                                         <input type="number" name="x_coordinate" id="x_coordinate" 
                                                class="form-control" value="{{ stamp_mark.x_coordinate|default:'' }}"
-                                               placeholder="Pixlar från vänster">
+                                               placeholder="Procent från vänster" step="0.01" min="0" max="100">
                                     </div>
                                     <div class="col-md-3">
-                                        <label for="y_coordinate" class="form-label">Y-koordinat</label>
+                                        <label for="y_coordinate" class="form-label">Y-koordinat (%)</label>
                                         <input type="number" name="y_coordinate" id="y_coordinate" 
                                                class="form-control" value="{{ stamp_mark.y_coordinate|default:'' }}"
-                                               placeholder="Pixlar från toppen">
+                                               placeholder="Procent från toppen" step="0.01" min="0" max="100">
                                     </div>
                                     <div class="col-md-3">
-                                        <label for="width" class="form-label">Bredd</label>
+                                        <label for="width" class="form-label">Bredd (%)</label>
                                         <input type="number" name="width" id="width" 
                                                class="form-control" value="{{ stamp_mark.width|default:'' }}"
-                                               placeholder="Pixlar">
+                                               placeholder="Procent av bildbredd" step="0.01" min="0" max="100">
                                     </div>
                                     <div class="col-md-3">
-                                        <label for="height" class="form-label">Höjd</label>
+                                        <label for="height" class="form-label">Höjd (%)</label>
                                         <input type="number" name="height" id="height" 
                                                class="form-control" value="{{ stamp_mark.height|default:'' }}"
-                                               placeholder="Pixlar">
+                                               placeholder="Procent av bildhöjd" step="0.01" min="0" max="100">
                                     </div>
                                 </div>
 
@@ -107,10 +107,10 @@
                                 <div class="mt-3">
                                     <h6>Nuvarande markering:</h6>
                                     <ul class="list-unstyled">
-                                        <li><strong>X:</strong> {{ stamp_mark.x_coordinate }}px</li>
-                                        <li><strong>Y:</strong> {{ stamp_mark.y_coordinate }}px</li>
-                                        <li><strong>Bredd:</strong> {{ stamp_mark.width }}px</li>
-                                        <li><strong>Höjd:</strong> {{ stamp_mark.height }}px</li>
+                                        <li><strong>X:</strong> {{ stamp_mark.x_coordinate }}%</li>
+                                        <li><strong>Y:</strong> {{ stamp_mark.y_coordinate }}%</li>
+                                        <li><strong>Bredd:</strong> {{ stamp_mark.width }}%</li>
+                                        <li><strong>Höjd:</strong> {{ stamp_mark.height }}%</li>
                                     </ul>
                                 </div>
                             {% else %}
