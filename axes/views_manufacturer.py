@@ -5,7 +5,14 @@ from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.decorators import login_required
 from django.utils import timezone
 from django.contrib import messages
-from .models import Manufacturer, ManufacturerImage, ManufacturerLink, Axe, Transaction, Stamp
+from .models import (
+    Manufacturer,
+    ManufacturerImage,
+    ManufacturerLink,
+    Axe,
+    Transaction,
+    Stamp,
+)
 from django.db.models import Sum, Max
 import json
 import os
@@ -424,16 +431,15 @@ def manufacturer_edit(request, pk):
 def manufacturer_detail(request, pk):
     manufacturer = get_object_or_404(Manufacturer, pk=pk)
     axes = Axe.objects.filter(manufacturer=manufacturer).order_by("-id")
-    
+
     # Hämta ManufacturerImage för icke-stämpel bilder (övriga bilder)
     images = ManufacturerImage.objects.filter(
-        manufacturer=manufacturer, 
-        image_type="OTHER"
+        manufacturer=manufacturer, image_type="OTHER"
     ).order_by("order")
-    
+
     # Hämta Stamp objekt för denna tillverkare
     stamps = Stamp.objects.filter(manufacturer=manufacturer).order_by("name")
-    
+
     links = ManufacturerLink.objects.filter(manufacturer=manufacturer).order_by(
         "link_type", "order"
     )
@@ -530,11 +536,11 @@ def manufacturer_detail(request, pk):
                 axe.status_class = "bg-light"
     # Gruppera bilder efter typ
     images_by_type = {}
-    
+
     # Lägg till övriga bilder (icke-stämplar)
     if images:
         images_by_type["OTHER"] = list(images)
-    
+
     # Lägg till stämplar från det nya Stamp-systemet
     if stamps:
         images_by_type["STAMP"] = list(stamps)

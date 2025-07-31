@@ -72,7 +72,7 @@ def format_decimal(value):
         formatted_integer = ""
         for i, digit in enumerate(reversed(integer_str)):
             if i > 0 and i % 3 == 0:
-                formatted_integer = "\u00A0" + formatted_integer  # Non-breaking space
+                formatted_integer = "\u00a0" + formatted_integer  # Non-breaking space
             formatted_integer = digit + formatted_integer
 
         # Lägg till decimaler om de finns
@@ -101,7 +101,7 @@ def format_currency(value, currency="kr"):
         return ""
 
     # Använd non-breaking space mellan tal och valuta
-    return mark_safe(f"{formatted_value}\u00A0{currency}")
+    return mark_safe(f"{formatted_value}\u00a0{currency}")
 
 
 @register.filter(name="status_badge")

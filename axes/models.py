@@ -966,19 +966,19 @@ class Settings(models.Model):
 # Stämpelregister-modeller
 class Stamp(models.Model):
     """Stämpel - huvudmodell för stämplar"""
-    
+
     STAMP_TYPE_CHOICES = [
         ("text", "Text"),
         ("symbol", "Symbol"),
         ("text_symbol", "Text + Symbol"),
         ("label", "Etikett"),
     ]
-    
+
     STATUS_CHOICES = [
         ("known", "Känd"),
         ("unknown", "Okänd"),
     ]
-    
+
     SOURCE_CATEGORY_CHOICES = [
         ("own_collection", "Egen samling"),
         ("ebay_auction", "eBay/Auktion"),
@@ -992,40 +992,40 @@ class Stamp(models.Model):
     name = models.CharField(max_length=200, verbose_name="Namn")
     description = models.TextField(blank=True, null=True, verbose_name="Beskrivning")
     manufacturer = models.ForeignKey(
-        Manufacturer, 
-        on_delete=models.SET_NULL, 
-        null=True, 
+        Manufacturer,
+        on_delete=models.SET_NULL,
+        null=True,
         blank=True,
-        verbose_name="Tillverkare"
+        verbose_name="Tillverkare",
     )
     stamp_type = models.CharField(
-        max_length=20, 
-        choices=STAMP_TYPE_CHOICES,
-        default="text",
-        verbose_name="Typ"
+        max_length=20, choices=STAMP_TYPE_CHOICES, default="text", verbose_name="Typ"
     )
     status = models.CharField(
-        max_length=20, 
-        choices=STATUS_CHOICES,
-        default="unknown",
-        verbose_name="Status"
+        max_length=20, choices=STATUS_CHOICES, default="unknown", verbose_name="Status"
     )
-    
+
     # Årtalsinformation
     year_from = models.IntegerField(null=True, blank=True, verbose_name="Från år")
     year_to = models.IntegerField(null=True, blank=True, verbose_name="Till år")
-    year_uncertainty = models.BooleanField(default=False, verbose_name="Osäker årtalsinformation")
-    year_notes = models.TextField(blank=True, null=True, verbose_name="Anteckningar om årtal")
-    
+    year_uncertainty = models.BooleanField(
+        default=False, verbose_name="Osäker årtalsinformation"
+    )
+    year_notes = models.TextField(
+        blank=True, null=True, verbose_name="Anteckningar om årtal"
+    )
+
     # Källinformation
     source_category = models.CharField(
-        max_length=20, 
-        choices=SOURCE_CATEGORY_CHOICES, 
+        max_length=20,
+        choices=SOURCE_CATEGORY_CHOICES,
         default="own_collection",
-        verbose_name="Källkategori"
+        verbose_name="Källkategori",
     )
-    source_reference = models.TextField(blank=True, null=True, verbose_name="Källhänvisning")
-    
+    source_reference = models.TextField(
+        blank=True, null=True, verbose_name="Källhänvisning"
+    )
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -1057,34 +1057,34 @@ class Stamp(models.Model):
         elif self.year_to:
             return f"till {self.year_to}"
         return "Okänt årtal"
-    
+
     @property
     def primary_image(self):
         """Hämta primär bild för stämpeln"""
         return self.images.filter(is_primary=True).first()
-    
+
     @property
     def image_count(self):
         """Antal bilder kopplade till stämpeln"""
         return self.images.count()
-    
+
     @property
     def axe_count(self):
         """Antal yxor med denna stämpel"""
         return self.axes.count()
-    
+
     def clean(self):
         """Validera stämpeldata"""
         from django.core.exceptions import ValidationError
-        
+
         # Validera årtal
         if self.year_from and self.year_to and self.year_from > self.year_to:
             raise ValidationError("Från-år kan inte vara senare än till-år")
-        
+
         # Validera att kända stämplar har tillverkare
         if self.status == "known" and not self.manufacturer:
             raise ValidationError("Kända stämplar måste ha en tillverkare")
-    
+
     def save(self, *args, **kwargs):
         self.full_clean()
         super().save(*args, **kwargs)
@@ -1092,7 +1092,7 @@ class Stamp(models.Model):
 
 class StampTranscription(models.Model):
     """Textbaserad beskrivning av stämplar"""
-    
+
     QUALITY_CHOICES = [
         ("high", "Hög"),
         ("medium", "Medium"),
@@ -1100,23 +1100,23 @@ class StampTranscription(models.Model):
     ]
 
     stamp = models.ForeignKey(
-        Stamp, 
-        on_delete=models.CASCADE, 
+        Stamp,
+        on_delete=models.CASCADE,
         related_name="transcriptions",
-        verbose_name="Stämpel"
+        verbose_name="Stämpel",
     )
     text = models.CharField(max_length=500, verbose_name="Text")
     quality = models.CharField(
-        max_length=20, 
+        max_length=20,
         choices=QUALITY_CHOICES,
         default="medium",
-        verbose_name="Kvalitet"
+        verbose_name="Kvalitet",
     )
     created_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL, 
-        on_delete=models.SET_NULL, 
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
         null=True,
-        verbose_name="Skapad av"
+        verbose_name="Skapad av",
     )
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -1131,14 +1131,14 @@ class StampTranscription(models.Model):
 
 class StampTag(models.Model):
     """Kategorisering av stämplar"""
-    
+
     name = models.CharField(max_length=100, verbose_name="Namn")
     description = models.TextField(blank=True, null=True, verbose_name="Beskrivning")
     color = models.CharField(
-        max_length=7, 
+        max_length=7,
         default="#007bff",
         verbose_name="Färg (hex)",
-        help_text="Hex-färg för taggen, t.ex. #007bff"
+        help_text="Hex-färg för taggen, t.ex. #007bff",
     )
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -1153,184 +1153,178 @@ class StampTag(models.Model):
 
 class StampImage(models.Model):
     """Bilder av stämplar - konsoliderad modell för både fristående och yxbildmarkeringar"""
-    
+
     IMAGE_TYPE_CHOICES = [
-        ('standalone', 'Fristående stämpelbild'),
-        ('axe_mark', 'Yxbildmarkering'),
-        ('reference', 'Referensbild'),
-        ('documentation', 'Dokumentationsbild'),
+        ("standalone", "Fristående stämpelbild"),
+        ("axe_mark", "Yxbildmarkering"),
+        ("reference", "Referensbild"),
+        ("documentation", "Dokumentationsbild"),
     ]
-    
+
     UNCERTAINTY_CHOICES = [
-        ('certain', 'Säker'),
-        ('uncertain', 'Osäker'),
-        ('tentative', 'Preliminär'),
+        ("certain", "Säker"),
+        ("uncertain", "Osäker"),
+        ("tentative", "Preliminär"),
     ]
 
     stamp = models.ForeignKey(
-        Stamp, 
-        on_delete=models.CASCADE, 
-        related_name="images",
-        verbose_name="Stämpel"
+        Stamp, on_delete=models.CASCADE, related_name="images", verbose_name="Stämpel"
     )
-    
+
     # Bildtyp för att skilja mellan olika källor
     image_type = models.CharField(
         max_length=20,
         choices=IMAGE_TYPE_CHOICES,
-        default='standalone',
-        verbose_name="Bildtyp"
+        default="standalone",
+        verbose_name="Bildtyp",
     )
-    
+
     # Koppling till yxbild (om det är en markering)
     axe_image = models.ForeignKey(
-        AxeImage, 
+        AxeImage,
         on_delete=models.CASCADE,
-        null=True, 
+        null=True,
         blank=True,
-        related_name='stamp_markings',
+        related_name="stamp_markings",
         verbose_name="Yxbild",
-        help_text="Koppling till yxbild om detta är en markering"
+        help_text="Koppling till yxbild om detta är en markering",
     )
-    
+
     image = models.ImageField(upload_to="stamps/", verbose_name="Bild")
     caption = models.CharField(
-        max_length=255, 
-        blank=True, 
+        max_length=255,
+        blank=True,
         null=True,
         verbose_name="Bildtext",
-        help_text="Kort beskrivning av bilden"
+        help_text="Kort beskrivning av bilden",
     )
     description = models.TextField(
-        blank=True, 
+        blank=True,
         null=True,
         verbose_name="Beskrivning",
-        help_text="Detaljerad beskrivning av vad bilden visar"
+        help_text="Detaljerad beskrivning av vad bilden visar",
     )
     order = models.PositiveIntegerField(
-        default=0,
-        verbose_name="Ordning",
-        help_text="Sorteringsordning för bilderna"
+        default=0, verbose_name="Ordning", help_text="Sorteringsordning för bilderna"
     )
-    
+
     # Stämpelmarkering (koordinater) - procentuella värden för bästa visning
     x_coordinate = models.DecimalField(
-        max_digits=5, 
+        max_digits=5,
         decimal_places=2,
-        null=True, 
+        null=True,
         blank=True,
         verbose_name="X-koordinat (%)",
-        help_text="X-koordinat för stämpelområdet (procent från vänster)"
+        help_text="X-koordinat för stämpelområdet (procent från vänster)",
     )
     y_coordinate = models.DecimalField(
-        max_digits=5, 
+        max_digits=5,
         decimal_places=2,
-        null=True, 
+        null=True,
         blank=True,
-        verbose_name="Y-koordinat (%)", 
-        help_text="Y-koordinat för stämpelområdet (procent från toppen)"
+        verbose_name="Y-koordinat (%)",
+        help_text="Y-koordinat för stämpelområdet (procent från toppen)",
     )
     width = models.DecimalField(
-        max_digits=5, 
+        max_digits=5,
         decimal_places=2,
-        null=True, 
+        null=True,
         blank=True,
         verbose_name="Bredd (%)",
-        help_text="Bredd på stämpelområdet (procent av bildbredd)"
+        help_text="Bredd på stämpelområdet (procent av bildbredd)",
     )
     height = models.DecimalField(
-        max_digits=5, 
+        max_digits=5,
         decimal_places=2,
-        null=True, 
+        null=True,
         blank=True,
         verbose_name="Höjd (%)",
-        help_text="Höjd på stämpelområdet (procent av bildhöjd)"
+        help_text="Höjd på stämpelområdet (procent av bildhöjd)",
     )
-    
+
     # Inställningar för visning
     is_primary = models.BooleanField(
         default=False,
         verbose_name="Huvudbild",
-        help_text="Markera som huvudbild för stämpeln"
+        help_text="Markera som huvudbild för stämpeln",
     )
-    
+
     # Metadata för stämpelmarkering
     position = models.CharField(
-        max_length=100, 
-        blank=True, 
+        max_length=100,
+        blank=True,
         null=True,
         verbose_name="Position",
-        help_text="Var på bilden/yxan stämpeln finns (t.ex. 'på bladet - vänstra sidan')"
+        help_text="Var på bilden/yxan stämpeln finns (t.ex. 'på bladet - vänstra sidan')",
     )
     comment = models.TextField(
-        blank=True, 
+        blank=True,
         null=True,
         verbose_name="Kommentar",
-        help_text="Anteckningar om stämpelområdet"
+        help_text="Anteckningar om stämpelområdet",
     )
     uncertainty_level = models.CharField(
-        max_length=20, 
-        choices=UNCERTAINTY_CHOICES, 
+        max_length=20,
+        choices=UNCERTAINTY_CHOICES,
         default="certain",
-        verbose_name="Osäkerhetsnivå"
+        verbose_name="Osäkerhetsnivå",
     )
-    
+
     # Visningsinställningar
     show_full_image = models.BooleanField(
         default=False,
         verbose_name="Visa hela bilden",
-        help_text="Visa hela yxbilden istället för bara stämpelområdet"
+        help_text="Visa hela yxbilden istället för bara stämpelområdet",
     )
-    
+
     # Extern källinformation
     external_source = models.CharField(
         max_length=200,
         blank=True,
         null=True,
         verbose_name="Extern källa",
-        help_text="Källa för extern bild (t.ex. 'Museum X', 'Bok Y')"
+        help_text="Källa för extern bild (t.ex. 'Museum X', 'Bok Y')",
     )
-    
+
     cache_busting_timestamp = models.DateTimeField(
-        auto_now=True,
-        verbose_name="Cache-busting timestamp"
+        auto_now=True, verbose_name="Cache-busting timestamp"
     )
     uploaded_at = models.DateTimeField(auto_now_add=True)
-    
+
     class Meta:
         ordering = ["order", "-uploaded_at"]
         verbose_name = "Stämpelbild"
         verbose_name_plural = "Stämpelbilder"
-    
+
     def __str__(self):
         if self.axe_image:
             return f"{self.stamp.name} på {self.axe_image.axe.display_id}"
         return f"{self.stamp.name} - {self.get_image_type_display()}"
-    
+
     @property
     def webp_url(self):
         """Returnerar URL för WebP-version av bilden"""
         if self.image:
             # Skapa WebP-version om den inte finns
             image_path = self.image.path
-            webp_path = image_path.rsplit('.', 1)[0] + '.webp'
-            
+            webp_path = image_path.rsplit(".", 1)[0] + ".webp"
+
             if not os.path.exists(webp_path):
                 try:
                     with Image.open(image_path) as img:
                         # Konvertera till RGB om nödvändigt
-                        if img.mode in ('RGBA', 'LA', 'P'):
-                            img = img.convert('RGB')
-                        img.save(webp_path, 'WEBP', quality=85)
+                        if img.mode in ("RGBA", "LA", "P"):
+                            img = img.convert("RGB")
+                        img.save(webp_path, "WEBP", quality=85)
                 except Exception as e:
                     # Om WebP-konvertering misslyckas, returnera original
                     return self.image.url
-            
+
             # Returnera WebP-URL
-            webp_url = self.image.url.rsplit('.', 1)[0] + '.webp'
+            webp_url = self.image.url.rsplit(".", 1)[0] + ".webp"
             return webp_url
         return None
-    
+
     @property
     def image_url_with_cache_busting(self):
         """Returnerar bild-URL med cache-busting"""
@@ -1338,72 +1332,80 @@ class StampImage(models.Model):
             timestamp = int(self.cache_busting_timestamp.timestamp())
             return f"{self.image.url}?v={timestamp}"
         return None
-    
+
     @property
     def has_coordinates(self):
         """Returnerar True om koordinater är definierade"""
-        return all([
-            self.x_coordinate is not None,
-            self.y_coordinate is not None,
-            self.width is not None,
-            self.height is not None
-        ])
-    
+        return all(
+            [
+                self.x_coordinate is not None,
+                self.y_coordinate is not None,
+                self.width is not None,
+                self.height is not None,
+            ]
+        )
+
     @property
     def crop_area(self):
         """Returnerar beskärningsområdet som en tuple (x%, y%, width%, height%)"""
         if self.has_coordinates:
             return (self.x_coordinate, self.y_coordinate, self.width, self.height)
         return None
-    
+
     def save(self, *args, **kwargs):
         # Validering för att säkerställa att axe_image finns för axe_mark-typer
-        if self.image_type == 'axe_mark' and not self.axe_image:
+        if self.image_type == "axe_mark" and not self.axe_image:
             raise ValidationError("Axe_image måste anges för axe_mark-typer")
-        
+
         # Validera koordinater om de finns
         if any([self.x_coordinate, self.y_coordinate, self.width, self.height]):
             if not all([self.x_coordinate, self.y_coordinate, self.width, self.height]):
                 raise ValidationError("Alla koordinater måste anges tillsammans")
-            
+
             # Kontrollera att värdena är inom rimliga gränser
-            if (self.x_coordinate < 0 or self.y_coordinate < 0 or 
-                self.width <= 0 or self.height <= 0 or
-                self.x_coordinate + self.width > 100 or 
-                self.y_coordinate + self.height > 100):
+            if (
+                self.x_coordinate < 0
+                or self.y_coordinate < 0
+                or self.width <= 0
+                or self.height <= 0
+                or self.x_coordinate + self.width > 100
+                or self.y_coordinate + self.height > 100
+            ):
                 raise ValidationError("Koordinater måste vara inom 0-100%")
-        
+
         # Om detta är den första bilden för stämpeln, gör den till primär
         if not self.pk and not self.stamp.images.exists():
             self.is_primary = True
-        
+
         # Om denna bild är markerad som primär, ta bort primär från andra bilder
         if self.is_primary:
-            self.stamp.images.filter(is_primary=True).exclude(pk=self.pk).update(is_primary=False)
-        
+            self.stamp.images.filter(is_primary=True).exclude(pk=self.pk).update(
+                is_primary=False
+            )
+
         super().save(*args, **kwargs)
-        
+
         # Skapa WebP-version om det är en ny bild
-        if not hasattr(self, '_webp_created'):
+        if not hasattr(self, "_webp_created"):
             self._create_webp_version()
             self._webp_created = True
-    
+
     def _create_webp_version(self):
         """Skapa WebP-version av bilden"""
         if self.image:
             try:
                 image_path = self.image.path
-                webp_path = image_path.rsplit('.', 1)[0] + '.webp'
-                
+                webp_path = image_path.rsplit(".", 1)[0] + ".webp"
+
                 if not os.path.exists(webp_path):
                     with Image.open(image_path) as img:
-                        if img.mode in ('RGBA', 'LA', 'P'):
-                            img = img.convert('RGB')
-                        img.save(webp_path, 'WEBP', quality=85)
+                        if img.mode in ("RGBA", "LA", "P"):
+                            img = img.convert("RGB")
+                        img.save(webp_path, "WEBP", quality=85)
             except Exception:
                 # Ignorera fel vid WebP-konvertering
                 pass
-    
+
     def delete(self, *args, **kwargs):
         # Ta bort både originalfilen och .webp-filen
         if self.image:
@@ -1411,21 +1413,21 @@ class StampImage(models.Model):
                 # Ta bort originalfil
                 if os.path.exists(self.image.path):
                     os.remove(self.image.path)
-                
+
                 # Ta bort WebP-fil
-                webp_path = self.image.path.rsplit('.', 1)[0] + '.webp'
+                webp_path = self.image.path.rsplit(".", 1)[0] + ".webp"
                 if os.path.exists(webp_path):
                     os.remove(webp_path)
             except Exception:
                 # Ignorera fel vid filborttagning
                 pass
-        
+
         super().delete(*args, **kwargs)
 
 
 class AxeStamp(models.Model):
     """Koppling mellan yxa och stämpel"""
-    
+
     UNCERTAINTY_CHOICES = [
         ("certain", "Säker"),
         ("uncertain", "Osäker"),
@@ -1433,30 +1435,24 @@ class AxeStamp(models.Model):
     ]
 
     axe = models.ForeignKey(
-        Axe, 
-        on_delete=models.CASCADE, 
-        related_name="stamps",
-        verbose_name="Yxa"
+        Axe, on_delete=models.CASCADE, related_name="stamps", verbose_name="Yxa"
     )
     stamp = models.ForeignKey(
-        Stamp, 
-        on_delete=models.CASCADE, 
-        related_name="axes",
-        verbose_name="Stämpel"
+        Stamp, on_delete=models.CASCADE, related_name="axes", verbose_name="Stämpel"
     )
     comment = models.TextField(blank=True, null=True, verbose_name="Kommentar")
     position = models.CharField(
-        max_length=100, 
-        blank=True, 
+        max_length=100,
+        blank=True,
         null=True,
         verbose_name="Position",
-        help_text="Var på yxan stämpeln finns"
+        help_text="Var på yxan stämpeln finns",
     )
     uncertainty_level = models.CharField(
-        max_length=20, 
-        choices=UNCERTAINTY_CHOICES, 
+        max_length=20,
+        choices=UNCERTAINTY_CHOICES,
         default="certain",
-        verbose_name="Osäkerhetsnivå"
+        verbose_name="Osäkerhetsnivå",
     )
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -1472,24 +1468,24 @@ class AxeStamp(models.Model):
 
 class StampVariant(models.Model):
     """Varianter av stämplar"""
-    
+
     main_stamp = models.ForeignKey(
-        Stamp, 
-        on_delete=models.CASCADE, 
+        Stamp,
+        on_delete=models.CASCADE,
         related_name="variants",
-        verbose_name="Huvudstämpel"
+        verbose_name="Huvudstämpel",
     )
     variant_stamp = models.ForeignKey(
-        Stamp, 
-        on_delete=models.CASCADE, 
+        Stamp,
+        on_delete=models.CASCADE,
         related_name="main_stamp",
-        verbose_name="Variantstämpel"
+        verbose_name="Variantstämpel",
     )
     description = models.TextField(
-        blank=True, 
+        blank=True,
         null=True,
         verbose_name="Beskrivning",
-        help_text="Beskrivning av skillnaden"
+        help_text="Beskrivning av skillnaden",
     )
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -1505,7 +1501,7 @@ class StampVariant(models.Model):
 
 class StampUncertaintyGroup(models.Model):
     """Grupper av stämplar med osäker identifiering"""
-    
+
     CONFIDENCE_CHOICES = [
         ("high", "Hög"),
         ("medium", "Medium"),
@@ -1515,15 +1511,13 @@ class StampUncertaintyGroup(models.Model):
     name = models.CharField(max_length=200, verbose_name="Namn")
     description = models.TextField(blank=True, null=True, verbose_name="Beskrivning")
     stamps = models.ManyToManyField(
-        Stamp, 
-        related_name="uncertainty_groups",
-        verbose_name="Stämplar"
+        Stamp, related_name="uncertainty_groups", verbose_name="Stämplar"
     )
     confidence_level = models.CharField(
-        max_length=20, 
+        max_length=20,
         choices=CONFIDENCE_CHOICES,
         default="medium",
-        verbose_name="Konfidensnivå"
+        verbose_name="Konfidensnivå",
     )
     created_at = models.DateTimeField(auto_now_add=True)
 

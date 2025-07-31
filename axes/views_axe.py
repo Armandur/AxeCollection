@@ -313,8 +313,14 @@ def axe_list(request):
 def axe_detail(request, pk):
     axe = get_object_or_404(
         Axe.objects.select_related("manufacturer")
-        .prefetch_related("measurements", "images", "images__stamp_markings__stamp__manufacturer")
-        .prefetch_related("stamps__stamp__manufacturer", "stamps__stamp__transcriptions", "stamps__stamp__images"),
+        .prefetch_related(
+            "measurements", "images", "images__stamp_markings__stamp__manufacturer"
+        )
+        .prefetch_related(
+            "stamps__stamp__manufacturer",
+            "stamps__stamp__transcriptions",
+            "stamps__stamp__images",
+        ),
         pk=pk,
     )
     # Hämta transaktioner för denna yxa
@@ -393,15 +399,15 @@ def axe_detail(request, pk):
             return redirect("axe_detail", pk=axe.pk)
     else:
         transaction_form = TransactionForm()
-    
+
     # Hämta alla StampImage för denna yxa och skapa kort för varje
     stamp_images = (
-        StampImage.objects.filter(axe_image__axe=axe, image_type='axe_mark')
-        .select_related('stamp__manufacturer', 'axe_image')
-        .prefetch_related('stamp__transcriptions')
-        .order_by('-uploaded_at')
+        StampImage.objects.filter(axe_image__axe=axe, image_type="axe_mark")
+        .select_related("stamp__manufacturer", "axe_image")
+        .prefetch_related("stamp__transcriptions")
+        .order_by("-uploaded_at")
     )
-    
+
     # För varje StampImage, hitta motsvarande AxeStamp för att få position, uncertainty_level, etc.
     for stamp_image in stamp_images:
         # Hitta motsvarande AxeStamp (ta första om flera finns)
@@ -425,7 +431,7 @@ def axe_detail(request, pk):
             stamp_image.position = ""
             stamp_image.uncertainty_level = "certain"
             stamp_image.axe_stamp_comment = ""
-    
+
     context = {
         "axe": axe,
         "transactions": transactions,
@@ -962,10 +968,7 @@ def _rename_axe_images_for_edit(axe):
 @login_required
 def axe_edit(request, pk):
     axe = get_object_or_404(
-        Axe.objects.prefetch_related(
-            'images__stamp_marks__stamp__manufacturer'
-        ), 
-        pk=pk
+        Axe.objects.prefetch_related("images__stamp_marks__stamp__manufacturer"), pk=pk
     )
     if request.method == "POST":
         form = AxeForm(request.POST, request.FILES, instance=axe)

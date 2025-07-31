@@ -241,23 +241,85 @@ urlpatterns = [
     path("stamplar/", views_stamp.stamp_list, name="stamp_list"),
     path("stamplar/ny/", views_stamp.stamp_create, name="stamp_create"),
     path("stamplar/<int:stamp_id>/", views_stamp.stamp_detail, name="stamp_detail"),
-    path("stamplar/<int:stamp_id>/redigera/", views_stamp.stamp_edit, name="stamp_edit"),
+    path(
+        "stamplar/<int:stamp_id>/redigera/", views_stamp.stamp_edit, name="stamp_edit"
+    ),
     path("stamplar/sok/", views_stamp.stamp_search, name="stamp_search"),
     path("stamplar/statistik/", views_stamp.stamp_statistics, name="stamp_statistics"),
-    path("yxor-utan-stamplar/", views_stamp.axes_without_stamps, name="axes_without_stamps"),
-    path("yxor/<int:axe_id>/stampel/lagg-till/", views_stamp.add_axe_stamp, name="add_axe_stamp"),
-    path("yxor/<int:axe_id>/stampel/<int:axe_stamp_id>/redigera/", views_stamp.edit_axe_stamp, name="edit_axe_stamp"),
-    path("yxor/<int:axe_id>/stampel/<int:axe_stamp_id>/ta-bort/", views_stamp.remove_axe_stamp, name="remove_axe_stamp"),
-    path("stamplar/<int:stamp_id>/bild/lagg-till/", views_stamp.stamp_image_upload, name="stamp_image_upload"),
-    path("stamplar/<int:stamp_id>/bild/<int:image_id>/redigera/", views_stamp.stamp_image_edit, name="stamp_image_edit"),
-    path("stamplar/<int:stamp_id>/bild/<int:image_id>/ta-bort/", views_stamp.stamp_image_delete, name="stamp_image_delete"),
+    path(
+        "yxor-utan-stamplar/",
+        views_stamp.axes_without_stamps,
+        name="axes_without_stamps",
+    ),
+    path(
+        "yxor/<int:axe_id>/stampel/lagg-till/",
+        views_stamp.add_axe_stamp,
+        name="add_axe_stamp",
+    ),
+    path(
+        "yxor/<int:axe_id>/stampel/<int:axe_stamp_id>/redigera/",
+        views_stamp.edit_axe_stamp,
+        name="edit_axe_stamp",
+    ),
+    path(
+        "yxor/<int:axe_id>/stampel/<int:axe_stamp_id>/ta-bort/",
+        views_stamp.remove_axe_stamp,
+        name="remove_axe_stamp",
+    ),
+    path(
+        "stamplar/<int:stamp_id>/bild/lagg-till/",
+        views_stamp.stamp_image_upload,
+        name="stamp_image_upload",
+    ),
+    path(
+        "stamplar/<int:stamp_id>/bild/<int:image_id>/redigera/",
+        views_stamp.stamp_image_edit,
+        name="stamp_image_edit",
+    ),
+    path(
+        "stamplar/<int:stamp_id>/bild/<int:image_id>/ta-bort/",
+        views_stamp.stamp_image_delete,
+        name="stamp_image_delete",
+    ),
     # StampImage URL:er (konsoliderade från AxeImageStamp)
-    path("yxor/<int:axe_id>/bild/<int:image_id>/markera-stampel/", views_stamp.mark_axe_image_as_stamp, name="mark_axe_image_as_stamp"),
-    path("yxor/<int:axe_id>/bild/<int:image_id>/ta-bort-stampel-markering/", views_stamp.unmark_axe_image_stamp, name="unmark_axe_image_stamp"),
-    path("yxor/<int:axe_id>/stampel-markering/<int:mark_id>/redigera/", views_stamp.edit_axe_image_stamp, name="edit_axe_image_stamp"),
-    path("yxor/<int:axe_id>/bild/<int:image_id>/stampel/redigera-via-axe-stamp/", views_stamp.edit_axe_image_stamp_via_axe_stamp, name="edit_axe_image_stamp_via_axe_stamp"),
-    path("yxor/<int:axe_id>/stampel-markering/<int:mark_id>/ta-bort/", views_stamp.remove_axe_image_stamp, name="remove_axe_image_stamp"),
-    path("stamplar/<int:stamp_id>/beskarning/", views_stamp.stamp_image_crop, name="stamp_image_crop"),
-    path("stamplar/<int:stamp_id>/huvudbild/<int:mark_id>/", views_stamp.set_primary_stamp_image, name="set_primary_stamp_image"),
-    path("yxor/stampel-markering/<int:mark_id>/uppdatera-visa-hela/", views_stamp.update_axe_image_stamp_show_full, name="update_axe_image_stamp_show_full"),
+    path(
+        "yxor/<int:axe_id>/bild/<int:image_id>/markera-stampel/",
+        views_stamp.mark_axe_image_as_stamp,
+        name="mark_axe_image_as_stamp",
+    ),
+    path(
+        "yxor/<int:axe_id>/bild/<int:image_id>/ta-bort-stampel-markering/",
+        views_stamp.unmark_axe_image_stamp,
+        name="unmark_axe_image_stamp",
+    ),
+    path(
+        "yxor/<int:axe_id>/stampel-markering/<int:mark_id>/redigera/",
+        views_stamp.edit_axe_image_stamp,
+        name="edit_axe_image_stamp",
+    ),
+    path(
+        "yxor/<int:axe_id>/bild/<int:image_id>/stampel/redigera-via-axe-stamp/",
+        views_stamp.edit_axe_image_stamp_via_axe_stamp,
+        name="edit_axe_image_stamp_via_axe_stamp",
+    ),
+    path(
+        "yxor/<int:axe_id>/stampel-markering/<int:mark_id>/ta-bort/",
+        views_stamp.remove_axe_image_stamp,
+        name="remove_axe_image_stamp",
+    ),
+    path(
+        "stamplar/<int:stamp_id>/beskarning/",
+        views_stamp.stamp_image_crop,
+        name="stamp_image_crop",
+    ),
+    path(
+        "stamplar/<int:stamp_id>/huvudbild/<int:mark_id>/",
+        views_stamp.set_primary_stamp_image,
+        name="set_primary_stamp_image",
+    ),
+    path(
+        "yxor/stampel-markering/<int:mark_id>/uppdatera-visa-hela/",
+        views_stamp.update_axe_image_stamp_show_full,
+        name="update_axe_image_stamp_show_full",
+    ),
 ]

@@ -812,362 +812,426 @@ class BackupUploadForm(forms.Form):
             # Kontrollera filtyp
             if not backup_file.name.endswith(".sqlite3"):
                 raise forms.ValidationError("Endast .sqlite3-filer är tillåtna.")
-            
+
             # Kontrollera filstorlek (max 100MB)
             if backup_file.size > 100 * 1024 * 1024:
-                raise forms.ValidationError("Filen är för stor. Maximal storlek är 100MB.")
-        
+                raise forms.ValidationError(
+                    "Filen är för stor. Maximal storlek är 100MB."
+                )
+
         return backup_file
 
 
 # Stämpelregister-formulär
 class StampForm(forms.ModelForm):
     """Formulär för att skapa och redigera stämplar"""
-    
+
     class Meta:
         model = Stamp
         fields = [
-            'name', 'description', 'manufacturer', 'stamp_type', 'status',
-            'year_from', 'year_to', 'year_uncertainty', 'year_notes',
-            'source_category', 'source_reference'
+            "name",
+            "description",
+            "manufacturer",
+            "stamp_type",
+            "status",
+            "year_from",
+            "year_to",
+            "year_uncertainty",
+            "year_notes",
+            "source_category",
+            "source_reference",
         ]
         labels = {
-            'name': 'Namn',
-            'description': 'Beskrivning',
-            'manufacturer': 'Tillverkare',
-            'stamp_type': 'Typ',
-            'status': 'Status',
-            'year_from': 'Från år',
-            'year_to': 'Till år',
-            'year_uncertainty': 'Osäker årtalsinformation',
-            'year_notes': 'Anteckningar om årtal',
-            'source_category': 'Källkategori',
-            'source_reference': 'Källhänvisning',
+            "name": "Namn",
+            "description": "Beskrivning",
+            "manufacturer": "Tillverkare",
+            "stamp_type": "Typ",
+            "status": "Status",
+            "year_from": "Från år",
+            "year_to": "Till år",
+            "year_uncertainty": "Osäker årtalsinformation",
+            "year_notes": "Anteckningar om årtal",
+            "source_category": "Källkategori",
+            "source_reference": "Källhänvisning",
         }
         widgets = {
-            'name': forms.TextInput(attrs={
-                'class': 'form-control',
-                'placeholder': 'Ange stämpelns namn'
-            }),
-            'description': forms.Textarea(attrs={
-                'class': 'form-control',
-                'rows': 3,
-                'placeholder': 'Beskriv stämpeln...'
-            }),
-            'manufacturer': forms.Select(attrs={'class': 'form-control'}),
-            'stamp_type': forms.Select(attrs={'class': 'form-control'}),
-            'status': forms.Select(attrs={'class': 'form-control'}),
-            'year_from': forms.NumberInput(attrs={
-                'class': 'form-control',
-                'placeholder': '1884'
-            }),
-            'year_to': forms.NumberInput(attrs={
-                'class': 'form-control',
-                'placeholder': '1900'
-            }),
-            'year_uncertainty': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
-            'year_notes': forms.Textarea(attrs={
-                'class': 'form-control',
-                'rows': 2,
-                'placeholder': 'Anteckningar om årtal (t.ex. "cirka")'
-            }),
-            'source_category': forms.Select(attrs={'class': 'form-control'}),
-            'source_reference': forms.Textarea(attrs={
-                'class': 'form-control',
-                'rows': 2,
-                'placeholder': 'Specifik källhänvisning (t.ex. "eBay-auktion 2023")'
-            }),
+            "name": forms.TextInput(
+                attrs={"class": "form-control", "placeholder": "Ange stämpelns namn"}
+            ),
+            "description": forms.Textarea(
+                attrs={
+                    "class": "form-control",
+                    "rows": 3,
+                    "placeholder": "Beskriv stämpeln...",
+                }
+            ),
+            "manufacturer": forms.Select(attrs={"class": "form-control"}),
+            "stamp_type": forms.Select(attrs={"class": "form-control"}),
+            "status": forms.Select(attrs={"class": "form-control"}),
+            "year_from": forms.NumberInput(
+                attrs={"class": "form-control", "placeholder": "1884"}
+            ),
+            "year_to": forms.NumberInput(
+                attrs={"class": "form-control", "placeholder": "1900"}
+            ),
+            "year_uncertainty": forms.CheckboxInput(
+                attrs={"class": "form-check-input"}
+            ),
+            "year_notes": forms.Textarea(
+                attrs={
+                    "class": "form-control",
+                    "rows": 2,
+                    "placeholder": 'Anteckningar om årtal (t.ex. "cirka")',
+                }
+            ),
+            "source_category": forms.Select(attrs={"class": "form-control"}),
+            "source_reference": forms.Textarea(
+                attrs={
+                    "class": "form-control",
+                    "rows": 2,
+                    "placeholder": 'Specifik källhänvisning (t.ex. "eBay-auktion 2023")',
+                }
+            ),
         }
         help_texts = {
-            'name': 'Unikt namn för stämpeln',
-            'description': 'Detaljerad beskrivning av stämpeln',
-            'manufacturer': 'Tillverkare som använde denna stämpel (kan vara okänd)',
-            'stamp_type': 'Typ av stämpel (text, bild eller symbol)',
-            'status': 'Är stämpeln känd eller okänd',
-            'year_from': 'Startår för när stämpeln användes',
-            'year_to': 'Slutår för när stämpeln användes',
-            'year_uncertainty': 'Markera om årtalsinformationen är osäker',
-            'year_notes': 'Anteckningar om årtal (t.ex. "cirka", "omkring")',
-            'source_category': 'Kategori för källan till stämpelinformationen',
-            'source_reference': 'Specifik hänvisning till källan',
+            "name": "Unikt namn för stämpeln",
+            "description": "Detaljerad beskrivning av stämpeln",
+            "manufacturer": "Tillverkare som använde denna stämpel (kan vara okänd)",
+            "stamp_type": "Typ av stämpel (text, bild eller symbol)",
+            "status": "Är stämpeln känd eller okänd",
+            "year_from": "Startår för när stämpeln användes",
+            "year_to": "Slutår för när stämpeln användes",
+            "year_uncertainty": "Markera om årtalsinformationen är osäker",
+            "year_notes": 'Anteckningar om årtal (t.ex. "cirka", "omkring")',
+            "source_category": "Kategori för källan till stämpelinformationen",
+            "source_reference": "Specifik hänvisning till källan",
         }
 
 
 class StampTranscriptionForm(forms.ModelForm):
     """Formulär för att lägga till transkriberingar"""
-    
+
     class Meta:
         model = StampTranscription
-        fields = ['text', 'quality']
+        fields = ["text", "quality"]
         labels = {
-            'text': 'Text',
-            'quality': 'Kvalitet',
+            "text": "Text",
+            "quality": "Kvalitet",
         }
         widgets = {
-            'text': forms.TextInput(attrs={
-                'class': 'form-control',
-                'placeholder': 'Ange text från stämpeln (t.ex. "GRÄNSFORS")'
-            }),
-            'quality': forms.Select(attrs={'class': 'form-control'}),
+            "text": forms.TextInput(
+                attrs={
+                    "class": "form-control",
+                    "placeholder": 'Ange text från stämpeln (t.ex. "GRÄNSFORS")',
+                }
+            ),
+            "quality": forms.Select(attrs={"class": "form-control"}),
         }
         help_texts = {
-            'text': 'Textbaserad beskrivning av stämpeln',
-            'quality': 'Bedömning av hur säker transkriberingen är',
+            "text": "Textbaserad beskrivning av stämpeln",
+            "quality": "Bedömning av hur säker transkriberingen är",
         }
 
 
 class AxeStampForm(forms.ModelForm):
     """Formulär för att koppla stämpel till yxa"""
-    
+
     def __init__(self, *args, **kwargs):
-        axe = kwargs.pop('axe', None)
+        axe = kwargs.pop("axe", None)
         super().__init__(*args, **kwargs)
-        
+
         if axe and axe.manufacturer:
             # Hämta alla stämplar, prioritera tillverkarens stämplar först
             from .models import Stamp
-            
+
             # Stämplar från yxans tillverkare (prioriterade)
-            primary_stamps = Stamp.objects.filter(manufacturer=axe.manufacturer).order_by('name')
-            
+            primary_stamps = Stamp.objects.filter(
+                manufacturer=axe.manufacturer
+            ).order_by("name")
+
             # Alla andra stämplar (sekundära)
-            other_stamps = Stamp.objects.exclude(manufacturer=axe.manufacturer).order_by('name')
-            
+            other_stamps = Stamp.objects.exclude(
+                manufacturer=axe.manufacturer
+            ).order_by("name")
+
             # Skapa choices med prioriterade stämplar först
-            choices = [('', 'Välj stämpel...')]
-            
+            choices = [("", "Välj stämpel...")]
+
             # Lägg till prioriterade stämplar med separator
             if primary_stamps.exists():
-                choices.append(('', f'--- Stämplar från {axe.manufacturer.name} ---'))
+                choices.append(("", f"--- Stämplar från {axe.manufacturer.name} ---"))
                 for stamp in primary_stamps:
-                    choices.append((stamp.id, f"{stamp.name} ({stamp.get_stamp_type_display()})"))
-            
+                    choices.append(
+                        (stamp.id, f"{stamp.name} ({stamp.get_stamp_type_display()})")
+                    )
+
             # Lägg till separator för andra stämplar
             if other_stamps.exists():
-                choices.append(('', '--- Andra stämplar ---'))
+                choices.append(("", "--- Andra stämplar ---"))
                 for stamp in other_stamps:
-                    choices.append((stamp.id, f"{stamp.name} - {stamp.manufacturer.name if stamp.manufacturer else 'Okänd'} ({stamp.get_stamp_type_display()})"))
-            
-            self.fields['stamp'] = forms.ChoiceField(
+                    choices.append(
+                        (
+                            stamp.id,
+                            f"{stamp.name} - {stamp.manufacturer.name if stamp.manufacturer else 'Okänd'} ({stamp.get_stamp_type_display()})",
+                        )
+                    )
+
+            self.fields["stamp"] = forms.ChoiceField(
                 choices=choices,
                 required=True,
-                widget=forms.Select(attrs={'class': 'form-control'}),
-                label='Stämpel',
-                help_text=f'Prioriterade stämplar från {axe.manufacturer.name} visas först'
+                widget=forms.Select(attrs={"class": "form-control"}),
+                label="Stämpel",
+                help_text=f"Prioriterade stämplar från {axe.manufacturer.name} visas först",
             )
-    
+
     class Meta:
         model = AxeStamp
-        fields = ['stamp', 'comment', 'position', 'uncertainty_level']
+        fields = ["stamp", "comment", "position", "uncertainty_level"]
         labels = {
-            'stamp': 'Stämpel',
-            'comment': 'Kommentar',
-            'position': 'Position',
-            'uncertainty_level': 'Osäkerhetsnivå',
+            "stamp": "Stämpel",
+            "comment": "Kommentar",
+            "position": "Position",
+            "uncertainty_level": "Osäkerhetsnivå",
         }
         widgets = {
-            'stamp': forms.Select(attrs={'class': 'form-control'}),
-            'comment': forms.Textarea(attrs={
-                'class': 'form-control',
-                'rows': 3,
-                'placeholder': 'Lägg till kommentar om stämpeln...'
-            }),
-            'position': forms.TextInput(attrs={
-                'class': 'form-control',
-                'placeholder': 'Var på yxan stämpeln finns'
-            }),
-            'uncertainty_level': forms.Select(attrs={'class': 'form-control'}),
+            "stamp": forms.Select(attrs={"class": "form-control"}),
+            "comment": forms.Textarea(
+                attrs={
+                    "class": "form-control",
+                    "rows": 3,
+                    "placeholder": "Lägg till kommentar om stämpeln...",
+                }
+            ),
+            "position": forms.TextInput(
+                attrs={
+                    "class": "form-control",
+                    "placeholder": "Var på yxan stämpeln finns",
+                }
+            ),
+            "uncertainty_level": forms.Select(attrs={"class": "form-control"}),
         }
         help_texts = {
-            'stamp': 'Välj stämpel att koppla till yxan',
-            'comment': 'Kommentar om stämpeln (kvalitet, synlighet, etc.)',
-            'position': 'Var på yxan stämpeln finns (valfritt)',
-            'uncertainty_level': 'Hur säker är identifieringen av stämpeln',
+            "stamp": "Välj stämpel att koppla till yxan",
+            "comment": "Kommentar om stämpeln (kvalitet, synlighet, etc.)",
+            "position": "Var på yxan stämpeln finns (valfritt)",
+            "uncertainty_level": "Hur säker är identifieringen av stämpeln",
         }
-    
-
 
 
 class StampTagForm(forms.ModelForm):
     """Formulär för att skapa stämpeltaggar"""
-    
+
     class Meta:
         model = StampTag
-        fields = ['name', 'description', 'color']
+        fields = ["name", "description", "color"]
         labels = {
-            'name': 'Namn',
-            'description': 'Beskrivning',
-            'color': 'Färg',
+            "name": "Namn",
+            "description": "Beskrivning",
+            "color": "Färg",
         }
         widgets = {
-            'name': forms.TextInput(attrs={
-                'class': 'form-control',
-                'placeholder': 'Ange taggnamn (t.ex. "tillverkarnamn")'
-            }),
-            'description': forms.Textarea(attrs={
-                'class': 'form-control',
-                'rows': 2,
-                'placeholder': 'Beskriv vad taggen representerar'
-            }),
-            'color': forms.TextInput(attrs={
-                'class': 'form-control',
-                'type': 'color',
-                'placeholder': '#007bff'
-            }),
+            "name": forms.TextInput(
+                attrs={
+                    "class": "form-control",
+                    "placeholder": 'Ange taggnamn (t.ex. "tillverkarnamn")',
+                }
+            ),
+            "description": forms.Textarea(
+                attrs={
+                    "class": "form-control",
+                    "rows": 2,
+                    "placeholder": "Beskriv vad taggen representerar",
+                }
+            ),
+            "color": forms.TextInput(
+                attrs={
+                    "class": "form-control",
+                    "type": "color",
+                    "placeholder": "#007bff",
+                }
+            ),
         }
         help_texts = {
-            'name': 'Namn på taggen',
-            'description': 'Beskrivning av vad taggen representerar',
-            'color': 'Hex-färg för taggen (t.ex. #007bff)',
+            "name": "Namn på taggen",
+            "description": "Beskrivning av vad taggen representerar",
+            "color": "Hex-färg för taggen (t.ex. #007bff)",
         }
 
 
 class StampImageForm(forms.ModelForm):
     """Formulär för stämpelbilder med dynamisk fältvisning"""
-    
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        
+
         # Gör axe_image-fältet dynamiskt baserat på image_type
         if self.instance and self.instance.pk:
             # Redigering av befintlig bild
-            if self.instance.image_type == 'axe_mark':
-                self.fields['axe_image'].queryset = AxeImage.objects.all()
-                self.fields['axe_image'].required = True
+            if self.instance.image_type == "axe_mark":
+                self.fields["axe_image"].queryset = AxeImage.objects.all()
+                self.fields["axe_image"].required = True
             else:
-                self.fields['axe_image'].queryset = AxeImage.objects.none()
-                self.fields['axe_image'].required = False
+                self.fields["axe_image"].queryset = AxeImage.objects.none()
+                self.fields["axe_image"].required = False
         else:
             # Ny bild - dölj axe_image initialt
-            self.fields['axe_image'].queryset = AxeImage.objects.none()
-            self.fields['axe_image'].required = False
+            self.fields["axe_image"].queryset = AxeImage.objects.none()
+            self.fields["axe_image"].required = False
 
     class Meta:
         model = StampImage
         fields = [
-            'image', 'image_type', 'axe_image', 'caption', 'description', 
-            'x_coordinate', 'y_coordinate', 'width', 'height', 
-            'position', 'comment', 'uncertainty_level', 'external_source'
+            "image",
+            "image_type",
+            "axe_image",
+            "caption",
+            "description",
+            "x_coordinate",
+            "y_coordinate",
+            "width",
+            "height",
+            "position",
+            "comment",
+            "uncertainty_level",
+            "external_source",
         ]
         labels = {
-            'image': 'Bild',
-            'image_type': 'Bildtyp',
-            'axe_image': 'Yxbild',
-            'caption': 'Bildtext',
-            'description': 'Beskrivning',
-            'x_coordinate': 'X-koordinat (%)',
-            'y_coordinate': 'Y-koordinat (%)',
-            'width': 'Bredd (%)',
-            'height': 'Höjd (%)',
-            'position': 'Position',
-            'comment': 'Kommentar',
-            'uncertainty_level': 'Osäkerhetsnivå',
-            'external_source': 'Extern källa',
+            "image": "Bild",
+            "image_type": "Bildtyp",
+            "axe_image": "Yxbild",
+            "caption": "Bildtext",
+            "description": "Beskrivning",
+            "x_coordinate": "X-koordinat (%)",
+            "y_coordinate": "Y-koordinat (%)",
+            "width": "Bredd (%)",
+            "height": "Höjd (%)",
+            "position": "Position",
+            "comment": "Kommentar",
+            "uncertainty_level": "Osäkerhetsnivå",
+            "external_source": "Extern källa",
         }
         widgets = {
-            'image': forms.FileInput(attrs={
-                'class': 'form-control',
-                'accept': 'image/*'
-            }),
-            'image_type': forms.Select(attrs={
-                'class': 'form-control',
-                'onchange': 'updateAxeImageField(this.value)'
-            }),
-            'axe_image': forms.Select(attrs={
-                'class': 'form-control',
-                'style': 'display: none;'
-            }),
-            'caption': forms.TextInput(attrs={
-                'class': 'form-control',
-                'placeholder': 'Kort beskrivning av bilden'
-            }),
-            'description': forms.Textarea(attrs={
-                'class': 'form-control',
-                'rows': 3,
-                'placeholder': 'Detaljerad beskrivning av vad bilden visar'
-            }),
-            'x_coordinate': forms.NumberInput(attrs={
-                'class': 'form-control',
-                'readonly': 'readonly',
-                'placeholder': 'Markera på bilden',
-                'step': '0.01',
-                'min': '0',
-                'max': '100'
-            }),
-            'y_coordinate': forms.NumberInput(attrs={
-                'class': 'form-control',
-                'readonly': 'readonly',
-                'placeholder': 'Markera på bilden',
-                'step': '0.01',
-                'min': '0',
-                'max': '100'
-            }),
-            'width': forms.NumberInput(attrs={
-                'class': 'form-control',
-                'readonly': 'readonly',
-                'placeholder': 'Markera på bilden',
-                'step': '0.01',
-                'min': '0',
-                'max': '100'
-            }),
-            'height': forms.NumberInput(attrs={
-                'class': 'form-control',
-                'readonly': 'readonly',
-                'placeholder': 'Markera på bilden',
-                'step': '0.01',
-                'min': '0',
-                'max': '100'
-            }),
-            'position': forms.TextInput(attrs={
-                'class': 'form-control',
-                'placeholder': 'Var på bilden/yxan stämpeln finns (t.ex. "på bladet - vänstra sidan")'
-            }),
-            'comment': forms.Textarea(attrs={
-                'class': 'form-control',
-                'rows': 3,
-                'placeholder': 'Lägg till kommentar om stämpeln...'
-            }),
-            'uncertainty_level': forms.Select(attrs={'class': 'form-control'}),
-            'external_source': forms.TextInput(attrs={
-                'class': 'form-control',
-                'placeholder': 'Källa för extern bild (t.ex. "Museum X", "Bok Y")'
-            }),
+            "image": forms.FileInput(
+                attrs={"class": "form-control", "accept": "image/*"}
+            ),
+            "image_type": forms.Select(
+                attrs={
+                    "class": "form-control",
+                    "onchange": "updateAxeImageField(this.value)",
+                }
+            ),
+            "axe_image": forms.Select(
+                attrs={"class": "form-control", "style": "display: none;"}
+            ),
+            "caption": forms.TextInput(
+                attrs={
+                    "class": "form-control",
+                    "placeholder": "Kort beskrivning av bilden",
+                }
+            ),
+            "description": forms.Textarea(
+                attrs={
+                    "class": "form-control",
+                    "rows": 3,
+                    "placeholder": "Detaljerad beskrivning av vad bilden visar",
+                }
+            ),
+            "x_coordinate": forms.NumberInput(
+                attrs={
+                    "class": "form-control",
+                    "readonly": "readonly",
+                    "placeholder": "Markera på bilden",
+                    "step": "0.01",
+                    "min": "0",
+                    "max": "100",
+                }
+            ),
+            "y_coordinate": forms.NumberInput(
+                attrs={
+                    "class": "form-control",
+                    "readonly": "readonly",
+                    "placeholder": "Markera på bilden",
+                    "step": "0.01",
+                    "min": "0",
+                    "max": "100",
+                }
+            ),
+            "width": forms.NumberInput(
+                attrs={
+                    "class": "form-control",
+                    "readonly": "readonly",
+                    "placeholder": "Markera på bilden",
+                    "step": "0.01",
+                    "min": "0",
+                    "max": "100",
+                }
+            ),
+            "height": forms.NumberInput(
+                attrs={
+                    "class": "form-control",
+                    "readonly": "readonly",
+                    "placeholder": "Markera på bilden",
+                    "step": "0.01",
+                    "min": "0",
+                    "max": "100",
+                }
+            ),
+            "position": forms.TextInput(
+                attrs={
+                    "class": "form-control",
+                    "placeholder": 'Var på bilden/yxan stämpeln finns (t.ex. "på bladet - vänstra sidan")',
+                }
+            ),
+            "comment": forms.Textarea(
+                attrs={
+                    "class": "form-control",
+                    "rows": 3,
+                    "placeholder": "Lägg till kommentar om stämpeln...",
+                }
+            ),
+            "uncertainty_level": forms.Select(attrs={"class": "form-control"}),
+            "external_source": forms.TextInput(
+                attrs={
+                    "class": "form-control",
+                    "placeholder": 'Källa för extern bild (t.ex. "Museum X", "Bok Y")',
+                }
+            ),
         }
         help_texts = {
-            'image': 'Ladda upp bild av stämpeln',
-            'image_type': 'Välj typ av bild',
-            'axe_image': 'Välj yxbild om detta är en markering',
-            'caption': 'Kort beskrivning av bilden',
-            'description': 'Detaljerad beskrivning av vad bilden visar',
-            'x_coordinate': 'X-koordinat för stämpelområdet (procent från vänster)',
-            'y_coordinate': 'Y-koordinat för stämpelområdet (procent från toppen)',
-            'width': 'Bredd på stämpelområdet (procent av bildbredd)',
-            'height': 'Höjd på stämpelområdet (procent av bildhöjd)',
-            'position': 'Var på bilden/yxan stämpeln finns',
-            'comment': 'Anteckningar om stämpelområdet',
-            'uncertainty_level': 'Hur säker är identifieringen',
-            'external_source': 'Källa för extern bild',
+            "image": "Ladda upp bild av stämpeln",
+            "image_type": "Välj typ av bild",
+            "axe_image": "Välj yxbild om detta är en markering",
+            "caption": "Kort beskrivning av bilden",
+            "description": "Detaljerad beskrivning av vad bilden visar",
+            "x_coordinate": "X-koordinat för stämpelområdet (procent från vänster)",
+            "y_coordinate": "Y-koordinat för stämpelområdet (procent från toppen)",
+            "width": "Bredd på stämpelområdet (procent av bildbredd)",
+            "height": "Höjd på stämpelområdet (procent av bildhöjd)",
+            "position": "Var på bilden/yxan stämpeln finns",
+            "comment": "Anteckningar om stämpelområdet",
+            "uncertainty_level": "Hur säker är identifieringen",
+            "external_source": "Källa för extern bild",
         }
-    
+
     def clean(self):
         """Validera formulärdata"""
         cleaned_data = super().clean()
-        image_type = cleaned_data.get('image_type')
-        axe_image = cleaned_data.get('axe_image')
-        
+        image_type = cleaned_data.get("image_type")
+        axe_image = cleaned_data.get("axe_image")
+
         # Validera att axe_image finns för axe_mark-typer
-        if image_type == 'axe_mark' and not axe_image:
+        if image_type == "axe_mark" and not axe_image:
             raise forms.ValidationError("Yxbild måste väljas för yxbildmarkeringar")
-        
+
         # Validera koordinater
         coords = [
-            cleaned_data.get('x_coordinate'),
-            cleaned_data.get('y_coordinate'),
-            cleaned_data.get('width'),
-            cleaned_data.get('height')
+            cleaned_data.get("x_coordinate"),
+            cleaned_data.get("y_coordinate"),
+            cleaned_data.get("width"),
+            cleaned_data.get("height"),
         ]
-        
+
         if any(coords) and not all(coords):
             raise forms.ValidationError("Alla koordinater måste anges tillsammans")
-        
+
         return cleaned_data
