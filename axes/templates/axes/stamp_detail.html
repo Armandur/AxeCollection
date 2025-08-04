@@ -323,9 +323,11 @@ function setPrimaryImage(stampId, markId, isPrimary) {
                             <div class="d-flex justify-content-between align-items-center">
                                 <h1 class="h3 mb-0">{{ stamp.name }}</h1>
                                 <div>
-                                    <a href="{% url 'stamp_edit' stamp.id %}" class="btn btn-outline-primary">
-                                        <i class="fas fa-edit"></i> Redigera
-                                    </a>
+                                    {% if user.is_authenticated %}
+                                        <a href="{% url 'stamp_edit' stamp.id %}" class="btn btn-outline-primary">
+                                            <i class="fas fa-edit"></i> Redigera
+                                        </a>
+                                    {% endif %}
                                     <a href="{% url 'stamp_list' %}" class="btn btn-outline-secondary">
                                         <i class="fas fa-arrow-left"></i> Tillbaka
                                     </a>
@@ -499,14 +501,16 @@ function setPrimaryImage(stampId, markId, isPrimary) {
                                                 av {{ transcription.created_by.username }}
                                                 {% endif %}
                                             </p>
-                                            <div class="btn-group btn-group-sm" role="group">
-                                                <a href="{% url 'stamp_transcription_edit' stamp.id transcription.id %}" class="btn btn-outline-secondary btn-sm">
-                                                    <i class="fas fa-edit"></i> Redigera
-                                                </a>
-                                                <a href="{% url 'stamp_transcription_delete' stamp.id transcription.id %}" class="btn btn-outline-danger btn-sm">
-                                                    <i class="fas fa-trash"></i> Ta bort
-                                                </a>
-                                            </div>
+                                            {% if user.is_authenticated %}
+                                                <div class="btn-group btn-group-sm" role="group">
+                                                    <a href="{% url 'stamp_transcription_edit' stamp.id transcription.id %}" class="btn btn-outline-secondary btn-sm">
+                                                        <i class="fas fa-edit"></i> Redigera
+                                                    </a>
+                                                    <a href="{% url 'stamp_transcription_delete' stamp.id transcription.id %}" class="btn btn-outline-danger btn-sm">
+                                                        <i class="fas fa-trash"></i> Ta bort
+                                                    </a>
+                                                </div>
+                                            {% endif %}
                                         </div>
                                     </div>
                                 </div>
@@ -515,9 +519,11 @@ function setPrimaryImage(stampId, markId, isPrimary) {
                             {% else %}
                             <div class="text-center py-4">
                                 <p class="text-muted">Inga transkriberingar finns för denna stämpel ännu.</p>
-                                <a href="{% url 'stamp_transcription_create' stamp.id %}" class="btn btn-primary">
-                                    <i class="fas fa-plus"></i> Lägg till första transkriberingen
-                                </a>
+                                {% if user.is_authenticated %}
+                                    <a href="{% url 'stamp_transcription_create' stamp.id %}" class="btn btn-primary">
+                                        <i class="fas fa-plus"></i> Lägg till första transkriberingen
+                                    </a>
+                                {% endif %}
                             </div>
                             {% endif %}
                         </div>
@@ -532,9 +538,11 @@ function setPrimaryImage(stampId, markId, isPrimary) {
                         <div class="card-header">
                             <div class="d-flex justify-content-between align-items-center">
                                 <h5 class="mb-0">Bilder ({{ stamp_images.count }})</h5>
-                                <a href="{% url 'stamp_image_upload' stamp.id %}" class="btn btn-primary btn-sm">
-                                    <i class="fas fa-plus"></i> Lägg till bild
-                                </a>
+                                {% if user.is_authenticated %}
+                                    <a href="{% url 'stamp_image_upload' stamp.id %}" class="btn btn-primary btn-sm">
+                                        <i class="fas fa-plus"></i> Lägg till bild
+                                    </a>
+                                {% endif %}
                             </div>
                         </div>
                         <div class="card-body">
@@ -572,10 +580,12 @@ function setPrimaryImage(stampId, markId, isPrimary) {
                                                         <span class="badge bg-info">Från yxa</span>
                                                         <!-- Huvudbild-stjärna -->
                                                         <i class="fas fa-star text-warning ms-1 {% if not image.is_primary %}opacity-25{% endif %}" 
-                                                           style="cursor: pointer; font-size: 1.2em;"
+                                                           style="cursor: {% if user.is_authenticated %}pointer{% else %}default{% endif %}; font-size: 1.2em;"
                                                            data-mark-id="{{ image.id }}"
+                                                           {% if user.is_authenticated %}
                                                            onclick="setPrimaryImage({{ stamp.id }}, {{ image.id }}, !{{ image.is_primary|yesno:'true,false' }})"
-                                                           title="{% if image.is_primary %}Ta bort huvudbildsmarkering{% else %}Markera som huvudbild{% endif %}">
+                                                           {% endif %}
+                                                           title="{% if user.is_authenticated %}{% if image.is_primary %}Ta bort huvudbildsmarkering{% else %}Markera som huvudbild{% endif %}{% else %}Huvudbild (endast inloggade kan ändra){% endif %}">
                                                         </i>
                                                     </div>
                                                 {% else %}
@@ -605,10 +615,12 @@ function setPrimaryImage(stampId, markId, isPrimary) {
                                                     <div class="position-absolute top-0 end-0 m-2">
                                                         <!-- Huvudbild-stjärna för fristående bilder -->
                                                         <i class="fas fa-star text-warning ms-1 {% if not image.is_primary %}opacity-25{% endif %}" 
-                                                           style="cursor: pointer; font-size: 1.2em;"
+                                                           style="cursor: {% if user.is_authenticated %}pointer{% else %}default{% endif %}; font-size: 1.2em;"
                                                            data-mark-id="{{ image.id }}"
+                                                           {% if user.is_authenticated %}
                                                            onclick="setPrimaryImage({{ stamp.id }}, {{ image.id }}, !{{ image.is_primary|yesno:'true,false' }})"
-                                                           title="{% if image.is_primary %}Ta bort huvudbildsmarkering{% else %}Markera som huvudbild{% endif %}">
+                                                           {% endif %}
+                                                           title="{% if user.is_authenticated %}{% if image.is_primary %}Ta bort huvudbildsmarkering{% else %}Markera som huvudbild{% endif %}{% else %}Huvudbild (endast inloggade kan ändra){% endif %}">
                                                         </i>
                                                     </div>
                                                 {% endif %}
@@ -674,24 +686,26 @@ function setPrimaryImage(stampId, markId, isPrimary) {
                                                                 Visa stämpel
                                                             </button>
                                                             {% endif %}
-                                                            {% if image.image_type == 'axe_mark' %}
-                                                            <a href="{% url 'edit_axe_image_stamp_via_axe_stamp' image.axe_image.axe.id image.axe_image.id %}" 
-                                                               class="btn btn-sm btn-outline-secondary">
-                                                                <i class="fas fa-edit"></i> Redigera
-                                                            </a>
-                                                            <a href="{% url 'unmark_axe_image_stamp' image.axe_image.axe.id image.axe_image.id %}" 
-                                                               class="btn btn-sm btn-outline-danger">
-                                                                <i class="fas fa-unlink"></i> Ta bort markering
-                                                            </a>
-                                                            {% else %}
-                                                            <a href="{% url 'stamp_image_edit' stamp.id image.id %}" 
-                                                               class="btn btn-sm btn-outline-secondary">
-                                                                <i class="fas fa-edit"></i> Redigera
-                                                            </a>
-                                                            <a href="{% url 'stamp_image_delete' stamp.id image.id %}" 
-                                                               class="btn btn-sm btn-outline-danger">
-                                                                <i class="fas fa-trash"></i> Ta bort
-                                                            </a>
+                                                            {% if user.is_authenticated %}
+                                                                {% if image.image_type == 'axe_mark' %}
+                                                                <a href="{% url 'edit_axe_image_stamp_via_axe_stamp' image.axe_image.axe.id image.axe_image.id %}" 
+                                                                   class="btn btn-sm btn-outline-secondary">
+                                                                    <i class="fas fa-edit"></i> Redigera
+                                                                </a>
+                                                                <a href="{% url 'unmark_axe_image_stamp' image.axe_image.axe.id image.axe_image.id %}" 
+                                                                   class="btn btn-sm btn-outline-danger">
+                                                                    <i class="fas fa-unlink"></i> Ta bort markering
+                                                                </a>
+                                                                {% else %}
+                                                                <a href="{% url 'stamp_image_edit' stamp.id image.id %}" 
+                                                                   class="btn btn-sm btn-outline-secondary">
+                                                                    <i class="fas fa-edit"></i> Redigera
+                                                                </a>
+                                                                <a href="{% url 'stamp_image_delete' stamp.id image.id %}" 
+                                                                   class="btn btn-sm btn-outline-danger">
+                                                                    <i class="fas fa-trash"></i> Ta bort
+                                                                </a>
+                                                                {% endif %}
                                                             {% endif %}
                                                         </div>
                                                     </div>
@@ -705,9 +719,11 @@ function setPrimaryImage(stampId, markId, isPrimary) {
                                 <div class="text-center py-4">
                                     <i class="fas fa-image fa-3x text-muted mb-3"></i>
                                     <p class="text-muted">Inga bilder tillgängliga för denna stämpel.</p>
-                                    <a href="{% url 'stamp_image_upload' stamp.id %}" class="btn btn-primary">
-                                        <i class="fas fa-plus"></i> Lägg till första bilden
-                                    </a>
+                                    {% if user.is_authenticated %}
+                                        <a href="{% url 'stamp_image_upload' stamp.id %}" class="btn btn-primary">
+                                            <i class="fas fa-plus"></i> Lägg till första bilden
+                                        </a>
+                                    {% endif %}
                                 </div>
                             {% endif %}
                         </div>

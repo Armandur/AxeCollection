@@ -28,7 +28,6 @@ from .forms import (
 import json
 
 
-@login_required
 def stamp_list(request):
     """Lista alla stämplar med sökning och filtrering"""
 
@@ -162,7 +161,6 @@ def stamp_list(request):
     return render(request, "axes/stamp_list.html", context)
 
 
-@login_required
 def stamp_detail(request, stamp_id):
     """Detaljvy för en stämpel"""
 
@@ -307,7 +305,6 @@ def axes_without_stamps(request):
     return render(request, "axes/axes_without_stamps.html", context)
 
 
-@login_required
 def stamp_search(request):
     """AJAX-sökning för stämplar med förbättrad funktionalitet"""
 
@@ -788,7 +785,6 @@ def remove_axe_stamp(request, axe_id, axe_stamp_id):
     return render(request, "axes/axe_stamp_confirm_delete.html", context)
 
 
-@login_required
 def stamp_statistics(request):
     """Statistik för stämplar"""
 
@@ -1439,7 +1435,6 @@ def transcription_delete(request, stamp_id, transcription_id):
     return render(request, "axes/transcription_confirm_delete.html", context)
 
 
-@login_required
 def stamp_transcriptions(request, stamp_id):
     """Visa alla transkriberingar för en specifik stämpel"""
     
