@@ -407,6 +407,29 @@ def stamp_search(request):
         # Ta bort duplicerade symboler
         stamp_symbols = list(set(stamp_symbols))
 
+        # Bestäm matchningstyp för relevans-sortering
+        match_types = []
+        if query:
+            query_lower = query.lower()
+            if query_lower in stamp.name.lower():
+                match_types.append("name")
+            if stamp.description and query_lower in stamp.description.lower():
+                match_types.append("description")
+            if best_transcription and query_lower in best_transcription.lower():
+                match_types.append("transcription")
+            if stamp.manufacturer and query_lower in stamp.manufacturer.name.lower():
+                match_types.append("manufacturer")
+        
+        # Kontrollera symbol-matchning
+        if symbols_filter:
+            matching_symbols = []
+            for symbol_id in symbols_filter:
+                for symbol_text in stamp_symbols:
+                    if symbol_id in symbol_text or any(symbol_id in s for s in symbol_text.split()):
+                        matching_symbols.append(symbol_text)
+            if matching_symbols:
+                match_types.append("symbol")
+
         results.append(
             {
                 "id": stamp.id,
@@ -427,9 +450,14 @@ def stamp_search(request):
                     else best_transcription
                 ),
                 "symbols": stamp_symbols,
+                "match_types": match_types,
+                "relevance_score": len(match_types),  # Fler matchningar = högre relevans
                 "url": f"/stamplar/{stamp.id}/",
             }
         )
+    
+    # Sortera resultat efter relevans (flest matchningar först)
+    results.sort(key=lambda x: x["relevance_score"], reverse=True)
 
     return JsonResponse({"results": results})
 

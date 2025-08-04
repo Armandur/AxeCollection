@@ -454,6 +454,72 @@
 .symbol-pictogram {
     line-height: 1;
 }
+
+/* Sökresultat-styling */
+#stamp-search-results {
+    max-height: 500px;
+    overflow-y: auto;
+    border: 1px solid #dee2e6;
+    border-radius: 0.375rem;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+
+#stamp-search-results .dropdown-header {
+    background-color: #f8f9fa;
+    font-weight: 600;
+    color: #495057;
+    padding: 0.5rem 1rem;
+    border-bottom: 1px solid #dee2e6;
+    font-size: 0.875rem;
+}
+
+#stamp-search-results .dropdown-item {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid #f8f9fa;
+    transition: background-color 0.15s ease-in-out;
+}
+
+#stamp-search-results .dropdown-item:hover {
+    background-color: #f8f9fa;
+}
+
+#stamp-search-results .dropdown-item:last-child {
+    border-bottom: none;
+}
+
+/* Markering av matchande text */
+#stamp-search-results mark {
+    background-color: #fff3cd;
+    color: #856404;
+    padding: 0.1rem 0.2rem;
+    border-radius: 0.2rem;
+    font-weight: 600;
+}
+
+/* Gruppering av resultat */
+.search-result-group {
+    margin-bottom: 0.5rem;
+}
+
+.search-result-group:last-child {
+    margin-bottom: 0;
+}
+
+/* Responsiv design för sökresultat */
+@media (max-width: 768px) {
+    #stamp-search-results {
+        max-height: 400px;
+    }
+    
+    #stamp-search-results .dropdown-item {
+        padding: 0.5rem 0.75rem;
+    }
+    
+    #stamp-search-results .dropdown-header {
+        padding: 0.375rem 0.75rem;
+        font-size: 0.8rem;
+    }
+}
 </style>
 {% endblock %}
 
