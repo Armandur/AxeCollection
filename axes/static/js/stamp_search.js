@@ -46,7 +46,14 @@ class StampSearch {
         const manufacturerFilter = document.getElementById('manufacturer-filter')?.value || '';
         const stampTypeFilter = document.getElementById('stamp-type-filter')?.value || '';
         
-        if (!query && !manufacturerFilter && !stampTypeFilter) {
+        // Hämta nya sökparametrar
+        const searchType = document.querySelector('input[name="search_type"]:checked')?.value || 'partial';
+        const searchLogic = document.querySelector('input[name="search_logic"]:checked')?.value || 'and';
+        
+        // Hämta valda symboler
+        const selectedSymbols = Array.from(document.querySelectorAll('input[name="symbols"]')).map(input => input.value);
+        
+        if (!query && !manufacturerFilter && !stampTypeFilter && selectedSymbols.length === 0) {
             this.hideResults();
             return;
         }
@@ -57,7 +64,14 @@ class StampSearch {
             const params = new URLSearchParams({
                 q: query,
                 manufacturer: manufacturerFilter,
-                stamp_type: stampTypeFilter
+                stamp_type: stampTypeFilter,
+                search_type: searchType,
+                search_logic: searchLogic
+            });
+            
+            // Lägg till valda symboler
+            selectedSymbols.forEach(symbolId => {
+                params.append('symbols', symbolId);
             });
             
             const response = await fetch(`/stamplar/sok/?${params}`);
@@ -97,6 +111,12 @@ class StampSearch {
                                 <br>
                                 <small class="text-muted">${this.escapeHtml(stamp.description)}</small>
                             ` : ''}
+                            ${stamp.symbols && stamp.symbols.length > 0 ? `
+                                <br>
+                                <small class="text-success">
+                                    <i class="fas fa-icons"></i> ${this.escapeHtml(stamp.symbols.join(', '))}
+                                </small>
+                            ` : ''}
                         </div>
                         <span class="badge badge-${this.getStatusBadgeClass(stamp.status)} ml-2">
                             ${this.escapeHtml(stamp.status)}
@@ -126,6 +146,12 @@ class StampSearch {
                                 <br>
                                 <small class="text-info">
                                     <i class="fas fa-font"></i> ${this.escapeHtml(stamp.transcription)}
+                                </small>
+                            ` : ''}
+                            ${stamp.symbols && stamp.symbols.length > 0 ? `
+                                <br>
+                                <small class="text-success">
+                                    <i class="fas fa-icons"></i> ${this.escapeHtml(stamp.symbols.join(', '))}
                                 </small>
                             ` : ''}
                         </div>
@@ -215,5 +241,5 @@ function selectStamp(stampId, stampName) {
 
 // Initialisera sökning när DOM är redo
 document.addEventListener('DOMContentLoaded', () => {
-    new StampSearch();
+    window.stampSearchInstance = new StampSearch();
 }); 

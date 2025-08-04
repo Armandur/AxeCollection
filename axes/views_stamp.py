@@ -309,24 +309,24 @@ def axes_without_stamps(request):
 
 @login_required
 def stamp_search(request):
-    """AJAX-sökning för stämplar"""
+    """AJAX-sökning för stämplar med förbättrad funktionalitet"""
 
     query = request.GET.get("q", "")
     manufacturer_filter = request.GET.get("manufacturer", "")
     stamp_type_filter = request.GET.get("stamp_type", "")
+    search_type = request.GET.get("search_type", "partial")
+    symbols_filter = request.GET.getlist("symbols")
+    search_logic = request.GET.get("search_logic", "and")
 
-    if not query and not manufacturer_filter and not stamp_type_filter:
+    if not query and not manufacturer_filter and not stamp_type_filter and not symbols_filter:
         return JsonResponse({"results": []})
 
     stamps = Stamp.objects.select_related("manufacturer").prefetch_related(
-        "transcriptions"
+        "transcriptions__symbols"
     )
 
-    # Sökning
+    # Text-sökning
     if query:
-        # Förbättrad text-sökning med olika söktyper
-        search_type = request.GET.get("search_type", "partial")  # partial, exact, fuzzy
-        
         if search_type == "exact":
             # Exakt match
             stamps = stamps.filter(
@@ -353,6 +353,25 @@ def stamp_search(request):
                 | Q(manufacturer__name__icontains=query)
             ).distinct()
 
+    # Symbol-sökning
+    if symbols_filter:
+        from .models import StampTranscription
+        
+        if search_logic == "or":
+            # OR-logik: Minst en symbol måste matcha
+            transcription_ids = StampTranscription.objects.filter(
+                symbols__id__in=symbols_filter
+            ).values_list('id', flat=True)
+            stamps = stamps.filter(transcriptions__id__in=transcription_ids).distinct()
+        else:
+            # AND-logik: Alla valda symboler måste finnas (standard)
+            for symbol_id in symbols_filter:
+                transcription_ids = StampTranscription.objects.filter(
+                    symbols__id=symbol_id
+                ).values_list('id', flat=True)
+                stamps = stamps.filter(transcriptions__id__in=transcription_ids)
+            stamps = stamps.distinct()
+
     # Filtrering
     if manufacturer_filter:
         stamps = stamps.filter(manufacturer_id=manufacturer_filter)
@@ -376,6 +395,18 @@ def stamp_search(request):
             if not best_transcription and transcriptions.exists():
                 best_transcription = transcriptions.first().text
 
+        # Samla symboler för denna stämpel
+        stamp_symbols = []
+        for transcription in stamp.transcriptions.all():
+            for symbol in transcription.symbols.all():
+                if symbol.pictogram:
+                    stamp_symbols.append(f"{symbol.pictogram} {symbol.name}")
+                else:
+                    stamp_symbols.append(symbol.name)
+        
+        # Ta bort duplicerade symboler
+        stamp_symbols = list(set(stamp_symbols))
+
         results.append(
             {
                 "id": stamp.id,
@@ -395,6 +426,7 @@ def stamp_search(request):
                     if best_transcription and len(best_transcription) > 100
                     else best_transcription
                 ),
+                "symbols": stamp_symbols,
                 "url": f"/stamplar/{stamp.id}/",
             }
         )

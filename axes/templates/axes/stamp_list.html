@@ -557,16 +557,70 @@ function updateSelectedSymbolsDisplay() {
             container.appendChild(input);
         }
     });
+    
+    // Trigga sökning om det finns en sökning eller valda symboler
+    const searchInput = document.getElementById('stamp-search-input');
+    const hasSearchQuery = searchInput && searchInput.value.trim();
+    const hasSelectedSymbols = selectedSymbols.size > 0;
+    
+    if (hasSearchQuery || hasSelectedSymbols) {
+        const stampSearch = window.stampSearchInstance;
+        if (stampSearch) {
+            stampSearch.performSearch();
+        }
+    }
 }
 
 function removeSymbol(symbolId) {
     selectedSymbols.delete(symbolId.toString());
     updateSelectedSymbolsDisplay();
+    
+    // Trigga sökning om det finns en sökning eller andra valda symboler
+    const searchInput = document.getElementById('stamp-search-input');
+    const hasSearchQuery = searchInput && searchInput.value.trim();
+    const hasSelectedSymbols = selectedSymbols.size > 0;
+    
+    if (hasSearchQuery || hasSelectedSymbols) {
+        const stampSearch = window.stampSearchInstance;
+        if (stampSearch) {
+            stampSearch.performSearch();
+        }
+    }
 }
 
 // Initiera display när sidan laddas
 document.addEventListener('DOMContentLoaded', function() {
     updateSelectedSymbolsDisplay();
+    
+    // Lägg till event listeners för sökparametrar
+    const searchTypeRadios = document.querySelectorAll('input[name="search_type"]');
+    const searchLogicRadios = document.querySelectorAll('input[name="search_logic"]');
+    
+    searchTypeRadios.forEach(radio => {
+        radio.addEventListener('change', () => {
+            // Trigga sökning om det finns en sökning
+            const searchInput = document.getElementById('stamp-search-input');
+            if (searchInput && searchInput.value.trim()) {
+                const stampSearch = window.stampSearchInstance;
+                if (stampSearch) {
+                    stampSearch.performSearch();
+                }
+            }
+        });
+    });
+    
+    searchLogicRadios.forEach(radio => {
+        radio.addEventListener('change', () => {
+            // Trigga sökning om det finns valda symboler
+            const selectedSymbols = document.querySelectorAll('input[name="symbols"]');
+            if (selectedSymbols.length > 0) {
+                const stampSearch = window.stampSearchInstance;
+                if (stampSearch) {
+                    stampSearch.performSearch();
+                }
+            }
+        });
+    });
 });
 </script>
 {% endblock %} 
