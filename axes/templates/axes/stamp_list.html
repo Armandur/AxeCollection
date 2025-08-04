@@ -14,6 +14,9 @@
                     <a href="{% url 'stamp_create' %}" class="btn btn-primary">
                         <i class="fas fa-plus"></i> Ny stämpel
                     </a>
+                    <a href="{% url 'stamp_symbols_manage' %}" class="btn btn-outline-info">
+                        <i class="fas fa-icons"></i> Symbolpiktogram
+                    </a>
                     <a href="{% url 'stamp_statistics' %}" class="btn btn-outline-secondary">
                         <i class="fas fa-chart-bar"></i> Statistik
                     </a>
@@ -232,8 +235,8 @@
                                 <div class="mt-2">
                                     <small class="text-muted">
                                         <i class="fas fa-font"></i> 
-                                        {% for transcription in stamp.transcriptions.all|slice:":3" %}
-                                            {{ transcription.full_transcription }}{% if not forloop.last %}, {% endif %}
+                                        {% for transcription in stamp.transcriptions.all|sort_by_quality|slice:":3" %}
+                                            {{ transcription.full_transcription|safe }}{% if not forloop.last %} | {% endif %}
                                         {% endfor %}
                                         {% if stamp.transcriptions.count > 3 %}...{% endif %}
                                     </small>

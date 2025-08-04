@@ -1364,3 +1364,90 @@ def stamp_symbols_api(request):
     return JsonResponse({
         'symbols': symbols_data
     })
+
+
+@login_required
+def stamp_symbol_update(request, symbol_id):
+    """API endpoint för att uppdatera en symbol"""
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Endast POST-metod tillåten'}, status=405)
+    
+    try:
+        symbol = get_object_or_404(StampSymbol, id=symbol_id)
+        
+        # Uppdatera symbolen
+        symbol.name = request.POST.get('name', symbol.name)
+        symbol.description = request.POST.get('description', symbol.description)
+        symbol.pictogram = request.POST.get('pictogram', symbol.pictogram)
+        symbol.symbol_type = request.POST.get('symbol_type', symbol.symbol_type)
+        
+        symbol.save()
+        
+        return JsonResponse({
+            'success': True,
+            'message': 'Symbol uppdaterad'
+        })
+        
+    except Exception as e:
+        return JsonResponse({
+            'error': f'Kunde inte uppdatera symbol: {str(e)}'
+        }, status=400)
+
+
+@login_required
+def stamp_symbol_delete(request, symbol_id):
+    """API endpoint för att ta bort en symbol"""
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Endast POST-metod tillåten'}, status=405)
+    
+    try:
+        symbol = get_object_or_404(StampSymbol, id=symbol_id)
+        
+        # Kontrollera att symbolen inte används i några transkriberingar
+        from axes.models import StampTranscription
+        if StampTranscription.objects.filter(symbols=symbol).exists():
+            return JsonResponse({
+                'error': 'Kan inte ta bort symbol som används i transkriberingar'
+            }, status=400)
+        
+        symbol.delete()
+        
+        return JsonResponse({
+            'success': True,
+            'message': 'Symbol borttagen'
+        })
+        
+    except Exception as e:
+        return JsonResponse({
+            'error': f'Kunde inte ta bort symbol: {str(e)}'
+        }, status=400)
+
+
+@login_required
+def stamp_symbols_manage(request):
+    """Hantera symbolpiktogrammen"""
+    symbols = StampSymbol.objects.all().order_by('symbol_type', 'name')
+    
+    # Gruppera symboler efter typ
+    symbols_by_type = {}
+    total_symbols = 0
+    symbols_with_pictograms = 0
+    
+    for symbol in symbols:
+        symbol_type = symbol.get_symbol_type_display()
+        if symbol_type not in symbols_by_type:
+            symbols_by_type[symbol_type] = []
+        symbols_by_type[symbol_type].append(symbol)
+        total_symbols += 1
+        if symbol.pictogram:
+            symbols_with_pictograms += 1
+    
+    context = {
+        'symbols_by_type': symbols_by_type,
+        'symbol_types': StampSymbol.SYMBOL_TYPE_CHOICES,
+        'total_symbols': total_symbols,
+        'symbols_with_pictograms': symbols_with_pictograms,
+        'symbol_types_count': len(symbols_by_type),
+    }
+    
+    return render(request, 'axes/stamp_symbols_manage.html', context)

@@ -611,8 +611,8 @@ class StampUncertaintyGroup(models.Model):
 - [ ] **Mobiloptimering**: Förbättrad mobilupplevelse för stämpelfunktioner
 - [ ] **Tema-anpassning**: Anpassa färger och stil för stämpelfunktioner
 - [ ] **Case-insensitive symbolsökning**: Sökning efter symboler ska vara oberoende av versal/gemen så att "krona" hittar "Krona" istället för att skapa ny symbol med gemener
-- [ ] **Symbolhanteringsmeny**: Admin-gränssnitt för att lista alla symboler, redigera, ta bort och hantera fördefinierade symboler
-- [ ] **Symbolpiktogram**: Möjlighet att definiera Unicode-piktogram för symboler (t.ex. 👑 för Krona, ⭕ för Cirkel) som kan visas som komplement eller ersättning för text
+- [x] **Symbolhanteringsmeny**: Admin-gränssnitt för att lista alla symboler, redigera, ta bort och hantera fördefinierade symboler
+- [x] **Symbolpiktogram**: Möjlighet att definiera Unicode-piktogram för symboler (t.ex. 👑 för Krona, ⭕ för Cirkel) som kan visas som komplement eller ersättning för text
 
 #### Stämpeltyper och etiketter (2025-07-29)
 - [x] **Ny stämpeltyp**: Lagt till "Etikett" som ny typ i STAMP_TYPE_CHOICES

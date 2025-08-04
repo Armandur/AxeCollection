@@ -365,3 +365,25 @@ def country_name(country_code):
     }
 
     return COUNTRY_NAMES.get(country_code.upper(), country_code)
+
+
+@register.filter
+def sort_by_quality(transcriptions):
+    """Sorterar transkriberingar efter kvalitet med Hög först"""
+    if not transcriptions:
+        return []
+    
+    # Definiera sorteringsordning för kvalitet
+    quality_order = {
+        'high': 1,    # Hög först
+        'medium': 2,  # Medium andra
+        'low': 3,     # Låg sist
+    }
+    
+    # Sortera baserat på kvalitetsordning
+    sorted_transcriptions = sorted(
+        transcriptions, 
+        key=lambda t: quality_order.get(t.quality, 4)  # Okänd kvalitet sist
+    )
+    
+    return sorted_transcriptions

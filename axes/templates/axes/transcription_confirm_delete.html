@@ -26,7 +26,7 @@
                         <div class="card-body">
                             <h6>Transkribering:</h6>
                             <p class="mb-2">
-                                <strong>Komplett transkribering:</strong> {{ transcription.full_transcription }}
+                                <strong>Komplett transkribering:</strong> {{ transcription.full_transcription|safe }}
                             </p>
                             <p class="mb-2">
                                 <strong>Kvalitet:</strong> {{ transcription.get_quality_display }}

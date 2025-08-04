@@ -343,10 +343,26 @@ urlpatterns = [
         views_stamp.transcription_delete,
         name="stamp_transcription_delete",
     ),
+    # Symbolhantering
+    path(
+        "stamplar/symboler/",
+        views_stamp.stamp_symbols_manage,
+        name="stamp_symbols_manage",
+    ),
     # API endpoints
     path(
         "api/stamp-symbols/",
         views_stamp.stamp_symbols_api,
         name="stamp_symbols_api",
+    ),
+    path(
+        "api/stamp-symbols/<int:symbol_id>/update/",
+        views_stamp.stamp_symbol_update,
+        name="stamp_symbol_update",
+    ),
+    path(
+        "api/stamp-symbols/<int:symbol_id>/delete/",
+        views_stamp.stamp_symbol_delete,
+        name="stamp_symbol_delete",
     ),
 ]

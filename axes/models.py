@@ -1148,9 +1148,17 @@ class StampTranscription(models.Model):
         """Returnerar komplett transkribering med text och symboler (utan kategorier)"""
         parts = [self.text]
         if self.symbols.exists():
-            symbols_part = " + ".join([symbol.display_with_pictogram for symbol in self.symbols.all()])
-            parts.append(symbols_part)
-        return " + ".join(parts)
+            # Samla bara pictogrammen, inte texten
+            pictograms = []
+            for symbol in self.symbols.all():
+                if symbol.pictogram:
+                    pictograms.append(symbol.pictogram)
+                else:
+                    # Om ingen pictogram finns, använd symbolnamnet
+                    pictograms.append(symbol.name)
+            if pictograms:
+                parts.append(", ".join(pictograms))
+        return ", ".join(parts)
 
 
 class StampTag(models.Model):

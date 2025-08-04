@@ -1,0 +1,269 @@
+{% extends 'axes/base.html' %}
+{% load static %}
+{% load axe_filters %}
+
+{% block title %}Symbolpiktogram - AxeCollection{% endblock %}
+
+{% block content %}
+{% csrf_token %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1>Symbolpiktogram</h1>
+                <div>
+                    <a href="{% url 'stamp_list' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left"></i> Tillbaka till stämplar
+                    </a>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-icons"></i> Hantera symbolpiktogram
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted">
+                        Här kan du se alla symbolpiktogram som används i stämplar. 
+                        Piktogrammen visas som komplement till symbolnamnen för tydligare identifiering.
+                    </p>
+
+                    {% for symbol_type, symbols in symbols_by_type.items %}
+                    <div class="mb-4">
+                        <h6 class="text-primary border-bottom pb-2 mb-3">
+                            <i class="fas fa-tag"></i> {{ symbol_type }}
+                        </h6>
+                        
+                        <div class="row">
+                            {% for symbol in symbols %}
+                            <div class="col-md-6 col-lg-4 mb-3">
+                                <div class="card h-100 border">
+                                    <div class="card-body">
+                                        <div class="d-flex align-items-center mb-2">
+                                            {% if symbol.pictogram %}
+                                                <span class="symbol-pictogram fs-4 me-2" title="Piktogram">
+                                                    {{ symbol.pictogram }}
+                                                </span>
+                                            {% else %}
+                                                <span class="text-muted me-2" title="Inget piktogram">
+                                                    <i class="fas fa-question-circle"></i>
+                                                </span>
+                                            {% endif %}
+                                            <h6 class="card-title mb-0">{{ symbol.name }}</h6>
+                                            {% if symbol.is_predefined %}
+                                                <span class="badge bg-success ms-auto" title="Fördefinierad symbol">
+                                                    <i class="fas fa-star"></i>
+                                                </span>
+                                            {% endif %}
+                                        </div>
+                                        
+                                        {% if symbol.description %}
+                                            <p class="card-text text-muted small mb-2">
+                                                {{ symbol.description }}
+                                            </p>
+                                        {% endif %}
+                                        
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <small class="text-muted">
+                                                Typ: {{ symbol.get_symbol_type_display }}
+                                            </small>
+                                                                                         <div class="btn-group btn-group-sm">
+                                                 <button class="btn btn-outline-primary btn-sm" 
+                                                         onclick="editSymbol({{ symbol.id }})"
+                                                         title="Redigera symbol">
+                                                     <i class="fas fa-edit"></i>
+                                                 </button>
+                                                 <button class="btn btn-outline-danger btn-sm" 
+                                                         onclick="deleteSymbol({{ symbol.id }})"
+                                                         title="Ta bort symbol">
+                                                     <i class="fas fa-trash"></i>
+                                                 </button>
+                                             </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i> Inga symboler hittades.
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Statistik -->
+            <div class="row mt-4">
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-body text-center">
+                            <h3 class="text-primary">{{ symbol_types_count }}</h3>
+                            <p class="text-muted mb-0">Symboltyper</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-body text-center">
+                            <h3 class="text-success">{{ total_symbols }}</h3>
+                            <p class="text-muted mb-0">Totalt antal symboler</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-body text-center">
+                            <h3 class="text-info">{{ symbols_with_pictograms }}</h3>
+                            <p class="text-muted mb-0">Symboler med piktogram</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal för att redigera symbol -->
+<div class="modal fade" id="editSymbolModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Redigera symbol</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editSymbolForm">
+                    <div class="mb-3">
+                        <label for="symbolName" class="form-label">Namn</label>
+                        <input type="text" class="form-control" id="symbolName" name="name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="symbolDescription" class="form-label">Beskrivning</label>
+                        <textarea class="form-control" id="symbolDescription" name="description" rows="3"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="symbolPictogram" class="form-label">Piktogram (Unicode)</label>
+                        <input type="text" class="form-control" id="symbolPictogram" name="pictogram" 
+                               placeholder="t.ex. 👑 för krona, ⭕ för cirkel">
+                        <div class="form-text">
+                            Ange Unicode-piktogram för att visa symbolen visuellt
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="symbolType" class="form-label">Symboltyp</label>
+                        <select class="form-select" id="symbolType" name="symbol_type" required>
+                            {% for value, label in symbol_types %}
+                                <option value="{{ value }}">{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Avbryt</button>
+                <button type="button" class="btn btn-primary" onclick="saveSymbol()">Spara</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let currentSymbolId = null;
+
+function editSymbol(symbolId) {
+    currentSymbolId = symbolId;
+    
+    // Hämta symboldata via AJAX
+    fetch(`/api/stamp-symbols/`)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('Hämtade symboldata:', data); // Debug-logg
+            const symbol = data.symbols.find(s => s.id === symbolId);
+            if (symbol) {
+                document.getElementById('symbolName').value = symbol.name;
+                document.getElementById('symbolDescription').value = symbol.description || '';
+                document.getElementById('symbolPictogram').value = symbol.pictogram || '';
+                document.getElementById('symbolType').value = symbol.symbol_type;
+                
+                const modal = new bootstrap.Modal(document.getElementById('editSymbolModal'));
+                modal.show();
+            } else {
+                console.error('Symbol hittades inte:', symbolId);
+                alert('Kunde inte hitta symbolen');
+            }
+        })
+        .catch(error => {
+            console.error('Fel vid hämtning av symboldata:', error);
+            alert('Kunde inte hämta symboldata: ' + error.message);
+        });
+}
+
+function saveSymbol() {
+    if (!currentSymbolId) return;
+    
+    const formData = new FormData(document.getElementById('editSymbolForm'));
+    
+    fetch(`/api/stamp-symbols/${currentSymbolId}/update/`, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': document.querySelector('input[name=csrfmiddlewaretoken]').value
+        }
+    })
+    .then(response => {
+        if (!response.ok) {
+            return response.json().then(data => {
+                throw new Error(data.error || 'Kunde inte uppdatera symbol');
+            });
+        }
+        return response.json();
+    })
+    .then(data => {
+        console.log('Symbol uppdaterad:', data);
+        location.reload();
+    })
+    .catch(error => {
+        console.error('Fel vid uppdatering:', error);
+        alert('Kunde inte uppdatera symbol: ' + error.message);
+    });
+}
+
+function deleteSymbol(symbolId) {
+    if (confirm('Är du säker på att du vill ta bort denna symbol?')) {
+        fetch(`/api/stamp-symbols/${symbolId}/delete/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('input[name=csrfmiddlewaretoken]').value
+            }
+        })
+        .then(response => {
+            if (!response.ok) {
+                return response.json().then(data => {
+                    throw new Error(data.error || 'Kunde inte ta bort symbol');
+                });
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('Symbol borttagen:', data);
+            location.reload();
+        })
+        .catch(error => {
+            console.error('Fel vid borttagning:', error);
+            alert('Kunde inte ta bort symbol: ' + error.message);
+        });
+    }
+}
+</script>
+{% endblock %} 

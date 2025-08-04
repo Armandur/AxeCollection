@@ -563,8 +563,8 @@
                                         <div class="mb-2">
                                             <small class="text-muted">
                                                 <i class="bi bi-fonts"></i> 
-                                                {% for transcription in stamp.transcriptions.all|slice:":2" %}
-                                                    {{ transcription.full_transcription }}{% if not forloop.last %}, {% endif %}
+                                                {% for transcription in stamp.transcriptions.all|sort_by_quality|slice:":2" %}
+                                                    {{ transcription.full_transcription|safe }}{% if not forloop.last %} | {% endif %}
                                                 {% endfor %}
                                                 {% if stamp.transcriptions.count > 2 %}...{% endif %}
                                             </small>
