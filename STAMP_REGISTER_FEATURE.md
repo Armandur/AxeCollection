@@ -610,9 +610,43 @@ class StampUncertaintyGroup(models.Model):
 - [ ] **Lightbox för stämplar**: Förbättrad bildvisning för stämpelbilder
 - [ ] **Mobiloptimering**: Förbättrad mobilupplevelse för stämpelfunktioner
 - [ ] **Tema-anpassning**: Anpassa färger och stil för stämpelfunktioner
-- [ ] **Case-insensitive symbolsökning**: Sökning efter symboler ska vara oberoende av versal/gemen så att "krona" hittar "Krona" istället för att skapa ny symbol med gemener
+- [x] **Case-insensitive symbolsökning**: Sökning efter symboler ska vara oberoende av versal/gemen så att "krona" hittar "Krona" istället för att skapa ny symbol med gemener
 - [x] **Symbolhanteringsmeny**: Admin-gränssnitt för att lista alla symboler, redigera, ta bort och hantera fördefinierade symboler
 - [x] **Symbolpiktogram**: Möjlighet att definiera Unicode-piktogram för symboler (t.ex. 👑 för Krona, ⭕ för Cirkel) som kan visas som komplement eller ersättning för text
+
+#### Avancerad sökfunktion för stämplar (2025-08-04)
+- [ ] **Symbolbaserad sökning**: Sökning på stämplar baserat på symboler i transkriberingar
+  - [ ] **Enskild symbol**: Välj en specifik symbol för sökning
+  - [ ] **Flera symboler**: Välj flera symboler med AND/OR-logik
+  - [ ] **Symbolkategori**: Sök på alla symboler i en kategori
+- [ ] **Förbättrad text-sökning**: Olika söktyper för text
+  - [ ] **Exakt match**: Hittar endast exakta strängar
+  - [ ] **Delvis match**: Hittar text som innehåller söktermen
+  - [ ] **Fuzzy search**: Hittar liknande text (t.ex. "Gransfors" hittar "Gränsfors")
+- [ ] **Söklogik-alternativ**: Olika sätt att kombinera sökkriterier
+  - [ ] **AND-logik**: Alla kriterier måste matcha
+  - [ ] **OR-logik**: Minst ett kriterium måste matcha
+- [ ] **UI-komponenter för avancerad sökning**:
+  - [ ] **Symbol-väljare**: Dropdown med alla tillgängliga symboler
+  - [ ] **Multi-select**: Möjlighet att välja flera symboler
+  - [ ] **Söktyps-väljare**: Radiobuttons för exakt/delvis/fuzzy match
+  - [ ] **Logik-väljare**: Radiobuttons för AND/OR-logik
+- [ ] **Backend-implementation**:
+  - [ ] **Uppdatera stamp_list view**: Lägg till symbol-sökning och förbättrad text-sökning
+  - [ ] **Uppdatera stamp_search view**: AJAX-sökning med nya funktioner
+  - [ ] **Förbättra databasqueries**: Optimera för symbol-sökning
+- [ ] **Frontend-implementation**:
+  - [ ] **Uppdatera sökformuläret**: Lägg till nya fält för symboler och söklogik
+  - [ ] **JavaScript-funktionalitet**: Realtidssökning med nya kriterier
+  - [ ] **AJAX-integration**: Uppdatera AJAX-anrop för nya sökfunktioner
+- [ ] **Sökresultat-visning**:
+  - [ ] **Matchande text/symboler markerade**: Visa var matchningen hittades
+  - [ ] **Gruppering efter matchningstyp**: Separera resultat baserat på vad som matchade
+  - [ ] **Relevans-sortering**: Sortera resultat efter hur bra de matchar
+- [ ] **Användarupplevelse**:
+  - [ ] **Responsiv design**: Sökformuläret ska fungera på mobil
+  - [ ] **Tydlig feedback**: Visa antal resultat och sökkriterier
+  - [ ] **Spara sökningar**: Möjlighet att spara vanliga sökningar
 
 #### Stämpeltyper och etiketter (2025-07-29)
 - [x] **Ny stämpeltyp**: Lagt till "Etikett" som ny typ i STAMP_TYPE_CHOICES

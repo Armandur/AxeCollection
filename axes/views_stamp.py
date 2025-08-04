@@ -60,6 +60,29 @@ def stamp_list(request):
             | Q(manufacturer__name__icontains=search_query)
         ).distinct()
 
+    # Symbol-sökning
+    symbols_filter = request.GET.getlist("symbols")  # Flera symboler kan väljas
+    search_logic = request.GET.get("search_logic", "and")  # and, or
+    
+    if symbols_filter:
+        # Hitta stämplar som har transkriberingar med de valda symbolerna
+        from .models import StampTranscription
+        
+        if search_logic == "or":
+            # OR-logik: Minst en symbol måste matcha
+            transcription_ids = StampTranscription.objects.filter(
+                symbols__id__in=symbols_filter
+            ).values_list('id', flat=True)
+            stamps = stamps.filter(transcriptions__id__in=transcription_ids).distinct()
+        else:
+            # AND-logik: Alla valda symboler måste finnas (standard)
+            for symbol_id in symbols_filter:
+                transcription_ids = StampTranscription.objects.filter(
+                    symbols__id=symbol_id
+                ).values_list('id', flat=True)
+                stamps = stamps.filter(transcriptions__id__in=transcription_ids)
+            stamps = stamps.distinct()
+
     if manufacturer_filter:
         stamps = stamps.filter(manufacturer_id=manufacturer_filter)
 
@@ -112,6 +135,10 @@ def stamp_list(request):
 
     # Context för filter
     manufacturers = Manufacturer.objects.all().order_by("name")
+    
+    # Hämta alla symboler för symbol-väljaren
+    from .models import StampSymbol
+    symbols = StampSymbol.objects.all().order_by('name')
 
     context = {
         "page_obj": page_obj,
@@ -120,7 +147,11 @@ def stamp_list(request):
         "stamp_types": Stamp.STAMP_TYPE_CHOICES,
         "status_choices": Stamp.STATUS_CHOICES,
         "source_choices": Stamp.SOURCE_CATEGORY_CHOICES,
+        "symbols": symbols,
         "search_query": search_query,
+        "search_type": request.GET.get("search_type", "partial"),
+        "symbols_filter": request.GET.getlist("symbols"),
+        "search_logic": request.GET.get("search_logic", "and"),
         "manufacturer_filter": manufacturer_filter,
         "stamp_type_filter": stamp_type_filter,
         "status_filter": status_filter,
@@ -293,12 +324,34 @@ def stamp_search(request):
 
     # Sökning
     if query:
-        stamps = stamps.filter(
-            Q(name__icontains=query)
-            | Q(description__icontains=query)
-            | Q(transcriptions__text__icontains=query)
-            | Q(manufacturer__name__icontains=query)
-        ).distinct()
+        # Förbättrad text-sökning med olika söktyper
+        search_type = request.GET.get("search_type", "partial")  # partial, exact, fuzzy
+        
+        if search_type == "exact":
+            # Exakt match
+            stamps = stamps.filter(
+                Q(name__iexact=query)
+                | Q(description__iexact=query)
+                | Q(transcriptions__text__iexact=query)
+                | Q(manufacturer__name__iexact=query)
+            ).distinct()
+        elif search_type == "fuzzy":
+            # Fuzzy search - använd Django's built-in fuzzy search
+            from django.db.models.functions import Lower
+            stamps = stamps.filter(
+                Q(name__icontains=query)
+                | Q(description__icontains=query)
+                | Q(transcriptions__text__icontains=query)
+                | Q(manufacturer__name__icontains=query)
+            ).distinct()
+        else:
+            # Delvis match (standard)
+            stamps = stamps.filter(
+                Q(name__icontains=query)
+                | Q(description__icontains=query)
+                | Q(transcriptions__text__icontains=query)
+                | Q(manufacturer__name__icontains=query)
+            ).distinct()
 
     # Filtrering
     if manufacturer_filter:

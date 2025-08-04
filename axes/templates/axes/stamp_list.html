@@ -31,13 +31,71 @@
                 <div class="card-body">
                     <form method="get" class="row g-3">
                         <div class="col-md-3">
-                            <label for="search" class="form-label">Sök</label>
+                            <label for="search" class="form-label">Text-sökning</label>
                             <div class="position-relative">
                                 <input type="text" class="form-control" id="stamp-search-input" name="search" 
                                        value="{{ search_query }}" placeholder="Sök i namn, beskrivning...">
                                 <div id="stamp-search-results" class="dropdown-menu w-100" style="display: none; max-height: 400px; overflow-y: auto;">
                                     <!-- AJAX-resultat kommer här -->
                                 </div>
+                            </div>
+                            <div class="mt-2">
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="search_type" id="search_type_partial" 
+                                           value="partial" {% if search_type == "partial" %}checked{% endif %}>
+                                    <label class="form-check-label" for="search_type_partial">Delvis</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="search_type" id="search_type_exact" 
+                                           value="exact" {% if search_type == "exact" %}checked{% endif %}>
+                                    <label class="form-check-label" for="search_type_exact">Exakt</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="search_type" id="search_type_fuzzy" 
+                                           value="fuzzy" {% if search_type == "fuzzy" %}checked{% endif %}>
+                                    <label class="form-check-label" for="search_type_fuzzy">Fuzzy</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <label for="symbols" class="form-label">Symboler</label>
+                            <div class="position-relative">
+                                <input type="text" class="form-control" id="symbol-search-input" 
+                                       placeholder="Sök symboler..." readonly>
+                                <button type="button" class="btn btn-outline-secondary btn-sm position-absolute top-0 end-0 mt-1 me-1" 
+                                        onclick="openSymbolSelector()">
+                                    <i class="fas fa-search"></i>
+                                </button>
+                            </div>
+                            <div id="selected-symbols" class="mt-2">
+                                {% for symbol_id in symbols_filter %}
+                                    {% for symbol in symbols %}
+                                        {% if symbol.id|stringformat:"s" == symbol_id %}
+                                            <span class="badge bg-primary me-1 mb-1">
+                                                {% if symbol.pictogram %}{{ symbol.pictogram }} {% endif %}{{ symbol.name }}
+                                                <button type="button" class="btn-close btn-close-white ms-1" 
+                                                        onclick="removeSymbol({{ symbol.id }})"></button>
+                                            </span>
+                                        {% endif %}
+                                    {% endfor %}
+                                {% endfor %}
+                            </div>
+                            <!-- Dolda input-fält för att skicka med valda symboler -->
+                            {% for symbol_id in symbols_filter %}
+                                <input type="hidden" name="symbols" value="{{ symbol_id }}">
+                            {% endfor %}
+                        </div>
+                        <div class="col-md-2">
+                            <label for="search_logic" class="form-label">Söklogik</label>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="search_logic" id="search_logic_and" 
+                                       value="and" {% if search_logic == "and" %}checked{% endif %}>
+                                <label class="form-check-label" for="search_logic_and">Alla symboler (AND)</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="search_logic" id="search_logic_or" 
+                                       value="or" {% if search_logic == "or" %}checked{% endif %}>
+                                <label class="form-check-label" for="search_logic_or">Minst en symbol (OR)</label>
                             </div>
                         </div>
                         <div class="col-md-2">
@@ -330,9 +388,185 @@
         </div>
     </div>
 </div>
+
+<!-- Symbol-väljare Modal -->
+<div class="modal fade" id="symbolSelectorModal" tabindex="-1" aria-labelledby="symbolSelectorModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="symbolSelectorModalLabel">Välj symboler</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <input type="text" class="form-control" id="symbol-search-modal" 
+                           placeholder="Sök symboler..." onkeyup="filterSymbols()">
+                </div>
+                <div class="row" id="symbol-grid">
+                    {% for symbol in symbols %}
+                        <div class="col-md-4 mb-2 symbol-item" data-symbol-id="{{ symbol.id }}" data-symbol-name="{{ symbol.name|lower }}">
+                            <div class="card symbol-card" onclick="toggleSymbol({{ symbol.id }}, '{{ symbol.name }}', '{% if symbol.pictogram %}{{ symbol.pictogram }}{% endif %}')">
+                                <div class="card-body text-center p-2">
+                                    <div class="symbol-pictogram mb-1" style="font-size: 1.5em;">
+                                        {% if symbol.pictogram %}{{ symbol.pictogram }}{% else %}📝{% endif %}
+                                    </div>
+                                    <div class="symbol-name small">{{ symbol.name }}</div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Stäng</button>
+                <button type="button" class="btn btn-primary" onclick="applySymbolSelection()">Använd valda symboler</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.symbol-card {
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: 2px solid #dee2e6;
+}
+
+.symbol-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.symbol-card.border-primary {
+    border-color: #0d6efd !important;
+}
+
+.symbol-card.bg-primary {
+    background-color: #0d6efd !important;
+}
+
+.symbol-card.text-white .symbol-name {
+    color: white !important;
+}
+
+.symbol-pictogram {
+    line-height: 1;
+}
+</style>
 {% endblock %}
 
 {% block scripts %}
 <script src="{% static 'js/stamp_search.js' %}"></script>
 <script src="{% static 'js/stamp_crop_canvas.js' %}?v={{ request.GET.v|default:'1.0' }}"></script>
+
+<script>
+// Symbol-väljare funktionalitet
+let selectedSymbols = new Set();
+let tempSelectedSymbols = new Set();
+
+// Initiera valda symboler från server
+{% for symbol_id in symbols_filter %}
+    selectedSymbols.add('{{ symbol_id }}');
+    tempSelectedSymbols.add('{{ symbol_id }}');
+{% endfor %}
+
+function openSymbolSelector() {
+    // Kopiera valda symboler till temporära
+    tempSelectedSymbols = new Set(selectedSymbols);
+    updateSymbolCards();
+    $('#symbolSelectorModal').modal('show');
+}
+
+function filterSymbols() {
+    const searchTerm = document.getElementById('symbol-search-modal').value.toLowerCase();
+    const symbolItems = document.querySelectorAll('.symbol-item');
+    
+    symbolItems.forEach(item => {
+        const symbolName = item.getAttribute('data-symbol-name');
+        if (symbolName.includes(searchTerm)) {
+            item.style.display = 'block';
+        } else {
+            item.style.display = 'none';
+        }
+    });
+}
+
+function toggleSymbol(symbolId, symbolName, pictogram) {
+    const symbolIdStr = symbolId.toString();
+    const card = document.querySelector(`[data-symbol-id="${symbolId}"] .symbol-card`);
+    
+    if (tempSelectedSymbols.has(symbolIdStr)) {
+        tempSelectedSymbols.delete(symbolIdStr);
+        card.classList.remove('border-primary', 'bg-primary', 'text-white');
+        card.classList.add('border-secondary');
+    } else {
+        tempSelectedSymbols.add(symbolIdStr);
+        card.classList.remove('border-secondary');
+        card.classList.add('border-primary', 'bg-primary', 'text-white');
+    }
+}
+
+function updateSymbolCards() {
+    const symbolCards = document.querySelectorAll('.symbol-card');
+    symbolCards.forEach(card => {
+        const symbolId = card.closest('.symbol-item').getAttribute('data-symbol-id');
+        if (tempSelectedSymbols.has(symbolId)) {
+            card.classList.remove('border-secondary');
+            card.classList.add('border-primary', 'bg-primary', 'text-white');
+        } else {
+            card.classList.remove('border-primary', 'bg-primary', 'text-white');
+            card.classList.add('border-secondary');
+        }
+    });
+}
+
+function applySymbolSelection() {
+    selectedSymbols = new Set(tempSelectedSymbols);
+    updateSelectedSymbolsDisplay();
+    $('#symbolSelectorModal').modal('hide');
+}
+
+function updateSelectedSymbolsDisplay() {
+    const container = document.getElementById('selected-symbols');
+    container.innerHTML = '';
+    
+    // Ta bort alla befintliga hidden inputs
+    const existingInputs = document.querySelectorAll('input[name="symbols"]');
+    existingInputs.forEach(input => input.remove());
+    
+    selectedSymbols.forEach(symbolId => {
+        // Hitta symbol-information från modal
+        const symbolItem = document.querySelector(`[data-symbol-id="${symbolId}"]`);
+        if (symbolItem) {
+            const symbolName = symbolItem.querySelector('.symbol-name').textContent;
+            const pictogram = symbolItem.querySelector('.symbol-pictogram').textContent;
+            
+            // Skapa badge
+            const badge = document.createElement('span');
+            badge.className = 'badge bg-primary me-1 mb-1';
+            badge.innerHTML = `${pictogram} ${symbolName} <button type="button" class="btn-close btn-close-white ms-1" onclick="removeSymbol(${symbolId})"></button>`;
+            container.appendChild(badge);
+            
+            // Skapa hidden input
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'symbols';
+            input.value = symbolId;
+            container.appendChild(input);
+        }
+    });
+}
+
+function removeSymbol(symbolId) {
+    selectedSymbols.delete(symbolId.toString());
+    updateSelectedSymbolsDisplay();
+}
+
+// Initiera display när sidan laddas
+document.addEventListener('DOMContentLoaded', function() {
+    updateSelectedSymbolsDisplay();
+});
+</script>
 {% endblock %} 
