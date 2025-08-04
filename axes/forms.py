@@ -1038,6 +1038,7 @@ class StampTranscriptionForm(forms.ModelForm):
                         defaults={
                             'symbol_type': 'other',
                             'description': name,
+                            'pictogram': '',
                             'is_predefined': False
                         }
                     )

@@ -1352,13 +1352,14 @@ def stamp_symbols_api(request):
     
     symbols_data = []
     for symbol in symbols:
-        symbols_data.append({
-            'id': symbol.id,
-            'name': symbol.name,
-            'symbol_type': symbol.symbol_type,
-            'description': symbol.description,
-            'is_predefined': symbol.is_predefined,
-        })
+                   symbols_data.append({
+               'id': symbol.id,
+               'name': symbol.name,
+               'symbol_type': symbol.symbol_type,
+               'description': symbol.description,
+               'pictogram': symbol.pictogram,
+               'is_predefined': symbol.is_predefined,
+           })
     
     return JsonResponse({
         'symbols': symbols_data

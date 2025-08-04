@@ -1140,7 +1140,7 @@ class StampTranscription(models.Model):
     def symbols_display(self):
         """Returnerar en formaterad sträng av alla symboler (utan kategorier)"""
         if self.symbols.exists():
-            return ", ".join([symbol.name for symbol in self.symbols.all()])
+            return ", ".join([symbol.display_with_pictogram for symbol in self.symbols.all()])
         return ""
     
     @property
@@ -1148,7 +1148,7 @@ class StampTranscription(models.Model):
         """Returnerar komplett transkribering med text och symboler (utan kategorier)"""
         parts = [self.text]
         if self.symbols.exists():
-            symbols_part = " + ".join([symbol.name for symbol in self.symbols.all()])
+            symbols_part = " + ".join([symbol.display_with_pictogram for symbol in self.symbols.all()])
             parts.append(symbols_part)
         return " + ".join(parts)
 
@@ -1601,6 +1601,12 @@ class StampSymbol(models.Model):
         ("anchor", "Ankare"),
         ("flower", "Blomma"),
         ("leaf", "Löv"),
+        ("arrow", "Pil"),
+        ("circle", "Cirkel"),
+        ("square", "Fyrkant"),
+        ("triangle", "Triangel"),
+        ("diamond", "Diamant"),
+        ("heart", "Hjärta"),
         ("other", "Övrigt"),
     ]
 
@@ -1613,6 +1619,13 @@ class StampSymbol(models.Model):
     )
     description = models.TextField(
         blank=True, null=True, verbose_name="Beskrivning"
+    )
+    pictogram = models.CharField(
+        max_length=10,
+        blank=True,
+        null=True,
+        verbose_name="Piktogram",
+        help_text="Unicode-piktogram för symbolen (t.ex. 👑 för Krona, ⭕ för Cirkel)",
     )
     is_predefined = models.BooleanField(
         default=False,
@@ -1637,3 +1650,10 @@ class StampSymbol(models.Model):
         if self.symbol_type == "other":
             return self.name
         return f"{self.get_symbol_type_display()}: {self.name}"
+
+    @property
+    def display_with_pictogram(self):
+        """Returnerar visningsnamn med piktogram om det finns"""
+        if self.pictogram:
+            return f"{self.pictogram} {self.name}"
+        return self.name

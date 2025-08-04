@@ -1,5 +1,33 @@
 {% load static %}
 
+<style>
+.symbol-pictogram {
+    font-size: 1.2em;
+    margin-right: 0.5em;
+    display: inline-block;
+}
+
+.symbol-name {
+    font-weight: normal;
+}
+
+.symbol-item {
+    display: flex;
+    align-items: center;
+    padding: 0.5rem 1rem;
+    cursor: pointer;
+}
+
+.symbol-item:hover {
+    background-color: #f8f9fa;
+}
+
+.badge .symbol-pictogram {
+    font-size: 1em;
+    margin-right: 0.25em;
+}
+</style>
+
 <div class="symbol-search-container" data-widget-id="{{ widget.attrs.id|default:'symbols' }}">
     <div class="input-group">
         <input type="text" 
@@ -182,7 +210,14 @@
                 symbols.forEach(symbol => {
                     const item = document.createElement('div');
                     item.className = 'dropdown-item symbol-item';
-                    item.textContent = symbol.name;
+                    
+                    // Visa piktogram om det finns, annars bara namnet
+                    if (symbol.pictogram) {
+                        item.innerHTML = `<span class="symbol-pictogram">${symbol.pictogram}</span> <span class="symbol-name">${symbol.name}</span>`;
+                    } else {
+                        item.textContent = symbol.name;
+                    }
+                    
                     item.onclick = () => addSymbol(symbol);
                     dropdown.appendChild(item);
                 });
@@ -237,17 +272,24 @@
         function updateSelectedSymbolsDisplay() {
             selectedContainer.innerHTML = '';
             
-                         selectedSymbols.forEach(symbol => {
-                 const badge = document.createElement('span');
-                 badge.className = 'badge bg-primary me-1 mb-1';
-                 badge.innerHTML = `
-                     ${symbol.name}
-                     <button type="button" class="btn-close ms-1" 
-                             onclick="${functionName}('${symbol.id}')" 
-                             aria-label="Ta bort ${symbol.name}"></button>
-                 `;
-                 selectedContainer.appendChild(badge);
-             });
+            selectedSymbols.forEach(symbol => {
+                const badge = document.createElement('span');
+                badge.className = 'badge bg-primary me-1 mb-1';
+                
+                // Visa piktogram om det finns, annars bara namnet
+                let displayText = symbol.name;
+                if (symbol.pictogram) {
+                    displayText = `${symbol.pictogram} ${symbol.name}`;
+                }
+                
+                badge.innerHTML = `
+                    ${displayText}
+                    <button type="button" class="btn-close ms-1" 
+                            onclick="${functionName}('${symbol.id}')" 
+                            aria-label="Ta bort ${symbol.name}"></button>
+                `;
+                selectedContainer.appendChild(badge);
+            });
         }
         
         // Uppdatera dold input
