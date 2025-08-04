@@ -28,6 +28,7 @@ from axes.models import (
     Stamp,
     AxeStamp,
     StampImage,
+    StampSymbol,
 )
 
 
@@ -84,6 +85,9 @@ class Command(BaseCommand):
         # Skapa måtttyper och mallar först
         self.create_measurement_types()
         self.create_measurement_templates()
+        
+        # Initiera stämpelsymboler
+        self.init_stamp_symbols()
 
         # Skapa grunddata
         manufacturers = self.create_manufacturers(options["manufacturers"])
@@ -138,6 +142,7 @@ class Command(BaseCommand):
             StampTag,
             StampVariant,
             StampUncertaintyGroup,
+            StampSymbol,
         )
 
         StampImage.objects.all().delete()
@@ -147,6 +152,7 @@ class Command(BaseCommand):
         StampVariant.objects.all().delete()
         StampUncertaintyGroup.objects.all().delete()
         Stamp.objects.all().delete()
+        StampSymbol.objects.all().delete()
 
         # Rensa övrig data
         Transaction.objects.all().delete()
@@ -191,44 +197,80 @@ class Command(BaseCommand):
 
     def create_measurement_templates(self):
         """Skapa måttmallar"""
-        templates = [
-            ("Standardyxa", "Grundläggande mått för en vanlig yxa"),
-            ("Detaljerad yxa", "Utökade mått för detaljerad dokumentation"),
+        templates_data = [
+            {
+                "name": "Standard yxa",
+                "description": "Grundläggande mått för vanliga yxor",
+                "items": [
+                    ("Bladlängd", "mm"),
+                    ("Bladbredd", "mm"),
+                    ("Bladtjocklek", "mm"),
+                    ("Ögatjocklek", "mm"),
+                    ("Ögabredd", "mm"),
+                    ("Halslängd", "mm"),
+                    ("Halsbredd", "mm"),
+                    ("Handtagslängd", "mm"),
+                    ("Handtagsbredd", "mm"),
+                    ("Total längd", "mm"),
+                    ("Vikt", "gram"),
+                ],
+            },
+            {
+                "name": "Fällkniv",
+                "description": "Mått för fällknivar",
+                "items": [
+                    ("Bladlängd", "mm"),
+                    ("Bladbredd", "mm"),
+                    ("Bladtjocklek", "mm"),
+                    ("Handtagslängd", "mm"),
+                    ("Handtagsbredd", "mm"),
+                    ("Total längd (öppen)", "mm"),
+                    ("Total längd (stängd)", "mm"),
+                    ("Vikt", "gram"),
+                ],
+            },
+            {
+                "name": "Köksyxa",
+                "description": "Mått för köksyxor",
+                "items": [
+                    ("Bladlängd", "mm"),
+                    ("Bladbredd", "mm"),
+                    ("Bladtjocklek", "mm"),
+                    ("Handtagslängd", "mm"),
+                    ("Handtagsbredd", "mm"),
+                    ("Total längd", "mm"),
+                    ("Vikt", "gram"),
+                ],
+            },
         ]
 
-        for name, description in templates:
+        for template_data in templates_data:
             template, created = MeasurementTemplate.objects.get_or_create(
-                name=name,
+                name=template_data["name"],
                 defaults={
-                    "description": description,
+                    "description": template_data["description"],
                     "sort_order": len(MeasurementTemplate.objects.all()),
                 },
             )
 
-            if created:
-                # Lägg till måtttyper i mallen
-                if name == "Standardyxa":
-                    # Standardyxa: Vikt, Skaftlängd, Eggbredd, Nacke till egg
-                    measurement_types = MeasurementType.objects.filter(
-                        name__in=["Vikt", "Skaftlängd", "Eggbredd", "Nacke till egg"]
-                    )
-                else:  # Detaljerad yxa
-                    # Detaljerad yxa: Vikt, Skaftlängd, Eggbredd, Huvudvikt, Ögats bredd, Ögats höjd
-                    measurement_types = MeasurementType.objects.filter(
-                        name__in=[
-                            "Vikt",
-                            "Skaftlängd",
-                            "Eggbredd",
-                            "Huvudvikt",
-                            "Ögats bredd",
-                            "Ögats höjd",
-                        ]
-                    )
+            for i, (name, unit) in enumerate(template_data["items"]):
+                measurement_type, _ = MeasurementType.objects.get_or_create(
+                    name=name, defaults={"unit": unit}
+                )
+                MeasurementTemplateItem.objects.get_or_create(
+                    template=template,
+                    measurement_type=measurement_type,
+                    defaults={"sort_order": i},
+                )
 
-                for i, mtype in enumerate(measurement_types):
-                    MeasurementTemplateItem.objects.create(
-                        template=template, measurement_type=mtype, sort_order=i
-                    )
+    def init_stamp_symbols(self):
+        """Initiera stämpelsymboler"""
+        from axes.management.commands.init_stamp_symbols import Command as InitStampSymbolsCommand
+        
+        self.stdout.write("Initierar stämpelsymboler...")
+        init_command = InitStampSymbolsCommand()
+        init_command.handle()
+        self.stdout.write("Stämpelsymboler initierade.")
 
     def create_manufacturers(self, count):
         """Skapa tillverkare med hierarkisk struktur"""

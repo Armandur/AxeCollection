@@ -1247,6 +1247,9 @@ def transcription_create(request, stamp_id=None):
             transcription = form.save(commit=False)
             transcription.created_by = request.user
             transcription.save()
+            # Hantera ManyToMany-fält för symboler manuellt
+            if hasattr(form, 'cleaned_data') and 'symbols' in form.cleaned_data:
+                transcription.symbols.set(form.cleaned_data['symbols'])
             messages.success(request, "Transkribering skapad!")
             return redirect("stamp_detail", stamp_id=transcription.stamp.id)
         else:
@@ -1284,7 +1287,11 @@ def transcription_edit(request, stamp_id, transcription_id):
     if request.method == "POST":
         form = StampTranscriptionForm(request.POST, instance=transcription, pre_selected_stamp=transcription.stamp)
         if form.is_valid():
-            form.save()
+            transcription = form.save(commit=False)
+            transcription.save()
+            # Hantera ManyToMany-fält för symboler manuellt
+            if hasattr(form, 'cleaned_data') and 'symbols' in form.cleaned_data:
+                transcription.symbols.set(form.cleaned_data['symbols'])
             messages.success(request, "Transkribering uppdaterad!")
             return redirect("stamp_detail", stamp_id=transcription.stamp.id)
     else:

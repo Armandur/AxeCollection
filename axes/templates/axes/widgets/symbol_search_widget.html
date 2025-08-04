@@ -61,8 +61,22 @@
         let allSymbols = [];
         
         // Ladda alla symboler från servern
-        fetch('/api/stamp-symbols/')
-            .then(response => response.json())
+        fetch('/api/stamp-symbols/', {
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value || '',
+                'Content-Type': 'application/json',
+            },
+            credentials: 'same-origin'
+        })
+            .then(response => {
+                if (response.redirected) {
+                    throw new Error('Redirected - user not logged in');
+                }
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
             .then(data => {
                 allSymbols = data.symbols;
                 console.log('Loaded symbols:', allSymbols.length);
@@ -135,6 +149,13 @@
             })
             .catch(error => {
                 console.error('Error loading symbols:', error);
+                // Visa felmeddelande i dropdown
+                let errorMessage = 'Fel vid laddning av symboler.';
+                if (error.message.includes('Redirected') || error.message.includes('401') || error.message.includes('403')) {
+                    errorMessage = 'Du måste vara inloggad för att ladda symboler.';
+                }
+                dropdown.innerHTML = `<div class="dropdown-item text-danger">${errorMessage}</div>`;
+                dropdown.style.display = 'block';
             });
         
         // Sökfunktion
