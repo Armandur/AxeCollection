@@ -269,18 +269,6 @@
                                         </h6>
                                         
                                         <div class="mb-2">
-                                            {% if axe_stamp.stamp.manufacturer %}
-                                                <small class="text-muted">
-                                                    <a href="{% url 'manufacturer_detail' axe_stamp.stamp.manufacturer.id %}" class="text-decoration-none">
-                                                        {{ axe_stamp.stamp.manufacturer.name }}
-                                                    </a>
-                                                </small>
-                                            {% else %}
-                                                <small class="text-muted">Okänd tillverkare</small>
-                                            {% endif %}
-                                        </div>
-                                        
-                                        <div class="mb-2">
                                             <span class="badge bg-info">{{ axe_stamp.stamp.get_stamp_type_display }}</span>
                                             {% if axe_stamp.uncertainty_level == 'uncertain' %}
                                                 <span class="badge bg-warning">Osäker</span>
@@ -290,6 +278,20 @@
                                                 <span class="badge bg-success">Säker</span>
                                             {% endif %}
                                         </div>
+                                        
+                                        <!-- År och årnoter -->
+                                        {% if axe_stamp.stamp.year_range %}
+                                            <div class="mb-2">
+                                                <small class="text-muted">
+                                                    <i class="fas fa-calendar me-1"></i>
+                                                    {{ axe_stamp.stamp.year_range }}
+                                                    {% if axe_stamp.stamp.year_notes %}
+                                                        <br><i class="fas fa-sticky-note me-1"></i>
+                                                        {{ axe_stamp.stamp.year_notes|truncatechars:50 }}
+                                                    {% endif %}
+                                                </small>
+                                            </div>
+                                        {% endif %}
                                         
                                         {% if axe_stamp.position %}
                                             <div class="mb-2">
@@ -313,6 +315,18 @@
                                                 <small class="text-muted">
                                                     <i class="fas fa-comment me-1"></i>
                                                     {{ axe_stamp.axe_stamp_comment|truncatewords:8 }}
+                                                </small>
+                                            </div>
+                                        {% endif %}
+                                        
+                                        <!-- Transkriberingar -->
+                                        {% if axe_stamp.stamp.transcriptions.all %}
+                                            <div class="mb-2">
+                                                <small class="text-muted">
+                                                    <strong>Transkriberingar:</strong><br>
+                                                    {% for transcription in axe_stamp.stamp.transcriptions.all|sort_by_quality %}
+                                                        {{ transcription.full_transcription_for_cards|safe }}{% if not forloop.last %} | {% endif %}
+                                                    {% endfor %}
                                                 </small>
                                             </div>
                                         {% endif %}

@@ -1,6 +1,31 @@
-{% extends "axes/base.html" %}
+ {% extends "axes/base.html" %}
 
-{% block title %}Transkriberingar för {{ stamp.name }} - {{ block.super }}{% endblock %}
+ {% block title %}Transkriberingar för {{ stamp.name }} - {{ block.super }}{% endblock %}
+
+ {% block scripts %}
+ <script>
+ // Visa transkribering i modal
+ function showTranscriptionModal(transcriptionText, quality) {
+     const modal = document.getElementById('transcriptionModal');
+     const modalTitle = document.getElementById('transcriptionModalTitle');
+     const modalBody = document.getElementById('transcriptionModalBody');
+     
+     // Sätt titel med kvalitet
+     modalTitle.textContent = `Transkribering (${quality})`;
+     
+     // Formatera texten med radbrytningar och HTML
+     const formattedText = transcriptionText
+         .replace(/↩️/g, '<br>')
+         .replace(/\n/g, '<br>')
+         .replace(/• /g, '<br>• ');
+     modalBody.innerHTML = formattedText;
+     
+     // Visa modalen
+     const bootstrapModal = new bootstrap.Modal(modal);
+     bootstrapModal.show();
+ }
+ </script>
+ {% endblock %}
 
 {% block content %}
 <div class="container-fluid">
@@ -24,36 +49,33 @@
             <div class="row">
                 {% for transcription in transcriptions %}
                 <div class="col-md-6 col-lg-4 mb-3">
-                    <div class="card h-100">
+                    <div class="card h-100" style="cursor: pointer;" onclick="showTranscriptionModal('{{ transcription.formatted_transcription_for_cards|escapejs }}', '{{ transcription.get_quality_display }}')">
                         <div class="card-body">
-                            <div class="d-flex justify-content-between align-items-start mb-2">
-                                <h6 class="card-title mb-0">
-                                    <span class="text-decoration-none">
-                                        {{ transcription.full_transcription|truncatechars:50 }}
-                                    </span>
-                                </h6>
-                                <span class="badge {% if transcription.quality == 'high' %}bg-success{% elif transcription.quality == 'medium' %}bg-warning{% else %}bg-secondary{% endif %}">
-                                    {{ transcription.get_quality_display }}
-                                </span>
-                            </div>
-                            
-                            <p class="card-text small text-muted mb-3">
-                                <strong>Skapad:</strong> {{ transcription.created_at|date:"Y-m-d H:i" }}
-                                {% if transcription.created_by %}
-                                av {{ transcription.created_by.username }}
-                                {% endif %}
-                            </p>
-                            
-                            {% if user.is_authenticated %}
-                                <div class="btn-group btn-group-sm" role="group">
-                                    <a href="{% url 'stamp_transcription_edit' stamp.id transcription.id %}" class="btn btn-outline-secondary">
-                                        <i class="fas fa-edit"></i> Redigera
-                                    </a>
-                                    <a href="{% url 'stamp_transcription_delete' stamp.id transcription.id %}" class="btn btn-outline-danger">
-                                        <i class="fas fa-trash"></i> Ta bort
-                                    </a>
-                                </div>
-                            {% endif %}
+                                                         <div class="d-flex justify-content-between align-items-start mb-2">
+                                 <h6 class="card-title mb-0">
+                                     <span class="text-decoration-none">
+                                         {{ transcription.formatted_transcription_for_cards|safe }}
+                                     </span>
+                                 </h6>
+                                 <span class="badge {% if transcription.quality == 'high' %}bg-success{% elif transcription.quality == 'medium' %}bg-warning{% else %}bg-secondary{% endif %}">
+                                     {{ transcription.get_quality_display }}
+                                 </span>
+                             </div>
+                             
+                             <div class="btn-group btn-group-sm" role="group">
+                                 <button type="button" class="btn btn-outline-primary btn-sm" 
+                                         onclick="event.stopPropagation(); showTranscriptionModal('{{ transcription.formatted_transcription_for_cards|escapejs }}', '{{ transcription.get_quality_display }}')">
+                                     <i class="fas fa-eye"></i> Visa
+                                 </button>
+                                 {% if user.is_authenticated %}
+                                     <a href="{% url 'stamp_transcription_edit' stamp.id transcription.id %}" class="btn btn-outline-secondary" onclick="event.stopPropagation();">
+                                         <i class="fas fa-edit"></i> Redigera
+                                     </a>
+                                     <a href="{% url 'stamp_transcription_delete' stamp.id transcription.id %}" class="btn btn-outline-danger" onclick="event.stopPropagation();">
+                                         <i class="fas fa-trash"></i> Ta bort
+                                     </a>
+                                 {% endif %}
+                             </div>
                         </div>
                     </div>
                 </div>
@@ -74,7 +96,25 @@
                 {% endif %}
             </div>
             {% endif %}
-        </div>
-    </div>
-</div>
-{% endblock %} 
+                 </div>
+     </div>
+ </div>
+
+ <!-- Modal för transkriberingar -->
+ <div class="modal fade" id="transcriptionModal" tabindex="-1" aria-labelledby="transcriptionModalTitle" aria-hidden="true">
+     <div class="modal-dialog modal-lg modal-dialog-centered">
+         <div class="modal-content">
+             <div class="modal-header">
+                 <h5 class="modal-title" id="transcriptionModalTitle">Transkribering</h5>
+                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Stäng"></button>
+             </div>
+             <div class="modal-body">
+                 <div id="transcriptionModalBody" class="text-break"></div>
+             </div>
+             <div class="modal-footer">
+                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Stäng</button>
+             </div>
+         </div>
+     </div>
+ </div>
+ {% endblock %} 

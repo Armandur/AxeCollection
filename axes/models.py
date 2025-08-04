@@ -1181,6 +1181,33 @@ class StampTranscription(models.Model):
                 parts.append(", ".join(pictograms))
         return ", ".join(parts)
 
+    @property
+    def formatted_transcription_for_cards(self):
+        """Returnerar formaterad transkribering för kortvisning med text och symboler separerade"""
+        # Rensa bort extra mellanslag runt radbrytningar
+        cleaned_text = self.text.replace('\r\n', '\n').replace('\r', '\n')  # Normalisera radbrytningar
+        cleaned_text = '\n'.join(line.strip() for line in cleaned_text.split('\n'))  # Rensa mellanslag
+        cleaned_text = cleaned_text.replace('\n', '<br>')  # Ersätt med HTML-radbrytning
+        
+        # Samla symboler med beskrivningar
+        symbol_list = []
+        if self.symbols.exists():
+            for symbol in self.symbols.all():
+                if symbol.pictogram:
+                    symbol_list.append(f"{symbol.pictogram} - {symbol.name}")
+                else:
+                    symbol_list.append(f"{symbol.name}")
+        
+        # Formatera resultatet med HTML
+        parts = []
+        if cleaned_text:
+            parts.append(f"<strong>Text:</strong><br>{cleaned_text}")
+        
+        if symbol_list:
+            parts.append(f"<strong>Symboler:</strong><br>" + "<br>".join(symbol_list))
+        
+        return "<br><br>".join(parts)
+
 
 class StampTag(models.Model):
     """Kategorisering av stämplar"""

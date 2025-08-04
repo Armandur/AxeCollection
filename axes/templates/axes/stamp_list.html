@@ -174,7 +174,7 @@
             <div class="row">
                 {% for stamp in stamps %}
                 <div class="col-md-6 col-lg-4 mb-4">
-                    <div class="card h-100">
+                    <div class="card h-100" style="cursor: pointer;" onclick="window.location.href='{% url 'stamp_detail' stamp.id %}'">
                         <!-- Bildvisning -->
                         {% if stamp.primary_image %}
                             <div class="position-relative">
@@ -255,9 +255,9 @@
                         <div class="card-body">
                             <div class="d-flex justify-content-between align-items-start mb-2">
                                 <h5 class="card-title mb-0">
-                                    <a href="{% url 'stamp_detail' stamp.id %}" class="text-decoration-none">
+                                    <span class="text-decoration-none">
                                         {{ stamp.name }}
-                                    </a>
+                                    </span>
                                 </h5>
                                 <span class="badge bg-{% if stamp.status == 'known' %}success{% else %}warning{% endif %}">
                                     {{ stamp.get_status_display }}
@@ -266,7 +266,7 @@
                             
                             {% if stamp.manufacturer %}
                                 <p class="card-text text-muted mb-2">
-                                    <a href="{% url 'manufacturer_detail' stamp.manufacturer.id %}" class="text-decoration-none">
+                                    <span class="text-decoration-none">
                                         {% if stamp.manufacturer.country_code %}{{ stamp.manufacturer.country_code|country_flag }} {% endif %}
                                         {% if stamp.manufacturer.manufacturer_type == 'TILLVERKARE' %}
                                             <i class="fas fa-industry" title="Tillverkare"></i>
@@ -274,7 +274,7 @@
                                             <i class="fas fa-user" title="Smed"></i>
                                         {% endif %}
                                         {{ stamp.manufacturer.name }}
-                                    </a>
+                                    </span>
                                 </p>
                             {% endif %}
                             
