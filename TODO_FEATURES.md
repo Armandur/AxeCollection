@@ -497,4 +497,3 @@ En checklista för vidareutveckling av AxeCollection. Bocka av med [x] när klar
 107. [ ] Bulk-redigering av bilder (redigera flera bilder samtidigt).
 108. [ ] Bildkommentarer med @-mentions för att länka till tillverkare eller yxor.
 109. [ ] **📋 Detaljerad dokumentation:** Se [STAMP_REGISTER_FEATURE.md](STAMP_REGISTER_FEATURE.md) för fullständig beskrivning av funktionen, datamodeller, API-endpoints och implementation.
-110. [ ] **🔍 Granska modellstruktur:** Gå igenom och analysera modellerna för att identifiera duplicerade fält och förbättra databasdesign. Särskilt positionsfältet som nu finns på både AxeStamp och AxeImageStamp-modellerna.

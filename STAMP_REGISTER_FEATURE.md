@@ -341,18 +341,20 @@ class StampUncertaintyGroup(models.Model):
 - ✅ **Kortbaserad visning**: Visuell stämpelvisning på yxdetaljsidan
 - ✅ **AJAX-sökning**: Realtidssökning i stämplar
 - ✅ **Bildmarkering**: Integrerad stämpelmarkering på yxbilder med koordinater
+- ✅ **StampTranscription-hantering**: Komplett implementation med views, templates och URLs
+- ✅ **Symbolfunktionalitet**: 22 fördefinierade symboler med gruppering och ManyToMany-koppling
+- ✅ **Avancerad bildhantering**: WebP-stöd, koordinater, huvudbildshantering
+- ✅ **Prioriterade stämplar**: Stämplar från yxans tillverkare visas först i dropdown
 
 ### Saknat användargränssnitt
-- ❌ **StampTranscription**: Modell finns men saknar användarvyer för hantering
-- ❌ **StampTag**: Modell finns men saknar användarvyer för hantering  
+- ❌ **StampTag**: Modell finns men saknar användarvyer för hantering
 - ❌ **StampVariant**: Modell finns men saknar användarvyer för hantering
 - ❌ **StampUncertaintyGroup**: Modell finns men saknar användarvyer för hantering
 
 ### Prioriterade nästa steg
-1. **StampTranscription-hantering** - Högst prioritet (obligatorisk för stämplar)
-2. **StampTag-hantering** - Medium prioritet (för kategorisering)
-3. **StampVariant-hantering** - Låg prioritet (avancerad funktion)
-4. **StampUncertaintyGroup-hantering** - Låg prioritet (avancerad funktion)
+1. **StampTag-hantering** - Medium prioritet (för kategorisering)
+2. **StampVariant-hantering** - Låg prioritet (avancerad funktion)
+3. **StampUncertaintyGroup-hantering** - Låg prioritet (avancerad funktion)
 
 ## Framtida utveckling
 
@@ -439,6 +441,7 @@ class StampUncertaintyGroup(models.Model):
 - [x] **axes_without_stamps**: Lista yxor utan stämplar
 - [x] **stamp_statistics**: Statistik för stämplar
 - [x] **add_axe_stamp**: Koppla stämpel till yxa
+- [x] **StampTranscription views**: transcription_create, transcription_edit, transcription_delete, stamp_transcriptions
 
 #### Forms
 - [x] **StampForm**: Formulär för stämplar
@@ -453,6 +456,9 @@ class StampUncertaintyGroup(models.Model):
 - [x] **axes_without_stamps.html**: Lista yxor utan stämplar
 - [x] **stamp_statistics.html**: Statistik-vy för stämplar
 - [x] **base.html**: Uppdaterad med navigation för stämplar
+- [x] **transcription_form.html**: Formulär för att skapa/redigera transkriberingar
+- [x] **transcription_confirm_delete.html**: Bekräftelse för borttagning av transkriberingar
+- [x] **stamp_transcriptions.html**: Lista alla transkriberingar för en stämpel
 
 #### Navigation
 - [x] **Huvudmeny**: Lagt till "Stämplar" i huvudnavigationen
@@ -470,7 +476,7 @@ class StampUncertaintyGroup(models.Model):
 - [ ] **Mottagningsflöde-integration**: Integrera stämpeldefinition i mottagningsarbetsflödet (SKIPPAD - fungerar bra som separat process)
 
 #### Saknade användargränssnitt (upptäckt 2025-01-27)
-- [ ] **StampTranscription-hantering**: Views, templates och URLs för att hantera stämpeltranskriberingar
+- [x] **StampTranscription-hantering**: Views, templates och URLs för att hantera stämpeltranskriberingar
 - [ ] **StampTag-hantering**: Views, templates och URLs för att hantera stämpeltaggar
 - [ ] **StampVariant-hantering**: Views, templates och URLs för att hantera stämpelvarianter
 - [ ] **StampUncertaintyGroup-hantering**: Views, templates och URLs för att hantera osäkerhetsgrupper
@@ -489,7 +495,7 @@ class StampUncertaintyGroup(models.Model):
 
 ### Kända begränsningar
 - **Ingen data**: Databasen är tom för stämplar (förväntat)
-- **Saknade användargränssnitt**: Flera stämpelmodeller har bara admin-gränssnitt men saknar användarvyer
+- **Saknade användargränssnitt**: StampTag, StampVariant och StampUncertaintyGroup har bara admin-gränssnitt men saknar användarvyer
 - **Ingen mottagningsintegration**: Stämpeldefinition är inte integrerad i mottagningsflödet (medvetet val)
 
 ### Nyligen implementerat (2025-07-29)
@@ -506,8 +512,8 @@ class StampUncertaintyGroup(models.Model):
 #### Tekniska detaljer
 - **Template**: `axe_detail.html` - Lagt till stämpelsektion efter transaktionshistoriken
 - **View**: `views_axe.py` - Uppdaterat `axe_detail` för att hämta stämpeldata
-- **Form**: `AxeStampForm` - Används för att koppla stämplar till yxor
-- **URL**: `add_axe_stamp` och `remove_axe_stamp` - Hanterar stämpelkoppling/avkoppling
+- [x] **Form**: `AxeStampForm` - Används för att koppla stämplar till yxor
+- [x] **URL**: `add_axe_stamp` och `remove_axe_stamp` - Hanterar stämpelkoppling/avkoppling
 - **Styling**: Bootstrap-klasser för responsiv design och konsistent utseende
 
 #### Stämpelprioritering (2025-07-29)
@@ -519,7 +525,7 @@ class StampUncertaintyGroup(models.Model):
 - [x] **Validering**: `clean_stamp` metod tillagd för att konvertera ID till Stamp-objekt
 
 #### AJAX-sökning (2025-07-29)
-- [x] **Live-sökning**: Realtidssökning med debouncing (300ms) i stämpellistan
+- [x] **Live-sökning**: Realtidssökning med debouncing (300ms) i stämpellisten
 - [x] **Förbättrad sökning**: Sök i namn, beskrivning, transkriptioner och tillverkare
 - [x] **Filtrering**: Kombinera sökning med tillverkare och stämpeltyp
 - [x] **Resultatvisning**: Dropdown med detaljerad information om varje stämpel
@@ -559,7 +565,7 @@ class StampUncertaintyGroup(models.Model):
 ### Kommande funktioner (TODO)
 
 #### Saknade användargränssnitt (högsta prioritet)
-- [ ] **StampTranscription-hantering**: Views, templates och URLs för att hantera stämpeltranskriberingar
+- [x] **StampTranscription-hantering**: Views, templates och URLs för att hantera stämpeltranskriberingar
 - [ ] **StampTag-hantering**: Views, templates och URLs för att hantera stämpeltaggar
 - [ ] **StampVariant-hantering**: Views, templates och URLs för att hantera stämpelvarianter
 - [ ] **StampUncertaintyGroup-hantering**: Views, templates och URLs för att hantera osäkerhetsgrupper
@@ -571,6 +577,15 @@ class StampUncertaintyGroup(models.Model):
 - [x] **Visa hela bilden**: Alternativ att visa hela AxeImage istället för bara stämpelområdet
 - [x] **Bildkoordinater**: Spara x,y-koordinater för stämpelområdet inom bilden
 - [ ] **Zoom-funktionalitet**: Möjlighet att zooma in på stämpelområdet
+
+#### StampTranscription-implementation (2025-01-27)
+- [x] **Views**: transcription_create, transcription_edit, transcription_delete, stamp_transcriptions
+- [x] **Templates**: transcription_form.html, transcription_confirm_delete.html, stamp_transcriptions.html
+- [x] **URLs**: Implementerade URL-mönster för alla transkriberingsvyer
+- [x] **Formulär**: StampTranscriptionForm med symbolval och kvalitetsbedömning
+- [x] **Symbolkoppling**: ManyToManyField mellan StampTranscription och StampSymbol
+- [x] **Komplett transkribering**: Property som kombinerar text och symboler
+- [x] **Användarhantering**: created_by-fält för att spåra vem som skapade transkriberingen
 
 #### Mottagningsflöde-integration (SKIPPAD)
 - [x] **Stämpeldefinition som separat process**: Stämpeldefinition fungerar bra som separat process efter mottagning
@@ -935,7 +950,11 @@ class Migration(migrations.Migration):
 - ✅ Form-uppdateringar fungerar
 - ✅ Template-uppdateringar implementerade
 - ✅ Migrationer skapade och applicerade
-- ✅ Prestanda-optimeringar implementerade 
+- ✅ Prestanda-optimeringar implementerade
+- ✅ StampTranscription-implementation komplett
+- ✅ Symbolfunktionalitet implementerad
+- ✅ Avancerad bildhantering implementerad
+- ⏳ Saknade användargränssnitt: StampTag, StampVariant, StampUncertaintyGroup 
 
 
 # Integrerad stämpeltillägg - Ny funktionalitet

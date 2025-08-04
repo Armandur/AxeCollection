@@ -1,0 +1,228 @@
+# AxeCollection - Cursor Rules
+
+## Projektöversikt
+AxeCollection är ett Django-baserat system för att hantera och katalogisera yxsamlingar med avancerad bildhantering, måttregistrering och transaktionshantering. Projektet använder SQLite, Bootstrap 5, och har både publik och inloggad vy.
+
+## Teknisk Stack
+- **Backend**: Django 5.2.3
+- **Frontend**: Bootstrap 5, JavaScript (ES6+)
+- **Databas**: SQLite med WAL-mode
+- **Bildhantering**: Pillow 10.4.0, django-imagekit
+- **Testning**: pytest 8.0.0, pytest-django 4.8.0, coverage 7.10.0
+- **Kodkvalitet**: flake8 7.0.0, black 24.1.1, pylint 3.0.3
+
+## Kodstandarder
+
+### Python/Django
+- Använd svenska för commit-meddelanden och dokumentation
+- Följ PEP 8 med black-formatering (line-length = 88)
+- Använd type hints där det är lämpligt
+- Skriv docstrings för komplexa funktioner
+- Använd `@property` för beräknade fält i modeller
+- Använd `related_name` för att undvika konflikter med automatiska reverse-relationer
+
+### Template-struktur
+- Använd `{% load axe_filters %}` i includes för custom filters
+- Skapa återanvändbara includes för återkommande UI-komponenter
+- Använd `|safe` filter för HTML-innehåll som ska renderas som HTML
+- Platta ut nästlade listor i Python innan de skickas till templates
+- Organisera templates med includes för statistik-kort, filter-sektioner och andra återkommande element
+
+### CSS och Styling
+- Använd `!important` och specifika selektorer för att överskriva Bootstrap
+- Använd `<strong>` taggar för att tvinga fetstil oavsett CSS-konflikter
+- Undvik färger som redan används för semantiska betydelser (grön för status, röd för ekonomi)
+- Testa styling på både desktop och mobil för konsekvent utseende
+- Använd Bootstrap-kort med `h-100` för jämn höjd på olika skärmstorlekar
+
+### JavaScript
+- Använd debouncing för AJAX-sökningar (timeout för att undvika för många requests)
+- Hantera AJAX-fel gracefully med fallback-beteenden
+- Använd event delegation där det är lämpligt
+- Undvik att blanda Django-template-kod direkt i JavaScript
+- Använd Bootstrap Modal API istället för standard browser-dialoger
+- Kontrollera alltid om variabler finns innan de används (t.ex. `axe.pk` för nya yxor)
+
+## Arbetsflöde
+
+### Git och Branch-hantering
+- Använd svenska commit-meddelanden som beskriver funktionalitet, inte formatering
+- Använd feature branches för större funktionalitet
+- Använd `git commit --amend` för små ändringar i föregående commit
+- Använd `;` istället för `&&` för att kedja kommandon i PowerShell
+- Använd `git push --force-with-lease` för säker force push efter amend
+
+### TODO-hantering
+- Uppdatera `TODO_FEATURES.md` med nya punkter och markera klara med [x]
+- Använd hierarkisk numrering (1, 2, 3... för huvudpunkter, 1.1, 1.2... för underpunkter)
+- Placera nya punkter i rätt sektion från början
+- Använd todo-manager för att hantera TODO-listan: `python todo_manager.py`
+
+### Testning
+- Mål för testtäckning: 70% (aktuellt 69%)
+- Kör tester med: `python manage.py test` eller `pytest --cov=axes`
+- Skriv tester för nya funktioner
+- Använd mocks för externa beroenden
+- Testa på både desktop och mobil för responsiv design
+
+## Projektstruktur
+
+### Viktiga filer och mappar
+- `axes/` - Django-app med alla vyer, modeller och templates
+- `axes/views_*.py` - Separerade vy-filer (views_axe.py, views_contact.py, etc.)
+- `axes/templates/axes/` - Django-templates
+- `axes/static/js/` - JavaScript-filer
+- `todo-manager/` - TODO-hanteringsverktyg
+- `deploy/` - Deployment-filer och Docker-konfiguration
+
+### Modeller och databas
+- Använd SQLite med WAL-mode för bättre prestanda
+- Exportera data innan större modelländringar för säkerhet
+- Använd `select_related` och `prefetch_related` för att minska antalet databasqueries
+- Validera data på modellnivå för bättre dataintegritet
+
+## Användarupplevelse (UX)
+
+### Responsiv design
+- Designa för mobil först, anpassa sedan för desktop
+- Testa alltid på både mobil och desktop innan implementation
+- Använd endast ikon på mobil för transaktionsknappar och redigeringsknappar i listor
+- Visa alltid text för viktiga funktioner som "Lägg till transaktion"
+
+### AJAX och interaktivitet
+- Implementera fullständiga AJAX-flöden med felhantering och feedback
+- Använd modaler för komplexa formulär men undvik dem för enkla listor på mobil
+- Använd `setTimeout` för att fördröja sidladdning så att notifikationer hinner visas
+- Använd smooth övergångar (fade out, slide) för professionell känsla
+
+### Formulär och validering
+- Visa olika fält beroende på om objekt skapas eller redigeras
+- Sätt smarta standardvärden (t.ex. dagens datum för transaktioner)
+- Ge tydlig feedback när validering misslyckas
+- Använd inline-redigering för små ändringar, sidladdning för stora uppdateringar
+
+## Säkerhet och användare
+
+### Inloggning och behörigheter
+- Använd Django's inbyggda auth-system för säkerhet
+- Använd `@login_required` decorator för skyddade vyer
+- Implementera långa sessioner (30 dagar) för bättre användarupplevelse
+- Kräv starka lösenord (minst 12 tecken)
+
+### Publik/privat vy
+- Använd Settings-modell för konfigurerbara publika inställningar
+- Använd context processor för automatisk tillgänglighet av publika inställningar
+- Dölj känsliga uppgifter (kontakter, priser, plattformar) för icke-inloggade användare
+- Implementera intelligent filtrering baserat på användarstatus
+
+## Deployment och Docker
+
+### Docker-konfiguration
+- Använd `nobody:users` (UID 99, GID 100) för Unraid-kompatibilitet
+- Inkludera `nginx.integrated.conf` direkt i Dockerfile
+- Använd `start.sh` för databasinitialisering och behörighetsfix
+- Konvertera Windows line endings automatiskt med `sed -i 's/\r$//'`
+
+### Media-filhantering
+- Använd Nginx för att servera media-filer direkt i produktion
+- Sätt `MEDIA_URL = '/media/'` i produktion för korrekt URL-generering
+- Fixa sökvägar vid backup-återställning med `restore_backup.py`
+- Hantera sökvägar för både utvecklingsmiljö (Windows) och produktionsmiljö (Linux)
+
+### Miljövariabler
+- Använd miljövariabler eller UI för ALLOWED_HOSTS och CSRF_TRUSTED_ORIGINS
+- Stöd för flera instanser med olika host-konfigurationer
+- Använd `DEMO_MODE` för demo-installationer
+
+## Kodkvalitet och refaktorering
+
+### Periodisk kodgranskning
+- Gå igenom koden stegvis för att identifiera refaktoreringsbehov
+- Testa varje steg innan nästa påbörjas
+- Fokusera på C901-problem (för komplexa funktioner)
+- Dela upp stora funktioner i mindre, fokuserade enheter
+
+### Linting och formatering
+- Använd black för kodformatering
+- Använd flake8 för linting
+- Fixa whitespace-problem (W293, W291, W292)
+- Använd pylint för kodkvalitetsanalys
+
+## Specifika funktioner
+
+### Bildhantering
+- Stöd för drag & drop, URL-uppladdning och .webp-optimering
+- Automatisk hantering av filnamn och ordning
+- Lightbox för bildförhandsvisning med navigationsknappar
+- Kategorisering av bilder (Stämpel/Övrig bild)
+
+### Måtthantering
+- Batch-mått från mallar för snabb inmatning
+- Inline-redigering av måttvärden via AJAX
+- Måttmallar för olika yxtyper (standard, fällkniv, köksyxa)
+- Dynamisk UI med automatisk uppdatering av räknare
+
+### Transaktionshantering
+- Automatisk typbestämning baserat på pris (negativ = köp, positiv = sälj)
+- API-endpoints för AJAX-hantering
+- Bootstrap-modaler för bekräftelse och felmeddelanden
+- Visuella badges med ikoner för tydlighet
+
+### Tillverkare och kontakter
+- Hierarkiskt tillverkarsystem med undertillverkare/smeder
+- Flaggemoji för kontakter baserat på landskod (ISO 3166-1 alpha-2)
+- AJAX-sökning med dropdown-resultat
+- Inline-redigering och drag & drop-sortering
+
+## Felsökning och debugging
+
+### Vanliga problem
+- Kontrollera terminalen för detaljerade felmeddelanden vid 500-fel
+- Validera att fältnamn finns i modellen innan användning i ORM-operationer
+- Använd `git restore .` för att snabbt återställa oönskade ändringar
+- Kontrollera att varje `{% block %}` avslutas med `{% endblock %}`
+
+### Template-fel
+- Lägg till `{% load axe_filters %}` i includes för custom filters
+- Kontrollera att rätt context skickas in till includes
+- Undvik att placera `{% endblock %}` inuti JavaScript-strängar
+
+### Databas-problem
+- Exportera data innan större modelländringar
+- Använd migrations för säkra databasändringar
+
+## Dokumentation
+
+### Viktiga dokument
+- `README.md` - Huvuddokumentation
+- `TODO_FEATURES.md` - Komplett lista över funktioner och förbättringsförslag
+- `WORKFLOW_AND_COLLAB.md` - Arbetsflöde och samarbete
+- `TESTING.md` - Teststrategi och instruktioner
+- `PROJECT_STRUCTURE.md` - Projektstruktur och arkitektur
+
+### Uppdatering av dokumentation
+- Uppdatera README.md efter större ändringar
+- Uppdatera TODO_FEATURES.md med nya punkter och markera klara - använd todo_manager.py för hantering av todo-listan. Körs från rotkatalogen.
+- Dokumentera tekniska beslut och varför de togs
+
+## Prestanda och optimering
+
+### Databas-optimering
+- Använd WAL-mode för SQLite
+- Använd `select_related` och `prefetch_related` för att minska queries
+- Implementera caching där det är lämpligt
+- Använd lazy loading för bilder
+
+### Frontend-optimering
+- Använd .webp-format för bilder
+- Implementera lazy loading av bilder
+- Använd debouncing för AJAX-sökningar
+- Minimera sidladdningar med AJAX
+
+### Utvecklingsprinciper
+- Arbeta iterativt med användarfeedback
+- Testa alltid funktionalitet i webbläsaren innan commit
+- Dokumentera beslut och lärdomar
+- Håll koden ren och kommenterad för framtida underhåll
+- Följ DRY-principer och skapa återanvändbara komponenter 
+- Fråga användaren om du är osäker

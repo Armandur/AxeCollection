@@ -1,9 +1,27 @@
 # Startprompt för AI-assistenter - AxeCollection
 
+## Snabbstart för AI-assistenter
+
+### Första stegen när du börjar arbeta:
+1. **Kolla projektstatus**: `cd todo-manager; python todo_manager.py stats`
+2. **Se vad som behöver göras**: `python todo_manager.py all-incomplete`
+3. **Starta servern**: `python manage.py runserver`
+4. **Läs relevanta filer**: WORKFLOW_AND_COLLAB.md, .cursorrules, README.md
+
+### Viktiga verktyg att använda aktivt:
+- **`codebase_search`** - För att hitta relevant kod
+- **`read_file`** - För att läsa specifika filer
+- **`grep_search`** - För att hitta exakta textmönster
+- **`list_dir`** - För att utforska projektstruktur
+- **`run_terminal_cmd`** - För att köra kommandon
+- **`edit_file`** - För att göra kodändringar
+
 ## Projektöversikt
 AxeCollection är ett Django-baserat system för att hantera och katalogisera yxsamlingar med avancerad bildhantering, måttregistrering och transaktionshantering. Projektet har både en publik del (för besökare) och en inloggad admin-del (för samlaren).
 
 ## AI-assistent riktlinjer
+
+### Arbetsmetodik
 - **Använd verktyg aktivt**: Använd `codebase_search`, `read_file`, `grep_search` för att förstå kodstrukturen
 - **Filstruktur**: Använd `list_dir` för att utforska projektstrukturen innan du börjar arbeta
 - **Kodanalys**: Läs relevanta filer med `read_file` innan du föreslår ändringar
@@ -11,7 +29,7 @@ AxeCollection är ett Django-baserat system för att hantera och katalogisera yx
 - **Iterativ approach**: Testa dina förslag med användaren innan du implementerar fullständiga lösningar
 - **Dokumentation**: Uppdatera relevanta markdown-filer efter större ändringar
 
-## Viktiga filer att läsa först
+### Viktiga filer att läsa först
 1. **WORKFLOW_AND_COLLAB.md** - Detaljerad information om arbetsflöde, git-hantering och samarbetsprinciper
 2. **UX_DESIGN_DISCUSSION.md** - Designprinciper och UX-beslut
 3. **README.md** - Teknisk översikt och installation
@@ -26,7 +44,7 @@ AxeCollection är ett Django-baserat system för att hantera och katalogisera yx
 - **TODO-hantering**: Använd TODO Manager-verktyget för att strukturerat hantera uppgifter och framsteg
 
 ## Tekniska riktlinjer
-- **Django 4.x** med Bootstrap 5 och JavaScript (ES6+)
+- **Django 5.2.3** med Bootstrap 5 och JavaScript (ES6+)
 - **Responsiv design**: Mobil-först approach, testa på både mobil och desktop
 - **AJAX-flöden**: Fullständiga flöden med felhantering och feedback
 - **Template-struktur**: Använd includes för återkommande komponenter
@@ -109,7 +127,7 @@ python todo_manager.py swap 42 43              # Byter plats på uppgifter
 
 **VIKTIGT**: Använd TODO Manager-verktyget för alla TODO-operationer istället för manuell redigering.
 
-## Grundläggande användning:
+### Grundläggande användning:
 ```bash
 cd todo-manager
 python todo_manager.py stats                    # Visa projektstatistik
@@ -121,7 +139,7 @@ python todo_manager.py complete 42             # Markera uppgift som klar
 python todo_manager.py list "Sektion" --incomplete  # Visa ofinished
 ```
 
-## Hierarkiska underuppgifter (5 nivåer):
+### Hierarkiska underuppgifter (5 nivåer):
 ```bash
 # Lägg till underuppgift till huvuduppgift
 python todo_manager.py add-sub 42 "Ny underuppgift"
@@ -138,7 +156,7 @@ python todo_manager.py show 42                # Huvuduppgift med alla underuppgi
 python todo_manager.py show 42.1.2            # Specifik underuppgift
 ```
 
-## Organisering och flytt:
+### Organisering och flytt:
 ```bash
 # Flytta uppgifter
 python todo_manager.py move 42 "Ny sektion"
@@ -154,7 +172,7 @@ python todo_manager.py remove 42              # Ta bort uppgift
 python todo_manager.py remove-multiple 42 43 44  # Ta bort flera
 ```
 
-## Daglig användning:
+### Daglig användning:
 ```bash
 # Morgon - kolla status och planera
 python todo_manager.py stats
@@ -170,7 +188,7 @@ python todo_manager.py complete 42            # Fungerar med både vanliga och u
 python todo_manager.py complete-multiple 42 42.1 43  # Blandade typer
 ```
 
-## När du arbetar med uppgifter:
+### När du arbetar med uppgifter:
 1. **Börja alltid med stats** för att se övergripande status
 2. **Lista relevanta sektioner** med `--incomplete` för fokus
 3. **Lägg till uppgifter direkt** när nya behov upptäcks
@@ -178,7 +196,7 @@ python todo_manager.py complete-multiple 42 42.1 43  # Blandade typer
 5. **Organisera** med `move`, `swap`, `new-section` och `merge` vid behov
 6. **Använd hierarkiska underuppgifter** för komplexa uppgifter
 
-## Exempel på arbetsflöde:
+### Exempel på arbetsflöde:
 ```bash
 # 1. Se vad som behöver göras
 python todo_manager.py all-incomplete  # Översikt över alla ofinished
@@ -194,6 +212,55 @@ python todo_manager.py add "Fixa CSS-bugg i lightbox" "Bildhantering"
 # 5. Slutkontroll av framsteg
 python todo_manager.py stats
 ```
+
+## Kodstandarder och best practices
+
+### Python/Django
+- Använd svenska för commit-meddelanden och dokumentation
+- Följ PEP 8 med black-formatering (line-length = 88)
+- Använd type hints där det är lämpligt
+- Skriv docstrings för komplexa funktioner
+- Använd `@property` för beräknade fält i modeller
+- Använd `related_name` för att undvika konflikter med automatiska reverse-relationer
+
+### Template-struktur
+- Använd `{% load axe_filters %}` i includes för custom filters
+- Skapa återanvändbara includes för återkommande UI-komponenter
+- Använd `|safe` filter för HTML-innehåll som ska renderas som HTML
+- Platta ut nästlade listor i Python innan de skickas till templates
+- Organisera templates med includes för statistik-kort, filter-sektioner och andra återkommande element
+
+### CSS och Styling
+- Använd `!important` och specifika selektorer för att överskriva Bootstrap
+- Använd `<strong>` taggar för att tvinga fetstil oavsett CSS-konflikter
+- Undvik färger som redan används för semantiska betydelser (grön för status, röd för ekonomi)
+- Testa styling på både desktop och mobil för konsekvent utseende
+- Använd Bootstrap-kort med `h-100` för jämn höjd på olika skärmstorlekar
+
+### JavaScript
+- Använd debouncing för AJAX-sökningar (timeout för att undvika för många requests)
+- Hantera AJAX-fel gracefully med fallback-beteenden
+- Använd event delegation där det är lämpligt
+- Undvik att blanda Django-template-kod direkt i JavaScript
+- Använd Bootstrap Modal API istället för standard browser-dialoger
+- Kontrollera alltid om variabler finns innan de används (t.ex. `axe.pk` för nya yxor)
+
+## Felsökning och debugging
+
+### Vanliga problem
+- Kontrollera terminalen för detaljerade felmeddelanden vid 500-fel
+- Validera att fältnamn finns i modellen innan användning i ORM-operationer
+- Använd `git restore .` för att snabbt återställa oönskade ändringar
+- Kontrollera att varje `{% block %}` avslutas med `{% endblock %}`
+
+### Template-fel
+- Lägg till `{% load axe_filters %}` i includes för custom filters
+- Kontrollera att rätt context skickas in till includes
+- Undvik att placera `{% endblock %}` inuti JavaScript-strängar
+
+### Databas-problem
+- Exportera data innan större modelländringar för säkerhet
+- Använd migrations för säkra databasändringar
 
 ## Nästa steg
 1. Läs igenom markdown-filerna för att förstå projektet
