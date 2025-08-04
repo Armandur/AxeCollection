@@ -230,13 +230,22 @@
                                     <i class="fas fa-calendar"></i> {{ stamp.year_range }}
                                 </div>
                             </div>
+                            {% if stamp.year_notes %}
+                                <div class="row text-muted small">
+                                    <div class="col-6">
+                                    </div>
+                                    <div class="col-6">
+                                        <i class="fas fa-sticky-note"></i> {{ stamp.year_notes|truncatechars:50 }}
+                                    </div>
+                                </div>
+                            {% endif %}
                             
                             {% if stamp.transcriptions.all %}
                                 <div class="mt-2">
                                     <small class="text-muted">
                                         <i class="fas fa-font"></i> 
                                         {% for transcription in stamp.transcriptions.all|sort_by_quality|slice:":3" %}
-                                            {{ transcription.full_transcription|safe }}{% if not forloop.last %} | {% endif %}
+                                            {{ transcription.full_transcription_for_cards|safe }}{% if not forloop.last %} | {% endif %}
                                         {% endfor %}
                                         {% if stamp.transcriptions.count > 3 %}...{% endif %}
                                     </small>

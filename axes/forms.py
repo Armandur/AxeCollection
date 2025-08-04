@@ -1071,10 +1071,11 @@ class StampTranscriptionForm(forms.ModelForm):
         }
         widgets = {
             "stamp": forms.Select(attrs={"class": "form-control"}),
-            "text": forms.TextInput(
+            "text": forms.Textarea(
                 attrs={
                     "class": "form-control",
                     "placeholder": 'Ange text från stämpeln (t.ex. "GRÄNSFORS")',
+                    "rows": "4",
                 }
             ),
             "quality": forms.Select(attrs={"class": "form-control"}),

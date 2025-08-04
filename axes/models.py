@@ -1105,7 +1105,7 @@ class StampTranscription(models.Model):
         related_name="transcriptions",
         verbose_name="Stämpel",
     )
-    text = models.CharField(max_length=500, verbose_name="Text")
+    text = models.TextField(verbose_name="Text")
     quality = models.CharField(
         max_length=20,
         choices=QUALITY_CHOICES,
@@ -1147,6 +1147,27 @@ class StampTranscription(models.Model):
     def full_transcription(self):
         """Returnerar komplett transkribering med text och symboler (utan kategorier)"""
         parts = [self.text]
+        if self.symbols.exists():
+            # Samla bara pictogrammen, inte texten
+            pictograms = []
+            for symbol in self.symbols.all():
+                if symbol.pictogram:
+                    pictograms.append(symbol.pictogram)
+                else:
+                    # Om ingen pictogram finns, använd symbolnamnet
+                    pictograms.append(symbol.name)
+            if pictograms:
+                parts.append(", ".join(pictograms))
+        return ", ".join(parts)
+    
+    @property
+    def full_transcription_for_cards(self):
+        """Returnerar komplett transkribering för kortvisning med ↩️ som radbrytning"""
+        # Rensa bort extra mellanslag runt radbrytningar
+        cleaned_text = self.text.replace('\r\n', '\n').replace('\r', '\n')  # Normalisera radbrytningar
+        cleaned_text = '\n'.join(line.strip() for line in cleaned_text.split('\n'))  # Rensa mellanslag
+        cleaned_text = cleaned_text.replace('\n', '↩️')  # Ersätt med symbol
+        parts = [cleaned_text]
         if self.symbols.exists():
             # Samla bara pictogrammen, inte texten
             pictograms = []

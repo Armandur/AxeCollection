@@ -558,13 +558,22 @@
                                             <i class="bi bi-calendar3"></i> {{ stamp.year_range }}
                                         </div>
                                     </div>
+                                    {% if stamp.year_notes %}
+                                        <div class="row text-muted small mb-2">
+                                            <div class="col-6">
+                                            </div>
+                                            <div class="col-6">
+                                                <i class="bi bi-sticky-note"></i> {{ stamp.year_notes|truncatechars:50 }}
+                                            </div>
+                                        </div>
+                                    {% endif %}
                                     
                                     {% if stamp.transcriptions.all %}
                                         <div class="mb-2">
                                             <small class="text-muted">
                                                 <i class="bi bi-fonts"></i> 
                                                 {% for transcription in stamp.transcriptions.all|sort_by_quality|slice:":2" %}
-                                                    {{ transcription.full_transcription|safe }}{% if not forloop.last %} | {% endif %}
+                                                    {{ transcription.full_transcription_for_cards|safe }}{% if not forloop.last %} | {% endif %}
                                                 {% endfor %}
                                                 {% if stamp.transcriptions.count > 2 %}...{% endif %}
                                             </small>
