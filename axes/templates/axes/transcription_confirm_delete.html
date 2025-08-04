@@ -26,16 +26,11 @@
                         <div class="card-body">
                             <h6>Transkribering:</h6>
                             <p class="mb-2">
-                                <strong>Text:</strong> {{ transcription.text }}
+                                <strong>Komplett transkribering:</strong> {{ transcription.full_transcription }}
                             </p>
                             <p class="mb-2">
                                 <strong>Kvalitet:</strong> {{ transcription.get_quality_display }}
                             </p>
-                            {% if transcription.symbols.exists %}
-                            <p class="mb-2">
-                                <strong>Symboler:</strong> {{ transcription.symbols_display }}
-                            </p>
-                            {% endif %}
                             <p class="mb-0">
                                 <strong>Skapad:</strong> {{ transcription.created_at|date:"Y-m-d H:i" }}
                                 {% if transcription.created_by %}

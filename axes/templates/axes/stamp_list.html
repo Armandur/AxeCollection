@@ -233,7 +233,7 @@
                                     <small class="text-muted">
                                         <i class="fas fa-font"></i> 
                                         {% for transcription in stamp.transcriptions.all|slice:":3" %}
-                                            {{ transcription.text }}{% if not forloop.last %}, {% endif %}
+                                            {{ transcription.full_transcription }}{% if not forloop.last %}, {% endif %}
                                         {% endfor %}
                                         {% if stamp.transcriptions.count > 3 %}...{% endif %}
                                     </small>
