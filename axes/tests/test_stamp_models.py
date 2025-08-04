@@ -70,7 +70,7 @@ class StampModelTest(TestCase):
 
     def test_stamp_type_choices(self):
         """Testa alla giltigga stämpeltyper"""
-        valid_types = ["text", "image", "symbol"]
+        valid_types = ["text", "symbol", "text_symbol", "label"]
 
         for stamp_type in valid_types:
             stamp = Stamp.objects.create(
@@ -84,10 +84,17 @@ class StampModelTest(TestCase):
         valid_statuses = ["known", "unknown"]
 
         for status in valid_statuses:
-            stamp = Stamp.objects.create(
-                name=f"Test {status}",
-                status=status,
-            )
+            if status == "known":
+                stamp = Stamp.objects.create(
+                    name=f"Test {status}",
+                    status=status,
+                    manufacturer=self.manufacturer,
+                )
+            else:
+                stamp = Stamp.objects.create(
+                    name=f"Test {status}",
+                    status=status,
+                )
             self.assertEqual(stamp.status, status)
 
     def test_stamp_source_category_choices(self):
@@ -240,12 +247,12 @@ class StampImageModelTest(TestCase):
         stamp_image = StampImage.objects.create(
             stamp=self.stamp,
             image=test_image,
-            quality="high",
+            uncertainty_level="certain",
         )
 
         self.assertEqual(stamp_image.stamp, self.stamp)
-        self.assertEqual(stamp_image.quality, "high")
-        self.assertIsNotNone(stamp_image.uploaded_at)
+        self.assertEqual(stamp_image.uncertainty_level, "certain")
+        self.assertIsNotNone(stamp_image.image)
         self.assertTrue(stamp_image.image.name.startswith("stamps/"))
 
     def test_stamp_image_str_representation(self):
@@ -257,21 +264,21 @@ class StampImageModelTest(TestCase):
             image=test_image,
         )
 
-        expected = f"cool_stamp.jpg (Test Stämpel)"
+        expected = f"Test Stämpel - Fristående stämpelbild"
         self.assertEqual(str(stamp_image), expected)
 
-    def test_stamp_image_quality_choices(self):
-        """Testa alla giltiga kvalitetsnivåer"""
-        valid_qualities = ["high", "medium", "low"]
+    def test_stamp_image_uncertainty_choices(self):
+        """Testa alla giltiga osäkerhetsnivåer"""
+        valid_uncertainties = ["certain", "uncertain", "tentative"]
 
-        for quality in valid_qualities:
-            test_image = self.create_test_image(f"{quality}.jpg")
+        for uncertainty in valid_uncertainties:
+            test_image = self.create_test_image(f"{uncertainty}.jpg")
             stamp_image = StampImage.objects.create(
                 stamp=self.stamp,
                 image=test_image,
-                quality=quality,
+                uncertainty_level=uncertainty,
             )
-            self.assertEqual(stamp_image.quality, quality)
+            self.assertEqual(stamp_image.uncertainty_level, uncertainty)
 
     def test_stamp_image_ordering(self):
         """Testa att stämpelbilder sorteras efter uppladdningsdatum (nyaste först)"""
@@ -572,14 +579,14 @@ class StampSymbolModelTest(TestCase):
         """Testa grundläggande skapande av stämpelsymbol"""
         symbol = StampSymbol.objects.create(
             name="Krona",
-            symbol="♔",
-            symbol_type="pictogram",
+            pictogram="♔",
+            symbol_type="crown",
             description="Kunglig krona symbol",
         )
 
         self.assertEqual(symbol.name, "Krona")
-        self.assertEqual(symbol.symbol, "♔")
-        self.assertEqual(symbol.symbol_type, "pictogram")
+        self.assertEqual(symbol.pictogram, "♔")
+        self.assertEqual(symbol.symbol_type, "crown")
         self.assertEqual(symbol.description, "Kunglig krona symbol")
         self.assertIsNotNone(symbol.created_at)
 
@@ -587,18 +594,20 @@ class StampSymbolModelTest(TestCase):
         """Testa strängrepresentation av stämpelsymbol"""
         symbol = StampSymbol.objects.create(
             name="Stjärna",
-            symbol="★",
+            pictogram="★",
+            symbol_type="star",
         )
-        expected = "Stjärna (★)"
+        expected = "Stjärna: Stjärna"
         self.assertEqual(str(symbol), expected)
 
     def test_stamp_symbol_ordering(self):
-        """Testa att symboler sorteras efter namn"""
-        symbol_c = StampSymbol.objects.create(name="C-symbol", symbol="C")
-        symbol_a = StampSymbol.objects.create(name="A-symbol", symbol="A")
-        symbol_b = StampSymbol.objects.create(name="B-symbol", symbol="B")
+        """Testa att symboler sorteras efter symbol_type och namn"""
+        symbol_c = StampSymbol.objects.create(name="C-symbol", pictogram="C", symbol_type="other")
+        symbol_a = StampSymbol.objects.create(name="A-symbol", pictogram="A", symbol_type="other")
+        symbol_b = StampSymbol.objects.create(name="B-symbol", pictogram="B", symbol_type="other")
 
         symbols = list(StampSymbol.objects.all())
+        # Sorterat efter symbol_type, sedan namn
         self.assertEqual(symbols[0], symbol_a)
         self.assertEqual(symbols[1], symbol_b)
         self.assertEqual(symbols[2], symbol_c)
