@@ -627,26 +627,26 @@ class StampUncertaintyGroup(models.Model):
   - [ ] **AND-logik**: Alla kriterier måste matcha
   - [ ] **OR-logik**: Minst ett kriterium måste matcha
 - [ ] **UI-komponenter för avancerad sökning**:
-  - [ ] **Symbol-väljare**: Dropdown med alla tillgängliga symboler
-  - [ ] **Multi-select**: Möjlighet att välja flera symboler
-  - [ ] **Söktyps-väljare**: Radiobuttons för exakt/delvis/fuzzy match
-  - [ ] **Logik-väljare**: Radiobuttons för AND/OR-logik
-- [ ] **Backend-implementation**:
-  - [ ] **Uppdatera stamp_list view**: Lägg till symbol-sökning och förbättrad text-sökning
-  - [ ] **Uppdatera stamp_search view**: AJAX-sökning med nya funktioner
-  - [ ] **Förbättra databasqueries**: Optimera för symbol-sökning
-- [ ] **Frontend-implementation**:
-  - [ ] **Uppdatera sökformuläret**: Lägg till nya fält för symboler och söklogik
-  - [ ] **JavaScript-funktionalitet**: Realtidssökning med nya kriterier
-  - [ ] **AJAX-integration**: Uppdatera AJAX-anrop för nya sökfunktioner
-- [ ] **Sökresultat-visning**:
-  - [ ] **Matchande text/symboler markerade**: Visa var matchningen hittades
-  - [ ] **Gruppering efter matchningstyp**: Separera resultat baserat på vad som matchade
-  - [ ] **Relevans-sortering**: Sortera resultat efter hur bra de matchar
-- [ ] **Användarupplevelse**:
-  - [ ] **Responsiv design**: Sökformuläret ska fungera på mobil
-  - [ ] **Tydlig feedback**: Visa antal resultat och sökkriterier
-  - [ ] **Spara sökningar**: Möjlighet att spara vanliga sökningar
+  - [x] **Symbol-väljare**: Modal med sökbar grid av symboler
+  - [x] **Multi-select**: Möjlighet att välja flera symboler med badges
+  - [x] **Söktyps-väljare**: Radiobuttons för exakt/delvis/fuzzy match
+  - [x] **Logik-väljare**: Radiobuttons för AND/OR-logik
+- [x] **Backend-implementation**:
+  - [x] **Uppdatera stamp_list view**: Lägg till symbol-sökning och förbättrad text-sökning
+  - [x] **Uppdatera stamp_search view**: AJAX-sökning med nya funktioner
+  - [x] **Förbättra databasqueries**: Optimera för symbol-sökning
+- [x] **Frontend-implementation**:
+  - [x] **Uppdatera sökformuläret**: Lägg till nya fält för symboler och söklogik
+  - [x] **JavaScript-funktionalitet**: Realtidssökning med nya kriterier
+  - [x] **AJAX-integration**: Uppdatera AJAX-anrop för nya sökfunktioner
+- [x] **Sökresultat-visning**:
+  - [x] **Matchande text/symboler markerade**: Visa var matchningen hittades
+  - [x] **Gruppering efter matchningstyp**: Separera resultat baserat på vad som matchade
+  - [x] **Relevans-sortering**: Sortera resultat efter hur bra de matchar
+- [x] **Användarupplevelse**:
+  - [x] **Responsiv design**: Sökformuläret ska fungera på mobil
+  - [x] **Tydlig feedback**: Visa antal resultat och sökkriterier
+  - [ ] **Spara sökningar**: Möjlighet att spara vanliga sökningar (inte implementerat enligt användarens önskemål)
 
 #### Stämpeltyper och etiketter (2025-07-29)
 - [x] **Ny stämpeltyp**: Lagt till "Etikett" som ny typ i STAMP_TYPE_CHOICES
