@@ -11,7 +11,6 @@ from axes.models import (
     Manufacturer,
     Axe,
     AxeImage,
-    AxeImageStamp,
 )
 from axes.forms import (
     StampForm,

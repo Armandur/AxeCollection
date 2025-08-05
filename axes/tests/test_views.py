@@ -658,7 +658,7 @@ class BackupViewsTest(ViewsTestCase):
         # Skapa en test backup-fil
         backup_content = b"backup content"
         backup_file = SimpleUploadedFile(
-            "test_backup.zip", backup_content, content_type="application/zip"
+            "test_backup.sqlite3", backup_content, content_type="application/x-sqlite3"
         )
 
         # Mock settings.BASE_DIR för att peka på vår test-mapp
@@ -671,7 +671,7 @@ class BackupViewsTest(ViewsTestCase):
             self.assertEqual(response.status_code, 302)  # Redirect
 
             # Kontrollera att filen sparades i backup-mappen
-            saved_file = os.path.join(self.backup_dir, "backups", "test_backup.zip")
+            saved_file = os.path.join(self.backup_dir, "backups", "test_backup.sqlite3")
             self.assertTrue(os.path.exists(saved_file))
 
     def test_handle_backup_upload_invalid_form(self):

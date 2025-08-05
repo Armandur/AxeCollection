@@ -634,14 +634,14 @@ class AxeFormTest(TestCase):
 
 class BackupUploadFormTest(TestCase):
     def test_backup_upload_form_valid_zip(self):
-        """Testa BackupUploadForm med giltig zip-fil"""
+        """Testa BackupUploadForm med giltig sqlite3-fil"""
         from axes.forms import BackupUploadForm
         from django.core.files.uploadedfile import SimpleUploadedFile
 
         form_data = {}
         file_data = {
             "backup_file": SimpleUploadedFile(
-                "test_backup.zip", b"test zip content", content_type="application/zip"
+                "test_backup.sqlite3", b"test database content", content_type="application/x-sqlite3"
             )
         }
         form = BackupUploadForm(data=form_data, files=file_data)

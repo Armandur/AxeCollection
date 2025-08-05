@@ -945,7 +945,7 @@ class Settings(models.Model):
         verbose_name_plural = "Inställningar"
 
     def __str__(self):
-        return f"Inställningar - {self.site_title}"
+        return "Systeminställningar"
 
     @classmethod
     def get_settings(cls):
