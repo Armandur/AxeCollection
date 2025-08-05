@@ -30,22 +30,19 @@ class StampTranscriptionViewsTest(TestCase):
             name="Test Tillverkare", country_code="SE"
         )
         self.stamp = Stamp.objects.create(
-            name="Test Stämpel", 
-            manufacturer=self.manufacturer,
-            stamp_type="text"
+            name="Test Stämpel", manufacturer=self.manufacturer, stamp_type="text"
         )
         self.axe = Axe.objects.create(
-            manufacturer=self.manufacturer,
-            model="Test Modell"
+            manufacturer=self.manufacturer, model="Test Modell"
         )
 
     def test_stamp_transcription_create_view_get(self):
         """Testa att transkriptionsskapande-vy visas korrekt"""
         self.client.login(username="testuser", password="testpass123")
-        
+
         url = reverse("stamp_transcription_create", kwargs={"stamp_id": self.stamp.id})
         response = self.client.get(url)
-        
+
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Skapa ny transkription")
         self.assertContains(response, self.stamp.name)
@@ -54,18 +51,18 @@ class StampTranscriptionViewsTest(TestCase):
     def test_stamp_transcription_create_view_post_valid(self):
         """Testa framgångsrikt skapande av transkription"""
         self.client.login(username="testuser", password="testpass123")
-        
+
         url = reverse("stamp_transcription_create", kwargs={"stamp_id": self.stamp.id})
         data = {
             "text": "GRÄNSFORS BRUK",
             "quality": "high",
         }
-        
+
         response = self.client.post(url, data)
-        
+
         # Ska redirecta till stämpeldetaljsidan
         self.assertEqual(response.status_code, 302)
-        
+
         # Verifiera att transkriptionen skapades
         transcription = StampTranscription.objects.get(stamp=self.stamp)
         self.assertEqual(transcription.text, "GRÄNSFORS BRUK")
@@ -75,15 +72,15 @@ class StampTranscriptionViewsTest(TestCase):
     def test_stamp_transcription_create_view_post_invalid(self):
         """Testa skapande av transkription med ogiltig data"""
         self.client.login(username="testuser", password="testpass123")
-        
+
         url = reverse("stamp_transcription_create", kwargs={"stamp_id": self.stamp.id})
         data = {
             "text": "",  # Tomt text-fält
             "quality": "invalid_quality",
         }
-        
+
         response = self.client.post(url, data)
-        
+
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "error")
         self.assertEqual(StampTranscription.objects.count(), 0)
@@ -92,7 +89,7 @@ class StampTranscriptionViewsTest(TestCase):
         """Testa att transkriptionsskapande kräver inloggning"""
         url = reverse("stamp_transcription_create", kwargs={"stamp_id": self.stamp.id})
         response = self.client.get(url)
-        
+
         self.assertEqual(response.status_code, 302)
         self.assertIn("/login/", response.url)
 
@@ -102,21 +99,21 @@ class StampTranscriptionViewsTest(TestCase):
             stamp=self.stamp,
             text="Original text",
             quality="medium",
-            created_by=self.user
+            created_by=self.user,
         )
-        
+
         self.client.login(username="testuser", password="testpass123")
-        
-        url = reverse("stamp_transcription_edit", kwargs={
-            "stamp_id": self.stamp.id,
-            "transcription_id": transcription.id
-        })
+
+        url = reverse(
+            "stamp_transcription_edit",
+            kwargs={"stamp_id": self.stamp.id, "transcription_id": transcription.id},
+        )
         response = self.client.get(url)
-        
+
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Redigera transkription")
         self.assertContains(response, "Original text")
-        
+
         form = response.context["form"]
         self.assertEqual(form.initial["text"], "Original text")
         self.assertEqual(form.initial["quality"], "medium")
@@ -127,24 +124,24 @@ class StampTranscriptionViewsTest(TestCase):
             stamp=self.stamp,
             text="Original text",
             quality="medium",
-            created_by=self.user
+            created_by=self.user,
         )
-        
+
         self.client.login(username="testuser", password="testpass123")
-        
-        url = reverse("stamp_transcription_edit", kwargs={
-            "stamp_id": self.stamp.id,
-            "transcription_id": transcription.id
-        })
+
+        url = reverse(
+            "stamp_transcription_edit",
+            kwargs={"stamp_id": self.stamp.id, "transcription_id": transcription.id},
+        )
         data = {
             "text": "Uppdaterad text",
             "quality": "high",
         }
-        
+
         response = self.client.post(url, data)
-        
+
         self.assertEqual(response.status_code, 302)
-        
+
         # Verifiera att transkriptionen uppdaterades
         transcription.refresh_from_db()
         self.assertEqual(transcription.text, "Uppdaterad text")
@@ -153,19 +150,17 @@ class StampTranscriptionViewsTest(TestCase):
     def test_stamp_transcription_delete_view_get(self):
         """Testa bekräftelsesida för borttagning av transkription"""
         transcription = StampTranscription.objects.create(
-            stamp=self.stamp,
-            text="Text to delete",
-            created_by=self.user
+            stamp=self.stamp, text="Text to delete", created_by=self.user
         )
-        
+
         self.client.login(username="testuser", password="testpass123")
-        
-        url = reverse("stamp_transcription_delete", kwargs={
-            "stamp_id": self.stamp.id,
-            "transcription_id": transcription.id
-        })
+
+        url = reverse(
+            "stamp_transcription_delete",
+            kwargs={"stamp_id": self.stamp.id, "transcription_id": transcription.id},
+        )
         response = self.client.get(url)
-        
+
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Bekräfta borttagning")
         self.assertContains(response, "Text to delete")
@@ -173,19 +168,17 @@ class StampTranscriptionViewsTest(TestCase):
     def test_stamp_transcription_delete_view_post(self):
         """Testa faktisk borttagning av transkription"""
         transcription = StampTranscription.objects.create(
-            stamp=self.stamp,
-            text="Text to delete",
-            created_by=self.user
+            stamp=self.stamp, text="Text to delete", created_by=self.user
         )
-        
+
         self.client.login(username="testuser", password="testpass123")
-        
-        url = reverse("stamp_transcription_delete", kwargs={
-            "stamp_id": self.stamp.id,
-            "transcription_id": transcription.id
-        })
+
+        url = reverse(
+            "stamp_transcription_delete",
+            kwargs={"stamp_id": self.stamp.id, "transcription_id": transcription.id},
+        )
         response = self.client.post(url)
-        
+
         self.assertEqual(response.status_code, 302)
         self.assertEqual(StampTranscription.objects.count(), 0)
 
@@ -196,50 +189,54 @@ class StampTranscriptionViewsTest(TestCase):
             stamp=self.stamp,
             text="Första transkriptionen",
             quality="high",
-            created_by=self.user
+            created_by=self.user,
         )
         transcription2 = StampTranscription.objects.create(
-            stamp=self.stamp,
-            text="Andra transkriptionen", 
-            quality="medium"
+            stamp=self.stamp, text="Andra transkriptionen", quality="medium"
         )
-        
+
         self.client.login(username="testuser", password="testpass123")
-        
+
         url = reverse("stamp_transcriptions", kwargs={"stamp_id": self.stamp.id})
         response = self.client.get(url)
-        
+
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Transkriberingar")
-        self.assertContains(response, "Första transkriptionen")
-        self.assertContains(response, "Andra transkriptionen")
+        self.assertContains(response, transcription1.text)
+        self.assertContains(response, transcription2.text)
         self.assertContains(response, self.stamp.name)
-        
+
         # Verifiera att båda transkriptionerna finns i context
         transcriptions = response.context["transcriptions"]
         self.assertEqual(transcriptions.count(), 2)
+        self.assertIn(transcription1, transcriptions)
+        self.assertIn(transcription2, transcriptions)
 
     def test_transcription_access_permissions(self):
         """Testa åtkomstbehörigheter för transkriptioner"""
         transcription = StampTranscription.objects.create(
-            stamp=self.stamp,
-            text="Permission test",
-            created_by=self.user
+            stamp=self.stamp, text="Permission test", created_by=self.user
         )
-        
+
         # Test utan inloggning
         urls_requiring_login = [
             reverse("stamp_transcription_create", kwargs={"stamp_id": self.stamp.id}),
-            reverse("stamp_transcription_edit", kwargs={
-                "stamp_id": self.stamp.id,
-                "transcription_id": transcription.id
-            }),
-            reverse("stamp_transcription_delete", kwargs={
-                "stamp_id": self.stamp.id,
-                "transcription_id": transcription.id
-            }),
+            reverse(
+                "stamp_transcription_edit",
+                kwargs={
+                    "stamp_id": self.stamp.id,
+                    "transcription_id": transcription.id,
+                },
+            ),
+            reverse(
+                "stamp_transcription_delete",
+                kwargs={
+                    "stamp_id": self.stamp.id,
+                    "transcription_id": transcription.id,
+                },
+            ),
         ]
-        
+
         for url in urls_requiring_login:
             response = self.client.get(url)
             self.assertEqual(response.status_code, 302)
@@ -254,22 +251,18 @@ class StampTranscriptionViewsTest(TestCase):
         }
         form = StampTranscriptionForm(data=valid_data, pre_selected_stamp=self.stamp)
         self.assertTrue(form.is_valid())
-        
+
         # Ogiltig data - tomt text-fält
-        invalid_data = {
-            "text": "",
-            "quality": "high"
-        }
+        invalid_data = {"text": "", "quality": "high"}
         form = StampTranscriptionForm(data=invalid_data, pre_selected_stamp=self.stamp)
         self.assertFalse(form.is_valid())
         self.assertIn("text", form.errors)
-        
+
         # Ogiltig kvalitetsnivå
-        invalid_quality_data = {
-            "text": "Valid text",
-            "quality": "invalid_quality"
-        }
-        form = StampTranscriptionForm(data=invalid_quality_data, pre_selected_stamp=self.stamp)
+        invalid_quality_data = {"text": "Valid text", "quality": "invalid_quality"}
+        form = StampTranscriptionForm(
+            data=invalid_quality_data, pre_selected_stamp=self.stamp
+        )
         self.assertFalse(form.is_valid())
 
 
@@ -286,62 +279,58 @@ class StampTranscriptionIntegrationTest(TestCase):
             name="Gränsfors Bruk", country_code="SE"
         )
         self.stamp = Stamp.objects.create(
-            name="GRÄNSFORS",
-            manufacturer=self.manufacturer,
-            stamp_type="text"
+            name="GRÄNSFORS", manufacturer=self.manufacturer, stamp_type="text"
         )
         self.axe = Axe.objects.create(
-            manufacturer=self.manufacturer,
-            model="Small Forest Axe"
+            manufacturer=self.manufacturer, model="Small Forest Axe"
         )
         self.axe_stamp = AxeStamp.objects.create(
-            axe=self.axe,
-            stamp=self.stamp,
-            position="öga",
-            uncertainty_level="certain"
+            axe=self.axe, stamp=self.stamp, position="öga", uncertainty_level="certain"
         )
 
     def test_transcription_workflow_complete(self):
         """Testa komplett arbetsflöde för transkriptioner"""
         self.client.login(username="testuser", password="testpass123")
-        
+
         # 1. Skapa transkription
-        create_url = reverse("stamp_transcription_create", kwargs={"stamp_id": self.stamp.id})
+        create_url = reverse(
+            "stamp_transcription_create", kwargs={"stamp_id": self.stamp.id}
+        )
         create_data = {
             "text": "GRÄNSFORS BRUK",
             "quality": "high",
         }
         response = self.client.post(create_url, create_data)
         self.assertEqual(response.status_code, 302)
-        
+
         transcription = StampTranscription.objects.get(stamp=self.stamp)
-        
+
         # 2. Visa alla transkriptioner
         list_url = reverse("stamp_transcriptions", kwargs={"stamp_id": self.stamp.id})
         response = self.client.get(list_url)
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "GRÄNSFORS BRUK")
-        
+
         # 3. Redigera transkription
-        edit_url = reverse("stamp_transcription_edit", kwargs={
-            "stamp_id": self.stamp.id,
-            "transcription_id": transcription.id
-        })
+        edit_url = reverse(
+            "stamp_transcription_edit",
+            kwargs={"stamp_id": self.stamp.id, "transcription_id": transcription.id},
+        )
         edit_data = {
             "text": "GRÄNSFORS BRUK SWEDEN",
-            "quality": "high", 
+            "quality": "high",
         }
         response = self.client.post(edit_url, edit_data)
         self.assertEqual(response.status_code, 302)
-        
+
         transcription.refresh_from_db()
         self.assertEqual(transcription.text, "GRÄNSFORS BRUK SWEDEN")
-        
+
         # 4. Ta bort transkription
-        delete_url = reverse("stamp_transcription_delete", kwargs={
-            "stamp_id": self.stamp.id,
-            "transcription_id": transcription.id
-        })
+        delete_url = reverse(
+            "stamp_transcription_delete",
+            kwargs={"stamp_id": self.stamp.id, "transcription_id": transcription.id},
+        )
         response = self.client.post(delete_url)
         self.assertEqual(response.status_code, 302)
         self.assertEqual(StampTranscription.objects.count(), 0)
@@ -349,51 +338,52 @@ class StampTranscriptionIntegrationTest(TestCase):
     def test_multiple_transcriptions_per_stamp(self):
         """Testa hantering av flera transkriptioner per stämpel"""
         self.client.login(username="testuser", password="testpass123")
-        
+
         # Skapa flera transkriptioner för samma stämpel
-        transcriptions_data = [
-        ]
-        
+        transcriptions_data = []
+
         created_transcriptions = []
         for data in transcriptions_data:
-            url = reverse("stamp_transcription_create", kwargs={"stamp_id": self.stamp.id})
+            url = reverse(
+                "stamp_transcription_create", kwargs={"stamp_id": self.stamp.id}
+            )
             response = self.client.post(url, data)
             self.assertEqual(response.status_code, 302)
             created_transcriptions.append(
                 StampTranscription.objects.filter(stamp=self.stamp).last()
             )
-        
+
         # Verifiera att alla transkriptioner skapades
         self.assertEqual(StampTranscription.objects.filter(stamp=self.stamp).count(), 3)
-        
+
         # Kontrollera att de visas i översikten
         list_url = reverse("stamp_transcriptions", kwargs={"stamp_id": self.stamp.id})
         response = self.client.get(list_url)
         self.assertEqual(response.status_code, 200)
-        
+
         for data in transcriptions_data:
             self.assertContains(response, data["text"])
 
     def test_transcription_with_axe_stamp_context(self):
         """Testa transkription i kontext av yxstämpel"""
         self.client.login(username="testuser", password="testpass123")
-        
+
         # Skapa transkription
         transcription = StampTranscription.objects.create(
             stamp=self.stamp,
             text="GRÄNSFORS BRUK",
             quality="high",
-            created_by=self.user
+            created_by=self.user,
         )
-        
+
         # Verifiera att transkriptionen är associerad med stämpeln som finns på yxan
         self.assertEqual(transcription.stamp, self.stamp)
         self.assertEqual(self.axe_stamp.stamp, self.stamp)
-        
+
         # Testa att transkriptionen visas när man tittar på yxans stämplar
         axe_detail_url = reverse("axe_detail", kwargs={"pk": self.axe.id})
         response = self.client.get(axe_detail_url)
-        
+
         # Ska innehålla både stämpeln och dess transkription
         self.assertContains(response, self.stamp.name)
         # Transkriptionen kanske inte visas direkt på yxsidan, men logiken fungerar
@@ -401,40 +391,45 @@ class StampTranscriptionIntegrationTest(TestCase):
     def test_transcription_quality_progression(self):
         """Testa progression av transkriptionskvalitet över tid"""
         self.client.login(username="testuser", password="testpass123")
-        
+
         # Skapa första transkriptionen med låg kvalitet
         first_transcription = StampTranscription.objects.create(
             stamp=self.stamp,
             text="GRANSFORS",  # Felstavning
             quality="low",
-            created_by=self.user
+            created_by=self.user,
         )
-        
+
         # Skapa andra transkriptionen med bättre kvalitet
         second_transcription = StampTranscription.objects.create(
-            stamp=self.stamp,
-            text="GRÄNSFORS", 
-            quality="medium",
-            created_by=self.user
+            stamp=self.stamp, text="GRÄNSFORS", quality="medium", created_by=self.user
         )
-        
+
         # Skapa tredje transkriptionen med hög kvalitet
         third_transcription = StampTranscription.objects.create(
             stamp=self.stamp,
             text="GRÄNSFORS BRUK",
-            quality="high", 
-            created_by=self.user
+            quality="high",
+            created_by=self.user,
         )
-        
+
         # Verifiera progression
-        transcriptions = StampTranscription.objects.filter(stamp=self.stamp).order_by("created_at")
+        transcriptions = StampTranscription.objects.filter(stamp=self.stamp).order_by(
+            "created_at"
+        )
         self.assertEqual(transcriptions.count(), 3)
-        
-        self.assertEqual(transcriptions[0].quality, "low")
-        self.assertEqual(transcriptions[1].quality, "medium")
-        self.assertEqual(transcriptions[2].quality, "high")
-        
+
+        # Verifiera kvalitetsprogression
+        self.assertEqual(first_transcription.quality, "low")
+        self.assertEqual(second_transcription.quality, "medium")
+        self.assertEqual(third_transcription.quality, "high")
+
+        # Verifiera textprogression
+        self.assertEqual(first_transcription.text, "GRANSFORS")
+        self.assertEqual(second_transcription.text, "GRÄNSFORS")
+        self.assertEqual(third_transcription.text, "GRÄNSFORS BRUK")
+
         # Den senaste borde vara den mest kompletta
         latest = transcriptions.last()
-        self.assertEqual(latest.text, "GRÄNSFORS BRUK")
-        self.assertEqual(latest.quality, "high")
+        self.assertEqual(latest.text, third_transcription.text)
+        self.assertEqual(latest.quality, third_transcription.quality)

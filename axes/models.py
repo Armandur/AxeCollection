@@ -1119,7 +1119,7 @@ class StampTranscription(models.Model):
         verbose_name="Skapad av",
     )
     created_at = models.DateTimeField(auto_now_add=True)
-    
+
     # Koppling till symboler
     symbols = models.ManyToManyField(
         "StampSymbol",
@@ -1135,14 +1135,16 @@ class StampTranscription(models.Model):
 
     def __str__(self):
         return f"{self.stamp.name}: {self.text}"
-    
+
     @property
     def symbols_display(self):
         """Returnerar en formaterad sträng av alla symboler (utan kategorier)"""
         if self.symbols.exists():
-            return ", ".join([symbol.display_with_pictogram for symbol in self.symbols.all()])
+            return ", ".join(
+                [symbol.display_with_pictogram for symbol in self.symbols.all()]
+            )
         return ""
-    
+
     @property
     def full_transcription(self):
         """Returnerar komplett transkribering med text och symboler (utan kategorier)"""
@@ -1159,14 +1161,18 @@ class StampTranscription(models.Model):
             if pictograms:
                 parts.append(", ".join(pictograms))
         return ", ".join(parts)
-    
+
     @property
     def full_transcription_for_cards(self):
         """Returnerar komplett transkribering för kortvisning med ↩️ som radbrytning"""
         # Rensa bort extra mellanslag runt radbrytningar
-        cleaned_text = self.text.replace('\r\n', '\n').replace('\r', '\n')  # Normalisera radbrytningar
-        cleaned_text = '\n'.join(line.strip() for line in cleaned_text.split('\n'))  # Rensa mellanslag
-        cleaned_text = cleaned_text.replace('\n', '↩️')  # Ersätt med symbol
+        cleaned_text = self.text.replace("\r\n", "\n").replace(
+            "\r", "\n"
+        )  # Normalisera radbrytningar
+        cleaned_text = "\n".join(
+            line.strip() for line in cleaned_text.split("\n")
+        )  # Rensa mellanslag
+        cleaned_text = cleaned_text.replace("\n", "↩️")  # Ersätt med symbol
         parts = [cleaned_text]
         if self.symbols.exists():
             # Samla bara pictogrammen, inte texten
@@ -1185,10 +1191,14 @@ class StampTranscription(models.Model):
     def formatted_transcription_for_cards(self):
         """Returnerar formaterad transkribering för kortvisning med text och symboler separerade"""
         # Rensa bort extra mellanslag runt radbrytningar
-        cleaned_text = self.text.replace('\r\n', '\n').replace('\r', '\n')  # Normalisera radbrytningar
-        cleaned_text = '\n'.join(line.strip() for line in cleaned_text.split('\n'))  # Rensa mellanslag
-        cleaned_text = cleaned_text.replace('\n', '<br>')  # Ersätt med HTML-radbrytning
-        
+        cleaned_text = self.text.replace("\r\n", "\n").replace(
+            "\r", "\n"
+        )  # Normalisera radbrytningar
+        cleaned_text = "\n".join(
+            line.strip() for line in cleaned_text.split("\n")
+        )  # Rensa mellanslag
+        cleaned_text = cleaned_text.replace("\n", "<br>")  # Ersätt med HTML-radbrytning
+
         # Samla symboler med beskrivningar
         symbol_list = []
         if self.symbols.exists():
@@ -1197,15 +1207,15 @@ class StampTranscription(models.Model):
                     symbol_list.append(f"{symbol.pictogram} - {symbol.name}")
                 else:
                     symbol_list.append(f"{symbol.name}")
-        
+
         # Formatera resultatet med HTML
         parts = []
         if cleaned_text:
             parts.append(f"<strong>Text:</strong><br>{cleaned_text}")
-        
+
         if symbol_list:
             parts.append(f"<strong>Symboler:</strong><br>" + "<br>".join(symbol_list))
-        
+
         return "<br><br>".join(parts)
 
 
@@ -1673,9 +1683,7 @@ class StampSymbol(models.Model):
         default="other",
         verbose_name="Symboltyp",
     )
-    description = models.TextField(
-        blank=True, null=True, verbose_name="Beskrivning"
-    )
+    description = models.TextField(blank=True, null=True, verbose_name="Beskrivning")
     pictogram = models.CharField(
         max_length=10,
         blank=True,

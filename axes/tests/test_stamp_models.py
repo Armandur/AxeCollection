@@ -174,7 +174,7 @@ class StampTranscriptionModelTest(TestCase):
             stamp=self.stamp,
             text="TEST TEXT",
         )
-        expected = f"Test Stämpel: TEST TEXT"
+        expected = "Test Stämpel: TEST TEXT"
         self.assertEqual(str(transcription), expected)
 
     def test_transcription_quality_choices(self):
@@ -264,7 +264,7 @@ class StampImageModelTest(TestCase):
             image=test_image,
         )
 
-        expected = f"Test Stämpel - Fristående stämpelbild"
+        expected = "Test Stämpel - Fristående stämpelbild"
         self.assertEqual(str(stamp_image), expected)
 
     def test_stamp_image_uncertainty_choices(self):
@@ -597,10 +597,16 @@ class StampSymbolModelTest(TestCase):
         """Testa att symboler sorteras efter symbol_type och namn"""
         # Rensa befintliga symboler för detta test
         StampSymbol.objects.all().delete()
-        
-        symbol_c = StampSymbol.objects.create(name="C-symbol", pictogram="C", symbol_type="other")
-        symbol_a = StampSymbol.objects.create(name="A-symbol", pictogram="A", symbol_type="other")
-        symbol_b = StampSymbol.objects.create(name="B-symbol", pictogram="B", symbol_type="other")
+
+        symbol_c = StampSymbol.objects.create(
+            name="C-symbol", pictogram="C", symbol_type="other"
+        )
+        symbol_a = StampSymbol.objects.create(
+            name="A-symbol", pictogram="A", symbol_type="other"
+        )
+        symbol_b = StampSymbol.objects.create(
+            name="B-symbol", pictogram="B", symbol_type="other"
+        )
 
         symbols = list(StampSymbol.objects.all())
         # Sorterat efter symbol_type, sedan namn
@@ -610,10 +616,14 @@ class StampSymbolModelTest(TestCase):
 
     def test_stamp_symbol_unique_constraint(self):
         """Testa att samma namn + symbol_type är unikt"""
-        StampSymbol.objects.create(name="Unik Symbol", symbol_type="star", pictogram="★")
+        StampSymbol.objects.create(
+            name="Unik Symbol", symbol_type="star", pictogram="★"
+        )
 
         with self.assertRaises(IntegrityError):
-            StampSymbol.objects.create(name="Unik Symbol", symbol_type="star", pictogram="☆")
+            StampSymbol.objects.create(
+                name="Unik Symbol", symbol_type="star", pictogram="☆"
+            )
 
     def tearDown(self):
         """Städa upp efter varje test"""

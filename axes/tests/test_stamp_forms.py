@@ -624,7 +624,8 @@ class StampImageMarkFormTest(TestCase):
 
         form = StampImageMarkForm(data=data)
         # Formuläret kanske inte validerar detta, beror på implementation
-        # men vi testar att det hanteras
+        # men vi testar att det hanteras korrekt
+        self.assertIsNotNone(form)
 
     def test_stamp_image_mark_form_decimal_precision(self):
         """Testa decimalprecision"""
@@ -727,6 +728,7 @@ class StampFormIntegrationTest(TestCase):
         self.assertEqual(StampTag.objects.count(), 1)
 
         self.assertEqual(transcription.stamp, stamp)
+        self.assertEqual(tag.name, "Test Tag")
         self.assertEqual(transcription.created_by, self.user)
 
     def test_form_validation_consistency(self):

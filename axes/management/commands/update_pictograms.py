@@ -68,7 +68,9 @@ class Command(BaseCommand):
                         symbol.save()
                         updated_count += 1
                         self.stdout.write(
-                            self.style.SUCCESS(f"Uppdaterade {symbol_name} (ID {symbol.id}): {pictogram}")
+                            self.style.SUCCESS(
+                                f"Uppdaterade {symbol_name} (ID {symbol.id}): {pictogram}"
+                            )
                         )
             else:
                 self.stdout.write(
@@ -79,4 +81,4 @@ class Command(BaseCommand):
             self.style.SUCCESS(
                 f"Uppdatering slutförd. {updated_count} symboler uppdaterade."
             )
-        ) 
+        )

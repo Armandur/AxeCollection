@@ -62,23 +62,23 @@ def stamp_list(request):
     # Symbol-sökning
     symbols_filter = request.GET.getlist("symbols")  # Flera symboler kan väljas
     search_logic = request.GET.get("search_logic", "and")  # and, or
-    
+
     if symbols_filter:
         # Hitta stämplar som har transkriberingar med de valda symbolerna
         from .models import StampTranscription
-        
+
         if search_logic == "or":
             # OR-logik: Minst en symbol måste matcha
             transcription_ids = StampTranscription.objects.filter(
                 symbols__id__in=symbols_filter
-            ).values_list('id', flat=True)
+            ).values_list("id", flat=True)
             stamps = stamps.filter(transcriptions__id__in=transcription_ids).distinct()
         else:
             # AND-logik: Alla valda symboler måste finnas (standard)
             for symbol_id in symbols_filter:
                 transcription_ids = StampTranscription.objects.filter(
                     symbols__id=symbol_id
-                ).values_list('id', flat=True)
+                ).values_list("id", flat=True)
                 stamps = stamps.filter(transcriptions__id__in=transcription_ids)
             stamps = stamps.distinct()
 
@@ -134,10 +134,11 @@ def stamp_list(request):
 
     # Context för filter
     manufacturers = Manufacturer.objects.all().order_by("name")
-    
+
     # Hämta alla symboler för symbol-väljaren
     from .models import StampSymbol
-    symbols = StampSymbol.objects.all().order_by('name')
+
+    symbols = StampSymbol.objects.all().order_by("name")
 
     context = {
         "page_obj": page_obj,
@@ -315,7 +316,12 @@ def stamp_search(request):
     symbols_filter = request.GET.getlist("symbols")
     search_logic = request.GET.get("search_logic", "and")
 
-    if not query and not manufacturer_filter and not stamp_type_filter and not symbols_filter:
+    if (
+        not query
+        and not manufacturer_filter
+        and not stamp_type_filter
+        and not symbols_filter
+    ):
         return JsonResponse({"results": []})
 
     stamps = Stamp.objects.select_related("manufacturer").prefetch_related(
@@ -335,6 +341,7 @@ def stamp_search(request):
         elif search_type == "fuzzy":
             # Fuzzy search - använd Django's built-in fuzzy search
             from django.db.models.functions import Lower
+
             stamps = stamps.filter(
                 Q(name__icontains=query)
                 | Q(description__icontains=query)
@@ -353,19 +360,19 @@ def stamp_search(request):
     # Symbol-sökning
     if symbols_filter:
         from .models import StampTranscription
-        
+
         if search_logic == "or":
             # OR-logik: Minst en symbol måste matcha
             transcription_ids = StampTranscription.objects.filter(
                 symbols__id__in=symbols_filter
-            ).values_list('id', flat=True)
+            ).values_list("id", flat=True)
             stamps = stamps.filter(transcriptions__id__in=transcription_ids).distinct()
         else:
             # AND-logik: Alla valda symboler måste finnas (standard)
             for symbol_id in symbols_filter:
                 transcription_ids = StampTranscription.objects.filter(
                     symbols__id=symbol_id
-                ).values_list('id', flat=True)
+                ).values_list("id", flat=True)
                 stamps = stamps.filter(transcriptions__id__in=transcription_ids)
             stamps = stamps.distinct()
 
@@ -400,7 +407,7 @@ def stamp_search(request):
                     stamp_symbols.append(f"{symbol.pictogram} {symbol.name}")
                 else:
                     stamp_symbols.append(symbol.name)
-        
+
         # Ta bort duplicerade symboler
         stamp_symbols = list(set(stamp_symbols))
 
@@ -416,13 +423,15 @@ def stamp_search(request):
                 match_types.append("transcription")
             if stamp.manufacturer and query_lower in stamp.manufacturer.name.lower():
                 match_types.append("manufacturer")
-        
+
         # Kontrollera symbol-matchning
         if symbols_filter:
             matching_symbols = []
             for symbol_id in symbols_filter:
                 for symbol_text in stamp_symbols:
-                    if symbol_id in symbol_text or any(symbol_id in s for s in symbol_text.split()):
+                    if symbol_id in symbol_text or any(
+                        symbol_id in s for s in symbol_text.split()
+                    ):
                         matching_symbols.append(symbol_text)
             if matching_symbols:
                 match_types.append("symbol")
@@ -448,11 +457,13 @@ def stamp_search(request):
                 ),
                 "symbols": stamp_symbols,
                 "match_types": match_types,
-                "relevance_score": len(match_types),  # Fler matchningar = högre relevans
+                "relevance_score": len(
+                    match_types
+                ),  # Fler matchningar = högre relevans
                 "url": f"/stamplar/{stamp.id}/",
             }
         )
-    
+
     # Sortera resultat efter relevans (flest matchningar först)
     results.sort(key=lambda x: x["relevance_score"], reverse=True)
 
@@ -1334,11 +1345,10 @@ def remove_axe_image_stamp(request, axe_id, mark_id):
 # StampTranscription views
 
 
-
 @login_required
 def transcription_create(request, stamp_id=None):
     """Skapa ny transkribering"""
-    
+
     stamp = None
     stamp_images = []
     if stamp_id:
@@ -1349,7 +1359,7 @@ def transcription_create(request, stamp_id=None):
             .select_related("axe_image__axe")
             .order_by("-is_primary", "order", "-uploaded_at")
         )
-    
+
     if request.method == "POST":
         form = StampTranscriptionForm(request.POST, pre_selected_stamp=stamp)
         if form.is_valid():
@@ -1357,190 +1367,195 @@ def transcription_create(request, stamp_id=None):
             transcription.created_by = request.user
             transcription.save()
             # Hantera ManyToMany-fält för symboler manuellt
-            if hasattr(form, 'cleaned_data') and 'symbols' in form.cleaned_data:
-                transcription.symbols.set(form.cleaned_data['symbols'])
+            if hasattr(form, "cleaned_data") and "symbols" in form.cleaned_data:
+                transcription.symbols.set(form.cleaned_data["symbols"])
             messages.success(request, "Transkribering skapad!")
             return redirect("stamp_detail", stamp_id=transcription.stamp.id)
         else:
             # Lägg till debug-information för valideringsfel
             print("Form validation errors:", form.errors)
-            messages.error(request, "Det uppstod fel i formuläret. Kontrollera dina uppgifter.")
+            messages.error(
+                request, "Det uppstod fel i formuläret. Kontrollera dina uppgifter."
+            )
     else:
         initial = {}
         if stamp:
             initial["stamp"] = stamp
         form = StampTranscriptionForm(initial=initial, pre_selected_stamp=stamp)
-    
+
     context = {
         "form": form,
         "stamp": stamp,
         "stamp_images": stamp_images,
     }
-    
+
     return render(request, "axes/transcription_form.html", context)
 
 
 @login_required
 def transcription_edit(request, stamp_id, transcription_id):
     """Redigera befintlig transkribering"""
-    
-    transcription = get_object_or_404(StampTranscription, id=transcription_id, stamp_id=stamp_id)
-    
+
+    transcription = get_object_or_404(
+        StampTranscription, id=transcription_id, stamp_id=stamp_id
+    )
+
     # Hämta stämpelbilder för galleriet
     stamp_images = (
         StampImage.objects.filter(stamp=transcription.stamp)
         .select_related("axe_image__axe")
         .order_by("-is_primary", "order", "-uploaded_at")
     )
-    
+
     if request.method == "POST":
-        form = StampTranscriptionForm(request.POST, instance=transcription, pre_selected_stamp=transcription.stamp)
+        form = StampTranscriptionForm(
+            request.POST, instance=transcription, pre_selected_stamp=transcription.stamp
+        )
         if form.is_valid():
             transcription = form.save(commit=False)
             transcription.save()
             # Hantera ManyToMany-fält för symboler manuellt
-            if hasattr(form, 'cleaned_data') and 'symbols' in form.cleaned_data:
-                transcription.symbols.set(form.cleaned_data['symbols'])
+            if hasattr(form, "cleaned_data") and "symbols" in form.cleaned_data:
+                transcription.symbols.set(form.cleaned_data["symbols"])
             messages.success(request, "Transkribering uppdaterad!")
             return redirect("stamp_detail", stamp_id=transcription.stamp.id)
     else:
-        form = StampTranscriptionForm(instance=transcription, pre_selected_stamp=transcription.stamp)
-    
+        form = StampTranscriptionForm(
+            instance=transcription, pre_selected_stamp=transcription.stamp
+        )
+
     context = {
         "form": form,
         "transcription": transcription,
         "stamp": transcription.stamp,
         "stamp_images": stamp_images,
     }
-    
+
     return render(request, "axes/transcription_form.html", context)
 
 
 @login_required
 def transcription_delete(request, stamp_id, transcription_id):
     """Ta bort transkribering"""
-    
-    transcription = get_object_or_404(StampTranscription, id=transcription_id, stamp_id=stamp_id)
-    
+
+    transcription = get_object_or_404(
+        StampTranscription, id=transcription_id, stamp_id=stamp_id
+    )
+
     if request.method == "POST":
         stamp_id = transcription.stamp.id
         transcription.delete()
         messages.success(request, "Transkribering borttagen!")
         return redirect("stamp_detail", stamp_id=stamp_id)
-    
+
     context = {
         "transcription": transcription,
     }
-    
+
     return render(request, "axes/transcription_confirm_delete.html", context)
 
 
 def stamp_transcriptions(request, stamp_id):
     """Visa alla transkriberingar för en specifik stämpel"""
-    
+
     stamp = get_object_or_404(
-        Stamp.objects.prefetch_related("transcriptions__created_by"),
-        id=stamp_id
+        Stamp.objects.prefetch_related("transcriptions__created_by"), id=stamp_id
     )
-    
+
     transcriptions = stamp.transcriptions.all().order_by("-created_at")
-    
+
     context = {
         "stamp": stamp,
         "transcriptions": transcriptions,
     }
-    
+
     return render(request, "axes/stamp_transcriptions.html", context)
 
 
 @login_required
 def stamp_symbols_api(request):
     """API endpoint för att hämta alla stämpelsymboler"""
-    symbols = StampSymbol.objects.all().order_by('symbol_type', 'name')
-    
+    symbols = StampSymbol.objects.all().order_by("symbol_type", "name")
+
     symbols_data = []
     for symbol in symbols:
-                   symbols_data.append({
-               'id': symbol.id,
-               'name': symbol.name,
-               'symbol_type': symbol.symbol_type,
-               'description': symbol.description,
-               'pictogram': symbol.pictogram,
-               'is_predefined': symbol.is_predefined,
-           })
-    
-    return JsonResponse({
-        'symbols': symbols_data
-    })
+        symbols_data.append(
+            {
+                "id": symbol.id,
+                "name": symbol.name,
+                "symbol_type": symbol.symbol_type,
+                "description": symbol.description,
+                "pictogram": symbol.pictogram,
+                "is_predefined": symbol.is_predefined,
+            }
+        )
+
+    return JsonResponse({"symbols": symbols_data})
 
 
 @login_required
 def stamp_symbol_update(request, symbol_id):
     """API endpoint för att uppdatera en symbol"""
-    if request.method != 'POST':
-        return JsonResponse({'error': 'Endast POST-metod tillåten'}, status=405)
-    
+    if request.method != "POST":
+        return JsonResponse({"error": "Endast POST-metod tillåten"}, status=405)
+
     try:
         symbol = get_object_or_404(StampSymbol, id=symbol_id)
-        
+
         # Uppdatera symbolen
-        symbol.name = request.POST.get('name', symbol.name)
-        symbol.description = request.POST.get('description', symbol.description)
-        symbol.pictogram = request.POST.get('pictogram', symbol.pictogram)
-        symbol.symbol_type = request.POST.get('symbol_type', symbol.symbol_type)
-        
+        symbol.name = request.POST.get("name", symbol.name)
+        symbol.description = request.POST.get("description", symbol.description)
+        symbol.pictogram = request.POST.get("pictogram", symbol.pictogram)
+        symbol.symbol_type = request.POST.get("symbol_type", symbol.symbol_type)
+
         symbol.save()
-        
-        return JsonResponse({
-            'success': True,
-            'message': 'Symbol uppdaterad'
-        })
-        
+
+        return JsonResponse({"success": True, "message": "Symbol uppdaterad"})
+
     except Exception as e:
-        return JsonResponse({
-            'error': f'Kunde inte uppdatera symbol: {str(e)}'
-        }, status=400)
+        return JsonResponse(
+            {"error": f"Kunde inte uppdatera symbol: {str(e)}"}, status=400
+        )
 
 
 @login_required
 def stamp_symbol_delete(request, symbol_id):
     """API endpoint för att ta bort en symbol"""
-    if request.method != 'POST':
-        return JsonResponse({'error': 'Endast POST-metod tillåten'}, status=405)
-    
+    if request.method != "POST":
+        return JsonResponse({"error": "Endast POST-metod tillåten"}, status=405)
+
     try:
         symbol = get_object_or_404(StampSymbol, id=symbol_id)
-        
+
         # Kontrollera att symbolen inte används i några transkriberingar
         from axes.models import StampTranscription
+
         if StampTranscription.objects.filter(symbols=symbol).exists():
-            return JsonResponse({
-                'error': 'Kan inte ta bort symbol som används i transkriberingar'
-            }, status=400)
-        
+            return JsonResponse(
+                {"error": "Kan inte ta bort symbol som används i transkriberingar"},
+                status=400,
+            )
+
         symbol.delete()
-        
-        return JsonResponse({
-            'success': True,
-            'message': 'Symbol borttagen'
-        })
-        
+
+        return JsonResponse({"success": True, "message": "Symbol borttagen"})
+
     except Exception as e:
-        return JsonResponse({
-            'error': f'Kunde inte ta bort symbol: {str(e)}'
-        }, status=400)
+        return JsonResponse(
+            {"error": f"Kunde inte ta bort symbol: {str(e)}"}, status=400
+        )
 
 
 @login_required
 def stamp_symbols_manage(request):
     """Hantera symbolpiktogrammen"""
-    symbols = StampSymbol.objects.all().order_by('symbol_type', 'name')
-    
+    symbols = StampSymbol.objects.all().order_by("symbol_type", "name")
+
     # Gruppera symboler efter typ
     symbols_by_type = {}
     total_symbols = 0
     symbols_with_pictograms = 0
-    
+
     for symbol in symbols:
         symbol_type = symbol.get_symbol_type_display()
         if symbol_type not in symbols_by_type:
@@ -1549,13 +1564,13 @@ def stamp_symbols_manage(request):
         total_symbols += 1
         if symbol.pictogram:
             symbols_with_pictograms += 1
-    
+
     context = {
-        'symbols_by_type': symbols_by_type,
-        'symbol_types': StampSymbol.SYMBOL_TYPE_CHOICES,
-        'total_symbols': total_symbols,
-        'symbols_with_pictograms': symbols_with_pictograms,
-        'symbol_types_count': len(symbols_by_type),
+        "symbols_by_type": symbols_by_type,
+        "symbol_types": StampSymbol.SYMBOL_TYPE_CHOICES,
+        "total_symbols": total_symbols,
+        "symbols_with_pictograms": symbols_with_pictograms,
+        "symbol_types_count": len(symbols_by_type),
     }
-    
-    return render(request, 'axes/stamp_symbols_manage.html', context)
+
+    return render(request, "axes/stamp_symbols_manage.html", context)
