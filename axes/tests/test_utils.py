@@ -42,6 +42,9 @@ class CurrencyConverterTest(TestCase):
     @patch("requests.get")
     def test_convert_currency_api_error(self, mock_get):
         """Testa valutakonvertering med API-fel"""
+        # Rensa cache först
+        clear_cache()
+        
         mock_response = MagicMock()
         mock_response.status_code = 500
         mock_get.return_value = mock_response
@@ -52,6 +55,9 @@ class CurrencyConverterTest(TestCase):
     @patch("requests.get")
     def test_convert_currency_network_error(self, mock_get):
         """Testa valutakonvertering med nätverksfel"""
+        # Rensa cache först
+        clear_cache()
+        
         mock_get.side_effect = Exception("Network error")
 
         result = convert_currency(100, "USD", "SEK")

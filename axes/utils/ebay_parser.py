@@ -1391,3 +1391,50 @@ def parse_ebay_url(url: str) -> Dict:
     """Enkel funktion för att parsa eBay URL"""
     parser = EbayParser()
     return parser.parse_ebay_page(url)
+
+
+def parse_ebay_listing(html: str) -> Dict:
+    """Parsa eBay HTML och returnera data (för testning)"""
+    from bs4 import BeautifulSoup
+    
+    # Hantera None input
+    if html is None:
+        return {
+            "title": None,
+            "price": None,
+            "images": []
+        }
+    
+    soup = BeautifulSoup(html, "html.parser")
+    
+    # Extrahera titel
+    title_elem = soup.find("h1")
+    title = title_elem.get_text(strip=True) if title_elem else None
+    
+    # Extrahera pris
+    price_elem = soup.find(class_="price")
+    price = None
+    if price_elem:
+        price_text = price_elem.get_text(strip=True)
+        # Enkel prisparsning
+        import re
+        price_match = re.search(r'[\$€£]?(\d+(?:,\d{3})*(?:\.\d{2})?)', price_text)
+        if price_match:
+            try:
+                price_str = price_match.group(1).replace(",", "")
+                price = float(price_str)
+            except ValueError:
+                pass
+    
+    # Extrahera bilder
+    images = []
+    for img in soup.find_all("img", src=True):
+        src = img.get("src")
+        if src:
+            images.append(src)
+    
+    return {
+        "title": title,
+        "price": price,
+        "images": images
+    }
