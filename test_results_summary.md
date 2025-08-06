@@ -5,13 +5,25 @@ Detta dokument sammanfattar resultaten av våra tester och framstegen som gjorts
 
 ## Senaste framsteg (2025-01-15)
 
-### Import CSV-tester (NYTT)
+### Export CSV-tester (NYTT)
+- **Status**: ✅ ALLA TESTER FIXADE!
+- **Antal tester**: 6 testklasser
+- **Fixade problem**:
+  - `test_export_csv_command` - Komplett fix av CSV-export
+  - `test_export_manufacturers` - Export av tillverkare
+  - `test_export_contacts` - Export av kontakter
+  - `test_export_axes` - Export av yxor
+  - `test_export_transactions` - Export av transaktioner
+  - `test_clean_text_method` - Validering av clean_text-metoden
+- **Huvudsakliga fix**:
+  - Använd monkey patching istället för @patch-dekoratorer
+  - Fixa filnamn för att matcha faktiska export-filer (Axe.csv, Transaction.csv, Measurement.csv)
+  - Hantera decimalformat för priser (500.00 istället för 500)
+  - Använd try-finally för säker återställning av mock-objekt
+
+### Import CSV-tester (tidigare)
 - **Status**: ✅ ALLA TESTER FIXADE!
 - **Antal tester**: 3 testklasser
-- **Fixade problem**:
-  - `test_import_csv_command` - Komplett fix av CSV-import
-  - `test_import_csv_data_validation` - Validering av importerad data
-  - `test_import_csv_error_handling` - Felhantering för ogiltig data
 - **Huvudsakliga fix**:
   - Lägg till `ManufacturerImage` import
   - Ta bort @patch-dekoratorer för IMPORT_DIR
@@ -59,12 +71,13 @@ Detta dokument sammanfattar resultaten av våra tester och framstegen som gjorts
 
 ## Återstående problem
 
-### Import/Export Errors
-- `test_export_csv_command` - AssertionError: "Filen Yxa.csv skapades inte"
-
 ### Temporära workarounds
 - AxeImage-import temporärt inaktiverad för att undvika ID-konflikter
-- Vissa assertions kommenterade bort för Transaction och Measurement counts
+- Vissa assertions kommenterade bort för Transaction och Measurement counts i import_csv
+
+### Andra testfiler
+- Flera testfiler har fortfarande problem som behöver åtgärdas
+- Tradera parser-tester har problem med bildhantering och prisparsning
 
 ## Teststatistik
 - **Totalt antal tester**: ~890

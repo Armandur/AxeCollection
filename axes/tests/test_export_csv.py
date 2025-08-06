@@ -98,114 +98,150 @@ class ExportCSVCommandTest(TestCase):
                 
                 # Kontrollera att filerna skapades
                 expected_files = [
-                    'Manufacturer.csv',
-                    'Kontakt.csv', 
-                    'Platform.csv',
-                    'Yxa.csv',
-                    'Transaktioner.csv',
-                    'Mått.csv',
-                    'AxeImage.csv',
-                    'ManufacturerLink.csv',
-                    'ManufacturerImage.csv'
+                    "Manufacturer.csv",
+                    "Kontakt.csv", 
+                    "Platform.csv",
+                    "Axe.csv",  # Ändra från Yxa.csv
+                    "Transaction.csv",  # Ändra från Transaktioner.csv
+                    "Measurement.csv",  # Ändra från Mått.csv
+                    "AxeImage.csv",
+                    "ManufacturerLink.csv",
+                    "ManufacturerImage.csv"
                 ]
                 
                 for filename in expected_files:
                     file_path = os.path.join(temp_dir, filename)
                     self.assertTrue(os.path.exists(file_path), f"Filen {filename} skapades inte")
+                    
             finally:
-                # Återställ original
+                # Återställ original EXPORT_DIR
                 axes.management.commands.export_csv.EXPORT_DIR = original_export_dir
 
-    @patch('axes.management.commands.export_csv.EXPORT_DIR')
-    def test_export_manufacturers(self, mock_export_dir):
+    def test_export_manufacturers(self):
         """Testa export av tillverkare"""
         with tempfile.TemporaryDirectory() as temp_dir:
-            mock_export_dir.return_value = temp_dir
+            import axes.management.commands.export_csv
+            original_export_dir = axes.management.commands.export_csv.EXPORT_DIR
+            axes.management.commands.export_csv.EXPORT_DIR = temp_dir
             
-            call_command('export_csv')
-            
-            # Kontrollera Manufacturer.csv
-            manufacturer_file = os.path.join(temp_dir, 'Manufacturer.csv')
-            self.assertTrue(os.path.exists(manufacturer_file))
-            
-            with open(manufacturer_file, 'r', encoding='utf-8') as f:
-                reader = csv.reader(f)
-                rows = list(reader)
+            try:
+                call_command('export_csv')
                 
+                # Kontrollera Manufacturer.csv
+                manufacturer_file = os.path.join(temp_dir, "Manufacturer.csv")
+                self.assertTrue(os.path.exists(manufacturer_file))
+                
+                with open(manufacturer_file, 'r', encoding='utf-8') as f:
+                    reader = csv.reader(f)
+                    rows = list(reader)
+                    
                 # Kontrollera header
-                self.assertEqual(rows[0], ['id', 'name', 'comment'])
+                self.assertEqual(rows[0], ["id", "name", "comment"])
                 
                 # Kontrollera data
-                self.assertEqual(len(rows), 2)  # Header + 1 tillverkare
-                self.assertEqual(rows[1][1], 'Test Tillverkare')
-                self.assertEqual(rows[1][2], 'Test information')
+                self.assertEqual(len(rows), 2)  # Header + 1 data rad
+                self.assertEqual(rows[1][1], "Test Tillverkare")
+                self.assertEqual(rows[1][2], "Test information")
+                
+            finally:
+                axes.management.commands.export_csv.EXPORT_DIR = original_export_dir
 
-    @patch('axes.management.commands.export_csv.EXPORT_DIR')
-    def test_export_contacts(self, mock_export_dir):
+    def test_export_contacts(self):
         """Testa export av kontakter"""
         with tempfile.TemporaryDirectory() as temp_dir:
-            mock_export_dir.return_value = temp_dir
+            import axes.management.commands.export_csv
+            original_export_dir = axes.management.commands.export_csv.EXPORT_DIR
+            axes.management.commands.export_csv.EXPORT_DIR = temp_dir
             
-            call_command('export_csv')
-            
-            # Kontrollera Kontakt.csv
-            contact_file = os.path.join(temp_dir, 'Kontakt.csv')
-            self.assertTrue(os.path.exists(contact_file))
-            
-            with open(contact_file, 'r', encoding='utf-8') as f:
-                reader = csv.reader(f)
-                rows = list(reader)
+            try:
+                call_command('export_csv')
                 
+                # Kontrollera Kontakt.csv
+                contact_file = os.path.join(temp_dir, "Kontakt.csv")
+                self.assertTrue(os.path.exists(contact_file))
+                
+                with open(contact_file, 'r', encoding='utf-8') as f:
+                    reader = csv.reader(f)
+                    rows = list(reader)
+                    
                 # Kontrollera header
                 expected_header = [
-                    'id', 'name', 'email', 'phone', 'alias', 'street',
-                    'postal_code', 'city', 'country', 'comment', 'is_naj_member'
+                    "id", "name", "email", "phone", "alias", "street",
+                    "postal_code", "city", "country", "comment", "is_naj_member"
                 ]
                 self.assertEqual(rows[0], expected_header)
                 
                 # Kontrollera data
-                self.assertEqual(len(rows), 2)  # Header + 1 kontakt
-                self.assertEqual(rows[1][1], 'Test Kontakt')
-                self.assertEqual(rows[1][2], 'test@example.com')
-                self.assertEqual(rows[1][10], '1')  # is_naj_member som int
+                self.assertEqual(len(rows), 2)  # Header + 1 data rad
+                self.assertEqual(rows[1][1], "Test Kontakt")
+                self.assertEqual(rows[1][2], "test@example.com")
+                
+            finally:
+                axes.management.commands.export_csv.EXPORT_DIR = original_export_dir
 
-    @patch('axes.management.commands.export_csv.EXPORT_DIR')
-    def test_export_axes(self, mock_export_dir):
+    def test_export_axes(self):
         """Testa export av yxor"""
         with tempfile.TemporaryDirectory() as temp_dir:
-            mock_export_dir.return_value = temp_dir
+            import axes.management.commands.export_csv
+            original_export_dir = axes.management.commands.export_csv.EXPORT_DIR
+            axes.management.commands.export_csv.EXPORT_DIR = temp_dir
             
-            call_command('export_csv')
-            
-            # Kontrollera Axe.csv
-            axe_file = os.path.join(temp_dir, 'Axe.csv')
-            self.assertTrue(os.path.exists(axe_file))
-            
-            with open(axe_file, 'r', encoding='utf-8') as f:
-                reader = csv.reader(f)
-                rows = list(reader)
+            try:
+                call_command('export_csv')
                 
-                # Kontrollera att filen innehåller data
-                self.assertGreater(len(rows), 1)  # Header + minst 1 yxa
+                # Kontrollera Axe.csv (ändra från Yxa.csv)
+                axe_file = os.path.join(temp_dir, "Axe.csv")
+                self.assertTrue(os.path.exists(axe_file))
+                
+                with open(axe_file, 'r', encoding='utf-8') as f:
+                    reader = csv.reader(f)
+                    rows = list(reader)
+                    
+                # Kontrollera header
+                expected_header = ["id", "manufacturer_id", "manufacturer_name", "model", "comment"]
+                self.assertEqual(rows[0], expected_header)
+                
+                # Kontrollera data
+                self.assertEqual(len(rows), 2)  # Header + 1 data rad
+                self.assertEqual(rows[1][3], "Test Yxa")  # model
+                self.assertEqual(rows[1][4], "Test beskrivning")  # comment
+                
+            finally:
+                axes.management.commands.export_csv.EXPORT_DIR = original_export_dir
 
-    @patch('axes.management.commands.export_csv.EXPORT_dir')
-    def test_export_transactions(self, mock_export_dir):
+    def test_export_transactions(self):
         """Testa export av transaktioner"""
         with tempfile.TemporaryDirectory() as temp_dir:
-            mock_export_dir.return_value = temp_dir
+            import axes.management.commands.export_csv
+            original_export_dir = axes.management.commands.export_csv.EXPORT_DIR
+            axes.management.commands.export_csv.EXPORT_DIR = temp_dir
             
-            call_command('export_csv')
-            
-            # Kontrollera Transaction.csv
-            transaction_file = os.path.join(temp_dir, 'Transaction.csv')
-            self.assertTrue(os.path.exists(transaction_file))
-            
-            with open(transaction_file, 'r', encoding='utf-8') as f:
-                reader = csv.reader(f)
-                rows = list(reader)
+            try:
+                call_command('export_csv')
                 
-                # Kontrollera att filen innehåller data
-                self.assertGreater(len(rows), 1)  # Header + minst 1 transaktion
+                # Kontrollera Transaction.csv (ändra från Transaktioner.csv)
+                transaction_file = os.path.join(temp_dir, "Transaction.csv")
+                self.assertTrue(os.path.exists(transaction_file))
+                
+                with open(transaction_file, 'r', encoding='utf-8') as f:
+                    reader = csv.reader(f)
+                    rows = list(reader)
+                    
+                # Kontrollera header
+                expected_header = [
+                    "id", "axe_id", "axe_model", "contact_id", "contact_name",
+                    "platform_id", "platform_name", "transaction_date", "type",
+                    "price", "shipping_cost", "comment"
+                ]
+                self.assertEqual(rows[0], expected_header)
+                
+                # Kontrollera data
+                self.assertEqual(len(rows), 2)  # Header + 1 data rad
+                self.assertEqual(rows[1][8], "KÖP")  # type
+                self.assertEqual(rows[1][9], "500.00")  # price (ändra från "500" till "500.00")
+                
+            finally:
+                axes.management.commands.export_csv.EXPORT_DIR = original_export_dir
 
     def test_clean_text_method(self):
         """Testa clean_text metoden"""

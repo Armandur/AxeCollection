@@ -6,7 +6,15 @@
 
 ## Nyligen fixade problem (2025-01-15)
 
-### Import CSV-tester (NYTT)
+### Export CSV-tester (NYTT)
+1. **FileNotFoundError för mock-objekt** - Löst genom att använda monkey patching istället för @patch-dekoratorer
+2. **AssertionError: Filen Yxa.csv skapades inte** - Löst genom att ändra till rätt filnamn (Axe.csv)
+3. **AssertionError: Filen Transaktioner.csv skapades inte** - Löst genom att ändra till rätt filnamn (Transaction.csv)
+4. **AssertionError: Filen Mått.csv skapades inte** - Löst genom att ändra till rätt filnamn (Measurement.csv)
+5. **AssertionError: '500.00' != '500'** - Löst genom att förvänta sig decimalformat för priser
+6. **AttributeError: EXPORT_dir saknas** - Löst genom att använda rätt attributnamn (EXPORT_DIR)
+
+### Import CSV-tester (tidigare)
 1. **F821 undefined name 'ManufacturerImage'** - Löst genom att lägga till import
 2. **AttributeError: IMPORT_DIR saknas** - Löst genom att ta bort @patch-dekoratorer och skicka temp_dir direkt
 3. **TypeError: Manufacturer() got unexpected keyword arguments: 'comment'** - Löst genom att ändra till 'information'
@@ -35,6 +43,11 @@
 - Hantera ID-parsning med try-except för robusthet
 - Använd Windows-sökvägar (backslashes) för image assertions
 - Temporära workarounds kan behövas för komplexa import-kedjor
+- **Nya lärdomar från export_csv-fixarna**:
+  - Monkey patching är mer pålitligt än @patch-dekoratorer för modulattribut
+  - Filnamn måste matcha exakt vad som skapas av kommandot
+  - Decimalformat för priser måste hanteras korrekt
+  - Använd try-finally för att säkerställa att mock-objekt återställs
 
 ### Stamp Views
 - Login-krav måste hanteras i alla vyer som kräver autentisering
@@ -50,7 +63,7 @@
 - Dokumentera alla fix för framtida referens
 
 ## Nästa steg
-- Fixa temporärt kommenterade assertions
+- Fixa temporärt kommenterade assertions i import_csv
 - Återaktivera axeimages-import
-- Fortsätt med export_csv-tester
+- Fortsätt med andra testfiler som har problem
 - Uppnå 70% testtäckning 
