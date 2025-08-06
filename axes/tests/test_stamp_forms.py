@@ -311,9 +311,18 @@ class AxeStampFormTest(TestCase):
 
         # Skapa stämplar
         self.stamp_same_manufacturer = Stamp.objects.create(
-            name="HULTS BRUK", manufacturer=self.manufacturer
+            name="HULTS BRUK", 
+            manufacturer=self.manufacturer,
+            stamp_type="text",
+            status="known",
+            source_category="own_collection"
         )
-        self.stamp_other_manufacturer = Stamp.objects.create(name="GRÄNSFORS")
+        self.stamp_other_manufacturer = Stamp.objects.create(
+            name="GRÄNSFORS",
+            stamp_type="text",
+            status="known",
+            source_category="own_collection"
+        )
 
         self.valid_data = {
             "stamp": self.stamp_same_manufacturer.id,
@@ -363,7 +372,7 @@ class AxeStampFormTest(TestCase):
         self.assertIn("stamp", form.fields)
 
         # Hämta stämpelvalen från formuläret
-        stamp_choices = list(form.fields["stamp"].queryset)
+        stamp_choices = [choice[0] for choice in form.fields["stamp"].choices if choice[0]]
 
         # Tillverkarens stämpel ska komma först
         self.assertIn(self.stamp_same_manufacturer, stamp_choices)

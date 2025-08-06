@@ -43,22 +43,19 @@ class StampViewsTest(TestCase):
             name="Test Stämpel",
             manufacturer=self.manufacturer,
             description="Test beskrivning",
-            stamp_type="standard",
-            status="active",
-            source_category="auction",
+            stamp_type="text",
+            status="known",
+            source_category="own_collection",
         )
 
         self.axe = Axe.objects.create(
-            name="Test Yxa",
             manufacturer=self.manufacturer,
-            description="Test beskrivning",
-            length=50,
-            weight=1000,
-            price=500,
+            model="Test Yxa",
+            comment="Test beskrivning",
         )
 
         self.axe_stamp = AxeStamp.objects.create(
-            axe=self.axe, stamp=self.stamp, confidence="high"
+            axe=self.axe, stamp=self.stamp, uncertainty_level="certain"
         )
 
         self.stamp_image = StampImage.objects.create(
