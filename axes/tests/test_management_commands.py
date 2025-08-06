@@ -1160,7 +1160,12 @@ class GenerateTestDataCommandTest(TestCase):
         """Test att kommandot använder anpassade antal"""
         out = StringIO()
         call_command(
-            "generate_test_data", axes=5, manufacturers=3, contacts=4, quiet=True, stdout=out
+            "generate_test_data",
+            axes=5,
+            manufacturers=3,
+            contacts=4,
+            quiet=True,
+            stdout=out,
         )
 
         output = out.getvalue()
@@ -1278,7 +1283,12 @@ class GenerateTestDataCommandTest(TestCase):
         """Test att success-meddelandet har rätt format"""
         out = StringIO()
         call_command(
-            "generate_test_data", axes=10, manufacturers=5, contacts=8, quiet=True, stdout=out
+            "generate_test_data",
+            axes=10,
+            manufacturers=5,
+            contacts=8,
+            quiet=True,
+            stdout=out,
         )
 
         output = out.getvalue()

@@ -82,7 +82,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         quiet = options.get("quiet", False)
-        
+
         if options["clear"]:
             self.stdout.write("Rensar befintlig data...")
             self.clear_data()
@@ -110,7 +110,9 @@ class Command(BaseCommand):
         self.create_specific_stamps(manufacturers, quiet=quiet)
 
         # Skapa specifika yxor med riktiga bilder och manuella stämpelmarkeringar
-        self.create_specific_axes_with_real_images(manufacturers, no_stamp_images=False, quiet=quiet)
+        self.create_specific_axes_with_real_images(
+            manufacturers, no_stamp_images=False, quiet=quiet
+        )
 
         if not quiet:
             self.stdout.write("Skapade yxor med manuella stämpelmarkeringar")
@@ -1053,7 +1055,9 @@ class Command(BaseCommand):
         # Skapa stämpelmarkeringar med manuella koordinater om det inte är inaktiverat
         if not no_stamp_images:
             if not quiet:
-                self.stdout.write("\nSkapar stämpelmarkeringar med manuella koordinater...")
+                self.stdout.write(
+                    "\nSkapar stämpelmarkeringar med manuella koordinater..."
+                )
             self._create_stamp_images_with_manual_coordinates(created_axes, quiet=quiet)
 
     def create_specific_stamps(self, manufacturers, quiet=False):
@@ -1490,7 +1494,9 @@ class Command(BaseCommand):
             axe_display_id = axe.id  # Använd faktiska ID:n från databasen
             if axe_display_id in stamp_assignments:
                 if not quiet:
-                    self.stdout.write(f"  Bearbetar yxa {axe.display_id} ({axe.model})...")
+                    self.stdout.write(
+                        f"  Bearbetar yxa {axe.display_id} ({axe.model})..."
+                    )
 
                 # Hämta alla bilder för denna yxa
                 axe_images = AxeImage.objects.filter(axe=axe).order_by("order")

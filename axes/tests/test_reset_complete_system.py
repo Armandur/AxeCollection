@@ -88,7 +88,9 @@ class ResetCompleteSystemCommandTest(TestCase):
 
         stamp_image = StampImage.objects.create(stamp=stamp, image="test2.jpg", order=1)
 
-        axe_stamp = AxeStamp.objects.create(axe=axe, stamp=stamp, uncertainty_level="certain")
+        axe_stamp = AxeStamp.objects.create(
+            axe=axe, stamp=stamp, uncertainty_level="certain"
+        )
 
         stamp_symbol = StampSymbol.objects.create(
             name="Test Symbol", description="Test symbol beskrivning"
