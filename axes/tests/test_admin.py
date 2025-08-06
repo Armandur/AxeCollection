@@ -1,6 +1,7 @@
 """
 Tester för admin.py
 """
+
 import os
 from unittest.mock import patch, MagicMock
 from django.test import TestCase, RequestFactory
@@ -127,21 +128,21 @@ class AdminTestCase(TestCase):
             description="Längdmått",
             sort_order=1,
         )
-        
+
         # Skapa MeasurementTemplate för måttmall
         self.measurement_template = MeasurementTemplate.objects.create(
             name="Standard yxa",
             description="Standardmått för yxor",
             sort_order=1,
         )
-        
+
         # Skapa MeasurementTemplateItem
         self.measurement_template_item = MeasurementTemplateItem.objects.create(
             template=self.measurement_template,
             measurement_type=self.measurement_type,
             sort_order=1,
         )
-        
+
         self.measurement = Measurement.objects.create(
             axe=self.axe,
             name="Längd",
@@ -172,24 +173,23 @@ class AdminTestCase(TestCase):
 
         # Skapa en mock-bild för AxeImage
         from django.core.files.uploadedfile import SimpleUploadedFile
+
         mock_axe_image = SimpleUploadedFile(
-            "test_axe_image.jpg",
-            b"fake axe image content",
-            content_type="image/jpeg"
+            "test_axe_image.jpg", b"fake axe image content", content_type="image/jpeg"
         )
-        
+
         self.axe_image = AxeImage.objects.create(
             axe=self.axe,
             image=mock_axe_image,
         )
-        
+
         # Skapa en mock-bild för StampImage
         mock_stamp_image = SimpleUploadedFile(
             "test_stamp_image.jpg",
             b"fake stamp image content",
-            content_type="image/jpeg"
+            content_type="image/jpeg",
         )
-        
+
         self.stamp_image = StampImage.objects.create(
             stamp=self.stamp,
             image=mock_stamp_image,
@@ -221,7 +221,7 @@ class AdminTestCase(TestCase):
             pictogram="👑",
             is_predefined=True,
         )
-        
+
         self.stamp_uncertainty_group = StampUncertaintyGroup.objects.create(
             name="Test Group",
             description="Test group description",
@@ -239,7 +239,12 @@ class ManufacturerAdminTest(AdminTestCase):
     def test_list_display(self):
         """Testa list_display"""
         list_display = self.admin.get_list_display(self.factory.get("/"))
-        expected_fields = ["hierarchical_name", "parent", "manufacturer_type", "country_code"]
+        expected_fields = [
+            "hierarchical_name",
+            "parent",
+            "manufacturer_type",
+            "country_code",
+        ]
         for field in expected_fields:
             self.assertIn(field, list_display)
 
@@ -274,11 +279,15 @@ class ManufacturerAdminTest(AdminTestCase):
 
     def test_list_filter(self):
         """Testa list_filter"""
-        self.assertEqual(self.admin.list_filter, ("manufacturer_type", "parent", "country_code"))
+        self.assertEqual(
+            self.admin.list_filter, ("manufacturer_type", "parent", "country_code")
+        )
 
     def test_search_fields(self):
         """Testa search_fields"""
-        self.assertEqual(self.admin.search_fields, ("name", "information", "country_code"))
+        self.assertEqual(
+            self.admin.search_fields, ("name", "information", "country_code")
+        )
 
 
 class AxeAdminTest(AdminTestCase):
@@ -292,7 +301,7 @@ class AxeAdminTest(AdminTestCase):
         """Testa list_display"""
         self.assertEqual(
             self.admin.list_display,
-            ("id", "manufacturer", "model", "status", "display_id")
+            ("id", "manufacturer", "model", "status", "display_id"),
         )
 
     def test_list_filter(self):
@@ -302,8 +311,7 @@ class AxeAdminTest(AdminTestCase):
     def test_search_fields(self):
         """Testa search_fields"""
         self.assertEqual(
-            self.admin.search_fields,
-            ("manufacturer__name", "model", "comment")
+            self.admin.search_fields, ("manufacturer__name", "model", "comment")
         )
 
     def test_readonly_fields(self):
@@ -320,7 +328,7 @@ class AxeAdminTest(AdminTestCase):
     def test_delete_model_with_images(self, mock_remove, mock_isfile):
         """Testa delete_model med bilder"""
         mock_isfile.return_value = True
-        
+
         # Skapa en testbild
         image_content = b"fake image content"
         image = SimpleUploadedFile("test.jpg", image_content, content_type="image/jpeg")
@@ -342,7 +350,7 @@ class AxeAdminTest(AdminTestCase):
         deleted_objects = [
             [self.axe, self.contact],
             self.transaction,
-            [self.measurement]
+            [self.measurement],
         ]
         flat = self.admin.get_flat_deleted_objects(deleted_objects)
         self.assertIsInstance(flat, list)
@@ -352,8 +360,8 @@ class AxeAdminTest(AdminTestCase):
         """Testa delete_view"""
         request = self.factory.get("/")
         request.user = self.user
-        
-        with patch.object(self.admin, 'get_object') as mock_get_object:
+
+        with patch.object(self.admin, "get_object") as mock_get_object:
             mock_get_object.return_value = self.axe
             response = self.admin.delete_view(request, str(self.axe.id))
             self.assertIsNotNone(response)
@@ -410,8 +418,12 @@ class MeasurementTemplateAdminTest(AdminTestCase):
     def test_list_display(self):
         """Testa list_display"""
         expected_fields = [
-            "name", "description", "is_active", "sort_order", 
-            "item_count", "created_at"
+            "name",
+            "description",
+            "is_active",
+            "sort_order",
+            "item_count",
+            "created_at",
         ]
         for field in expected_fields:
             self.assertIn(field, self.admin.list_display)
@@ -448,8 +460,12 @@ class StampAdminTest(AdminTestCase):
     def test_list_display(self):
         """Testa list_display"""
         expected_fields = [
-            "name", "manufacturer", "stamp_type", "status", 
-            "year_range", "source_category"
+            "name",
+            "manufacturer",
+            "stamp_type",
+            "status",
+            "year_range",
+            "source_category",
         ]
         for field in expected_fields:
             self.assertIn(field, self.admin.list_display)
@@ -463,8 +479,7 @@ class StampAdminTest(AdminTestCase):
     def test_search_fields(self):
         """Testa search_fields"""
         self.assertEqual(
-            self.admin.search_fields,
-            ("name", "description", "manufacturer__name")
+            self.admin.search_fields, ("name", "description", "manufacturer__name")
         )
 
     def test_ordering(self):
@@ -500,7 +515,7 @@ class StampTranscriptionAdminTest(AdminTestCase):
         """Testa search_fields"""
         self.assertEqual(
             self.admin.search_fields,
-            ("text", "stamp__name", "stamp__manufacturer__name")
+            ("text", "stamp__name", "stamp__manufacturer__name"),
         )
 
     def test_ordering(self):
@@ -544,8 +559,14 @@ class StampImageAdminTest(AdminTestCase):
     def test_list_display(self):
         """Testa list_display"""
         expected_fields = [
-            "stamp", "image_type", "axe_image", "caption", "is_primary",
-            "has_coordinates", "show_full_image", "uploaded_at"
+            "stamp",
+            "image_type",
+            "axe_image",
+            "caption",
+            "is_primary",
+            "has_coordinates",
+            "show_full_image",
+            "uploaded_at",
         ]
         for field in expected_fields:
             self.assertIn(field, self.admin.list_display)
@@ -579,12 +600,12 @@ class StampImageAdminTest(AdminTestCase):
         """Testa save_model med varning"""
         request = self.factory.post("/")
         request.user = self.user
-        
+
         # Skapa en axe_mark bild med axe_image
         self.stamp_image.image_type = "axe_mark"
         self.stamp_image.axe_image = self.axe_image
-        
-        with patch.object(self.admin, 'message_user') as mock_message:
+
+        with patch.object(self.admin, "message_user") as mock_message:
             self.admin.save_model(request, self.stamp_image, None, False)
             # Kontrollera att save_model körs utan fel
             self.assertTrue(True)
@@ -599,7 +620,13 @@ class AxeStampAdminTest(AdminTestCase):
 
     def test_list_display(self):
         """Testa list_display"""
-        expected_fields = ["axe", "stamp", "uncertainty_level", "position", "created_at"]
+        expected_fields = [
+            "axe",
+            "stamp",
+            "uncertainty_level",
+            "position",
+            "created_at",
+        ]
         for field in expected_fields:
             self.assertIn(field, self.admin.list_display)
 
@@ -613,7 +640,7 @@ class AxeStampAdminTest(AdminTestCase):
         """Testa search_fields"""
         self.assertEqual(
             self.admin.search_fields,
-            ("axe__model", "stamp__name", "comment", "position")
+            ("axe__model", "stamp__name", "comment", "position"),
         )
 
     def test_ordering(self):
@@ -644,7 +671,7 @@ class StampVariantAdminTest(AdminTestCase):
         """Testa search_fields"""
         self.assertEqual(
             self.admin.search_fields,
-            ("main_stamp__name", "variant_stamp__name", "description")
+            ("main_stamp__name", "variant_stamp__name", "description"),
         )
 
     def test_ordering(self):
@@ -682,4 +709,4 @@ class StampUncertaintyGroupAdminTest(AdminTestCase):
 
     def test_ordering(self):
         """Testa ordering"""
-        self.assertEqual(self.admin.ordering, ("-created_at",)) 
+        self.assertEqual(self.admin.ordering, ("-created_at",))

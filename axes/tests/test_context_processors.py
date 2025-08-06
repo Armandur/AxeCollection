@@ -1,6 +1,7 @@
 """
 Tester för context_processors.py
 """
+
 import subprocess
 from unittest.mock import patch, MagicMock
 from django.test import TestCase, RequestFactory
@@ -40,9 +41,7 @@ class ContextProcessorsTest(TestCase):
     @patch("subprocess.run")
     def test_get_git_version_with_tag(self, mock_run):
         """Testa get_git_version med giltig tag"""
-        mock_run.return_value = MagicMock(
-            returncode=0, stdout="v1.2.3\n"
-        )
+        mock_run.return_value = MagicMock(returncode=0, stdout="v1.2.3\n")
         result = get_git_version()
         self.assertEqual(result, "v1.2.3")
         mock_run.assert_called_once()
@@ -76,9 +75,7 @@ class ContextProcessorsTest(TestCase):
     @patch("subprocess.run")
     def test_get_build_date_success(self, mock_run):
         """Testa get_build_date med giltig git log"""
-        mock_run.return_value = MagicMock(
-            returncode=0, stdout="2024-01-15\n"
-        )
+        mock_run.return_value = MagicMock(returncode=0, stdout="2024-01-15\n")
         result = get_build_date()
         self.assertEqual(result, "2024-01-15")
 
@@ -212,6 +209,7 @@ class ContextProcessorsTest(TestCase):
 
         # Kontrollera att current_year är korrekt
         from datetime import datetime
+
         expected_year = datetime.now().year
         self.assertEqual(context["current_year"], expected_year)
 
@@ -246,11 +244,13 @@ class ContextProcessorsTest(TestCase):
         request.user = self.user
 
         # Mock Settings.get_settings för att kasta exception
-        with patch.object(Settings, "get_settings", side_effect=Exception("Database error")):
+        with patch.object(
+            Settings, "get_settings", side_effect=Exception("Database error")
+        ):
             context = settings_processor(request)
 
         # Kontrollera att fallback-värden används
         self.assertEqual(context["display_settings"]["axes_rows"], 50)
         self.assertEqual(context["display_settings"]["transactions_rows"], 30)
         self.assertEqual(context["display_settings"]["manufacturers_rows"], 50)
-        self.assertEqual(context["site_settings"]["title"], "AxeCollection") 
+        self.assertEqual(context["site_settings"]["title"], "AxeCollection")

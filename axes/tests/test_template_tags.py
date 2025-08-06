@@ -1,6 +1,7 @@
 """
 Tester för template tags
 """
+
 from django.test import TestCase
 from django.template import Context, Template
 from axes.templatetags.axe_filters import (
@@ -162,17 +163,18 @@ class AxeFiltersTest(TestCase):
 
     def test_hierarchy_prefix(self):
         """Testa hierarchy_prefix"""
+
         # Skapa mock-objekt med parent-attribut
         class MockManufacturer:
             def __init__(self, id, name, parent=None):
                 self.id = id
                 self.name = name
                 self.parent = parent
-        
+
         parent = MockManufacturer(1, "Parent")
         child = MockManufacturer(2, "Child", parent)
         manufacturers = [parent, child]
-        
+
         result = hierarchy_prefix(child, manufacturers)
         self.assertIn("└─", result)  # hierarchy_prefix använder └─ symbol
 
@@ -208,12 +210,13 @@ class AxeFiltersTest(TestCase):
 
     def test_sort_by_quality(self):
         """Testa sort_by_quality"""
+
         # Skapa mock-objekt med quality-attribut
         class MockTranscription:
             def __init__(self, quality, text):
                 self.quality = quality
                 self.text = text
-        
+
         transcriptions = [
             MockTranscription("low", "Low"),
             MockTranscription("high", "High"),
@@ -229,57 +232,61 @@ class TemplateTagIntegrationTest(TestCase):
 
     def test_format_currency_in_template(self):
         """Testa format_currency i template"""
-        template = Template('{% load axe_filters %}{{ value|format_currency }}')
+        template = Template("{% load axe_filters %}{{ value|format_currency }}")
         context = Context({"value": 1250})
         result = template.render(context)
         self.assertIn("1\xa0250\xa0kr", result)
 
     def test_format_currency_none_in_template(self):
         """Testa format_currency med None i template"""
-        template = Template('{% load axe_filters %}{{ value|format_currency }}')
+        template = Template("{% load axe_filters %}{{ value|format_currency }}")
         context = Context({"value": None})
         result = template.render(context)
         self.assertEqual(result.strip(), "")
 
     def test_format_decimal_in_template(self):
         """Testa format_decimal i template"""
-        template = Template('{% load axe_filters %}{{ value|format_decimal }}')
+        template = Template("{% load axe_filters %}{{ value|format_decimal }}")
         context = Context({"value": 1234567})
         result = template.render(context)
         self.assertIn("1\xa0234\xa0567", result)
 
     def test_status_badge_in_template(self):
         """Testa status_badge i template"""
-        template = Template('{% load axe_filters %}{{ value|status_badge }}')
+        template = Template("{% load axe_filters %}{{ value|status_badge }}")
         context = Context({"value": "KÖPT"})
         result = template.render(context)
         self.assertIn("bg-warning", result)
 
     def test_transaction_badge_in_template(self):
         """Testa transaction_badge i template"""
-        template = Template('{% load axe_filters %}{{ value|transaction_badge }}')
+        template = Template("{% load axe_filters %}{{ value|transaction_badge }}")
         context = Context({"value": "KÖP"})
         result = template.render(context)
         self.assertIn("bg-danger", result)
 
     def test_default_if_empty_in_template(self):
         """Testa default_if_empty i template"""
-        template = Template('{% load axe_filters %}{{ value|default_if_empty:"default" }}')
+        template = Template(
+            '{% load axe_filters %}{{ value|default_if_empty:"default" }}'
+        )
         context = Context({"value": None})
         result = template.render(context)
         self.assertIn("default", result)
 
     def test_country_flag_in_template(self):
         """Testa country_flag i template"""
-        template = Template('{% load axe_filters %}{{ value|country_flag }}')
+        template = Template("{% load axe_filters %}{{ value|country_flag }}")
         context = Context({"value": "SE"})
         result = template.render(context)
         self.assertIn("🇸🇪", result)
 
     def test_breadcrumb_item_in_template(self):
         """Testa breadcrumb_item i template"""
-        template = Template('{% load axe_filters %}{% breadcrumb_item "Test" "/test/" True %}')
+        template = Template(
+            '{% load axe_filters %}{% breadcrumb_item "Test" "/test/" True %}'
+        )
         context = Context({})
         result = template.render(context)
         self.assertIn("Test", result)
-        self.assertIn("active", result) 
+        self.assertIn("active", result)

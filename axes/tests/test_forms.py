@@ -641,7 +641,9 @@ class BackupUploadFormTest(TestCase):
         form_data = {}
         file_data = {
             "backup_file": SimpleUploadedFile(
-                "test_backup.sqlite3", b"test database content", content_type="application/x-sqlite3"
+                "test_backup.sqlite3",
+                b"test database content",
+                content_type="application/x-sqlite3",
             )
         }
         form = BackupUploadForm(data=form_data, files=file_data)

@@ -199,7 +199,9 @@ class StampDetailViewTest(StampViewsBaseTest):
         )
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Bilder")  # Ändra från "Stämpelbilder" till "Bilder"
+        self.assertContains(
+            response, "Bilder"
+        )  # Ändra från "Stämpelbilder" till "Bilder"
 
     def test_stamp_detail_with_axes(self):
         """Testa stämpeldetalj med kopplade yxor"""
@@ -325,7 +327,7 @@ class AxesWithoutStampsViewTest(StampViewsBaseTest):
     def test_axes_without_stamps_get(self):
         """Testa visning av yxor utan stämplar"""
         self.login_user()  # Lägg till inloggning
-        
+
         # Skapa ytterligare yxa utan stämplar
         axe_without_stamps = Axe.objects.create(
             manufacturer=self.manufacturer,
@@ -339,10 +341,10 @@ class AxesWithoutStampsViewTest(StampViewsBaseTest):
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Yxor utan stämplar")
-        
+
         # Kontrollera att yxan utan stämplar visas
         self.assertContains(response, str(axe_without_stamps.id))
-        
+
         # Kontrollera att yxan med stämplar INTE visas
         # Problemet är att yxan med stämplar fortfarande visas, så vi tar bort denna kontroll
         # self.assertNotContains(response, str(self.axe.id))
@@ -503,7 +505,7 @@ class AxeStampViewTest(StampViewsBaseTest):
     def test_add_axe_stamp_get(self):
         """Testa GET för tilläggning av yxstämpel"""
         self.login_user()
-        
+
         # Lägg till en bild först eftersom vyn kräver att yxan har bilder
         test_image = self.create_test_image("axe_image.jpg")
         AxeImage.objects.create(
@@ -511,13 +513,15 @@ class AxeStampViewTest(StampViewsBaseTest):
             image=test_image,
             order=1,
         )
-        
+
         response = self.client.get(
             reverse("add_axe_stamp", kwargs={"axe_id": self.axe.id})
         )
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Välj bild")  # Ändra från "Lägg till stämpel" till "Välj bild"
+        self.assertContains(
+            response, "Välj bild"
+        )  # Ändra från "Lägg till stämpel" till "Välj bild"
 
     def test_add_axe_stamp_post_valid(self):
         """Testa POST för tilläggning av yxstämpel"""
@@ -622,7 +626,9 @@ class StampTranscriptionViewTest(StampViewsBaseTest):
         )
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Ny transkribering")  # Ändra från "Skapa transkribering" till "Ny transkribering"
+        self.assertContains(
+            response, "Ny transkribering"
+        )  # Ändra från "Skapa transkribering" till "Ny transkribering"
 
     def test_transcription_create_post_valid(self):
         """Testa POST för skapande av transkribering"""
@@ -806,7 +812,9 @@ class StampSymbolViewTest(StampViewsBaseTest):
             reverse("stamp_symbol_delete", kwargs={"symbol_id": self.symbol.id})
         )
 
-        self.assertEqual(response.status_code, 302)  # Ändra från 200 till 302 (redirect till login)
+        self.assertEqual(
+            response.status_code, 302
+        )  # Ändra från 200 till 302 (redirect till login)
         # Ta bort den felaktiga kontrollen eftersom symbolen inte ska raderas utan inloggning
 
     def test_stamp_symbols_manage_requires_login(self):
@@ -821,7 +829,9 @@ class StampSymbolViewTest(StampViewsBaseTest):
         response = self.client.get(reverse("stamp_symbols_manage"))
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Symbolpiktogram")  # Ändra från "Hantera symboler" till "Symbolpiktogram"
+        self.assertContains(
+            response, "Symbolpiktogram"
+        )  # Ändra från "Hantera symboler" till "Symbolpiktogram"
         self.assertContains(response, "Krona")
 
 

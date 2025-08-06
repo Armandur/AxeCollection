@@ -608,17 +608,17 @@ class TraderaParser:
         """Parsa pris från text"""
         if not price_text:
             return None
-            
+
         # Rensa text och konvertera till lowercase
         price_text = price_text.strip().lower()
-        
+
         # Först, hitta alla tal i texten
         number_patterns = [
             r"(\d{1,3}(?:,\d{3})*)",  # 1,250 eller 2.500
             r"(\d{1,3}(?:\.\d{3})*)",  # 2.500
             r"(\d+)",  # Bara siffror
         ]
-        
+
         # Hitta alla möjliga tal
         all_numbers = []
         for pattern in number_patterns:
@@ -633,22 +633,22 @@ class TraderaParser:
                         all_numbers.append((num, match.start()))
                 except ValueError:
                     continue
-        
+
         # Sortera efter position i texten (tidigast först)
         all_numbers.sort(key=lambda x: x[1])
-        
+
         # Hitta det största talet som följs av "kr", "sek", etc.
         for num, pos in all_numbers:
             # Kontrollera om talet följs av en valuta
-            remaining_text = price_text[pos + len(str(num)):].strip()
+            remaining_text = price_text[pos + len(str(num)) :].strip()
             if any(currency in remaining_text for currency in ["kr", "sek", ":-"]):
                 return num
-        
+
         # Om inget tal med valuta hittades, returnera det största talet
         if all_numbers:
             largest_num = max(all_numbers, key=lambda x: x[0])[0]
             return largest_num
-        
+
         return None
 
     def _parse_price_with_currency(
@@ -657,10 +657,10 @@ class TraderaParser:
         """Parsa pris med valuta från text"""
         if not price_text:
             return None
-            
+
         # Rensa text
         price_text = price_text.strip()
-        
+
         # Olika mönster beroende på valuta
         if currency == "SEK":
             patterns = [
@@ -688,7 +688,7 @@ class TraderaParser:
                     # Ta bort tusentalsseparatorer
                     price_str = price_str.replace(",", "").replace(".", "")
                     price = int(price_str)
-                    
+
                     # Kontrollera att priset är rimligt (1-50000)
                     if 1 <= price <= 50000:
                         return {"amount": price, "currency": currency}
@@ -699,7 +699,7 @@ class TraderaParser:
 
     def _extract_images(self, soup: BeautifulSoup) -> List[str]:
         images = []
-        
+
         # Hitta alla img-taggar med tradera.net URLs
         for element in soup.find_all("img"):
             src = element.get("src") or element.get("data-src")
@@ -718,7 +718,7 @@ class TraderaParser:
                         "_images.jpg",
                         src,
                     )
-                    
+
                     # Lägg till om det nu är en _images.jpg-URL
                     if "_images.jpg" in src:
                         images.append(src)
@@ -735,21 +735,17 @@ def parse_tradera_url(url: str) -> Dict:
 def parse_tradera_listing(html: str) -> Dict:
     """Parsa Tradera HTML och returnera data (för testning)"""
     from bs4 import BeautifulSoup
-    
+
     # Hantera None input
     if html is None:
-        return {
-            "title": None,
-            "price": None,
-            "images": []
-        }
-    
+        return {"title": None, "price": None, "images": []}
+
     soup = BeautifulSoup(html, "html.parser")
-    
+
     # Extrahera titel
     title_elem = soup.find("h1")
     title = title_elem.get_text(strip=True) if title_elem else None
-    
+
     # Extrahera pris
     price_elem = soup.find(class_="price")
     price = None
@@ -757,27 +753,24 @@ def parse_tradera_listing(html: str) -> Dict:
         price_text = price_elem.get_text(strip=True)
         # Enkel prisparsning för svenska priser
         import re
+
         # Försök först med "kr" format
-        price_match = re.search(r'(\d+(?:,\d{3})*(?:\.\d{2})?)\s*kr', price_text)
+        price_match = re.search(r"(\d+(?:,\d{3})*(?:\.\d{2})?)\s*kr", price_text)
         if not price_match:
             # Fallback till bara nummer
-            price_match = re.search(r'(\d+(?:,\d{3})*(?:\.\d{2})?)', price_text)
+            price_match = re.search(r"(\d+(?:,\d{3})*(?:\.\d{2})?)", price_text)
         if price_match:
             try:
                 price_str = price_match.group(1).replace(",", "")
                 price = float(price_str)
             except ValueError:
                 pass
-    
+
     # Extrahera bilder
     images = []
     for img in soup.find_all("img", src=True):
         src = img.get("src")
         if src:
             images.append(src)
-    
-    return {
-        "title": title,
-        "price": price,
-        "images": images
-    }
+
+    return {"title": title, "price": price, "images": images}

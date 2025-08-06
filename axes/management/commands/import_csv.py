@@ -258,7 +258,9 @@ class Command(BaseCommand):
                     try:
                         contact_id = int(row[2]) if len(row) > 2 and row[2] else None
                     except ValueError:
-                        contact_id = None  # Om contact_id inte är ett nummer, sätt till None
+                        contact_id = (
+                            None  # Om contact_id inte är ett nummer, sätt till None
+                        )
                     date_str = row[3] if len(row) > 3 else ""
                     price_str = row[4] if len(row) > 4 else "0"
                     shipping_str = row[5] if len(row) > 5 else "0"
@@ -320,7 +322,9 @@ class Command(BaseCommand):
                     self.stdout.write(f"Skapade transaktion: {transaction}")
 
                 except ValueError as e:
-                    self.stdout.write(f"Hoppar över ogiltig transaktion-ID: {row[0]} - {e}")
+                    self.stdout.write(
+                        f"Hoppar över ogiltig transaktion-ID: {row[0]} - {e}"
+                    )
                 except Exception as e:
                     self.stdout.write(
                         f"Fel vid import av transaktion {row[0] if row else 'okänd'}: {e}"
@@ -449,7 +453,9 @@ class Command(BaseCommand):
             if len(row) >= 3:
                 img_id = int(row[0])
                 manufacturer_id = int(row[1]) if row[1] else None
-                img_filename = row[2].strip('"') if len(row) > 2 and row[2] else ""  # Ändra från row[3] till row[2]
+                img_filename = (
+                    row[2].strip('"') if len(row) > 2 and row[2] else ""
+                )  # Ändra från row[3] till row[2]
                 caption = row[3].strip('"') if len(row) > 3 and row[3] else ""
                 description = row[4].strip('"') if len(row) > 4 and row[4] else ""
                 if (

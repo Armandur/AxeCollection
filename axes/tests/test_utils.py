@@ -1,6 +1,7 @@
 """
 Tester för utils-funktioner
 """
+
 import json
 from unittest.mock import patch, MagicMock
 from django.test import TestCase
@@ -31,9 +32,7 @@ class CurrencyConverterTest(TestCase):
         """Testa lyckad valutakonvertering"""
         mock_response = MagicMock()
         mock_response.status_code = 200
-        mock_response.json.return_value = {
-            "rates": {"SEK": 10.5, "EUR": 0.095}
-        }
+        mock_response.json.return_value = {"rates": {"SEK": 10.5, "EUR": 0.095}}
         mock_get.return_value = mock_response
 
         result = convert_currency(100, "USD", "SEK")
@@ -44,7 +43,7 @@ class CurrencyConverterTest(TestCase):
         """Testa valutakonvertering med API-fel"""
         # Rensa cache först
         clear_cache()
-        
+
         mock_response = MagicMock()
         mock_response.status_code = 500
         mock_get.return_value = mock_response
@@ -57,7 +56,7 @@ class CurrencyConverterTest(TestCase):
         """Testa valutakonvertering med nätverksfel"""
         # Rensa cache först
         clear_cache()
-        
+
         mock_get.side_effect = Exception("Network error")
 
         result = convert_currency(100, "USD", "SEK")
@@ -84,9 +83,7 @@ class CurrencyConverterTest(TestCase):
         """Testa valutakonvertering med cache"""
         mock_response = MagicMock()
         mock_response.status_code = 200
-        mock_response.json.return_value = {
-            "rates": {"SEK": 10.5}
-        }
+        mock_response.json.return_value = {"rates": {"SEK": 10.5}}
         mock_get.return_value = mock_response
 
         # Första anropet
@@ -501,4 +498,4 @@ class TraderaParserTest(TestCase):
                 else:
                     html_content = None
                 result = self.parser(html_content)
-                self.assertIsNone(result["price"]) 
+                self.assertIsNone(result["price"])

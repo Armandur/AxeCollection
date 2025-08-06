@@ -17,9 +17,9 @@ class TraderaParserTest(TestCase):
         valid_urls = [
             "https://www.tradera.com/item/343327/683953821/yxa-saw-stamplat-ph-",
             "https://www.tradera.com/item/123/456/test-item",
-            "http://www.tradera.com/item/789/012/another-item"
+            "http://www.tradera.com/item/789/012/another-item",
         ]
-        
+
         for url in valid_urls:
             with self.subTest(url=url):
                 self.assertTrue(self.parser.is_tradera_url(url))
@@ -32,9 +32,9 @@ class TraderaParserTest(TestCase):
             "https://www.google.com/item/123/456/test",
             "not-a-url",
             "",
-            None
+            None,
         ]
-        
+
         for url in invalid_urls:
             with self.subTest(url=url):
                 self.assertFalse(self.parser.is_tradera_url(url))
@@ -42,11 +42,14 @@ class TraderaParserTest(TestCase):
     def test_extract_item_id(self):
         """Testa extrahering av objekt-ID från URL"""
         test_cases = [
-            ("https://www.tradera.com/item/343327/683953821/yxa-saw-stamplat-ph-", "683953821"),
+            (
+                "https://www.tradera.com/item/343327/683953821/yxa-saw-stamplat-ph-",
+                "683953821",
+            ),
             ("https://www.tradera.com/item/123/456/test-item", "456"),
-            ("https://www.tradera.com/item/789/012/another-item", "012")
+            ("https://www.tradera.com/item/789/012/another-item", "012"),
         ]
-        
+
         for url, expected_id in test_cases:
             with self.subTest(url=url):
                 item_id = self.parser.extract_item_id(url)
@@ -57,9 +60,9 @@ class TraderaParserTest(TestCase):
         invalid_urls = [
             "https://www.tradera.com/",
             "https://www.tradera.com/item/123",
-            "not-a-url"
+            "not-a-url",
         ]
-        
+
         for url in invalid_urls:
             with self.subTest(url=url):
                 item_id = self.parser.extract_item_id(url)
@@ -82,26 +85,28 @@ class TraderaParserTest(TestCase):
         </html>
         """
         mock_response.raise_for_status.return_value = None
-        
+
         # Mock session direkt på instansen
-        with patch.object(self.parser, 'session') as mock_session:
+        with patch.object(self.parser, "session") as mock_session:
             mock_session.get.return_value = mock_response
-            
+
             # Testa parsning
-            result = self.parser.parse_tradera_page("https://www.tradera.com/item/123/456/test")
-            
+            result = self.parser.parse_tradera_page(
+                "https://www.tradera.com/item/123/456/test"
+            )
+
             # Kontrollera resultat
-            self.assertIn('title', result)
-            self.assertIn('description', result)
-            self.assertIn('seller_alias', result)
-            self.assertIn('prices', result)
-            self.assertIn('item_id', result)
-            self.assertIn('images', result)
-            self.assertIn('auction_end_date', result)
-            self.assertIn('url', result)
-            
-            self.assertEqual(result['item_id'], '456')
-            self.assertEqual(result['url'], 'https://www.tradera.com/item/123/456/test')
+            self.assertIn("title", result)
+            self.assertIn("description", result)
+            self.assertIn("seller_alias", result)
+            self.assertIn("prices", result)
+            self.assertIn("item_id", result)
+            self.assertIn("images", result)
+            self.assertIn("auction_end_date", result)
+            self.assertIn("url", result)
+
+            self.assertEqual(result["item_id"], "456")
+            self.assertEqual(result["url"], "https://www.tradera.com/item/123/456/test")
 
     def test_parse_tradera_page_invalid_url(self):
         """Testa parsning med ogiltig URL"""
@@ -111,11 +116,13 @@ class TraderaParserTest(TestCase):
     def test_parse_tradera_page_request_error(self):
         """Testa parsning med nätverksfel"""
         # Mock session direkt på instansen
-        with patch.object(self.parser, 'session') as mock_session:
+        with patch.object(self.parser, "session") as mock_session:
             mock_session.get.side_effect = Exception("Network error")
-            
+
             with self.assertRaises(ValueError):
-                self.parser.parse_tradera_page("https://www.tradera.com/item/123/456/test")
+                self.parser.parse_tradera_page(
+                    "https://www.tradera.com/item/123/456/test"
+                )
 
     def test_extract_title(self):
         """Testa extrahering av titel från HTML"""
@@ -128,8 +135,8 @@ class TraderaParserTest(TestCase):
             </body>
         </html>
         """
-        soup = BeautifulSoup(html, 'html.parser')
-        
+        soup = BeautifulSoup(html, "html.parser")
+
         title = self.parser._extract_title(soup)
         self.assertIsInstance(title, str)
         self.assertGreater(len(title), 0)
@@ -144,8 +151,8 @@ class TraderaParserTest(TestCase):
             </body>
         </html>
         """
-        soup = BeautifulSoup(html, 'html.parser')
-        
+        soup = BeautifulSoup(html, "html.parser")
+
         seller = self.parser._extract_seller_alias(soup)
         self.assertIsInstance(seller, str)
 
@@ -160,8 +167,8 @@ class TraderaParserTest(TestCase):
             </body>
         </html>
         """
-        soup = BeautifulSoup(html, 'html.parser')
-        
+        soup = BeautifulSoup(html, "html.parser")
+
         prices = self.parser._extract_prices(soup)
         self.assertIsInstance(prices, list)
 
@@ -181,7 +188,7 @@ class TraderaParserTest(TestCase):
         """
         soup = BeautifulSoup(html, "html.parser")
         images = self.parser._extract_images(soup)
-        
+
         # Kontrollera att vi fick bilder från tradera.net
         self.assertGreater(len(images), 0)
         # Kontrollera att alla bilder är från tradera.net och konverterade till _images.jpg-format
@@ -199,8 +206,8 @@ class TraderaParserTest(TestCase):
             </body>
         </html>
         """
-        soup = BeautifulSoup(html, 'html.parser')
-        
+        soup = BeautifulSoup(html, "html.parser")
+
         end_date = self.parser._extract_auction_end_date(soup)
         # Kan vara None om inget datum hittas
         if end_date is not None:
@@ -216,9 +223,9 @@ class TraderaParserTest(TestCase):
             ("2.500 SEK", 2500),
             ("invalid", None),
             ("", None),
-            (None, None)
+            (None, None),
         ]
-        
+
         for price_text, expected in test_cases:
             with self.subTest(price_text=price_text):
                 result = self.parser._parse_price(price_text)
@@ -232,9 +239,9 @@ class TraderaParserTest(TestCase):
             ("1000", "EUR", {"amount": 1000, "currency": "EUR"}),
             ("invalid", "SEK", None),
             ("", "SEK", None),
-            (None, "SEK", None)
+            (None, "SEK", None),
         ]
-        
+
         for price_text, currency, expected in test_cases:
             with self.subTest(price_text=price_text, currency=currency):
                 result = self.parser._parse_price_with_currency(price_text, currency)
@@ -244,39 +251,41 @@ class TraderaParserTest(TestCase):
 class ParseTraderaURLTest(TestCase):
     """Tester för parse_tradera_url funktionen"""
 
-    @patch('axes.utils.tradera_parser.TraderaParser')
+    @patch("axes.utils.tradera_parser.TraderaParser")
     def test_parse_tradera_url_success(self, mock_parser_class):
         """Testa lyckad användning av parse_tradera_url"""
         # Mock parser
         mock_parser = Mock()
         mock_parser.parse_tradera_page.return_value = {
-            'title': 'Test Auction',
-            'description': 'Test Description',
-            'seller_alias': 'Test Seller',
-            'prices': [],
-            'item_id': '123',
-            'images': [],
-            'auction_end_date': None,
-            'url': 'https://www.tradera.com/item/123/456/test'
+            "title": "Test Auction",
+            "description": "Test Description",
+            "seller_alias": "Test Seller",
+            "prices": [],
+            "item_id": "123",
+            "images": [],
+            "auction_end_date": None,
+            "url": "https://www.tradera.com/item/123/456/test",
         }
         mock_parser_class.return_value = mock_parser
-        
+
         # Testa funktionen
         result = parse_tradera_url("https://www.tradera.com/item/123/456/test")
-        
+
         # Kontrollera att parser anropades
-        mock_parser.parse_tradera_page.assert_called_once_with("https://www.tradera.com/item/123/456/test")
-        
+        mock_parser.parse_tradera_page.assert_called_once_with(
+            "https://www.tradera.com/item/123/456/test"
+        )
+
         # Kontrollera resultat
         self.assertIsInstance(result, dict)
-        self.assertIn('title', result)
+        self.assertIn("title", result)
 
-    @patch('axes.utils.tradera_parser.TraderaParser')
+    @patch("axes.utils.tradera_parser.TraderaParser")
     def test_parse_tradera_url_invalid_url(self, mock_parser_class):
         """Testa parse_tradera_url med ogiltig URL"""
         mock_parser = Mock()
         mock_parser.parse_tradera_page.side_effect = ValueError("Invalid URL")
         mock_parser_class.return_value = mock_parser
-        
+
         with self.assertRaises(ValueError):
-            parse_tradera_url("https://www.google.com") 
+            parse_tradera_url("https://www.google.com")

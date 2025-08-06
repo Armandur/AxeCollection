@@ -138,10 +138,10 @@ def convert_currency(
     # Validera input
     if not isinstance(amount, (int, float)):
         return None
-    
+
     if amount < 0:
         return None
-    
+
     if from_currency == to_currency:
         return amount
 
@@ -154,7 +154,11 @@ def convert_currency(
             return round(amount * rate, 2)
 
         # Fallback till fördefinierade kurser endast om rates inte är tom
-        if rates and from_currency in FALLBACK_RATES and to_currency in FALLBACK_RATES[from_currency]:
+        if (
+            rates
+            and from_currency in FALLBACK_RATES
+            and to_currency in FALLBACK_RATES[from_currency]
+        ):
             rate = FALLBACK_RATES[from_currency][to_currency]
             return round(amount * rate, 2)
 
