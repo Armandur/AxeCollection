@@ -5,7 +5,15 @@ from axes.models import StampSymbol
 class Command(BaseCommand):
     help = "Initierar fördefinierade stämpelsymboler"
 
+    def add_arguments(self, parser):
+        parser.add_argument(
+            "--quiet",
+            action="store_true",
+            help="Minska output till endast viktiga meddelanden",
+        )
+
     def handle(self, *args, **options):
+        quiet = options.get("quiet", False)
         predefined_symbols = [
             # Kronor
             {
@@ -330,10 +338,12 @@ class Command(BaseCommand):
             )
             if created:
                 created_count += 1
-                self.stdout.write(self.style.SUCCESS(f"Skapade symbol: {symbol}"))
+                if not quiet:
+                    self.stdout.write(self.style.SUCCESS(f"Skapade symbol: {symbol}"))
 
-        self.stdout.write(
-            self.style.SUCCESS(
-                f"Initiering slutförd. {created_count} nya symboler skapade."
+        if not quiet:
+            self.stdout.write(
+                self.style.SUCCESS(
+                    f"Initiering slutförd. {created_count} nya symboler skapade."
+                )
             )
-        )

@@ -74,8 +74,15 @@ class Command(BaseCommand):
             action="store_true",
             help="Skapa inte StampImage-objekt automatiskt (låt användaren markera manuellt)",
         )
+        parser.add_argument(
+            "--quiet",
+            action="store_true",
+            help="Minska output till endast viktiga meddelanden",
+        )
 
     def handle(self, *args, **options):
+        quiet = options.get("quiet", False)
+        
         if options["clear"]:
             self.stdout.write("Rensar befintlig data...")
             self.clear_data()
@@ -87,39 +94,40 @@ class Command(BaseCommand):
         self.create_measurement_templates()
 
         # Initiera stämpelsymboler
-        self.init_stamp_symbols()
+        self.init_stamp_symbols(quiet=quiet)
 
         # Skapa grunddata
-        manufacturers = self.create_manufacturers(options["manufacturers"])
-        contacts = self.create_contacts(options["contacts"])
-        platforms = self.create_platforms()
+        manufacturers = self.create_manufacturers(options["manufacturers"], quiet=quiet)
+        contacts = self.create_contacts(options["contacts"], quiet=quiet)
+        platforms = self.create_platforms(quiet=quiet)
 
         # Skapa yxor och relaterad data
-        axes = self.create_axes(manufacturers, options["axes"])
-        self.create_transactions(axes, contacts, platforms)
-        self.create_measurements(axes)
+        axes = self.create_axes(manufacturers, options["axes"], quiet=quiet)
+        self.create_transactions(axes, contacts, platforms, quiet=quiet)
+        self.create_measurements(axes, quiet=quiet)
 
         # Skapa specifika stämplar först
-        self.create_specific_stamps(manufacturers)
+        self.create_specific_stamps(manufacturers, quiet=quiet)
 
         # Skapa specifika yxor med riktiga bilder och manuella stämpelmarkeringar
-        self.create_specific_axes_with_real_images(manufacturers, no_stamp_images=False)
+        self.create_specific_axes_with_real_images(manufacturers, no_stamp_images=False, quiet=quiet)
 
-        self.stdout.write("Skapade yxor med manuella stämpelmarkeringar")
+        if not quiet:
+            self.stdout.write("Skapade yxor med manuella stämpelmarkeringar")
 
         # Skapa tillverkarlänkar och bilder
-        self.create_manufacturer_links(manufacturers)
+        self.create_manufacturer_links(manufacturers, quiet=quiet)
 
         if not options["no_images"]:
-            self.create_manufacturer_images(manufacturers)
+            self.create_manufacturer_images(manufacturers, quiet=quiet)
             # Skapa yxbilder
-            self.create_axe_images(axes)
+            self.create_axe_images(axes, quiet=quiet)
 
         # Skapa standardinställningar
         self.create_settings()
 
         # Skapa demo-användare
-        self.create_demo_user()
+        self.create_demo_user(quiet=quiet)
 
         self.stdout.write(
             self.style.SUCCESS(
@@ -263,18 +271,20 @@ class Command(BaseCommand):
                     defaults={"sort_order": i},
                 )
 
-    def init_stamp_symbols(self):
+    def init_stamp_symbols(self, quiet=False):
         """Initiera stämpelsymboler"""
         from axes.management.commands.init_stamp_symbols import (
             Command as InitStampSymbolsCommand,
         )
 
-        self.stdout.write("Initierar stämpelsymboler...")
+        if not quiet:
+            self.stdout.write("Initierar stämpelsymboler...")
         init_command = InitStampSymbolsCommand()
-        init_command.handle()
-        self.stdout.write("Stämpelsymboler initierade.")
+        init_command.handle(quiet=quiet)
+        if not quiet:
+            self.stdout.write("Stämpelsymboler initierade.")
 
-    def create_manufacturers(self, count):
+    def create_manufacturers(self, count, quiet=False):
         """Skapa tillverkare med hierarkisk struktur"""
         # Definiera hierarkiska tillverkare
         hierarchical_manufacturers = {
@@ -419,7 +429,7 @@ class Command(BaseCommand):
 
         return manufacturers
 
-    def create_contacts(self, count):
+    def create_contacts(self, count, quiet=False):
         """Skapa kontakter"""
         countries = [
             ("Sverige", "SE"),
@@ -496,7 +506,7 @@ class Command(BaseCommand):
 
         return contacts
 
-    def create_platforms(self):
+    def create_platforms(self, quiet=False):
         """Skapa plattformar"""
         platforms_data = [
             ("Tradera", "bg-primary"),
@@ -516,7 +526,7 @@ class Command(BaseCommand):
 
         return platforms
 
-    def create_axes(self, manufacturers, count):
+    def create_axes(self, manufacturers, count, quiet=False):
         """Skapa yxor"""
         axe_models = [
             "Slöjdyxa",
@@ -562,7 +572,7 @@ class Command(BaseCommand):
 
         return axes
 
-    def create_transactions(self, axes, contacts, platforms):
+    def create_transactions(self, axes, contacts, platforms, quiet=False):
         """Skapa transaktioner"""
         for axe in axes:
             # Skapa 1-2 transaktioner per yxa (ett köp och eventuellt ett sälj)
@@ -622,7 +632,7 @@ class Command(BaseCommand):
                     ),
                 )
 
-    def create_measurements(self, axes):
+    def create_measurements(self, axes, quiet=False):
         """Skapa mått för yxor"""
         measurement_types = MeasurementType.objects.all()
 
@@ -712,7 +722,7 @@ class Command(BaseCommand):
 
         return img_io
 
-    def create_manufacturer_images(self, manufacturers):
+    def create_manufacturer_images(self, manufacturers, quiet=False):
         """Skapa tillverkarbilder"""
         for manufacturer in manufacturers:
             # 40% chans att ha bilder
@@ -760,7 +770,7 @@ class Command(BaseCommand):
                         filename, ContentFile(img_io.getvalue()), save=True
                     )
 
-    def create_manufacturer_links(self, manufacturers):
+    def create_manufacturer_links(self, manufacturers, quiet=False):
         """Skapa tillverkarlänkar"""
         link_types = ["WEBSITE", "CATALOG", "VIDEO", "ARTICLE", "DOCUMENT", "OTHER"]
 
@@ -791,7 +801,7 @@ class Command(BaseCommand):
         """Konvertera order (0,1,2,3...) till bokstav (a,b,c,d...)"""
         return chr(97 + order)  # 97 = 'a' i ASCII
 
-    def create_axe_images(self, axes):
+    def create_axe_images(self, axes, quiet=False):
         """Skapa yxbilder"""
         for axe in axes:
             # 70% chans att ha bilder
@@ -852,7 +862,7 @@ class Command(BaseCommand):
             },
         )
 
-    def create_demo_user(self):
+    def create_demo_user(self, quiet=False):
         """Skapa demo-användare"""
         # Skapa demo-användare om den inte finns
         demo_user, created = User.objects.get_or_create(
@@ -870,18 +880,21 @@ class Command(BaseCommand):
             # Sätt lösenord för demo-användare
             demo_user.set_password("demo123")
             demo_user.save()
-            self.stdout.write("Demo-användare skapad: demo/demo123")
+            if not quiet:
+                self.stdout.write("Demo-användare skapad: demo/demo123")
         else:
             # Uppdatera lösenord om användaren redan finns
             demo_user.set_password("demo123")
             demo_user.save()
-            self.stdout.write("Demo-användare uppdaterad: demo/demo123")
+            if not quiet:
+                self.stdout.write("Demo-användare uppdaterad: demo/demo123")
 
     def create_specific_axes_with_real_images(
-        self, manufacturers, no_stamp_images=False
+        self, manufacturers, no_stamp_images=False, quiet=False
     ):
         """Skapa specifika yxor med riktiga bilder från testdatabilder-mappen"""
-        self.stdout.write("Skapar specifika yxor med riktiga bilder...")
+        if not quiet:
+            self.stdout.write("Skapar specifika yxor med riktiga bilder...")
 
         # Hitta tillverkarna vi behöver
         johan_jonsson = None
@@ -985,9 +998,10 @@ class Command(BaseCommand):
             )
             created_axes.append(axe)
 
-            self.stdout.write(
-                f"  Skapade yxa {axe.display_id} ({axe.model}) från {axe.manufacturer.name}"
-            )
+            if not quiet:
+                self.stdout.write(
+                    f"  Skapade yxa {axe.display_id} ({axe.model}) från {axe.manufacturer.name}"
+                )
 
             # Kopiera och koppla bilderna
             axe_images = []
@@ -1008,38 +1022,44 @@ class Command(BaseCommand):
                             image_filename, ContentFile(f.read()), save=True
                         )
 
-                    self.stdout.write(
-                        f"    Kopierade {image_filename} till yxa {axe.display_id} (AxeImage ID: {axe_image.id})"
-                    )
+                    if not quiet:
+                        self.stdout.write(
+                            f"    Kopierade {image_filename} till yxa {axe.display_id} (AxeImage ID: {axe_image.id})"
+                        )
                 else:
-                    self.stdout.write(
-                        f"    VARNING: Bildfil {image_filename} hittades inte!"
-                    )
+                    if not quiet:
+                        self.stdout.write(
+                            f"    VARNING: Bildfil {image_filename} hittades inte!"
+                        )
 
-            self.stdout.write(
-                f"    Skapade {len(axe_images)} bilder för yxa {axe.display_id}"
-            )
-
-        self.stdout.write(f"Skapade {len(created_axes)} yxor med riktiga bilder")
-        self.stdout.write("Yxor skapade:")
-        for axe in created_axes:
-            self.stdout.write(
-                f"  - Yxa {axe.display_id}: {axe.model} från {axe.manufacturer.name}"
-            )
-            axe_images = AxeImage.objects.filter(axe=axe).order_by("order")
-            for axe_image in axe_images:
+            if not quiet:
                 self.stdout.write(
-                    f"    * Bild {axe_image.order+1}: {axe_image.image.name} (ID: {axe_image.id})"
+                    f"    Skapade {len(axe_images)} bilder för yxa {axe.display_id}"
                 )
+
+        if not quiet:
+            self.stdout.write(f"Skapade {len(created_axes)} yxor med riktiga bilder")
+            self.stdout.write("Yxor skapade:")
+            for axe in created_axes:
+                self.stdout.write(
+                    f"  - Yxa {axe.display_id}: {axe.model} från {axe.manufacturer.name}"
+                )
+                axe_images = AxeImage.objects.filter(axe=axe).order_by("order")
+                for axe_image in axe_images:
+                    self.stdout.write(
+                        f"    * Bild {axe_image.order+1}: {axe_image.image.name} (ID: {axe_image.id})"
+                    )
 
         # Skapa stämpelmarkeringar med manuella koordinater om det inte är inaktiverat
         if not no_stamp_images:
-            self.stdout.write("\nSkapar stämpelmarkeringar med manuella koordinater...")
-            self._create_stamp_images_with_manual_coordinates(created_axes)
+            if not quiet:
+                self.stdout.write("\nSkapar stämpelmarkeringar med manuella koordinater...")
+            self._create_stamp_images_with_manual_coordinates(created_axes, quiet=quiet)
 
-    def create_specific_stamps(self, manufacturers):
+    def create_specific_stamps(self, manufacturers, quiet=False):
         """Skapa specifika stämplar för testdata"""
-        self.stdout.write("Skapar specifika stämplar...")
+        if not quiet:
+            self.stdout.write("Skapar specifika stämplar...")
 
         # Hitta tillverkarna vi behöver
         johan_jonsson = None
@@ -1153,15 +1173,18 @@ class Command(BaseCommand):
                     source_reference=stamp_data.get("source_reference"),
                 )
                 created_stamps.append(stamp)
-                self.stdout.write(
-                    f"  Skapade stämpel: {stamp.name} för {stamp.manufacturer.name}"
-                )
+                if not quiet:
+                    self.stdout.write(
+                        f"  Skapade stämpel: {stamp.name} för {stamp.manufacturer.name}"
+                    )
             else:
-                self.stdout.write(
-                    f"  VARNING: Tillverkare för stämpel {stamp_data['name']} hittades inte!"
-                )
+                if not quiet:
+                    self.stdout.write(
+                        f"  VARNING: Tillverkare för stämpel {stamp_data['name']} hittades inte!"
+                    )
 
-        self.stdout.write(f"Skapade {len(created_stamps)} stämplar")
+        if not quiet:
+            self.stdout.write(f"Skapade {len(created_stamps)} stämplar")
 
     def create_axe_stamp_connections(self):
         """Koppla stämplar till yxor för testdata med realistiska positioner"""
@@ -1446,7 +1469,7 @@ class Command(BaseCommand):
         # Fallback till automatisk generering om inga manuella koordinater finns
         return self._generate_coordinates_for_position("Vid nacken", axe_display_id)
 
-    def _create_stamp_images_with_manual_coordinates(self, axes):
+    def _create_stamp_images_with_manual_coordinates(self, axes, quiet=False):
         """Skapa StampImage-objekt med manuella koordinater för specifika yxor"""
         from axes.models import Stamp, AxeStamp, StampImage
         from decimal import Decimal
@@ -1466,7 +1489,8 @@ class Command(BaseCommand):
         for axe in axes:
             axe_display_id = axe.id  # Använd faktiska ID:n från databasen
             if axe_display_id in stamp_assignments:
-                self.stdout.write(f"  Bearbetar yxa {axe.display_id} ({axe.model})...")
+                if not quiet:
+                    self.stdout.write(f"  Bearbetar yxa {axe.display_id} ({axe.model})...")
 
                 # Hämta alla bilder för denna yxa
                 axe_images = AxeImage.objects.filter(axe=axe).order_by("order")
@@ -1483,9 +1507,10 @@ class Command(BaseCommand):
                         try:
                             stamp = Stamp.objects.get(name=actual_stamp_name)
                         except Stamp.DoesNotExist:
-                            self.stdout.write(
-                                f"    VARNING: Stämpel '{actual_stamp_name}' finns inte!"
-                            )
+                            if not quiet:
+                                self.stdout.write(
+                                    f"    VARNING: Stämpel '{actual_stamp_name}' finns inte!"
+                                )
                             continue
 
                         # Skapa AxeStamp-koppling
@@ -1535,18 +1560,21 @@ class Command(BaseCommand):
                             f"stamp_manual_{stamp_image.id}.jpg", demo_image, save=True
                         )
 
-                        self.stdout.write(
-                            f"    Skapade StampImage för {stamp_name} på bild {image_index+1} (x={x_coord}%, y={y_coord}%, w={width}%, h={height}%)"
-                        )
+                        if not quiet:
+                            self.stdout.write(
+                                f"    Skapade StampImage för {stamp_name} på bild {image_index+1} (x={x_coord}%, y={y_coord}%, w={width}%, h={height}%)"
+                            )
                         created_count += 1
                     else:
-                        self.stdout.write(
-                            f"    VARNING: Bildindex {image_index} finns inte för yxa {axe.display_id}"
-                        )
+                        if not quiet:
+                            self.stdout.write(
+                                f"    VARNING: Bildindex {image_index} finns inte för yxa {axe.display_id}"
+                            )
 
-        self.stdout.write(
-            f"Skapade {created_count} StampImage-objekt med manuella koordinater"
-        )
+        if not quiet:
+            self.stdout.write(
+                f"Skapade {created_count} StampImage-objekt med manuella koordinater"
+            )
 
     def _generate_coordinates_for_position(self, position, axe_display_id):
         """Generera realistiska koordinater baserat på position och yxa"""

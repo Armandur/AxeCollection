@@ -1125,7 +1125,7 @@ class GenerateTestDataCommandTest(TestCase):
     def test_generate_test_data_default(self):
         """Test att kommandot genererar testdata med standardvärden"""
         out = StringIO()
-        call_command("generate_test_data", stdout=out)
+        call_command("generate_test_data", quiet=True, stdout=out)
 
         output = out.getvalue()
         self.assertIn("Genererar testdata...", output)
@@ -1144,7 +1144,7 @@ class GenerateTestDataCommandTest(TestCase):
         axe = Axe.objects.create(manufacturer=manufacturer, model="Existing Axe")
 
         out = StringIO()
-        call_command("generate_test_data", clear=True, stdout=out)
+        call_command("generate_test_data", clear=True, quiet=True, stdout=out)
 
         output = out.getvalue()
         self.assertIn("Rensar befintlig data...", output)
@@ -1160,7 +1160,7 @@ class GenerateTestDataCommandTest(TestCase):
         """Test att kommandot använder anpassade antal"""
         out = StringIO()
         call_command(
-            "generate_test_data", axes=5, manufacturers=3, contacts=4, stdout=out
+            "generate_test_data", axes=5, manufacturers=3, contacts=4, quiet=True, stdout=out
         )
 
         output = out.getvalue()
@@ -1175,7 +1175,7 @@ class GenerateTestDataCommandTest(TestCase):
 
     def test_generate_test_data_creates_measurement_types(self):
         """Test att kommandot skapar måtttyper"""
-        call_command("generate_test_data")
+        call_command("generate_test_data", quiet=True)
 
         # Kontrollera att måtttyper har skapats
         measurement_types = MeasurementType.objects.all()
@@ -1190,7 +1190,7 @@ class GenerateTestDataCommandTest(TestCase):
 
     def test_generate_test_data_creates_measurement_templates(self):
         """Test att kommandot skapar måttmallar"""
-        call_command("generate_test_data")
+        call_command("generate_test_data", quiet=True)
 
         # Kontrollera att måttmallar har skapats
         templates = MeasurementTemplate.objects.all()
@@ -1215,7 +1215,7 @@ class GenerateTestDataCommandTest(TestCase):
 
     def test_generate_test_data_creates_transactions(self):
         """Test att kommandot skapar transaktioner"""
-        call_command("generate_test_data")
+        call_command("generate_test_data", quiet=True)
 
         # Kontrollera att transaktioner har skapats
         transactions = Transaction.objects.all()
@@ -1229,7 +1229,7 @@ class GenerateTestDataCommandTest(TestCase):
 
     def test_generate_test_data_creates_manufacturer_images(self):
         """Test att kommandot skapar tillverkarbilder"""
-        call_command("generate_test_data")
+        call_command("generate_test_data", quiet=True)
 
         # Kontrollera att tillverkarbilder har skapats
         manufacturer_images = ManufacturerImage.objects.all()
@@ -1241,7 +1241,7 @@ class GenerateTestDataCommandTest(TestCase):
 
     def test_generate_test_data_creates_axe_images(self):
         """Test att kommandot skapar yxbilder"""
-        call_command("generate_test_data")
+        call_command("generate_test_data", quiet=True)
 
         # Kontrollera att yxbilder har skapats
         axe_images = AxeImage.objects.all()
@@ -1253,7 +1253,7 @@ class GenerateTestDataCommandTest(TestCase):
 
     def test_generate_test_data_creates_settings(self):
         """Test att kommandot skapar standardinställningar"""
-        call_command("generate_test_data")
+        call_command("generate_test_data", quiet=True)
 
         # Kontrollera att Settings-objekt har skapats
         settings = Settings.objects.first()
@@ -1265,7 +1265,7 @@ class GenerateTestDataCommandTest(TestCase):
 
     def test_generate_test_data_creates_demo_user(self):
         """Test att kommandot skapar demo-användare"""
-        call_command("generate_test_data")
+        call_command("generate_test_data", quiet=True)
 
         # Kontrollera att demo-användare har skapats
         from django.contrib.auth.models import User
@@ -1278,7 +1278,7 @@ class GenerateTestDataCommandTest(TestCase):
         """Test att success-meddelandet har rätt format"""
         out = StringIO()
         call_command(
-            "generate_test_data", axes=10, manufacturers=5, contacts=8, stdout=out
+            "generate_test_data", axes=10, manufacturers=5, contacts=8, quiet=True, stdout=out
         )
 
         output = out.getvalue()
@@ -1290,7 +1290,7 @@ class GenerateTestDataCommandTest(TestCase):
 
     def test_generate_test_data_creates_manufacturers_with_country_codes(self):
         """Test att kommandot skapar tillverkare med landskoder"""
-        call_command("generate_test_data")
+        call_command("generate_test_data", quiet=True)
 
         # Kontrollera att tillverkare har skapats med landskoder
         manufacturers = Manufacturer.objects.all()
@@ -1309,7 +1309,7 @@ class GenerateTestDataCommandTest(TestCase):
 
     def test_generate_test_data_creates_specific_country_codes(self):
         """Test att kommandot skapar förväntade landskoder för specifika tillverkare"""
-        call_command("generate_test_data")
+        call_command("generate_test_data", quiet=True)
 
         # Kontrollera att specifika tillverkare har rätt landskoder
         expected_country_codes = {
@@ -1341,7 +1341,7 @@ class GenerateTestDataCommandTest(TestCase):
         self,
     ):
         """Test att hierarkiska tillverkare (med undertillverkare) skapas med landskoder"""
-        call_command("generate_test_data")
+        call_command("generate_test_data", quiet=True)
 
         # Hitta huvudtillverkare med undertillverkare
         main_manufacturers = Manufacturer.objects.filter(parent__isnull=True)
@@ -1364,7 +1364,7 @@ class GenerateTestDataCommandTest(TestCase):
 
     def test_generate_test_data_country_codes_are_consistent(self):
         """Test att landskoder är konsistenta inom hierarkier"""
-        call_command("generate_test_data")
+        call_command("generate_test_data", quiet=True)
 
         # Kontrollera att alla tillverkare med landskoder har giltiga koder
         manufacturers_with_codes = Manufacturer.objects.filter(
