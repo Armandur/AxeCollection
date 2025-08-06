@@ -65,10 +65,9 @@ class TraderaParserTest(TestCase):
                 item_id = self.parser.extract_item_id(url)
                 self.assertIsNone(item_id)
 
-    @patch('axes.utils.tradera_parser.requests.Session')
-    def test_parse_tradera_page_success(self, mock_session):
+    def test_parse_tradera_page_success(self):
         """Testa lyckad parsning av Tradera-sida"""
-        # Mock response
+        # Mock response med mer realistisk HTML
         mock_response = Mock()
         mock_response.content = """
         <html>
@@ -77,47 +76,46 @@ class TraderaParserTest(TestCase):
                 <h1>Test Auction Title</h1>
                 <div class="seller">Test Seller</div>
                 <div class="price">500 kr</div>
-                <img src="test1.jpg">
-                <img src="test2.jpg">
+                <img src="https://img.tradera.net/902/607442902_small-square.jpg">
+                <img src="https://img.tradera.net/902/607442902_medium-fit.jpg">
             </body>
         </html>
         """
         mock_response.raise_for_status.return_value = None
         
-        mock_session_instance = Mock()
-        mock_session_instance.get.return_value = mock_response
-        mock_session.return_value = mock_session_instance
-        
-        # Testa parsning
-        result = self.parser.parse_tradera_page("https://www.tradera.com/item/123/456/test")
-        
-        # Kontrollera resultat
-        self.assertIn('title', result)
-        self.assertIn('description', result)
-        self.assertIn('seller_alias', result)
-        self.assertIn('prices', result)
-        self.assertIn('item_id', result)
-        self.assertIn('images', result)
-        self.assertIn('auction_end_date', result)
-        self.assertIn('url', result)
-        
-        self.assertEqual(result['item_id'], '456')
-        self.assertEqual(result['url'], 'https://www.tradera.com/item/123/456/test')
+        # Mock session direkt på instansen
+        with patch.object(self.parser, 'session') as mock_session:
+            mock_session.get.return_value = mock_response
+            
+            # Testa parsning
+            result = self.parser.parse_tradera_page("https://www.tradera.com/item/123/456/test")
+            
+            # Kontrollera resultat
+            self.assertIn('title', result)
+            self.assertIn('description', result)
+            self.assertIn('seller_alias', result)
+            self.assertIn('prices', result)
+            self.assertIn('item_id', result)
+            self.assertIn('images', result)
+            self.assertIn('auction_end_date', result)
+            self.assertIn('url', result)
+            
+            self.assertEqual(result['item_id'], '456')
+            self.assertEqual(result['url'], 'https://www.tradera.com/item/123/456/test')
 
     def test_parse_tradera_page_invalid_url(self):
         """Testa parsning med ogiltig URL"""
         with self.assertRaises(ValueError):
             self.parser.parse_tradera_page("https://www.google.com")
 
-    @patch('axes.utils.tradera_parser.requests.Session')
-    def test_parse_tradera_page_request_error(self, mock_session):
+    def test_parse_tradera_page_request_error(self):
         """Testa parsning med nätverksfel"""
-        mock_session_instance = Mock()
-        mock_session_instance.get.side_effect = Exception("Network error")
-        mock_session.return_value = mock_session_instance
-        
-        with self.assertRaises(ValueError):
-            self.parser.parse_tradera_page("https://www.tradera.com/item/123/456/test")
+        # Mock session direkt på instansen
+        with patch.object(self.parser, 'session') as mock_session:
+            mock_session.get.side_effect = Exception("Network error")
+            
+            with self.assertRaises(ValueError):
+                self.parser.parse_tradera_page("https://www.tradera.com/item/123/456/test")
 
     def test_extract_title(self):
         """Testa extrahering av titel från HTML"""
@@ -172,17 +170,24 @@ class TraderaParserTest(TestCase):
         html = """
         <html>
             <body>
-                <img src="image1.jpg" alt="Test 1">
-                <img src="image2.jpg" alt="Test 2">
-                <img src="image3.jpg" alt="Test 3">
+                <img src="https://img.tradera.net/902/607442902_small-square.jpg">
+                <img src="https://img.tradera.net/902/607442902_medium-fit.jpg">
+                <img src="https://img.tradera.net/902/607442902_large-fit.jpg">
+                <img src="https://img.tradera.net/902/607442902_heroimages.jpg">
+                <img src="https://other-site.com/image.jpg">
+                <a href="https://img.tradera.net/902/607442902_small-square.jpg">Link</a>
             </body>
         </html>
         """
-        soup = BeautifulSoup(html, 'html.parser')
-        
+        soup = BeautifulSoup(html, "html.parser")
         images = self.parser._extract_images(soup)
-        self.assertIsInstance(images, list)
+        
+        # Kontrollera att vi fick bilder från tradera.net
         self.assertGreater(len(images), 0)
+        # Kontrollera att alla bilder är från tradera.net och konverterade till _images.jpg-format
+        for image in images:
+            self.assertIn("img.tradera.net", image)
+            self.assertIn("_images.jpg", image)
 
     def test_extract_auction_end_date(self):
         """Testa extrahering av auktionsslutdatum"""

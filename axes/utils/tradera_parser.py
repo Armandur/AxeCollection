@@ -606,99 +606,122 @@ class TraderaParser:
 
     def _parse_price(self, price_text: str) -> Optional[int]:
         """Parsa pris från text"""
-        # Leta efter siffror följt av "kr" eller siffror med mellanslag
-        price_patterns = [
-            r"(\d+)\s*kr",  # 199 kr
-            r"(\d+)\s*SEK",  # 199 SEK
-            r"(\d+)\s*:-",  # 199 :-
-            r"(\d{1,4})\s*(\d{1,3})",  # 1 999 (med mellanslag)
+        if not price_text:
+            return None
+            
+        # Rensa text och konvertera till lowercase
+        price_text = price_text.strip().lower()
+        
+        # Först, hitta alla tal i texten
+        number_patterns = [
+            r"(\d{1,3}(?:,\d{3})*)",  # 1,250 eller 2.500
+            r"(\d{1,3}(?:\.\d{3})*)",  # 2.500
+            r"(\d+)",  # Bara siffror
         ]
-
-        for pattern in price_patterns:
-            match = re.search(pattern, price_text, re.IGNORECASE)
-            if match:
+        
+        # Hitta alla möjliga tal
+        all_numbers = []
+        for pattern in number_patterns:
+            matches = re.finditer(pattern, price_text)
+            for match in matches:
+                num_str = match.group(1)
+                # Ta bort tusentalsseparatorer
+                num_str = num_str.replace(",", "").replace(".", "")
                 try:
-                    if len(match.groups()) == 2:
-                        # Kombinera två grupper (t.ex. "1 999")
-                        price_str = match.group(1) + match.group(2)
-                    else:
-                        price_str = match.group(1)
-
-                    price = int(price_str)
-                    # Kontrollera att priset är rimligt (10-50000 kr)
-                    if 10 <= price <= 50000:
-                        return price
+                    num = int(num_str)
+                    if 10 <= num <= 50000:
+                        all_numbers.append((num, match.start()))
                 except ValueError:
                     continue
-
+        
+        # Sortera efter position i texten (tidigast först)
+        all_numbers.sort(key=lambda x: x[1])
+        
+        # Hitta det största talet som följs av "kr", "sek", etc.
+        for num, pos in all_numbers:
+            # Kontrollera om talet följs av en valuta
+            remaining_text = price_text[pos + len(str(num)):].strip()
+            if any(currency in remaining_text for currency in ["kr", "sek", ":-"]):
+                return num
+        
+        # Om inget tal med valuta hittades, returnera det största talet
+        if all_numbers:
+            largest_num = max(all_numbers, key=lambda x: x[0])[0]
+            return largest_num
+        
         return None
 
     def _parse_price_with_currency(
         self, price_text: str, currency: str
     ) -> Optional[Dict]:
         """Parsa pris med valuta från text"""
+        if not price_text:
+            return None
+            
+        # Rensa text
+        price_text = price_text.strip()
+        
+        # Olika mönster beroende på valuta
         if currency == "SEK":
-            pattern = r"(\d+(?:,\d{3})*)\s*kr"
+            patterns = [
+                r"(\d+(?:,\d{3})*)\s*kr",  # 1,250 kr
+                r"(\d+(?:\.\d{3})*)\s*kr",  # 2.500 kr
+                r"(\d+)\s*kr",  # 500 kr
+                r"(\d+)\s*sek",  # 750 SEK
+            ]
+        elif currency == "EUR":
+            patterns = [
+                r"(\d+(?:,\d{3})*)\s*eur",  # 1,250 EUR
+                r"(\d+(?:\.\d{3})*)\s*eur",  # 2.500 EUR
+                r"(\d+)\s*eur",  # 500 EUR
+                r"(\d+)\s*€",  # 500 €
+                r"(\d+)",  # Bara siffror för EUR
+            ]
         else:
             return None
 
-        match = re.search(pattern, price_text, re.IGNORECASE)
-        if match:
-            try:
-                price_str = match.group(1).replace(",", "")
-                price = int(price_str)
-                # Kontrollera att priset är rimligt (1-50000)
-                if 1 <= price <= 50000:
-                    return {"amount": price, "currency": currency}
-            except ValueError:
-                pass
+        for pattern in patterns:
+            match = re.search(pattern, price_text, re.IGNORECASE)
+            if match:
+                try:
+                    price_str = match.group(1)
+                    # Ta bort tusentalsseparatorer
+                    price_str = price_str.replace(",", "").replace(".", "")
+                    price = int(price_str)
+                    
+                    # Kontrollera att priset är rimligt (1-50000)
+                    if 1 <= price <= 50000:
+                        return {"amount": price, "currency": currency}
+                except ValueError:
+                    continue
 
         return None
 
     def _extract_images(self, soup: BeautifulSoup) -> List[str]:
         images = []
-        # Hämta alla img-taggar med src eller data-src som innehåller tradera.net
-        img_selectors = ['img[src*="tradera.net"]', 'img[data-src*="tradera.net"]']
+        
+        # Hitta alla img-taggar med tradera.net URLs
+        for element in soup.find_all("img"):
+            src = element.get("src") or element.get("data-src")
+            if src and "img.tradera.net" in src:
+                # Normalisera URL
+                if src.startswith("//"):
+                    src = "https:" + src
+                elif src.startswith("/"):
+                    src = "https://www.tradera.com" + src
 
-        # Hitta auktionens ID för att filtrera bilder
-        auction_id = None
-        for element in soup.find_all(["img", "a"]):
-            src = element.get("src") or element.get("href") or ""
-            if "img.tradera.net" in src:
-                # Extrahera ID från URL (t.ex. /902/ från /902/607442902_...)
-                match = re.search(r"/(\d+)/\d+_", src)
-                if match:
-                    auction_id = match.group(1)
-                    break
-
-        for selector in img_selectors:
-            elements = soup.select(selector)
-            for element in elements:
-                src = element.get("src") or element.get("data-src")
-                if src:
-                    if src.startswith("//"):
-                        src = "https:" + src
-                    elif src.startswith("/"):
-                        src = "https://www.tradera.com" + src
-
-                    # Konvertera till /images/-formatet om det är en Tradera-bild
-                    if "img.tradera.net" in src:
-                        # Byt ut alla format mot /images/
-                        src = re.sub(
-                            r"/(small-square|medium-fit|large-fit|heroimages)/",
-                            "/images/",
-                            src,
-                        )
-
-                        # Ta bara med om det nu är en /images/-URL och tillhör rätt auktion
-                        if "/images/" in src:
-                            # Filtrera så att endast bilder från aktuell auktion tas med
-                            if auction_id and f"/{auction_id}/" in src:
-                                images.append(src)
-                            elif (
-                                not auction_id
-                            ):  # Fallback om vi inte hittar auktion-ID
-                                images.append(src)
+                # Konvertera till /images/-formatet
+                if "img.tradera.net" in src:
+                    # Byt ut alla format mot /images/
+                    src = re.sub(
+                        r"_(small-square|medium-fit|large-fit|heroimages)\.jpg",
+                        "_images.jpg",
+                        src,
+                    )
+                    
+                    # Lägg till om det nu är en _images.jpg-URL
+                    if "_images.jpg" in src:
+                        images.append(src)
 
         return list(set(images))
 
