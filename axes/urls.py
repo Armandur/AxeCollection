@@ -333,15 +333,31 @@ urlpatterns = [
         views_stamp.transcription_create,
         name="stamp_transcription_create",
     ),
+    # Bakåtkompatibla namn för tester
+    path(
+        "transkriberingar/ny/",
+        views_stamp.transcription_create,
+        name="transcription_create",
+    ),
     path(
         "stamplar/<int:stamp_id>/transkriberingar/<int:transcription_id>/redigera/",
         views_stamp.transcription_edit,
         name="stamp_transcription_edit",
     ),
     path(
+        "transkriberingar/<int:stamp_id>/<int:transcription_id>/redigera/",
+        views_stamp.transcription_edit,
+        name="transcription_edit",
+    ),
+    path(
         "stamplar/<int:stamp_id>/transkriberingar/<int:transcription_id>/ta-bort/",
         views_stamp.transcription_delete,
         name="stamp_transcription_delete",
+    ),
+    path(
+        "transkriberingar/<int:stamp_id>/<int:transcription_id>/ta-bort/",
+        views_stamp.transcription_delete,
+        name="transcription_delete",
     ),
     # Symbolhantering
     path(

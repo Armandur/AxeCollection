@@ -1,0 +1,33 @@
+{% extends 'axes/base.html' %}
+{% block content %}
+<div class="container py-4">
+  <h1>Redigera symbol</h1>
+  {% if errors %}
+    <div class="alert alert-danger">error</div>
+  {% endif %}
+  <form method="post">
+    {% csrf_token %}
+    <div class="mb-3">
+      <label class="form-label">Namn</label>
+      <input type="text" name="name" class="form-control" value="{{ symbol.name }}" />
+    </div>
+    <div class="mb-3">
+      <label class="form-label">Beskrivning</label>
+      <textarea name="description" class="form-control">{{ symbol.description }}</textarea>
+    </div>
+    <div class="mb-3">
+      <label class="form-label">Piktogram</label>
+      <input type="text" name="pictogram" class="form-control" value="{{ symbol.pictogram }}" />
+    </div>
+    <div class="mb-3">
+      <label class="form-label">Symboltyp</label>
+      <select name="symbol_type" class="form-select">
+        {% for value, label in symbol_types %}
+          <option value="{{ value }}" {% if symbol.symbol_type == value %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <button class="btn btn-primary" type="submit">Spara</button>
+  </form>
+</div>
+{% endblock %}

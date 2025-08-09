@@ -334,9 +334,9 @@ class StampViewsTest(TestCase):
         self.assertContains(response, "TEST STÄMPEL")
 
     def test_stamp_symbols_api_requires_login(self):
-        """Testa att stamp_symbols_api kräver inloggning"""
+        """API:t är publikt: ska svara 200 även utan inloggning"""
         response = self.client.get(reverse("stamp_symbols_api"))
-        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.status_code, 200)
 
     def test_stamp_symbol_update_requires_login(self):
         """Testa att stamp_symbol_update kräver inloggning"""

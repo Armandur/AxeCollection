@@ -968,7 +968,8 @@ def _rename_axe_images_for_edit(axe):
 @login_required
 def axe_edit(request, pk):
     axe = get_object_or_404(
-        Axe.objects.prefetch_related("images__stamp_marks__stamp__manufacturer"), pk=pk
+        Axe.objects.prefetch_related("images__stamp_markings__stamp__manufacturer"),
+        pk=pk,
     )
     if request.method == "POST":
         form = AxeForm(request.POST, request.FILES, instance=axe)
