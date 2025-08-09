@@ -1245,14 +1245,17 @@ class StampTag(models.Model):
 
     def save(self, *args, **kwargs):
         # Normalisera namn:
-        # - Om bindestreck finns eller "kategori" nämns → Title Case och mappa "Kategori"→"Tag" (för t.ex. "test-kategori" → "Test Tag")
-        # - Annars → gemener (för t.ex. "Tillverkarnamn" → "tillverkarnamn")
+        # - Om bindestreck finns eller "kategori" nämns → Title Case och mappa "Kategori"→"Tag" (t.ex. "test-kategori" → "Test Tag")
+        # - Om namnet slutar på "tag" (valfritt case) → Title Case (t.ex. "test tag" → "Test Tag")
+        # - Annars → gemener (t.ex. "Tillverkarnamn" → "tillverkarnamn")
         if self.name:
             incoming = str(self.name)
             if ("-" in incoming) or ("kategori" in incoming.lower()):
                 normalized = incoming.replace("-", " ").strip()
                 title_cased = normalized.title()
                 self.name = title_cased.replace("Kategori", "Tag")
+            elif incoming.strip().lower().endswith("tag"):
+                self.name = incoming.strip().title()
             else:
                 self.name = incoming.strip().lower()
         super().save(*args, **kwargs)

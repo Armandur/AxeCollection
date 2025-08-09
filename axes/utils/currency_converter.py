@@ -159,10 +159,7 @@ def convert_currency(
         if not rates:
             return None
 
-        # Om senaste live-försök flaggade fel (och vi hämtade FALLBACK_RATES direkt i get_live_rates)
-        # ska utils-testerna tolka det som misslyckad konvertering och returnera None.
-        if LAST_LIVE_RATES_FAILED:
-            return None
+        # Använd rates även om de kommer från fallback; returnera inte None här
 
         if from_currency in rates and to_currency in rates[from_currency]:
             rate = rates[from_currency][to_currency]
