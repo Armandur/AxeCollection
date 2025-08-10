@@ -908,6 +908,8 @@ def mark_axe_image_as_stamp(request, axe_id, image_id):
                 stamp_image.comment = comment
                 stamp_image.save()
 
+            if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+                return JsonResponse({"success": True})
             messages.success(request, f"Bild markerad som stämpel: {stamp.name}")
             return redirect("axe_detail", pk=axe_id)
 
