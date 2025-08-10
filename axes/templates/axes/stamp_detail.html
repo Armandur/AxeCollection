@@ -295,7 +295,7 @@ function toggleStampModalView() {
             // Servern bekräftade ändringen - inget mer att göra visuellt
         } else {
             console.error('Error updating primary image:', data.error);
-            alert('Ett fel uppstod vid uppdatering av huvudbild: ' + (data.error || 'Okänt fel'));
+            if (window.showToast) showToast('Ett fel uppstod vid uppdatering av huvudbild: ' + (data.error || 'Okänt fel'), 'danger'); else alert('Ett fel uppstod vid uppdatering av huvudbild: ' + (data.error || 'Okänt fel'));
             
             // Återställ visuell tillstånd vid fel
             if (clickedStar) {
@@ -309,7 +309,7 @@ function toggleStampModalView() {
     })
     .catch(error => {
         console.error('Error:', error);
-        alert('Ett fel uppstod vid uppdatering av huvudbild: ' + error.message);
+        if (window.showToast) showToast('Ett fel uppstod vid uppdatering av huvudbild: ' + error.message, 'danger'); else alert('Ett fel uppstod vid uppdatering av huvudbild: ' + error.message);
         
         // Återställ visuell tillstånd vid fel
         if (clickedStar) {

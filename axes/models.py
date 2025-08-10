@@ -1727,6 +1727,10 @@ class StampSymbol(models.Model):
     ]
 
     name = models.CharField(max_length=100, verbose_name="Namn")
+
+    # Kategorisering av symboler (separat från symbol_type)
+    # Frivillig tills vidare; standardkategori "Övrigt" kan skapas via init-kommando
+
     symbol_type = models.CharField(
         max_length=20,
         choices=SYMBOL_TYPE_CHOICES,
@@ -1745,6 +1749,15 @@ class StampSymbol(models.Model):
         default=False,
         verbose_name="Fördefinierad",
         help_text="Om symbolen är fördefinierad eller skapad av användare",
+    )
+    # Frivillig kategori (separat från symbol_type)
+    category = models.ForeignKey(
+        "SymbolCategory",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="symbols",
+        verbose_name="Kategori",
     )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -1770,4 +1783,23 @@ class StampSymbol(models.Model):
         """Returnerar visningsnamn med piktogram om det finns"""
         if self.pictogram:
             return f"{self.pictogram} {self.name}"
+        return self.name
+
+
+class SymbolCategory(models.Model):
+    """Kategorier för symbolpiktogram (t.ex. Övrigt, Geometri, Djur)."""
+
+    name = models.CharField(max_length=100, unique=True, verbose_name="Namn")
+    description = models.TextField(blank=True, null=True, verbose_name="Beskrivning")
+    sort_order = models.IntegerField(default=0, verbose_name="Sorteringsordning")
+    is_active = models.BooleanField(default=True, verbose_name="Aktiv")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["sort_order", "name"]
+        verbose_name = "Symbolkategori"
+        verbose_name_plural = "Symbolkategorier"
+
+    def __str__(self):
         return self.name

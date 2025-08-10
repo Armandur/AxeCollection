@@ -1,0 +1,61 @@
+<div class="modal fade" id="globalConfirmModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="globalConfirmTitle"><i class="bi bi-question-circle me-2"></i>Bekräfta</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Stäng"></button>
+      </div>
+      <div class="modal-body" id="globalConfirmBody">
+        Är du säker?
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" id="globalConfirmCancel">Avbryt</button>
+        <button type="button" class="btn btn-danger" id="globalConfirmOk"><i class="bi bi-check2 me-1"></i>Ja</button>
+      </div>
+    </div>
+  </div>
+  </div>
+
+<script>
+(function(){
+  let resolver = null;
+  const modalEl = document.getElementById('globalConfirmModal');
+  const titleEl = document.getElementById('globalConfirmTitle');
+  const bodyEl = document.getElementById('globalConfirmBody');
+  const okBtn = document.getElementById('globalConfirmOk');
+  const cancelBtn = document.getElementById('globalConfirmCancel');
+  const modal = modalEl ? new bootstrap.Modal(modalEl) : null;
+
+  if (modalEl) {
+    modalEl.addEventListener('hidden.bs.modal', function(){
+      if (resolver) { resolver(false); resolver = null; }
+    });
+  }
+
+  window.showConfirm = function(opts) {
+    if (!modalEl || !modal) {
+      // Fallback
+      return Promise.resolve(window.confirm(opts && opts.message ? opts.message : 'Bekräfta?'));
+    }
+    const { title, message, confirmText, cancelText, confirmLevel } = opts || {};
+    titleEl.innerHTML = (title ? title : '<i class="bi bi-question-circle me-2"></i>Bekräfta');
+    bodyEl.innerHTML = message ? message : 'Är du säker?';
+    okBtn.textContent = confirmText ? confirmText : 'Ja';
+    cancelBtn.textContent = cancelText ? cancelText : 'Avbryt';
+    // Sätt färg på OK-knappen
+    okBtn.className = 'btn ' + (confirmLevel ? ('btn-' + confirmLevel) : 'btn-danger');
+
+    // Rensa tidigare click-handlers
+    const newOkBtn = okBtn.cloneNode(true);
+    okBtn.parentNode.replaceChild(newOkBtn, okBtn);
+    const finalOkBtn = document.getElementById('globalConfirmOk');
+
+    return new Promise((resolve) => {
+      resolver = resolve;
+      finalOkBtn.addEventListener('click', function(){ if (resolver) { resolver(true); resolver = null; } modal.hide(); });
+      modal.show();
+    });
+  }
+})();
+</script>
+

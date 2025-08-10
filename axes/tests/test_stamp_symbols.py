@@ -179,7 +179,7 @@ class StampSymbolViewsTest(TestCase):
         url = reverse("stamp_symbol_update", kwargs={"symbol_id": self.symbol.id})
         data = {
             "name": "Uppdaterad Symbol",
-            "symbol_type": "star",
+            "symbol_type": "star",  # Ignoreras numera av vyn
             "pictogram": "⭐",
             "description": "Uppdaterad beskrivning",
         }
@@ -191,7 +191,8 @@ class StampSymbolViewsTest(TestCase):
         # Verifiera att symbolen uppdaterades
         self.symbol.refresh_from_db()
         self.assertEqual(self.symbol.name, "Uppdaterad Symbol")
-        self.assertEqual(self.symbol.symbol_type, "star")
+        # symbol_type uppdateras inte längre via UI; behålls som tidigare
+        self.assertEqual(self.symbol.symbol_type, "crown")
         self.assertEqual(self.symbol.pictogram, "⭐")
         self.assertEqual(self.symbol.description, "Uppdaterad beskrivning")
 
@@ -236,8 +237,8 @@ class StampSymbolViewsTest(TestCase):
         self.assertEqual(response.status_code, 302)
         self.assertEqual(StampSymbol.objects.filter(id=self.symbol.id).count(), 0)
 
-    def test_stamp_symbol_delete_predefined_protection(self):
-        """Testa att fördefinierade symboler skyddas från borttagning"""
+    def test_stamp_symbol_delete_predefined_allowed(self):
+        """Fördefinierade symboler får tas bort (policy: användaren kan städa frödata)"""
         # Skapa fördefinierad symbol
         predefined_symbol = StampSymbol.objects.create(
             name="Fördefinierad", symbol_type="crown", is_predefined=True
@@ -248,9 +249,9 @@ class StampSymbolViewsTest(TestCase):
         url = reverse("stamp_symbol_delete", kwargs={"symbol_id": predefined_symbol.id})
         response = self.client.post(url)
 
-        # Borde inte kunna tas bort
-        self.assertEqual(response.status_code, 403)
-        self.assertEqual(StampSymbol.objects.filter(id=predefined_symbol.id).count(), 1)
+        # Ska kunna tas bort
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(StampSymbol.objects.filter(id=predefined_symbol.id).count(), 0)
 
     def test_stamp_symbol_access_permissions(self):
         """Testa åtkomstbehörigheter för symbolhantering"""
@@ -503,16 +504,14 @@ class StampSymbolIntegrationTest(TestCase):
         self.assertIn("Min Symbol", names)
         self.assertTrue(any(not item["is_predefined"] for item in data))
 
-        # Testa att fördefinierade symboler skyddas
+        # Policy: fördefinierade symboler får tas bort
         self.client.login(username="testuser", password="testpass123")
 
         predefined = created_predefined[0]
         delete_url = reverse("stamp_symbol_delete", kwargs={"symbol_id": predefined.id})
         response = self.client.post(delete_url)
-
-        # Borde inte kunna tas bort
-        self.assertEqual(response.status_code, 403)
-        self.assertTrue(StampSymbol.objects.filter(id=predefined.id).exists())
+        self.assertEqual(response.status_code, 302)
+        self.assertFalse(StampSymbol.objects.filter(id=predefined.id).exists())
 
         # Men användardefinierade borde kunna tas bort
         delete_url = reverse(

@@ -132,11 +132,9 @@
                  <li class="nav-item">
                     <a class="nav-link" href="{% url 'manufacturer_list' %}">Tillverkare</a>
                 </li>
-                {% if user.is_authenticated %}
                 <li class="nav-item">
                     <a class="nav-link" href="{% url 'stamp_list' %}">Stämplar</a>
                 </li>
-                {% endif %}
                 <li class="nav-item">
                     <a class="nav-link" href="{% url 'statistics_dashboard' %}">Statistik</a>
                 </li>
@@ -203,6 +201,9 @@
 <div class="container mt-4">
     {% block content %}{% endblock %}
 </div>
+
+{% include 'axes/_toast.html' %}
+{% include 'axes/_confirm.html' %}
 
 <!-- Footer -->
 <footer class="footer mt-5 py-4 border-top">

@@ -84,8 +84,7 @@
                                     <button type="submit" name="action" value="update" class="btn btn-primary">
                                         <i class="fas fa-save"></i> Uppdatera markering
                                     </button>
-                                    <button type="submit" name="action" value="delete" class="btn btn-danger"
-                                            onclick="return confirm('Är du säker på att du vill ta bort stämpelmarkeringen?')">
+                                    <button type="button" class="btn btn-danger" onclick="showDeleteMarkModal()">
                                         <i class="fas fa-trash"></i> Ta bort markering
                                     </button>
                                     <a href="{% url 'axe_detail' axe.id %}" class="btn btn-outline-secondary">
@@ -130,3 +129,42 @@
     </div>
 </div>
 {% endblock %} 
+
+{% block scripts %}
+<script>
+function showDeleteMarkModal() {
+  const body = document.body;
+  const id = 'confirmDeleteMarkModal';
+  document.getElementById(id)?.remove();
+  body.insertAdjacentHTML('beforeend', `
+  <div class="modal fade" id="${id}" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title"><i class="bi bi-trash me-2"></i>Ta bort stämpelmarkering</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="alert alert-warning mb-0"><i class="bi bi-exclamation-triangle me-2"></i>Är du säker på att du vill ta bort denna markering?</div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Avbryt</button>
+          <button type="button" class="btn btn-danger" id="confirmDeleteMarkBtn"><i class="bi bi-trash me-1"></i>Ta bort</button>
+        </div>
+      </div>
+    </div>
+  </div>`);
+  const m = new bootstrap.Modal(document.getElementById(id));
+  m.show();
+  document.getElementById('confirmDeleteMarkBtn').addEventListener('click', function() {
+    const form = document.getElementById('editStampForm');
+    const hidden = document.createElement('input');
+    hidden.type = 'hidden';
+    hidden.name = 'action';
+    hidden.value = 'delete';
+    form.appendChild(hidden);
+    form.submit();
+  });
+}
+</script>
+{% endblock %}

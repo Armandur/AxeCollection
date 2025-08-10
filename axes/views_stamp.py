@@ -17,6 +17,7 @@ from .models import (
     Manufacturer,
     AxeImage,
     StampSymbol,
+    SymbolCategory,
 )
 from .forms import (
     StampForm,
@@ -1514,15 +1515,29 @@ def stamp_symbols_api(request):
     Oinloggad: returnera ren lista (bakåtkompatibel med API-testerna).
     Inloggad: returnera {"symbols": [...]} (för vy-testerna/UI).
     """
-    queryset = StampSymbol.objects.all().order_by("symbol_type", "name")
+    queryset = (
+        StampSymbol.objects.select_related("category")
+        .all()
+        .order_by("category__sort_order", "category__name", "name")
+    )
 
     search = request.GET.get("search")
     if search:
         queryset = queryset.filter(name__icontains=search)
 
+    # Bakåtkompatibel filtrering på "type" lämnas orörd, men UI använder kategorier
     type_filter = request.GET.get("type")
     if type_filter:
         queryset = queryset.filter(symbol_type=type_filter)
+
+    # Ny filtrering på kategori (id eller namn)
+    category_filter = request.GET.get("category") or request.GET.get("category_id")
+    if category_filter:
+        try:
+            cat_id = int(category_filter)
+            queryset = queryset.filter(category_id=cat_id)
+        except (TypeError, ValueError):
+            queryset = queryset.filter(category__name__iexact=category_filter)
 
     predefined = request.GET.get("predefined")
     if predefined is not None:
@@ -1539,6 +1554,8 @@ def stamp_symbols_api(request):
             "description": s.description,
             "pictogram": s.pictogram,
             "is_predefined": s.is_predefined,
+            "category": (s.category.name if s.category else None),
+            "category_id": (s.category.id if s.category else None),
         }
         for s in queryset
     ]
@@ -1567,17 +1584,16 @@ def stamp_symbol_update(request, symbol_id):
 
     # POST
     name = request.POST.get("name", "").strip()
-    symbol_type = request.POST.get("symbol_type", "").strip()
     pictogram = request.POST.get("pictogram", "").strip()
     description = request.POST.get("description", "").strip()
+    category_id = request.POST.get("category")
 
     errors = []
     if not name:
         errors.append("error: name required")
-    valid_types = {choice[0] for choice in StampSymbol.SYMBOL_TYPE_CHOICES}
-    # Tillåt okända typer: behåll befintlig typ om ogiltig skickas in
-
     if errors:
+        if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+            return JsonResponse({"success": False, "errors": errors}, status=400)
         return render(
             request,
             "axes/stamp_symbol_update.html",
@@ -1590,12 +1606,19 @@ def stamp_symbol_update(request, symbol_id):
         )
 
     symbol.name = name
-    # Uppdatera endast symbol_type om det är giltigt, annars behåll
-    if symbol_type in valid_types:
-        symbol.symbol_type = symbol_type
     symbol.pictogram = pictogram
     symbol.description = description
+    # Uppdatera kategori
+    if category_id:
+        try:
+            symbol.category = SymbolCategory.objects.get(id=category_id)
+        except SymbolCategory.DoesNotExist:
+            pass
+    else:
+        symbol.category = None
     symbol.save()
+    if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+        return JsonResponse({"success": True, "id": symbol.id})
     if request.user.is_authenticated and request.user.is_staff:
         return redirect("stamp_symbols_manage")
     return render(
@@ -1614,49 +1637,224 @@ def stamp_symbol_delete(request, symbol_id):
         return render(request, "axes/stamp_symbol_delete.html", {"symbol": symbol})
 
     # POST
-    if symbol.is_predefined:
-        return HttpResponse(status=403)
+    # Tillåt borttagning även om symbolen är fördefinierad (användaren kan städa bort frödata)
 
     # Kontrollera användning i transkriberingar
     from axes.models import StampTranscription
 
     if StampTranscription.objects.filter(symbols=symbol).exists():
-        return JsonResponse(
-            {"error": "Kan inte ta bort symbol som används i transkriberingar"},
-            status=400,
+        if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+            return JsonResponse(
+                {
+                    "success": False,
+                    "error": "Kan inte ta bort symbol som används i transkriberingar",
+                },
+                status=400,
+            )
+        messages.error(
+            request, "Kan inte ta bort symbol som används i transkriberingar"
         )
+        return redirect("stamp_symbols_manage")
 
     symbol.delete()
+    if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+        return JsonResponse({"success": True})
+    return redirect("stamp_symbols_manage")
+
+
+@login_required
+def stamp_symbol_create(request):
+    """Skapa ny stämpelsymbol (AJAX eller vanlig POST)."""
+    if request.method != "POST":
+        return JsonResponse(
+            {"success": False, "error": "Endast POST tillåtet"}, status=405
+        )
+
+    name = request.POST.get("name", "").strip()
+    pictogram = request.POST.get("pictogram", "").strip()
+    description = request.POST.get("description", "").strip()
+    category_id = request.POST.get("category")
+
+    errors = []
+    if not name:
+        errors.append("error: name required")
+
+    if errors:
+        if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+            return JsonResponse({"success": False, "errors": errors}, status=400)
+        messages.error(request, " ".join(errors))
+        return redirect("stamp_symbols_manage")
+
+    # Skapa eller hämta befintlig (case-insensitive)
+    # Matcha på namn (typ ignoreras nu i UI – defaultas till 'other')
+    existing = StampSymbol.objects.filter(name__iexact=name).order_by("id").first()
+    created = False
+    if existing:
+        symbol = existing
+        # Uppdatera valfria fält
+        symbol.pictogram = pictogram
+        symbol.description = description
+        if category_id:
+            try:
+                symbol.category = SymbolCategory.objects.get(id=category_id)
+            except SymbolCategory.DoesNotExist:
+                pass
+        symbol.save()
+    else:
+        category = None
+        if category_id:
+            try:
+                category = SymbolCategory.objects.get(id=category_id)
+            except SymbolCategory.DoesNotExist:
+                category = None
+        symbol = StampSymbol.objects.create(
+            name=name,
+            symbol_type="other",
+            pictogram=pictogram or None,
+            description=description or None,
+            is_predefined=False,
+            category=category,
+        )
+        created = True
+
+    if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+        return JsonResponse({"success": True, "id": symbol.id, "created": created})
     return redirect("stamp_symbols_manage")
 
 
 @login_required
 def stamp_symbols_manage(request):
     """Hantera symbolpiktogrammen"""
-    symbols = StampSymbol.objects.all().order_by("symbol_type", "name")
+    symbols = (
+        StampSymbol.objects.select_related("category")
+        .all()
+        .order_by("category__sort_order", "category__name", "name")
+    )
 
     # Gruppera symboler efter typ
-    symbols_by_type = {}
+    symbols_by_category = {}
     total_symbols = 0
     symbols_with_pictograms = 0
 
     for symbol in symbols:
-        symbol_type = symbol.get_symbol_type_display()
-        if symbol_type not in symbols_by_type:
-            symbols_by_type[symbol_type] = []
-        symbols_by_type[symbol_type].append(symbol)
+        cat_name = symbol.category.name if symbol.category else "Övrigt"
+        if cat_name not in symbols_by_category:
+            symbols_by_category[cat_name] = []
+        symbols_by_category[cat_name].append(symbol)
         total_symbols += 1
         if symbol.pictogram:
             symbols_with_pictograms += 1
 
+    categories = SymbolCategory.objects.filter(is_active=True).order_by(
+        "sort_order", "name"
+    )
+
     context = {
         "symbols": list(symbols),
-        "symbols_by_type": symbols_by_type,
-        "symbol_types": StampSymbol.SYMBOL_TYPE_CHOICES,
+        "symbols_by_category": symbols_by_category,
+        "categories": categories,
         "total_symbols": total_symbols,
         "symbols_with_pictograms": symbols_with_pictograms,
-        "symbol_types_count": len(symbols_by_type),
+        "categories_count": len(symbols_by_category),
         "page_title": "Hantera stämpelsymboler",
     }
 
     return render(request, "axes/stamp_symbols_manage.html", context)
+
+
+@login_required
+def symbol_category_create(request):
+    """Skapa ny symbolkategori"""
+    if request.method != "POST":
+        return JsonResponse(
+            {"success": False, "error": "Endast POST tillåtet"}, status=405
+        )
+
+    name = (request.POST.get("name") or "").strip()
+    description = (request.POST.get("description") or "").strip() or None
+    sort_order = request.POST.get("sort_order")
+    try:
+        sort_order = (
+            int(sort_order) if sort_order is not None and sort_order != "" else 0
+        )
+    except ValueError:
+        sort_order = 0
+
+    if not name:
+        return JsonResponse({"success": False, "error": "Namn krävs"}, status=400)
+
+    category, created = SymbolCategory.objects.get_or_create(
+        name=name,
+        defaults={
+            "description": description,
+            "sort_order": sort_order,
+            "is_active": True,
+        },
+    )
+
+    return JsonResponse(
+        {
+            "success": True,
+            "id": category.id,
+            "created": created,
+            "name": category.name,
+        }
+    )
+
+
+@login_required
+def symbol_category_update(request, category_id):
+    """Uppdatera en symbolkategori"""
+    category = get_object_or_404(SymbolCategory, id=category_id)
+    if request.method != "POST":
+        return JsonResponse(
+            {"success": False, "error": "Endast POST tillåtet"}, status=405
+        )
+
+    name = (request.POST.get("name") or category.name).strip()
+    description = (
+        request.POST.get("description") or category.description or ""
+    ).strip() or None
+    sort_order = request.POST.get("sort_order")
+    is_active = request.POST.get("is_active")
+
+    if not name:
+        return JsonResponse({"success": False, "error": "Namn krävs"}, status=400)
+
+    category.name = name
+    category.description = description
+    try:
+        if sort_order is not None and sort_order != "":
+            category.sort_order = int(sort_order)
+    except ValueError:
+        pass
+    if is_active is not None:
+        category.is_active = str(is_active).lower() in ("1", "true", "on", "yes")
+    category.save()
+
+    return JsonResponse({"success": True})
+
+
+@login_required
+def symbol_category_delete(request, category_id):
+    """Ta bort symbolkategori. Tilldela om symboler till standardkategori 'Övrigt'"""
+    category = get_object_or_404(SymbolCategory, id=category_id)
+    if request.method != "POST":
+        return JsonResponse(
+            {"success": False, "error": "Endast POST tillåtet"}, status=405
+        )
+
+    # Hämta/Skapa standardkategori "Övrigt"
+    other_cat, _ = SymbolCategory.objects.get_or_create(
+        name="Övrigt", defaults={"description": "Standardkategori"}
+    )
+
+    # Flytta symboler från denna kategori till "Övrigt" (eller None om samma)
+    if other_cat.id != category.id:
+        StampSymbol.objects.filter(category=category).update(category=other_cat)
+    else:
+        # Om man försöker ta bort "Övrigt", flytta symboler till None
+        StampSymbol.objects.filter(category=category).update(category=None)
+
+    category.delete()
+    return JsonResponse({"success": True})

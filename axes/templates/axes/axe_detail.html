@@ -851,11 +851,11 @@ document.addEventListener('DOMContentLoaded', function() {
                         } else if (data.error) {
                             errorMsg += '\n' + data.error;
                         }
-                        alert(errorMsg);
+                        if (window.showToast) showToast(errorMsg, 'danger'); else alert(errorMsg);
                     }
                 })
                 .catch(() => {
-                    alert('Något gick fel vid uppdatering.');
+                    if (window.showToast) showToast('Något gick fel vid uppdatering.', 'danger'); else alert('Något gick fel vid uppdatering.');
                 });
             } else {
                 // Skicka som vanligt (lägg till ny transaktion)
@@ -1089,7 +1089,7 @@ function showRemoveStampModal(url) {
     })
     .catch(error => {
         console.error('Fel vid laddning av modal:', error);
-        alert('Ett fel uppstod vid laddning av bekräftelsedialog.');
+        if (window.showToast) showToast('Ett fel uppstod vid laddning av bekräftelsedialog.', 'danger'); else alert('Ett fel uppstod vid laddning av bekräftelsedialog.');
     });
 }
 
@@ -1107,7 +1107,7 @@ function showUnmarkStampModal(url) {
     })
     .catch(error => {
         console.error('Fel vid laddning av modal:', error);
-        alert('Ett fel uppstod vid laddning av bekräftelsedialog.');
+        if (window.showToast) showToast('Ett fel uppstod vid laddning av bekräftelsedialog.', 'danger'); else alert('Ett fel uppstod vid laddning av bekräftelsedialog.');
     });
 }
 
@@ -1134,12 +1134,12 @@ document.addEventListener('DOMContentLoaded', function() {
                     modal.hide();
                     location.reload();
                 } else {
-                    alert('Ett fel uppstod: ' + data.message);
+                    if (window.showToast) showToast('Ett fel uppstod: ' + (data.message || 'Okänt fel'), 'danger'); else alert('Ett fel uppstod: ' + data.message);
                 }
             })
             .catch(error => {
                 console.error('Fel vid submit:', error);
-                alert('Ett fel uppstod vid borttagning av stämpel.');
+                if (window.showToast) showToast('Ett fel uppstod vid borttagning av stämpel.', 'danger'); else alert('Ett fel uppstod vid borttagning av stämpel.');
             });
         }
         
@@ -1164,12 +1164,12 @@ document.addEventListener('DOMContentLoaded', function() {
                     modal.hide();
                     location.reload();
                 } else {
-                    alert('Ett fel uppstod: ' + data.message);
+                    if (window.showToast) showToast('Ett fel uppstod: ' + (data.message || 'Okänt fel'), 'danger'); else alert('Ett fel uppstod: ' + data.message);
                 }
             })
             .catch(error => {
                 console.error('Fel vid submit:', error);
-                alert('Ett fel uppstod vid borttagning av stämpelmarkering.');
+                if (window.showToast) showToast('Ett fel uppstod vid borttagning av stämpelmarkering.', 'danger'); else alert('Ett fel uppstod vid borttagning av stämpelmarkering.');
             });
         }
     });

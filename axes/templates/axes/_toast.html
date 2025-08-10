@@ -1,0 +1,29 @@
+<div class="position-fixed bottom-0 end-0 p-3" style="z-index: 1080">
+  <div id="globalToast" class="toast align-items-center text-bg-{{ level|default:'danger' }} border-0" role="alert" aria-live="assertive" aria-atomic="true">
+    <div class="d-flex">
+      <div class="toast-body" id="globalToastBody">
+        {{ message|default:'' }}
+      </div>
+      <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Stäng"></button>
+    </div>
+  </div>
+</div>
+
+<script>
+// Enkel global toast-API
+window.showToast = function(message, level = 'danger', autohideMs = 4000) {
+  try {
+    const toastEl = document.getElementById('globalToast');
+    const bodyEl = document.getElementById('globalToastBody');
+    if (!toastEl || !bodyEl) return alert(message);
+    bodyEl.textContent = message;
+    // Sätt färgklass
+    toastEl.className = `toast align-items-center text-bg-${level} border-0`;
+    const toast = new bootstrap.Toast(toastEl, { autohide: true, delay: autohideMs });
+    toast.show();
+  } catch (e) {
+    alert(message);
+  }
+}
+</script>
+

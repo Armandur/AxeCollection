@@ -1592,54 +1592,72 @@ function saveImageEdit() {
 }
 
 function deleteImage(imageId) {
-    if (!confirm('Är du säker på att du vill ta bort denna bild?')) {
-        return;
-    }
-    
-    const deleteBtn = document.querySelector('#editImageModal .btn-danger');
-    const originalText = deleteBtn.innerHTML;
-    deleteBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Tar bort...';
-    deleteBtn.disabled = true;
-    
-    fetch(`/tillverkare/bild/${imageId}/ta-bort/`, {
-        method: 'POST',
-        headers: {
-            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+    // Visa confirm-modal i stället för confirm()
+    const body = document.querySelector('body');
+    const modalId = 'confirmDeleteImageModal';
+    const existing = document.getElementById(modalId);
+    if (existing) existing.remove();
+    const modalHtml = `
+    <div class="modal fade" id="${modalId}" tabindex="-1">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title"><i class="bi bi-trash me-2"></i>Ta bort bild</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <div class="alert alert-warning mb-0"><i class="bi bi-exclamation-triangle me-2"></i>Är du säker på att du vill ta bort denna bild?</div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Avbryt</button>
+            <button type="button" class="btn btn-danger" id="confirmDeleteImageBtn"><i class="bi bi-trash me-1"></i>Ta bort</button>
+          </div>
+        </div>
+      </div>
+    </div>`;
+    body.insertAdjacentHTML('beforeend', modalHtml);
+    const m = new bootstrap.Modal(document.getElementById(modalId));
+    m.show();
+
+    document.getElementById('confirmDeleteImageBtn').addEventListener('click', function() {
+        const deleteBtn = document.querySelector('#editImageModal .btn-danger');
+        const originalText = deleteBtn ? deleteBtn.innerHTML : '';
+        if (deleteBtn) {
+            deleteBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Tar bort...';
+            deleteBtn.disabled = true;
         }
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            // Ta bort bildkortet från DOM
-            const imageElement = document.querySelector(`[data-image-id="${imageId}"]`);
-            if (imageElement) {
-                const card = imageElement.closest('.col-md-4');
-                card.remove();
-                
-                // Kontrollera om det finns fler bilder
-                const remainingImages = document.querySelectorAll('.manufacturer-image');
-                if (remainingImages.length === 0) {
-                    // Ladda om sidan för att visa "Inga bilder"-meddelandet
-                    location.reload();
+        fetch(`/tillverkare/bild/${imageId}/ta-bort/`, {
+            method: 'POST',
+            headers: { 'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value }
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                const imageElement = document.querySelector(`[data-image-id="${imageId}"]`);
+                if (imageElement) {
+                    const card = imageElement.closest('.col-md-4');
+                    card.remove();
+                    const remainingImages = document.querySelectorAll('.manufacturer-image');
+                    if (remainingImages.length === 0) location.reload();
                 }
+                const editM = bootstrap.Modal.getInstance(document.getElementById('editImageModal'));
+                if (editM) editM.hide();
+                m.hide();
+                if (window.showToast) showToast('Bild borttagen!', 'success');
+            } else {
+                if (window.showToast) showToast('Fel: ' + (data.error || 'Okänt fel'), 'danger');
             }
-            
-            // Stäng modal
-            const modal = bootstrap.Modal.getInstance(document.getElementById('editImageModal'));
-            modal.hide();
-            
-            showNotification('Bild borttagen!', 'success');
-        } else {
-            showNotification('Fel: ' + data.error, 'error');
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        showNotification('Ett fel uppstod vid borttagning', 'error');
-    })
-    .finally(() => {
-        deleteBtn.innerHTML = originalText;
-        deleteBtn.disabled = false;
+        })
+        .catch(err => {
+            console.error(err);
+            if (window.showToast) showToast('Ett fel uppstod vid borttagning', 'danger');
+        })
+        .finally(() => {
+            if (deleteBtn) {
+                deleteBtn.innerHTML = originalText;
+                deleteBtn.disabled = false;
+            }
+        });
     });
 }
 

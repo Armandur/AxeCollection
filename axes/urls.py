@@ -381,4 +381,25 @@ urlpatterns = [
         views_stamp.stamp_symbol_delete,
         name="stamp_symbol_delete",
     ),
+    path(
+        "api/stamp-symbols/create/",
+        views_stamp.stamp_symbol_create,
+        name="stamp_symbol_create",
+    ),
+    # Kategorier (CRUD via AJAX)
+    path(
+        "api/symbol-categories/create/",
+        views_stamp.symbol_category_create,
+        name="symbol_category_create",
+    ),
+    path(
+        "api/symbol-categories/<int:category_id>/update/",
+        views_stamp.symbol_category_update,
+        name="symbol_category_update",
+    ),
+    path(
+        "api/symbol-categories/<int:category_id>/delete/",
+        views_stamp.symbol_category_delete,
+        name="symbol_category_delete",
+    ),
 ]

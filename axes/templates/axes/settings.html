@@ -1388,7 +1388,7 @@ function loadMeasurementTemplates() {
      });
      
      if (selectedTypes.length === 0) {
-         alert('Du måste välja minst en måtttyp för mallen.');
+         if (window.showToast) showToast('Du måste välja minst en måtttyp för mallen.', 'warning'); else alert('Du måste välja minst en måtttyp för mallen.');
          return;
      }
      

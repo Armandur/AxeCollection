@@ -1,0 +1,398 @@
+[
+  {
+    "model": "axes.stampsymbol",
+    "pk": 80,
+    "fields": {
+      "name": "Ankare",
+      "symbol_type": "other",
+      "description": "Ankareg",
+      "pictogram": "⚓",
+      "is_predefined": true
+    }
+  },
+  {
+    "model": "axes.stampsymbol",
+    "pk": 81,
+    "fields": {
+      "name": "Blomma",
+      "symbol_type": "other",
+      "description": "Blomma",
+      "pictogram": "🌸",
+      "is_predefined": true
+    }
+  },
+  {
+    "model": "axes.stampsymbol",
+    "pk": 111,
+    "fields": {
+      "name": "Bock",
+      "symbol_type": "other",
+      "description": "Bocken",
+      "pictogram": "🐐",
+      "is_predefined": true
+    }
+  },
+  {
+    "model": "axes.stampsymbol",
+    "pk": 114,
+    "fields": {
+      "name": "Bäver",
+      "symbol_type": "other",
+      "description": "Bäver",
+      "pictogram": "🦫",
+      "is_predefined": true
+    }
+  },
+  {
+    "model": "axes.stampsymbol",
+    "pk": 90,
+    "fields": {
+      "name": "Cirkel",
+      "symbol_type": "other",
+      "description": "Cirkel",
+      "pictogram": "⭕",
+      "is_predefined": true
+    }
+  },
+  {
+    "model": "axes.stampsymbol",
+    "pk": 97,
+    "fields": {
+      "name": "Diamant",
+      "symbol_type": "other",
+      "description": "Diamant",
+      "pictogram": "♦",
+      "is_predefined": true
+    }
+  },
+  {
+    "model": "axes.stampsymbol",
+    "pk": 74,
+    "fields": {
+      "name": "Femuddig stjärna",
+      "symbol_type": "other",
+      "description": "Femuddig stjärna",
+      "pictogram": "⭐",
+      "is_predefined": true
+    }
+  },
+  {
+    "model": "axes.stampsymbol",
+    "pk": 92,
+    "fields": {
+      "name": "Fyrkant",
+      "symbol_type": "other",
+      "description": "Fyrkant",
+      "pictogram": "⬜",
+      "is_predefined": true
+    }
+  },
+  {
+    "model": "axes.stampsymbol",
+    "pk": 108,
+    "fields": {
+      "name": "Halvcirkel",
+      "symbol_type": "other",
+      "description": "",
+      "pictogram": "◠",
+      "is_predefined": true
+    }
+  },
+  {
+    "model": "axes.stampsymbol",
+    "pk": 109,
+    "fields": {
+      "name": "Halvmåne",
+      "symbol_type": "other",
+      "description": "Halvmåne",
+      "pictogram": "🌙",
+      "is_predefined": true
+    }
+  },
+  {
+    "model": "axes.stampsymbol",
+    "pk": 106,
+    "fields": {
+      "name": "Hexagon",
+      "symbol_type": "other",
+      "description": "Hexagon",
+      "pictogram": "⬡",
+      "is_predefined": true
+    }
+  },
+  {
+    "model": "axes.stampsymbol",
+    "pk": 99,
+    "fields": {
+      "name": "Hjärta",
+      "symbol_type": "other",
+      "description": "Hjärta",
+      "pictogram": "❤️",
+      "is_predefined": true
+    }
+  },
+  {
+    "model": "axes.stampsymbol",
+    "pk": 113,
+    "fields": {
+      "name": "Hästsko",
+      "symbol_type": "other",
+      "description": "Hästsko",
+      "pictogram": "🐎",
+      "is_predefined": true
+    }
+  },
+  {
+    "model": "axes.stampsymbol",
+    "pk": 118,
+    "fields": {
+      "name": "Järnsymbol",
+      "symbol_type": "other",
+      "description": "Järnsymbol",
+      "pictogram": "♂",
+      "is_predefined": true
+    }
+  },
+  {
+    "model": "axes.stampsymbol",
+    "pk": 73,
+    "fields": {
+      "name": "Kanon",
+      "symbol_type": "other",
+      "description": "Kanon",
+      "pictogram": "💥",
+      "is_predefined": true
+    }
+  },
+  {
+    "model": "axes.stampsymbol",
+    "pk": 115,
+    "fields": {
+      "name": "Katt",
+      "symbol_type": "other",
+      "description": "Katt",
+      "pictogram": "🐱",
+      "is_predefined": true
+    }
+  },
+  {
+    "model": "axes.stampsymbol",
+    "pk": 78,
+    "fields": {
+      "name": "Kors",
+      "symbol_type": "other",
+      "description": "Kors",
+      "pictogram": "🕇",
+      "is_predefined": true
+    }
+  },
+  {
+    "model": "axes.stampsymbol",
+    "pk": 71,
+    "fields": {
+      "name": "Krona",
+      "symbol_type": "other",
+      "description": "Krona",
+      "pictogram": "👑",
+      "is_predefined": true
+    }
+  },
+  {
+    "model": "axes.stampsymbol",
+    "pk": 77,
+    "fields": {
+      "name": "Kryss",
+      "symbol_type": "other",
+      "description": "Kryss",
+      "pictogram": "❌",
+      "is_predefined": true
+    }
+  },
+  {
+    "model": "axes.stampsymbol",
+    "pk": 101,
+    "fields": {
+      "name": "Linje",
+      "symbol_type": "other",
+      "description": "Linje",
+      "pictogram": "━",
+      "is_predefined": true
+    }
+  },
+  {
+    "model": "axes.stampsymbol",
+    "pk": 83,
+    "fields": {
+      "name": "Löv",
+      "symbol_type": "other",
+      "description": "Löv",
+      "pictogram": "🍃",
+      "is_predefined": true
+    }
+  },
+  {
+    "model": "axes.stampsymbol",
+    "pk": 117,
+    "fields": {
+      "name": "Man",
+      "symbol_type": "other",
+      "description": "Man",
+      "pictogram": "👤",
+      "is_predefined": true
+    }
+  },
+  {
+    "model": "axes.stampsymbol",
+    "pk": 105,
+    "fields": {
+      "name": "Oktagon",
+      "symbol_type": "other",
+      "description": "Oktagon",
+      "pictogram": "⬡",
+      "is_predefined": true
+    }
+  },
+  {
+    "model": "axes.stampsymbol",
+    "pk": 107,
+    "fields": {
+      "name": "Pentagon",
+      "symbol_type": "other",
+      "description": "Pentagon",
+      "pictogram": "⬟",
+      "is_predefined": true
+    }
+  },
+  {
+    "model": "axes.stampsymbol",
+    "pk": 85,
+    "fields": {
+      "name": "Pil",
+      "symbol_type": "other",
+      "description": "Pil",
+      "pictogram": "↑",
+      "is_predefined": true
+    }
+  },
+  {
+    "model": "axes.stampsymbol",
+    "pk": 75,
+    "fields": {
+      "name": "Sexuddig stjärna",
+      "symbol_type": "other",
+      "description": "Sexuddig stjärna",
+      "pictogram": "🟋",
+      "is_predefined": true
+    }
+  },
+  {
+    "model": "axes.stampsymbol",
+    "pk": 102,
+    "fields": {
+      "name": "Sicksackline",
+      "symbol_type": "other",
+      "description": "Sicksackline",
+      "pictogram": "⦚",
+      "is_predefined": true
+    }
+  },
+  {
+    "model": "axes.stampsymbol",
+    "pk": 79,
+    "fields": {
+      "name": "Sköld",
+      "symbol_type": "other",
+      "description": "Sköld",
+      "pictogram": "🛡️",
+      "is_predefined": true
+    }
+  },
+  {
+    "model": "axes.stampsymbol",
+    "pk": 119,
+    "fields": {
+      "name": "Sol",
+      "symbol_type": "other",
+      "description": "Sol",
+      "pictogram": "☀️",
+      "is_predefined": true
+    }
+  },
+  {
+    "model": "axes.stampsymbol",
+    "pk": 100,
+    "fields": {
+      "name": "Spader",
+      "symbol_type": "other",
+      "description": "Spader",
+      "pictogram": "♠",
+      "is_predefined": true
+    }
+  },
+  {
+    "model": "axes.stampsymbol",
+    "pk": 104,
+    "fields": {
+      "name": "Streckad linje",
+      "symbol_type": "other",
+      "description": "Streckad linje",
+      "pictogram": "┄",
+      "is_predefined": true
+    }
+  },
+  {
+    "model": "axes.stampsymbol",
+    "pk": 112,
+    "fields": {
+      "name": "Tjur",
+      "symbol_type": "other",
+      "description": "Tjur",
+      "pictogram": "🐂",
+      "is_predefined": true
+    }
+  },
+  {
+    "model": "axes.stampsymbol",
+    "pk": 72,
+    "fields": {
+      "name": "Tre kronor",
+      "symbol_type": "other",
+      "description": "Tre kronor",
+      "pictogram": "👑👑👑",
+      "is_predefined": true
+    }
+  },
+  {
+    "model": "axes.stampsymbol",
+    "pk": 94,
+    "fields": {
+      "name": "Triangel",
+      "symbol_type": "other",
+      "description": "Triangel",
+      "pictogram": "▲",
+      "is_predefined": true
+    }
+  },
+  {
+    "model": "axes.stampsymbol",
+    "pk": 116,
+    "fields": {
+      "name": "Vädur",
+      "symbol_type": "other",
+      "description": "Vädur",
+      "pictogram": "🐏",
+      "is_predefined": true
+    }
+  },
+  {
+    "model": "axes.stampsymbol",
+    "pk": 103,
+    "fields": {
+      "name": "W-linje",
+      "symbol_type": "other",
+      "description": "W-linje",
+      "pictogram": "〰️",
+      "is_predefined": true
+    }
+  }
+]

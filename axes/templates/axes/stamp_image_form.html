@@ -405,13 +405,21 @@ document.addEventListener('DOMContentLoaded', function() {
         const h = parseFloat(heightInput.value) || 0;
         
         if (x < 0 || x > 100 || y < 0 || y > 100 || w <= 0 || w > 100 || h <= 0 || h > 100) {
-            alert('Koordinaterna är ogiltiga. Vänligen kontrollera markeringen.');
+            if (window.showToast) showToast('Koordinaterna är ogiltiga. Vänligen kontrollera markeringen.', 'warning'); else alert('Koordinaterna är ogiltiga. Vänligen kontrollera markeringen.');
+            ['xCoordinate','yCoordinate','width','height'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.classList.add('is-invalid');
+            });
             e.preventDefault();
             return false;
         }
         
         if (x + w > 100 || y + h > 100) {
-            alert('Markeringen går utanför bildens gränser. Vänligen justera markeringen.');
+            if (window.showToast) showToast('Markeringen går utanför bildens gränser. Vänligen justera markeringen.', 'warning'); else alert('Markeringen går utanför bildens gränser. Vänligen justera markeringen.');
+            ['xCoordinate','yCoordinate','width','height'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.classList.add('is-invalid');
+            });
             e.preventDefault();
             return false;
         }

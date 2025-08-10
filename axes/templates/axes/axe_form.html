@@ -1870,7 +1870,9 @@ document.addEventListener('DOMContentLoaded', function() {
                         `;
                     }
                 } else {
-                    alert('Ange ett giltigt belopp i SEK');
+                    if (window.showToast) showToast('Ange ett giltigt belopp i SEK', 'warning'); else alert('Ange ett giltigt belopp i SEK');
+                    const amountEl = document.getElementById('id_amount') || document.querySelector('[name="amount"]');
+                    if (amountEl) amountEl.classList.add('is-invalid');
                 }
             });
         }
@@ -2164,7 +2166,7 @@ document.addEventListener('DOMContentLoaded', function() {
             })
             .catch(error => {
                 console.error('Fel vid laddning av modal:', error);
-                alert('Ett fel uppstod vid laddning av bekräftelsen.');
+                if (window.showToast) showToast('Ett fel uppstod vid laddning av bekräftelsen.', 'danger'); else alert('Ett fel uppstod vid laddning av bekräftelsen.');
             });
     }
 
