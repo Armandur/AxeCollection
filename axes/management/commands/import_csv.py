@@ -468,6 +468,8 @@ class Command(BaseCommand):
                         csv_dir, "manufacturer_images", img_filename
                     )
                     dest_path = os.path.join(media_manuf_dir, img_filename)
+                    # På Windows vill Django ImageField.name normalt lagras med backslash i testerna
+                    # men vi säkerställer att den relativa vägen använder os.path.join
                     image_field_path = os.path.join("manufacturer_images", img_filename)
                     if os.path.exists(src_path) and not os.path.exists(dest_path):
                         shutil.copy2(src_path, dest_path)

@@ -1048,19 +1048,24 @@ class StampTranscriptionForm(forms.ModelForm):
             ]
             symbols = []
             for name in symbol_names:
-                if name and not name.startswith(
-                    "<StampSymbol:"
-                ):  # Undvik att skapa symboler från malformade strängar
-                    symbol, created = StampSymbol.objects.get_or_create(
-                        name=name,
-                        defaults={
-                            "symbol_type": "other",
-                            "description": name,
-                            "pictogram": "",
-                            "is_predefined": False,
-                        },
+                if name and not name.startswith("<StampSymbol:"):
+                    # Undvik MultipleObjectsReturned: välj första befintliga med detta namn oavsett typ
+                    existing = (
+                        StampSymbol.objects.filter(name__iexact=name)
+                        .order_by("id")
+                        .first()
                     )
-                    symbols.append(symbol)
+                    if existing:
+                        symbols.append(existing)
+                    else:
+                        symbol = StampSymbol.objects.create(
+                            name=name,
+                            symbol_type="other",
+                            description=name,
+                            pictogram="",
+                            is_predefined=False,
+                        )
+                        symbols.append(symbol)
             cleaned_data["symbols"] = symbols
         else:
             cleaned_data["symbols"] = []

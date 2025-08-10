@@ -1512,9 +1512,9 @@ def stamp_symbols_api(request):
     predefined = request.GET.get("predefined")
     if predefined is not None:
         if predefined.lower() == "true":
-            queryset = queryset.filter(is_predefined=True)
+            queryset = StampSymbol.objects.filter(is_predefined=True)
         elif predefined.lower() == "false":
-            queryset = queryset.filter(is_predefined=False)
+            queryset = StampSymbol.objects.filter(is_predefined=False)
 
     symbols_data = [
         {
