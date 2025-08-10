@@ -155,8 +155,6 @@ def convert_currency(
 
     try:
         global LAST_LIVE_RATES_FAILED
-        # Nollställ flaggan före hämtning (per anrop)
-        LAST_LIVE_RATES_FAILED = False
         rates = get_exchange_rates()
 
         if not rates:
