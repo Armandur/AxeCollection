@@ -344,10 +344,12 @@ class ImportCSVCommandTest(TestCase):
 
         manufacturer_image1 = ManufacturerImage.objects.get(id=1)
         self.assertEqual(manufacturer_image1.manufacturer, manufacturer1)
+        # Normalisera sökväg för OS-agnostisk jämförelse (Linux/Windows)
+        normalized_image_path = manufacturer_image1.image.name.replace("\\", "/")
         self.assertEqual(
-            manufacturer_image1.image.name,
-            "manufacturer_images\\manufacturer_image_1.jpg",
-        )  # Använd backslashes för Windows
+            normalized_image_path,
+            "manufacturer_images/manufacturer_image_1.jpg",
+        )
 
     def test_import_csv_with_invalid_data(self):
         """Testa import_csv med ogiltig data"""
