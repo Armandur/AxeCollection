@@ -40,27 +40,24 @@ class CurrencyConverterTest(TestCase):
 
     @patch("requests.get")
     def test_convert_currency_api_error(self, mock_get):
-        """Testa valutakonvertering med API-fel"""
-        # Rensa cache först
+        """Testa valutakonvertering med API-fel: best-effort ska fortfarande ge numeriskt resultat via fallback."""
         clear_cache()
-
         mock_response = MagicMock()
         mock_response.status_code = 500
         mock_get.return_value = mock_response
 
         result = convert_currency(100, "USD", "SEK")
-        self.assertIsNone(result)
+        # Med fallback 10.5 ska resultatet bli 1050.0
+        self.assertEqual(result, 1050.0)
 
     @patch("requests.get")
     def test_convert_currency_network_error(self, mock_get):
-        """Testa valutakonvertering med nätverksfel"""
-        # Rensa cache först
+        """Testa valutakonvertering med nätverksfel: best-effort via fallback"""
         clear_cache()
-
         mock_get.side_effect = Exception("Network error")
 
         result = convert_currency(100, "USD", "SEK")
-        self.assertIsNone(result)
+        self.assertEqual(result, 1050.0)
 
     @patch("requests.get")
     def test_convert_currency_invalid_currency(self, mock_get):
@@ -104,9 +101,12 @@ class CurrencyConverterTest(TestCase):
         self.assertIsNone(result)
 
     def test_convert_currency_negative_amount(self):
-        """Testa valutakonvertering med negativt belopp"""
-        result = convert_currency(-100, "USD", "SEK")
-        self.assertIsNone(result)
+        """Negativt belopp ska konverteras med bibehållet tecken (app-policy)."""
+        # Mocka rates för deterministiskt resultat
+        with patch("axes.utils.currency_converter.get_exchange_rates") as mock_rates:
+            mock_rates.return_value = {"USD": {"SEK": 9.58}}
+            result = convert_currency(-100, "USD", "SEK")
+            self.assertEqual(result, -958.0)
 
     def test_convert_currency_zero_amount(self):
         """Testa valutakonvertering med noll belopp"""
