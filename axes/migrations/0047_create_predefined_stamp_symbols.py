@@ -233,15 +233,35 @@ def create_predefined_symbols(apps, schema_editor):
     ]
 
     for symbol_data in predefined_symbols:
-        StampSymbol.objects.get_or_create(
-            name=symbol_data["name"],
-            defaults={
-                "description": symbol_data.get("description", ""),
-                "pictogram": symbol_data.get("pictogram", ""),
-                "symbol_type": symbol_data.get("symbol_type", "other"),
-                "is_predefined": True,
-            },
-        )
+        name = symbol_data["name"]
+        description = symbol_data.get("description", "")
+        pictogram = symbol_data.get("pictogram", "")
+        symbol_type = symbol_data.get("symbol_type", "other")
+
+        # Hantera dubbletter robust: uppdatera första, rensa övriga
+        existing_qs = StampSymbol.objects.filter(name=name)
+        if existing_qs.exists():
+            primary = existing_qs.order_by("id").first()
+            # Uppdatera fält om tomt, och markera som fördefinierad
+            if not primary.description:
+                primary.description = description
+            if pictogram and (not primary.pictogram):
+                primary.pictogram = pictogram
+            if symbol_type and (not primary.symbol_type):
+                primary.symbol_type = symbol_type
+            primary.is_predefined = True
+            primary.save()
+
+            # Ta bort övriga dubbletter
+            existing_qs.exclude(pk=primary.pk).delete()
+        else:
+            StampSymbol.objects.create(
+                name=name,
+                description=description,
+                pictogram=pictogram,
+                symbol_type=symbol_type,
+                is_predefined=True,
+            )
 
 
 def reverse_create_predefined_symbols(apps, schema_editor):
