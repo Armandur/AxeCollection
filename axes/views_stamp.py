@@ -1030,14 +1030,21 @@ def edit_axe_image_stamp(request, axe_id, mark_id):
                 messages.error(request, "Stämpel måste väljas.")
         else:
             # Hantera vanlig form submission
-            form = StampImageMarkForm(request.POST, instance=stamp_mark)
+            # Säkerställ att obligatoriska relationer finns i POST (annars använd befintliga värden)
+            post_data = request.POST.copy()
+            if not post_data.get("stamp"):
+                post_data["stamp"] = str(stamp_mark.stamp.id)
+            if not post_data.get("axe_image"):
+                post_data["axe_image"] = str(axe_image.id)
+
+            form = StampImageMarkForm(post_data, instance=stamp_mark)
             if form.is_valid():
                 # Hantera koordinater från formuläret
                 # Läs från både modellfält och aliasfält
-                x_coord = request.POST.get("x_coordinate") or request.POST.get("x")
-                y_coord = request.POST.get("y_coordinate") or request.POST.get("y")
-                width = request.POST.get("width") or request.POST.get("width")
-                height = request.POST.get("height") or request.POST.get("height")
+                x_coord = post_data.get("x_coordinate") or post_data.get("x")
+                y_coord = post_data.get("y_coordinate") or post_data.get("y")
+                width = post_data.get("width")
+                height = post_data.get("height")
 
                 stamp_mark = form.save(commit=False)
 
@@ -1066,6 +1073,11 @@ def edit_axe_image_stamp(request, axe_id, mark_id):
                     request, "Stämpelmarkering uppdaterades framgångsrikt."
                 )
                 return redirect("axe_detail", pk=axe_id)
+            else:
+                # Visa valideringsfel i samma vy
+                messages.error(
+                    request, "Formuläret innehåller fel. Kontrollera dina uppgifter."
+                )
     else:
         form = StampImageMarkForm(instance=stamp_mark)
 
