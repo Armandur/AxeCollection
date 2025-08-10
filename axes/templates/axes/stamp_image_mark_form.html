@@ -56,6 +56,11 @@
                                     {{ form.y_coordinate }}
                                     {{ form.width }}
                                     {{ form.height }}
+                                    {# Aliasfält stöd – om formuläret exponeras, inkludera dolda inputs #}
+                                    {% if form.x %}{{ form.x.as_hidden }}{% endif %}
+                                    {% if form.y %}{{ form.y.as_hidden }}{% endif %}
+                                    {% if form.width %}{{ form.width.as_hidden }}{% endif %}
+                                    {% if form.height %}{{ form.height.as_hidden }}{% endif %}
                                     {{ form.external_source }}
                                 </div>
 

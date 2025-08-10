@@ -685,7 +685,7 @@ def add_axe_stamp(request, axe_id):
 
     if request.method == "POST":
         # Hantera olika typer av POST-requests
-        action = request.POST.get("action", "")
+        action = request.POST.get("action", request.POST.get("_action", ""))
 
         if action == "select_image":
             # Användaren har valt en bild - visa markering
@@ -985,7 +985,7 @@ def edit_axe_image_stamp(request, axe_id, mark_id):
 
     if request.method == "POST":
         # Hantera olika typer av POST-requests
-        action = request.POST.get("action", "")
+        action = request.POST.get("action", request.POST.get("_action", ""))
 
         if action == "save_stamp":
             # Användaren har markerat en bild och vill spara stämpeln
@@ -1031,10 +1031,11 @@ def edit_axe_image_stamp(request, axe_id, mark_id):
             form = StampImageMarkForm(request.POST, instance=stamp_mark)
             if form.is_valid():
                 # Hantera koordinater från formuläret
-                x_coord = request.POST.get("x_coordinate")
-                y_coord = request.POST.get("y_coordinate")
-                width = request.POST.get("width")
-                height = request.POST.get("height")
+                # Läs från både modellfält och aliasfält
+                x_coord = request.POST.get("x_coordinate") or request.POST.get("x")
+                y_coord = request.POST.get("y_coordinate") or request.POST.get("y")
+                width = request.POST.get("width") or request.POST.get("width")
+                height = request.POST.get("height") or request.POST.get("height")
 
                 stamp_mark = form.save(commit=False)
 

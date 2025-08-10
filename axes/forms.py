@@ -1421,11 +1421,11 @@ class StampImageForm(forms.ModelForm):
 class StampImageMarkForm(forms.ModelForm):
     """Formulär för redigering av stämpelmarkeringar på yxbilder"""
 
-    # Aliasfält som används av testerna (gör dem frivilliga och mappa i clean)
-    x = forms.DecimalField(required=True)
-    y = forms.DecimalField(required=True)
-    width = forms.DecimalField(required=True)
-    height = forms.DecimalField(required=True)
+    # Aliasfält som används av testerna (frivilliga i UI; mappas i clean())
+    x = forms.DecimalField(required=False)
+    y = forms.DecimalField(required=False)
+    width = forms.DecimalField(required=False)
+    height = forms.DecimalField(required=False)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

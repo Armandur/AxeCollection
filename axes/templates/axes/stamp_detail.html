@@ -587,7 +587,7 @@ function toggleStampModalView() {
                                                                  data-crop-y="{{ image.y_coordinate }}"
                                                                  data-stamp-width="{{ image.width }}"
                                                                  data-stamp-height="{{ image.height }}"
-                                                                 style="object-fit: cover; object-position: -{{ image.x_coordinate }}% -{{ image.y_coordinate }}%; width: {{ image.axe_image.image.width }}px; height: {{ image.axe_image.image.height }}px; max-width: none; max-height: none;">
+                                                                  style="object-fit: cover; object-position: center; height: 200px; width: 100%; max-width: none;">
                                                         </div>
                                                     {% else %}
                                                         <!-- Visa hela yxbild med stämpelmarkering -->
@@ -623,7 +623,7 @@ function toggleStampModalView() {
                                                                  data-crop-y="{{ image.y_coordinate }}"
                                                                  data-stamp-width="{{ image.width }}"
                                                                  data-stamp-height="{{ image.height }}"
-                                                                 style="object-fit: cover; object-position: -{{ image.x_coordinate }}% -{{ image.y_coordinate }}%; width: {{ image.image.width }}px; height: {{ image.image.height }}px; max-width: none; max-height: none;">
+                                                                  style="object-fit: cover; object-position: center; height: 200px; width: 100%; max-width: none;">
                                                         </div>
                                                     {% else %}
                                                         <!-- Visa hela fristående bild -->

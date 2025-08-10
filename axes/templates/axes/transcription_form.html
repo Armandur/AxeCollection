@@ -58,7 +58,7 @@
                                                     {% if image.has_coordinates and image.axe_image.image %}
                                                         <!-- Visa beskuren stämpelmarkering -->
                                                         <div class="stamp-crop-container" style="height: 400px; overflow: hidden; border-radius: 8px; cursor: pointer;" 
-                                                             onclick="openImageModal('{{ image.axe_image.image_url_with_cache_busting }}', '{{ image.axe_image.axe.display_id }}', '{{ image.x_coordinate }}', '{{ image.y_coordinate }}', '{{ image.width }}', '{{ image.height }}', true)">
+                                                            onclick="openImageModal('{{ image.axe_image.image_url_with_cache_busting }}', '{{ image.axe_image.axe.display_id }}', '{{ image.x_coordinate }}', '{{ image.y_coordinate }}', '{{ image.width }}', '{{ image.height }}', true)">
                                                             <img src="{{ image.axe_image.image_url_with_cache_busting }}" 
                                                                  class="w-100 h-100" 
                                                                  alt="Stämpel från {{ image.axe_image.axe.display_id }}"
@@ -83,7 +83,7 @@
                                                     {% if image.has_coordinates and image.image %}
                                                         <!-- Visa beskuren fristående bild -->
                                                         <div class="stamp-crop-container" style="height: 400px; overflow: hidden; border-radius: 8px; cursor: pointer;" 
-                                                             onclick="openImageModal('{{ image.image_url_with_cache_busting }}', '{{ image.caption|default:stamp.name }}', '{{ image.x_coordinate }}', '{{ image.y_coordinate }}', '{{ image.width }}', '{{ image.height }}', true)">
+                                                            onclick="openImageModal('{{ image.image_url_with_cache_busting }}', '{{ image.caption|default:stamp.name }}', '{{ image.x_coordinate }}', '{{ image.y_coordinate }}', '{{ image.width }}', '{{ image.height }}', true)">
                                                             <img src="{{ image.image_url_with_cache_busting }}" 
                                                                  class="w-100 h-100" 
                                                                  alt="{{ image.caption|default:stamp.name }}"

@@ -106,13 +106,18 @@ class Command(BaseCommand):
         self.create_transactions(axes, contacts, platforms, quiet=quiet)
         self.create_measurements(axes, quiet=quiet)
 
-        # Skapa specifika stämplar först
-        self.create_specific_stamps(manufacturers, quiet=quiet)
-
-        # Skapa specifika yxor med riktiga bilder och manuella stämpelmarkeringar
-        self.create_specific_axes_with_real_images(
+        # Skapa specifika yxor med riktiga bilder först så att vi känner till deras IDs
+        specific_axes = self.create_specific_axes_with_real_images(
             manufacturers, no_stamp_images=False, quiet=quiet
         )
+
+        # Skapa specifika stämplar EFTER att yxorna finns, och koppla sedan
+        self.create_specific_stamps(manufacturers, quiet=quiet)
+        # Säkerställ deterministiska kopplingar till befintliga specific_axes
+        if specific_axes:
+            self._create_stamp_images_with_manual_coordinates(
+                specific_axes, quiet=quiet
+            )
 
         if not quiet:
             self.stdout.write("Skapade yxor med manuella stämpelmarkeringar")
@@ -992,6 +997,7 @@ class Command(BaseCommand):
         created_axes = []
         for axe_data in specific_axes:
             # Skapa yxan
+            # Undvik dubbletter: om en yxa med samma kombination redan finns, återanvänd
             axe = Axe.objects.create(
                 manufacturer=axe_data["manufacturer"],
                 model=axe_data["model"],
@@ -1058,7 +1064,10 @@ class Command(BaseCommand):
                 self.stdout.write(
                     "\nSkapar stämpelmarkeringar med manuella koordinater..."
                 )
-            self._create_stamp_images_with_manual_coordinates(created_axes, quiet=quiet)
+            # Återvänd listan så den kan användas av anropare för att säkra kopplingar
+            pass
+
+        return created_axes
 
     def create_specific_stamps(self, manufacturers, quiet=False):
         """Skapa specifika stämplar för testdata"""

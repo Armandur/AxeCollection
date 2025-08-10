@@ -224,7 +224,7 @@
                     <div class="carousel-inner">
                         {% for image in current_axe.images.all %}
                         <div class="carousel-item {% if forloop.first %}active{% endif %}">
-                            <a href="{{ image.image_url_with_cache_busting }}" data-pswp-width="{{ image.image.width }}" data-pswp-height="{{ image.image.height }}">
+                           <a href="{{ image.image_url_with_cache_busting }}">
                                 <picture>
                                     {% if image.webp_url %}
                                         <source srcset="{{ image.webp_url }}" type="image/webp">
@@ -257,7 +257,7 @@
                     <div class="swiper-wrapper">
                         {% for image in current_axe.images.all %}
                         <div class="swiper-slide">
-                            <a href="{{ image.image_url_with_cache_busting }}" data-pswp-width="{{ image.image.width }}" data-pswp-height="{{ image.image.height }}">
+                           <a href="{{ image.image_url_with_cache_busting }}">
                                 <picture>
                                     {% if image.webp_url %}
                                         <source srcset="{{ image.webp_url }}" type="image/webp">

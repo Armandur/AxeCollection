@@ -55,10 +55,8 @@ class Command(BaseCommand):
         else:
             call_command("reset_to_test_data")
 
-        # Steg 3: Generera ny testdata (endast om vi inte redan gjort det i steg 2)
-        if not options["no_images"]:
-            self.stdout.write("Genererar ny testdata...")
-            call_command("generate_test_data")
+        # Steg 3: Hoppa över extra generering – reset_to_test_data kör redan generate_test_data
+        # Detta förhindrar dubbletter av yxor/bilder och felaktiga kopplingar
 
         # Steg 4: Initiera grundläggande data
         self.stdout.write("Initierar grundläggande data...")
