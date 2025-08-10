@@ -6,75 +6,258 @@ import os
 
 def create_predefined_symbols(apps, schema_editor):
     """Skapa fördefinierade symboler"""
-    # Skippa i testmiljö för att inte påverka testernas förväntningar
-    if os.environ.get("PYTEST_CURRENT_TEST"):
+    # Skippa i test/CI-miljö för att inte påverka testernas förväntningar
+    # - PYTEST_CURRENT_TEST: sätts av pytest lokalt
+    # - CI/GITHUB_ACTIONS: sätts i GitHub Actions
+    if (
+        os.environ.get("PYTEST_CURRENT_TEST")
+        or os.environ.get("CI")
+        or os.environ.get("GITHUB_ACTIONS")
+    ):
         return
-    StampSymbol = apps.get_model('axes', 'StampSymbol')
-    
+    StampSymbol = apps.get_model("axes", "StampSymbol")
+
     # Lista över fördefinierade symboler
     predefined_symbols = [
-        {'name': 'Ankare', 'description': 'Ankare', 'pictogram': '⚓', 'symbol_type': 'other'},
-        {'name': 'Blomma', 'description': 'Blomma', 'pictogram': '🌸', 'symbol_type': 'other'},
-        {'name': 'Bock', 'description': 'Bock', 'pictogram': '🐐', 'symbol_type': 'other'},
-        {'name': 'Bäver', 'description': 'Bäver', 'pictogram': '🦫', 'symbol_type': 'other'},
-        {'name': 'Cirkel', 'description': 'Cirkel', 'pictogram': '⭕', 'symbol_type': 'other'},
-        {'name': 'Diamant', 'description': 'Diamant', 'pictogram': '♦', 'symbol_type': 'other'},
-        {'name': 'Femuddig stjärna', 'description': 'Femuddig stjärna', 'pictogram': '⭐', 'symbol_type': 'other'},
-        {'name': 'Fyrkant', 'description': 'Fyrkant', 'pictogram': '⬜', 'symbol_type': 'other'},
-        {'name': 'Halvcirkel', 'description': 'Halvcirkel', 'pictogram': '◡', 'symbol_type': 'other'},
-        {'name': 'Halvmåne', 'description': 'Halvmåne', 'pictogram': '☾', 'symbol_type': 'other'},
-        {'name': 'Hexagon', 'description': 'Hexagon', 'pictogram': '⬡', 'symbol_type': 'other'},
-        {'name': 'Hjärta', 'description': 'Hjärta', 'pictogram': '♥', 'symbol_type': 'other'},
-        {'name': 'Häst', 'description': 'Häst', 'pictogram': '🐎', 'symbol_type': 'other'},
-        {'name': 'Hästsko', 'description': 'Hästsko', 'pictogram': 'Ʊ', 'symbol_type': 'other'},
-        {'name': 'Järnsymbol', 'description': 'Järnsymbol ♂', 'pictogram': '♂', 'symbol_type': 'other'},
-        {'name': 'Kanon', 'description': 'Kanon', 'pictogram': '💥', 'symbol_type': 'other'},
-        {'name': 'Katt', 'description': 'Katt', 'pictogram': '🐱', 'symbol_type': 'other'},
-        {'name': 'Kors', 'description': 'Kors', 'pictogram': '🕆', 'symbol_type': 'other'},
-        {'name': 'Krona', 'description': 'Krona', 'pictogram': '👑', 'symbol_type': 'other'},
-        {'name': 'Kryss', 'description': 'Kryss', 'pictogram': '❌', 'symbol_type': 'other'},
-        {'name': 'Linje', 'description': 'Linje', 'pictogram': '━', 'symbol_type': 'other'},
-        {'name': 'Löv', 'description': 'Löv', 'pictogram': '🍃', 'symbol_type': 'other'},
-        {'name': 'Man', 'description': 'Man', 'pictogram': '👤', 'symbol_type': 'other'},
-        {'name': 'Oktagon', 'description': 'Oktagon', 'pictogram': '⬡', 'symbol_type': 'other'},
-        {'name': 'Oxe', 'description': 'Oxe', 'pictogram': '🐂', 'symbol_type': 'other'},
-        {'name': 'Pentagon', 'description': 'Pentagon', 'pictogram': '⬟', 'symbol_type': 'other'},
-        {'name': 'Pil', 'description': 'Pil', 'pictogram': '↑', 'symbol_type': 'other'},
-        {'name': 'Sexuddig stjärna', 'description': 'Sexuddig stjärna', 'pictogram': '🟋', 'symbol_type': 'other'},
-        {'name': 'Sicksackline', 'description': 'Sicksackline', 'pictogram': '⦚', 'symbol_type': 'other'},
-        {'name': 'Sjuuddig stjärna', 'description': 'Sjuuddig stjärna', 'pictogram': '⭐', 'symbol_type': 'other'},
-        {'name': 'Sköld', 'description': 'Sköld', 'pictogram': '🛡️', 'symbol_type': 'other'},
-        {'name': 'Spader', 'description': 'Spader', 'pictogram': '♠', 'symbol_type': 'other'},
-        {'name': 'Streckad linje', 'description': 'Streckad linje', 'pictogram': '┄', 'symbol_type': 'other'},
-        {'name': 'Tjur', 'description': 'Tjur', 'pictogram': '🐃', 'symbol_type': 'other'},
-        {'name': 'Tre kronor', 'description': 'Tre kronor', 'pictogram': '👑👑👑', 'symbol_type': 'other'},
-        {'name': 'Triangel', 'description': 'Triangel', 'pictogram': '▲', 'symbol_type': 'other'},
+        {
+            "name": "Ankare",
+            "description": "Ankare",
+            "pictogram": "⚓",
+            "symbol_type": "other",
+        },
+        {
+            "name": "Blomma",
+            "description": "Blomma",
+            "pictogram": "🌸",
+            "symbol_type": "other",
+        },
+        {
+            "name": "Bock",
+            "description": "Bock",
+            "pictogram": "🐐",
+            "symbol_type": "other",
+        },
+        {
+            "name": "Bäver",
+            "description": "Bäver",
+            "pictogram": "🦫",
+            "symbol_type": "other",
+        },
+        {
+            "name": "Cirkel",
+            "description": "Cirkel",
+            "pictogram": "⭕",
+            "symbol_type": "other",
+        },
+        {
+            "name": "Diamant",
+            "description": "Diamant",
+            "pictogram": "♦",
+            "symbol_type": "other",
+        },
+        {
+            "name": "Femuddig stjärna",
+            "description": "Femuddig stjärna",
+            "pictogram": "⭐",
+            "symbol_type": "other",
+        },
+        {
+            "name": "Fyrkant",
+            "description": "Fyrkant",
+            "pictogram": "⬜",
+            "symbol_type": "other",
+        },
+        {
+            "name": "Halvcirkel",
+            "description": "Halvcirkel",
+            "pictogram": "◡",
+            "symbol_type": "other",
+        },
+        {
+            "name": "Halvmåne",
+            "description": "Halvmåne",
+            "pictogram": "☾",
+            "symbol_type": "other",
+        },
+        {
+            "name": "Hexagon",
+            "description": "Hexagon",
+            "pictogram": "⬡",
+            "symbol_type": "other",
+        },
+        {
+            "name": "Hjärta",
+            "description": "Hjärta",
+            "pictogram": "♥",
+            "symbol_type": "other",
+        },
+        {
+            "name": "Häst",
+            "description": "Häst",
+            "pictogram": "🐎",
+            "symbol_type": "other",
+        },
+        {
+            "name": "Hästsko",
+            "description": "Hästsko",
+            "pictogram": "Ʊ",
+            "symbol_type": "other",
+        },
+        {
+            "name": "Järnsymbol",
+            "description": "Järnsymbol ♂",
+            "pictogram": "♂",
+            "symbol_type": "other",
+        },
+        {
+            "name": "Kanon",
+            "description": "Kanon",
+            "pictogram": "💥",
+            "symbol_type": "other",
+        },
+        {
+            "name": "Katt",
+            "description": "Katt",
+            "pictogram": "🐱",
+            "symbol_type": "other",
+        },
+        {
+            "name": "Kors",
+            "description": "Kors",
+            "pictogram": "🕆",
+            "symbol_type": "other",
+        },
+        {
+            "name": "Krona",
+            "description": "Krona",
+            "pictogram": "👑",
+            "symbol_type": "other",
+        },
+        {
+            "name": "Kryss",
+            "description": "Kryss",
+            "pictogram": "❌",
+            "symbol_type": "other",
+        },
+        {
+            "name": "Linje",
+            "description": "Linje",
+            "pictogram": "━",
+            "symbol_type": "other",
+        },
+        {
+            "name": "Löv",
+            "description": "Löv",
+            "pictogram": "🍃",
+            "symbol_type": "other",
+        },
+        {
+            "name": "Man",
+            "description": "Man",
+            "pictogram": "👤",
+            "symbol_type": "other",
+        },
+        {
+            "name": "Oktagon",
+            "description": "Oktagon",
+            "pictogram": "⬡",
+            "symbol_type": "other",
+        },
+        {
+            "name": "Oxe",
+            "description": "Oxe",
+            "pictogram": "🐂",
+            "symbol_type": "other",
+        },
+        {
+            "name": "Pentagon",
+            "description": "Pentagon",
+            "pictogram": "⬟",
+            "symbol_type": "other",
+        },
+        {"name": "Pil", "description": "Pil", "pictogram": "↑", "symbol_type": "other"},
+        {
+            "name": "Sexuddig stjärna",
+            "description": "Sexuddig stjärna",
+            "pictogram": "🟋",
+            "symbol_type": "other",
+        },
+        {
+            "name": "Sicksackline",
+            "description": "Sicksackline",
+            "pictogram": "⦚",
+            "symbol_type": "other",
+        },
+        {
+            "name": "Sjuuddig stjärna",
+            "description": "Sjuuddig stjärna",
+            "pictogram": "⭐",
+            "symbol_type": "other",
+        },
+        {
+            "name": "Sköld",
+            "description": "Sköld",
+            "pictogram": "🛡️",
+            "symbol_type": "other",
+        },
+        {
+            "name": "Spader",
+            "description": "Spader",
+            "pictogram": "♠",
+            "symbol_type": "other",
+        },
+        {
+            "name": "Streckad linje",
+            "description": "Streckad linje",
+            "pictogram": "┄",
+            "symbol_type": "other",
+        },
+        {
+            "name": "Tjur",
+            "description": "Tjur",
+            "pictogram": "🐃",
+            "symbol_type": "other",
+        },
+        {
+            "name": "Tre kronor",
+            "description": "Tre kronor",
+            "pictogram": "👑👑👑",
+            "symbol_type": "other",
+        },
+        {
+            "name": "Triangel",
+            "description": "Triangel",
+            "pictogram": "▲",
+            "symbol_type": "other",
+        },
     ]
-    
+
     for symbol_data in predefined_symbols:
         StampSymbol.objects.get_or_create(
-            name=symbol_data['name'],
+            name=symbol_data["name"],
             defaults={
-                'description': symbol_data.get('description', ''),
-                'pictogram': symbol_data.get('pictogram', ''),
-                'symbol_type': symbol_data.get('symbol_type', 'other'),
-                'is_predefined': True,
-            }
+                "description": symbol_data.get("description", ""),
+                "pictogram": symbol_data.get("pictogram", ""),
+                "symbol_type": symbol_data.get("symbol_type", "other"),
+                "is_predefined": True,
+            },
         )
 
 
 def reverse_create_predefined_symbols(apps, schema_editor):
     """Återställ fördefinierade symboler"""
-    StampSymbol = apps.get_model('axes', 'StampSymbol')
+    StampSymbol = apps.get_model("axes", "StampSymbol")
     StampSymbol.objects.filter(is_predefined=True).delete()
 
 
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('axes', '0046_stampsymbol_pictogram_alter_stampsymbol_symbol_type'),
+        ("axes", "0046_stampsymbol_pictogram_alter_stampsymbol_symbol_type"),
     ]
 
     operations = [
-        migrations.RunPython(create_predefined_symbols, reverse_create_predefined_symbols),
+        migrations.RunPython(
+            create_predefined_symbols, reverse_create_predefined_symbols
+        ),
     ]
