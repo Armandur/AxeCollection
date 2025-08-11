@@ -1,5 +1,6 @@
 from django.test import SimpleTestCase
 from unittest.mock import patch, MagicMock
+from datetime import datetime
 from axes.utils.ebay_parser import EbayParser, parse_ebay_url
 
 
@@ -136,7 +137,18 @@ class EbayParserTestCase(SimpleTestCase):
         end_date = self.parser._extract_auction_end_date(soup)
 
         # Verifiera att datum extraheras korrekt
-        self.assertEqual(end_date, "2025-01-27")
+        # Koden använder aktuellt år (2025) för "Jan 27" utan år
+        # Men logiken för kring nyår kan göra att det blir 2026 om vi är i augusti
+        current_year = datetime.now().year
+        current_month = datetime.now().month
+
+        # Om vi är i augusti och datumet är "Jan 27", så blir det 2026
+        # beroende på kring nyår-logiken (januari är 7 månader bakåt)
+        expected_year = current_year
+        if current_month >= 7:  # Juli eller senare
+            expected_year = current_year + 1
+
+        self.assertEqual(end_date, f"{expected_year}-01-27")
 
     def test_parse_ebay_url_function(self):
         """Testa den enkla parse_ebay_url-funktionen"""

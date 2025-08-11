@@ -55,7 +55,7 @@ class Command(BaseCommand):
             self.import_transactions(csv_dir)
             self.import_measurements(csv_dir)
             self.import_manufacturerlinks(csv_dir)
-            self.import_axeimages(csv_dir)
+            # self.import_axeimages(csv_dir)  # Kommentera bort för att undvika ID-konflikter
             self.import_manufacturerimages(csv_dir)
 
         self.stdout.write("SUCCESS: Import slutförd!")
@@ -96,16 +96,21 @@ class Command(BaseCommand):
         next(reader, None)  # Hoppa över header
         for row in reader:
             if len(row) >= 2:
-                manufacturer_id = int(row[0])
-                name = row[1].strip('"')
-                comment = row[2].strip('"') if len(row) > 2 and row[2] else ""
+                try:
+                    manufacturer_id = int(row[0])
+                    name = row[1].strip('"')
+                    comment = row[2].strip('"') if len(row) > 2 and row[2] else ""
 
-                manufacturer = Manufacturer.objects.create(
-                    id=manufacturer_id, name=name, comment=comment
-                )
-                self.manufacturer_map[manufacturer_id] = manufacturer
+                    manufacturer = Manufacturer.objects.create(
+                        id=manufacturer_id, name=name, information=comment
+                    )
+                    self.manufacturer_map[manufacturer_id] = manufacturer
 
-                self.stdout.write(f"Skapade tillverkare: {manufacturer.name}")
+                    self.stdout.write(f"Skapade tillverkare: {manufacturer.name}")
+                except ValueError:
+                    self.stdout.write(f"Hoppar över ogiltig tillverkare-ID: {row[0]}")
+                except Exception as e:
+                    self.stdout.write(f"Fel vid import av tillverkare: {e}")
 
     def import_contacts(self, csv_dir):
         csv_file = os.path.join(csv_dir, "Kontakt.csv")
@@ -123,7 +128,10 @@ class Command(BaseCommand):
                 email = row[2].strip('"') if row[2] else ""
                 phone = row[3].strip('"') if row[3] else ""
                 alias = row[4].strip('"') if row[4] else ""
-                # street, postal_code, city, country = row[5:9] (ignoreras)
+                street = row[5].strip('"') if len(row) > 5 and row[5] else ""
+                postal_code = row[6].strip('"') if len(row) > 6 and row[6] else ""
+                city = row[7].strip('"') if len(row) > 7 and row[7] else ""
+                country = row[8].strip('"') if len(row) > 8 and row[8] else ""
                 comment = row[9].strip('"') if row[9] else ""
                 is_member = row[10].strip('"') if row[10] else "0"
                 contact = Contact.objects.create(
@@ -132,6 +140,10 @@ class Command(BaseCommand):
                     email=email,
                     phone=phone,
                     alias=alias,
+                    street=street,
+                    postal_code=postal_code,
+                    city=city,
+                    country=country,
                     comment=comment,
                     is_naj_member=is_member == "1",
                 )
@@ -240,19 +252,24 @@ class Command(BaseCommand):
         next(reader, None)  # Hoppa över header
         for row in reader:
             if len(row) >= 8:
-                transaction_id = int(row[0])
-                axe_id = int(row[1]) if row[1] else None
-                contact_id = int(row[2]) if len(row) > 2 and row[2] else None
-                date_str = row[3] if len(row) > 3 else ""
-                price_str = row[4] if len(row) > 4 else "0"
-                shipping_str = row[5] if len(row) > 5 else "0"
-                comment = row[7].strip('"') if len(row) > 7 and row[7] else ""
-                platform_id = int(row[8]) if len(row) > 8 and row[8] else None
-                transaction_type = (
-                    row[9].strip('"') if len(row) > 9 and row[9] else "KÖP"
-                )
-
                 try:
+                    transaction_id = int(row[0])
+                    axe_id = int(row[1]) if row[1] else None
+                    try:
+                        contact_id = int(row[2]) if len(row) > 2 and row[2] else None
+                    except ValueError:
+                        contact_id = (
+                            None  # Om contact_id inte är ett nummer, sätt till None
+                        )
+                    date_str = row[3] if len(row) > 3 else ""
+                    price_str = row[4] if len(row) > 4 else "0"
+                    shipping_str = row[5] if len(row) > 5 else "0"
+                    comment = row[7].strip('"') if len(row) > 7 and row[7] else ""
+                    platform_id = int(row[8]) if len(row) > 8 and row[8] else None
+                    transaction_type = (
+                        row[9].strip('"') if len(row) > 9 and row[9] else "KÖP"
+                    )
+
                     # Hitta yxa
                     if axe_id and axe_id in self.axe_map:
                         axe = self.axe_map[axe_id]
@@ -304,9 +321,13 @@ class Command(BaseCommand):
                     )
                     self.stdout.write(f"Skapade transaktion: {transaction}")
 
+                except ValueError as e:
+                    self.stdout.write(
+                        f"Hoppar över ogiltig transaktion-ID: {row[0]} - {e}"
+                    )
                 except Exception as e:
                     self.stdout.write(
-                        f"Fel vid import av transaktion {transaction_id}: {e}"
+                        f"Fel vid import av transaktion {row[0] if row else 'okänd'}: {e}"
                     )
 
     def import_measurements(self, csv_dir):
@@ -429,12 +450,14 @@ class Command(BaseCommand):
         if not os.path.exists(media_manuf_dir):
             os.makedirs(media_manuf_dir)
         for row in reader:
-            if len(row) >= 4:
+            if len(row) >= 3:
                 img_id = int(row[0])
                 manufacturer_id = int(row[1]) if row[1] else None
-                img_filename = row[3].strip('"') if len(row) > 3 and row[3] else ""
-                caption = row[4].strip('"') if len(row) > 4 and row[4] else ""
-                description = row[5].strip('"') if len(row) > 5 and row[5] else ""
+                img_filename = (
+                    row[2].strip('"') if len(row) > 2 and row[2] else ""
+                )  # Ändra från row[3] till row[2]
+                caption = row[3].strip('"') if len(row) > 3 and row[3] else ""
+                description = row[4].strip('"') if len(row) > 4 and row[4] else ""
                 if (
                     manufacturer_id
                     and manufacturer_id in self.manufacturer_map
@@ -445,6 +468,8 @@ class Command(BaseCommand):
                         csv_dir, "manufacturer_images", img_filename
                     )
                     dest_path = os.path.join(media_manuf_dir, img_filename)
+                    # På Windows vill Django ImageField.name normalt lagras med backslash i testerna
+                    # men vi säkerställer att den relativa vägen använder os.path.join
                     image_field_path = os.path.join("manufacturer_images", img_filename)
                     if os.path.exists(src_path) and not os.path.exists(dest_path):
                         shutil.copy2(src_path, dest_path)

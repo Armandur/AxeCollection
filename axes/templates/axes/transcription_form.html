@@ -1,0 +1,417 @@
+{% extends "axes/base.html" %}
+{% load static %}
+
+{% block title %}
+{% if transcription %}Redigera transkribering{% else %}Ny transkribering{% endif %} - {{ block.super }}
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h1>
+                    {% if transcription %}
+                        Redigera transkribering
+                    {% else %}
+                        Ny transkribering
+                    {% endif %}
+                </h1>
+                <a href="{% url 'stamp_detail' stamp.id %}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Tillbaka till stämpel
+                </a>
+            </div>
+
+            {% if stamp %}
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle"></i> 
+                Transkribering skapas för stämpel: 
+                <a href="{% url 'stamp_detail' stamp.id %}" class="alert-link">{{ stamp.name }}</a>
+            </div>
+            {% endif %}
+
+            <!-- Bildgalleri längst upp -->
+            {% if stamp and stamp_images %}
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">
+                                <i class="fas fa-images"></i> Stämpelbilder ({{ stamp_images.count }})
+                            </h5>
+                            {% if stamp_images.count > 1 %}
+                            <button id="carouselPlayPause" class="btn btn-sm btn-outline-primary" onclick="toggleCarousel()">
+                                <i class="fas fa-pause"></i> Pausa
+                            </button>
+                            {% endif %}
+                        </div>
+                        <div class="card-body">
+                            {% if stamp_images %}
+                                <!-- Huvudcarousel -->
+                                <div id="stampImageCarousel" class="carousel slide mb-3" data-bs-ride="carousel" data-bs-interval="1200">
+                                    <div class="carousel-inner">
+                                        {% for image in stamp_images %}
+                                        <div class="carousel-item {% if forloop.first %}active{% endif %}">
+                                            <div class="position-relative">
+                                                {% if image.image_type == 'axe_mark' %}
+                                                    <!-- Visa stämpelmarkering från yxbild -->
+                                                    {% if image.has_coordinates and image.axe_image.image %}
+                                                        <!-- Visa beskuren stämpelmarkering -->
+                                                        <div class="stamp-crop-container" style="height: 400px; overflow: hidden; border-radius: 8px; cursor: pointer;" 
+                                                            onclick="openImageModal('{{ image.axe_image.image_url_with_cache_busting }}', '{{ image.axe_image.axe.display_id }}', '{{ image.x_coordinate }}', '{{ image.y_coordinate }}', '{{ image.width }}', '{{ image.height }}', true)">
+                                                            <img src="{{ image.axe_image.image_url_with_cache_busting }}" 
+                                                                 class="w-100 h-100" 
+                                                                 alt="Stämpel från {{ image.axe_image.axe.display_id }}"
+                                                                 data-stamp-width="{{ image.width }}"
+                                                                 data-stamp-height="{{ image.height }}"
+                                                                 data-crop-x="{{ image.x_coordinate }}"
+                                                                 data-crop-y="{{ image.y_coordinate }}"
+                                                                 style="object-fit: cover;">
+                                                        </div>
+                                                    {% else %}
+                                                        <!-- Visa hela yxbild med stämpelmarkering -->
+                                                        <div style="height: 400px; cursor: pointer;" 
+                                                             onclick="openImageModal('{{ image.axe_image.image_url_with_cache_busting }}', '{{ image.axe_image.axe.display_id }}', null, null, null, null, false)">
+                                                            <img src="{{ image.axe_image.image_url_with_cache_busting }}" 
+                                                                 class="w-100 h-100" 
+                                                                 alt="Stämpel från {{ image.axe_image.axe.display_id }}" 
+                                                                 style="object-fit: cover; border-radius: 8px;">
+                                                        </div>
+                                                    {% endif %}
+                                                {% else %}
+                                                    <!-- Visa fristående stämpelbild -->
+                                                    {% if image.has_coordinates and image.image %}
+                                                        <!-- Visa beskuren fristående bild -->
+                                                        <div class="stamp-crop-container" style="height: 400px; overflow: hidden; border-radius: 8px; cursor: pointer;" 
+                                                            onclick="openImageModal('{{ image.image_url_with_cache_busting }}', '{{ image.caption|default:stamp.name }}', '{{ image.x_coordinate }}', '{{ image.y_coordinate }}', '{{ image.width }}', '{{ image.height }}', true)">
+                                                            <img src="{{ image.image_url_with_cache_busting }}" 
+                                                                 class="w-100 h-100" 
+                                                                 alt="{{ image.caption|default:stamp.name }}"
+                                                                 data-stamp-width="{{ image.width }}"
+                                                                 data-stamp-height="{{ image.height }}"
+                                                                 data-crop-x="{{ image.x_coordinate }}"
+                                                                 data-crop-y="{{ image.y_coordinate }}"
+                                                                 style="object-fit: cover;">
+                                                        </div>
+                                                    {% else %}
+                                                        <!-- Visa hela fristående bild -->
+                                                        <div style="height: 400px; cursor: pointer;" 
+                                                             onclick="openImageModal('{% if image.webp_url %}{{ image.webp_url }}{% else %}{{ image.image_url_with_cache_busting }}{% endif %}', '{{ image.caption|default:stamp.name }}', null, null, null, null, false)">
+                                                            <img src="{% if image.webp_url %}{{ image.webp_url }}{% else %}{{ image.image_url_with_cache_busting }}{% endif %}" 
+                                                                 class="w-100 h-100" 
+                                                                 alt="{{ image.caption|default:stamp.name }}" 
+                                                                 style="object-fit: cover; border-radius: 8px;">
+                                                        </div>
+                                                    {% endif %}
+                                                {% endif %}
+                                                
+                                                {% if image.is_primary %}
+                                                <div class="position-absolute top-0 end-0 m-2">
+                                                    <span class="badge bg-warning">
+                                                        <i class="fas fa-star"></i> Huvudbild
+                                                    </span>
+                                                </div>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+                                    
+                                    {% if stamp_images.count > 1 %}
+                                    <button class="carousel-control-prev" type="button" data-bs-target="#stampImageCarousel" data-bs-slide="prev">
+                                        <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                                        <span class="visually-hidden">Föregående</span>
+                                    </button>
+                                    <button class="carousel-control-next" type="button" data-bs-target="#stampImageCarousel" data-bs-slide="next">
+                                        <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                                        <span class="visually-hidden">Nästa</span>
+                                    </button>
+                                    {% endif %}
+                                </div>
+
+                                <!-- Thumbnails längs botten -->
+                                {% if stamp_images.count > 1 %}
+                                <div class="mt-3">
+                                    <div class="d-flex flex-wrap gap-2 justify-content-center">
+                                        {% for image in stamp_images %}
+                                        <div class="position-relative" style="cursor: pointer;" 
+                                             onclick="goToSlide({{ forloop.counter0 }})">
+                                            {% if image.image_type == 'axe_mark' %}
+                                                <!-- Thumbnail för stämpelmarkering från yxbild -->
+                                                {% if image.has_coordinates and image.axe_image.image %}
+                                                    <!-- Thumbnail för beskuren stämpelmarkering -->
+                                                    <div class="stamp-crop-container" style="width: 60px; height: 60px; overflow: hidden; border-radius: 4px; border: 2px solid {% if forloop.first %}var(--bs-primary){% else %}transparent{% endif %};">
+                                                        <img src="{{ image.axe_image.image_url_with_cache_busting }}" 
+                                                             class="w-100 h-100" 
+                                                             alt="Stämpel från {{ image.axe_image.axe.display_id }}"
+                                                             data-stamp-width="{{ image.width }}"
+                                                             data-stamp-height="{{ image.height }}"
+                                                             data-crop-x="{{ image.x_coordinate }}"
+                                                             data-crop-y="{{ image.y_coordinate }}"
+                                                             style="object-fit: cover;">
+                                                    </div>
+                                                {% else %}
+                                                    <!-- Thumbnail för hela yxbild -->
+                                                    <img src="{{ image.axe_image.image_url_with_cache_busting }}" 
+                                                         class="rounded" 
+                                                         alt="Stämpel från {{ image.axe_image.axe.display_id }}" 
+                                                         style="width: 60px; height: 60px; object-fit: cover; border: 2px solid {% if forloop.first %}var(--bs-primary){% else %}transparent{% endif %};">
+                                                {% endif %}
+                                            {% else %}
+                                                <!-- Thumbnail för fristående stämpelbild -->
+                                                {% if image.has_coordinates and image.image %}
+                                                    <!-- Thumbnail för beskuren fristående bild -->
+                                                    <div class="stamp-crop-container" style="width: 60px; height: 60px; overflow: hidden; border-radius: 4px; border: 2px solid {% if forloop.first %}var(--bs-primary){% else %}transparent{% endif %};">
+                                                        <img src="{{ image.image_url_with_cache_busting }}" 
+                                                             class="w-100 h-100" 
+                                                             alt="{{ image.caption|default:stamp.name }}"
+                                                             data-stamp-width="{{ image.width }}"
+                                                             data-stamp-height="{{ image.height }}"
+                                                             data-crop-x="{{ image.x_coordinate }}"
+                                                             data-crop-y="{{ image.y_coordinate }}"
+                                                             style="object-fit: cover;">
+                                                    </div>
+                                                {% else %}
+                                                    <!-- Thumbnail för hela fristående bild -->
+                                                    <img src="{% if image.webp_url %}{{ image.webp_url }}{% else %}{{ image.image_url_with_cache_busting }}{% endif %}" 
+                                                         class="rounded" 
+                                                         alt="{{ image.caption|default:stamp.name }}" 
+                                                         style="width: 60px; height: 60px; object-fit: cover; border: 2px solid {% if forloop.first %}var(--bs-primary){% else %}transparent{% endif %};">
+                                                {% endif %}
+                                            {% endif %}
+                                            
+                                            {% if image.is_primary %}
+                                            <div class="position-absolute top-0 end-0">
+                                                <span class="badge bg-warning" style="font-size: 0.6em;">
+                                                    <i class="fas fa-star"></i>
+                                                </span>
+                                            </div>
+                                            {% endif %}
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                                {% endif %}
+                            {% else %}
+                                <div class="text-center py-4">
+                                    <i class="fas fa-images text-muted" style="font-size: 3rem;"></i>
+                                    <p class="text-muted mt-2">Inga bilder tillgängliga för denna stämpel</p>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Formulär -->
+            <div class="row">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-body">
+                            <form method="post">
+                                {% csrf_token %}
+                                
+                                <div class="row">
+                                    <div class="col-md-12">
+                                        {% if not stamp %}
+                                        <div class="mb-3">
+                                            <label for="{{ form.stamp.id_for_label }}" class="form-label">
+                                                {{ form.stamp.label }}
+                                            </label>
+                                            {{ form.stamp }}
+                                            {% if form.stamp.help_text %}
+                                            <div class="form-text">{{ form.stamp.help_text }}</div>
+                                            {% endif %}
+                                            {% if form.stamp.errors %}
+                                            <div class="invalid-feedback d-block">
+                                                {% for error in form.stamp.errors %}
+                                                {{ error }}
+                                                {% endfor %}
+                                            </div>
+                                            {% endif %}
+                                        </div>
+                                        {% endif %}
+
+                                        <div class="mb-3">
+                                            <label for="{{ form.text.id_for_label }}" class="form-label">
+                                                {{ form.text.label }}
+                                            </label>
+                                            {{ form.text }}
+                                            {% if form.text.help_text %}
+                                            <div class="form-text">{{ form.text.help_text }}</div>
+                                            {% endif %}
+                                            {% if form.text.errors %}
+                                            <div class="invalid-feedback d-block">
+                                                {% for error in form.text.errors %}
+                                                {{ error }}
+                                                {% endfor %}
+                                            </div>
+                                            {% endif %}
+                                        </div>
+
+                                        <div class="mb-3">
+                                            <label for="{{ form.quality.id_for_label }}" class="form-label">
+                                                {{ form.quality.label }}
+                                            </label>
+                                            {{ form.quality }}
+                                            {% if form.quality.help_text %}
+                                            <div class="form-text">{{ form.quality.help_text }}</div>
+                                            {% endif %}
+                                            {% if form.quality.errors %}
+                                            <div class="invalid-feedback d-block">
+                                                {% for error in form.quality.errors %}
+                                                {{ error }}
+                                                {% endfor %}
+                                            </div>
+                                            {% endif %}
+                                        </div>
+
+                                        <div class="mb-3">
+                                            <label for="{{ form.symbols.id_for_label }}" class="form-label">
+                                                {{ form.symbols.label }}
+                                            </label>
+                                            {{ form.symbols }}
+                                            {% if form.symbols.help_text %}
+                                            <div class="form-text">{{ form.symbols.help_text }}</div>
+                                            {% endif %}
+                                            {% if form.symbols.errors %}
+                                            <div class="invalid-feedback d-block">
+                                                {% for error in form.symbols.errors %}
+                                                {{ error }}
+                                                {% endfor %}
+                                            </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="d-flex justify-content-between">
+                                    <a href="{% url 'stamp_detail' stamp.id %}" class="btn btn-secondary">
+                                        <i class="fas fa-times"></i> Avbryt
+                                    </a>
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-save"></i> 
+                                        {% if transcription %}Uppdatera{% else %}Skapa{% endif %}
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal för fullständig bildvisning -->
+<div class="modal fade" id="imageModal" tabindex="-1" aria-labelledby="imageModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="imageModalLabel">Bildvisning</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Stäng"></button>
+            </div>
+            <div class="modal-body text-center">
+                <div id="modalImageContainer">
+                    <!-- Bilderna kommer att laddas här via JavaScript -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Stäng</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Ladda canvas-funktionalitet -->
+<script src="{% static 'js/stamp_crop_canvas.js' %}?v={{ request.GET.v|default:'1.0' }}"></script>
+
+<script>
+let carousel = null;
+let isPlaying = true;
+
+function goToSlide(index) {
+    if (!carousel) {
+        carousel = new bootstrap.Carousel(document.getElementById('stampImageCarousel'));
+    }
+    carousel.to(index);
+    
+    // Uppdatera thumbnail-borders
+    document.querySelectorAll('.stamp-crop-container, .rounded').forEach((el, i) => {
+        if (i === index) {
+            el.style.borderColor = 'var(--bs-primary)';
+        } else {
+            el.style.borderColor = 'transparent';
+        }
+    });
+}
+
+function toggleCarousel() {
+    if (!carousel) {
+        carousel = new bootstrap.Carousel(document.getElementById('stampImageCarousel'));
+    }
+    
+    const button = document.getElementById('carouselPlayPause');
+    const icon = button.querySelector('i');
+    const text = button.querySelector('span') || button.lastChild;
+    
+    if (isPlaying) {
+        // Pausa carousel
+        carousel.pause();
+        icon.className = 'fas fa-play';
+        button.innerHTML = '<i class="fas fa-play"></i> Spela';
+        isPlaying = false;
+    } else {
+        // Starta carousel
+        carousel.cycle();
+        icon.className = 'fas fa-pause';
+        button.innerHTML = '<i class="fas fa-pause"></i> Pausa';
+        isPlaying = true;
+    }
+}
+
+function openImageModal(imageUrl, caption, xCoord, yCoord, width, height, isCropped) {
+    const modal = new bootstrap.Modal(document.getElementById('imageModal'));
+    const container = document.getElementById('modalImageContainer');
+    
+    // Rensa container
+    container.innerHTML = '';
+    
+    // Skapa bild-element
+    const img = document.createElement('img');
+    img.src = imageUrl;
+    img.alt = caption;
+    img.className = 'img-fluid';
+    img.style.maxHeight = '70vh';
+    
+    // Lägg till bild i container
+    container.appendChild(img);
+    
+    // Uppdatera modal-titel
+    document.getElementById('imageModalLabel').textContent = caption;
+    
+    // Visa modal
+    modal.show();
+}
+
+// Lyssna på carousel-ändringar för att uppdatera thumbnail-borders
+document.addEventListener('DOMContentLoaded', function() {
+    const carouselElement = document.getElementById('stampImageCarousel');
+    if (carouselElement) {
+        carousel = new bootstrap.Carousel(carouselElement);
+        
+        carouselElement.addEventListener('slid.bs.carousel', function(event) {
+            const activeIndex = event.to;
+            document.querySelectorAll('.stamp-crop-container, .rounded').forEach((el, i) => {
+                if (i === activeIndex) {
+                    el.style.borderColor = 'var(--bs-primary)';
+                } else {
+                    el.style.borderColor = 'transparent';
+                }
+            });
+        });
+    }
+});
+</script>
+{% endblock %} 

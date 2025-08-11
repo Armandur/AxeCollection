@@ -657,7 +657,7 @@ $(document).ready(function() {
                        .html('<i class="bi bi-arrow-left-circle"></i>');
                 }
                 
-                alert('Fel vid uppdatering av status: ' + (xhr.responseJSON?.error || 'Okänt fel'));
+                if (window.showToast) showToast('Fel vid uppdatering av status: ' + (xhr.responseJSON?.error || 'Okänt fel'), 'danger'); else alert('Fel vid uppdatering av status: ' + (xhr.responseJSON?.error || 'Okänt fel'));
             }
         });
     });

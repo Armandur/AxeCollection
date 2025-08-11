@@ -12,6 +12,14 @@ from .models import (
     ManufacturerImage,
     ManufacturerLink,
     AxeImage,
+    # Stämpelregister-modeller
+    Stamp,
+    StampTranscription,
+    StampTag,
+    StampImage,
+    AxeStamp,
+    StampVariant,
+    StampUncertaintyGroup,
 )
 from django import forms
 from django.utils.translation import gettext_lazy as _
@@ -188,6 +196,206 @@ class MeasurementTemplateAdmin(admin.ModelAdmin):
         return obj.items.count()
 
     item_count.short_description = "Antal mått"
+
+
+# Stämpelregister admin-klasser
+class StampTranscriptionInline(admin.TabularInline):
+    model = StampTranscription
+    extra = 1
+    fields = ("text", "quality", "created_by")
+    ordering = ("-created_at",)
+
+
+class StampImageInline(admin.TabularInline):
+    model = StampImage
+    extra = 1
+    fields = ("image", "caption", "description", "quality", "order")
+    ordering = (
+        "order",
+        "-uploaded_at",
+    )
+
+
+class StampTagInline(admin.TabularInline):
+    model = StampTag
+    extra = 1
+    fields = ("name", "description", "color")
+
+
+class StampAdmin(admin.ModelAdmin):
+    list_display = (
+        "name",
+        "manufacturer",
+        "stamp_type",
+        "status",
+        "year_range",
+        "source_category",
+    )
+    list_filter = ("stamp_type", "status", "source_category", "manufacturer")
+    search_fields = ("name", "description", "manufacturer__name")
+    ordering = ("name",)
+    fieldsets = (
+        (
+            "Grundinformation",
+            {"fields": ("name", "description", "manufacturer", "stamp_type", "status")},
+        ),
+        (
+            "Årtalsinformation",
+            {
+                "fields": ("year_from", "year_to", "year_uncertainty", "year_notes"),
+                "classes": ("collapse",),
+            },
+        ),
+        (
+            "Källinformation",
+            {
+                "fields": ("source_category", "source_reference"),
+                "classes": ("collapse",),
+            },
+        ),
+    )
+    inlines = [StampTranscriptionInline, StampImageInline]
+
+
+class StampTranscriptionAdmin(admin.ModelAdmin):
+    list_display = ("stamp", "text", "quality", "created_by", "created_at")
+    list_filter = ("quality", "created_at", "stamp__manufacturer")
+    search_fields = ("text", "stamp__name", "stamp__manufacturer__name")
+    ordering = ("-created_at",)
+
+
+class StampTagAdmin(admin.ModelAdmin):
+    list_display = ("name", "description", "color", "created_at")
+    list_filter = ("created_at",)
+    search_fields = ("name", "description")
+    ordering = ("name",)
+
+
+class StampImageAdmin(admin.ModelAdmin):
+    list_display = (
+        "stamp",
+        "image_type",
+        "axe_image",
+        "caption",
+        "is_primary",
+        "has_coordinates",
+        "show_full_image",
+        "uploaded_at",
+    )
+    list_filter = (
+        "image_type",
+        "uploaded_at",
+        "stamp__manufacturer",
+        "uncertainty_level",
+        "is_primary",
+        "show_full_image",
+    )
+    search_fields = (
+        "stamp__name",
+        "stamp__manufacturer__name",
+        "caption",
+        "description",
+        "comment",
+        "external_source",
+    )
+    ordering = (
+        "order",
+        "-uploaded_at",
+    )
+    fieldsets = (
+        (
+            "Grundinformation",
+            {"fields": ("stamp", "image_type", "image", "caption", "description")},
+        ),
+        (
+            "Yxbildmarkering",
+            {
+                "fields": ("axe_image", "show_full_image"),
+                "classes": ("collapse",),
+                "description": "Inställningar för markering av stämplar på yxbilder",
+            },
+        ),
+        (
+            "Koordinater",
+            {
+                "fields": ("x_coordinate", "y_coordinate", "width", "height"),
+                "classes": ("collapse",),
+                "description": "Procentuella koordinater för stämpelområdet",
+            },
+        ),
+        (
+            "Metadata",
+            {"fields": ("position", "comment", "uncertainty_level", "external_source")},
+        ),
+        ("Inställningar", {"fields": ("is_primary", "order")}),
+    )
+
+    def has_coordinates(self, obj):
+        """Kontrollera om bilden har koordinater"""
+        return obj.has_coordinates
+
+    has_coordinates.boolean = True
+    has_coordinates.short_description = "Har koordinater"
+
+    def get_queryset(self, request):
+        """Optimera queryset med select_related"""
+        return (
+            super()
+            .get_queryset(request)
+            .select_related(
+                "stamp", "stamp__manufacturer", "axe_image", "axe_image__axe"
+            )
+        )
+
+    def save_model(self, request, obj, form, change):
+        """Validera data innan sparande"""
+        if obj.image_type == "axe_mark" and not obj.axe_image:
+            self.message_user(
+                request,
+                "Varning: Axe_image måste anges för axe_mark-typer",
+                level="WARNING",
+            )
+        super().save_model(request, obj, form, change)
+
+
+class AxeStampAdmin(admin.ModelAdmin):
+    list_display = ("axe", "stamp", "uncertainty_level", "position", "created_at")
+    list_filter = ("uncertainty_level", "created_at", "stamp__manufacturer")
+    search_fields = ("axe__model", "stamp__name", "comment", "position")
+    ordering = ("-created_at",)
+    fieldsets = (
+        ("Koppling", {"fields": ("axe", "stamp")}),
+        ("Detaljer", {"fields": ("comment", "position", "uncertainty_level")}),
+    )
+
+
+class StampVariantAdmin(admin.ModelAdmin):
+    list_display = ("main_stamp", "variant_stamp", "description", "created_at")
+    list_filter = ("created_at", "main_stamp__manufacturer")
+    search_fields = ("main_stamp__name", "variant_stamp__name", "description")
+    ordering = ("-created_at",)
+
+
+class StampUncertaintyGroupAdmin(admin.ModelAdmin):
+    list_display = ("name", "confidence_level", "stamp_count", "created_at")
+    list_filter = ("confidence_level", "created_at")
+    search_fields = ("name", "description")
+    ordering = ("-created_at",)
+
+    def stamp_count(self, obj):
+        return obj.stamps.count()
+
+    stamp_count.short_description = "Antal stämplar"
+
+
+# Registrera admin-klasserna
+admin.site.register(Stamp, StampAdmin)
+admin.site.register(StampTranscription, StampTranscriptionAdmin)
+admin.site.register(StampTag, StampTagAdmin)
+admin.site.register(StampImage, StampImageAdmin)
+admin.site.register(AxeStamp, AxeStampAdmin)
+admin.site.register(StampVariant, StampVariantAdmin)
+admin.site.register(StampUncertaintyGroup, StampUncertaintyGroupAdmin)
 
 
 # "Registrera" dina modeller så de dyker upp i admin-gränssnittet

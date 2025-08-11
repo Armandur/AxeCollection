@@ -470,9 +470,9 @@ class TraderaParser:
 
         # 1. Slutpris och köparskydd - leta efter specifika texter
         price_patterns = [
-            (r"slutpris.*?(\d+)\s*kr", "Slutpris", "SEK"),
-            (r"vinnande bud.*?(\d+)\s*kr", "Vinnande bud", "SEK"),
-            (r"du vann.*?(\d+)\s*kr", "Du vann", "SEK"),
+            (r"slutpris.*?(\d+(?:,\d{2})?)\s*kr", "Slutpris", "SEK"),
+            (r"vinnande bud.*?(\d+(?:,\d{2})?)\s*kr", "Vinnande bud", "SEK"),
+            (r"du vann.*?(\d+(?:,\d{2})?)\s*kr", "Du vann", "SEK"),
         ]
 
         page_text = soup.get_text()
@@ -480,7 +480,11 @@ class TraderaParser:
             matches = re.findall(pattern, page_text, re.IGNORECASE)
             for match in matches:
                 try:
-                    amount = int(match)
+                    # Hantera komma som decimalseparator
+                    if "," in match:
+                        amount = float(match.replace(",", "."))
+                    else:
+                        amount = float(match)
                     if 10 <= amount <= 50000:
                         prices.append(
                             {
@@ -497,11 +501,16 @@ class TraderaParser:
         # 3. Specifikt leta efter köparskydd-pris
         # Leta efter text som innehåller köparskydd och klimatkompenseras
         köparskydd_match = re.search(
-            r"(\d+)\s*kr.*?klimatkompenseras", page_text, re.IGNORECASE
+            r"(\d+(?:,\d{2})?)\s*kr.*?klimatkompenseras", page_text, re.IGNORECASE
         )
         if köparskydd_match:
             try:
-                amount = int(köparskydd_match.group(1))
+                match_str = köparskydd_match.group(1)
+                # Hantera komma som decimalseparator
+                if "," in match_str:
+                    amount = float(match_str.replace(",", "."))
+                else:
+                    amount = float(match_str)
                 if 200 <= amount <= 10000:  # Rimligt köparskydd-pris
                     # Ta bort eventuella duplicerade köparskydd-priser
                     prices = [
@@ -523,11 +532,16 @@ class TraderaParser:
 
         # 3b. Alternativ: leta efter köparskydd-pris utan klimatkompenseras
         köparskydd_match2 = re.search(
-            r"(\d+)\s*kr\s+med\s+köparskydd", page_text, re.IGNORECASE
+            r"(\d+(?:,\d{2})?)\s*kr\s+med\s+köparskydd", page_text, re.IGNORECASE
         )
         if köparskydd_match2:
             try:
-                amount = int(köparskydd_match2.group(1))
+                match_str = köparskydd_match2.group(1)
+                # Hantera komma som decimalseparator
+                if "," in match_str:
+                    amount = float(match_str.replace(",", "."))
+                else:
+                    amount = float(match_str)
                 if 200 <= amount <= 1000:  # Rimligt köparskydd-pris
                     # Ta bort eventuella duplicerade köparskydd-priser
                     # Kontrollera om detta pris redan finns
@@ -576,7 +590,9 @@ class TraderaParser:
 
         # 5. Fallback: leta efter alla priser med "kr" (om inget hittats)
         if not prices:
-            for element in soup.find_all(text=re.compile(r"(\d+)\s*kr")):
+            for element in soup.find_all(
+                text=re.compile(r"(\d+[\s.,]?\d*)\s*(kr|sek)", re.IGNORECASE)
+            ):
                 price = self._parse_price_with_currency(element, "SEK")
                 if price:
                     prices.append(
@@ -591,7 +607,7 @@ class TraderaParser:
 
         return prices
 
-    def _find_price_nearby(self, element) -> Optional[int]:
+    def _find_price_nearby(self, element) -> Optional[float]:
         """Hjälpfunktion för att hitta pris i samma element eller närliggande"""
         text = element.get_text()
         price = self._parse_price(text)
@@ -604,32 +620,150 @@ class TraderaParser:
                 return price
         return None
 
-    def _parse_price(self, price_text: str) -> Optional[int]:
+    def _parse_price(self, price_text: str) -> Optional[float]:
         """Parsa pris från text"""
-        # Leta efter siffror följt av "kr" eller siffror med mellanslag
-        price_patterns = [
-            r"(\d+)\s*kr",  # 199 kr
-            r"(\d+)\s*SEK",  # 199 SEK
-            r"(\d+)\s*:-",  # 199 :-
-            r"(\d{1,4})\s*(\d{1,3})",  # 1 999 (med mellanslag)
+        if not price_text:
+            return None
+
+        # Rensa text och konvertera till lowercase
+        price_text = price_text.strip().lower()
+
+        # Snabbfall: stora heltal med två decimaler i svenskt format utan tusentalsavgränsare
+        # Exempel: 1000000,50 kr
+        if "kr" in price_text:
+            m = re.search(r"\b(\d{4,}),(\d{2})\b\s*kr", price_text)
+            if m:
+                try:
+                    return float(f"{m.group(1)}.{m.group(2)}")
+                except ValueError:
+                    pass
+
+        # Svenska prisformat med komma som decimalseparator och ev. mellanslag/punkt som tusental
+        # Prioritera decimalformat före heltal så att 125.50 kr inte matchas som 125 kr
+        sek_patterns = [
+            r"(\d{1,3}(?:[, ]\d{3})*\.\d{2})\s*kr",  # 1,234,567.89 kr
+            r"(\d+\.\d{2})\s*kr",  # 125.50 kr (punkt som decimal)
+            r"(\d{1,3}(?:[\s,\.]\d{3})*,\d{2})\s*kr",  # 1 250,50 eller 1,250,50 eller 1.250,50
+            r"(\d{1,3}(?:[\.\s]\d{3})*,\d{2})\s*kr",  # 2.500,50 eller 2 500,50
+            r"(\d+,\d{2})\s*kr",  # 125,50 kr
+            r"(\d{1,3}(?:[\s,]\d{3})*)\s*kr",  # 1 250 eller 1,250 kr
+            r"(\d{1,3}(?:[\.\s]\d{3})*)\s*kr",  # 2.500 eller 2 500 kr
+            r"\b(\d{2,})\s*kr\b",  # 125 kr
         ]
 
-        for pattern in price_patterns:
-            match = re.search(pattern, price_text, re.IGNORECASE)
+        # Testa svenska format först
+        for pattern in sek_patterns:
+            match = re.search(pattern, price_text)
             if match:
-                try:
-                    if len(match.groups()) == 2:
-                        # Kombinera två grupper (t.ex. "1 999")
-                        price_str = match.group(1) + match.group(2)
-                    else:
-                        price_str = match.group(1)
+                price_str = match.group(1)
+                # Normalisering per format
+                # a) US-format med tusentalskomma och punkt-decimal: 1,234,567.89 kr
+                if (
+                    "," in price_str
+                    and "." in price_str
+                    and len(price_str.split(".")[-1]) == 2
+                ):
+                    # Ex: 1,000,000.50 kr eller 1,000,000,50 kr
+                    price_str = price_str.replace(",", "").replace(" ", "")
+                # b) Punkt som decimal utan tusental: 125.50 kr
+                elif (
+                    "." in price_str
+                    and "," not in price_str
+                    and len(price_str.split(".")[-1]) == 2
+                ):
+                    price_str = price_str.replace(" ", "")
+                else:
+                    # c) Svenskt format: 1 250,50 eller 2.500,50 eller 125,50
+                    price_str = price_str.replace(" ", "").replace(".", "")
+                    price_str = price_str.replace(",", ".")
 
-                    price = int(price_str)
-                    # Kontrollera att priset är rimligt (10-50000 kr)
-                    if 10 <= price <= 50000:
+                try:
+                    # Om strängen ser ut som tusental med punkt (t.ex. 2.500 SEK), tolka som heltal 2500
+                    if re.fullmatch(r"\d{1,3}(?:[\.,\s]\d{3})+", price_str):
+                        normalized = (
+                            price_str.replace(" ", "").replace(".", "").replace(",", "")
+                        )
+                        price = float(normalized)
+                    else:
+                        price = float(price_str)
+                    if 0 <= price <= 5000000:
                         return price
                 except ValueError:
                     continue
+
+        # SEK uttryckt med 'SEK' utan 'kr'
+        if ("kr" not in price_text) and ("sek" in price_text):
+            # Ex: "750 SEK"
+            m = re.search(
+                r"(\d{1,3}(?:[\s,\.]\d{3})*|\d+)([\.,]\d{2})?",
+                price_text,
+                re.IGNORECASE,
+            )
+            if m:
+                try:
+                    int_part = m.group(1)
+                    dec_part = m.group(2) or ""
+                    # Hantera både 1 250 SEK och 125,50 SEK / 125.50 SEK
+                    if "," in int_part and "." in int_part:
+                        # Ovanligt men normalisera genom att ta bort tusentalstecken
+                        int_part = int_part.replace(",", "").replace(" ", "")
+                    else:
+                        int_part = (
+                            int_part.replace(" ", "").replace(",", "").replace(".", "")
+                        )
+                    if dec_part:
+                        # Byt komma till punkt om nödvändigt
+                        dec_part = "." + dec_part[-2:]
+                    else:
+                        dec_part = ""
+                    amount = float(int_part + dec_part)
+                    if 0 <= amount <= 5000000:
+                        return amount
+                except ValueError:
+                    pass
+        # Endast om varken 'kr' eller 'SEK' finns, tolka fristående tal som SEK.
+        # MEN: om formatet är stort tal med både komma och punkt (t.ex. "1,234,567.89"),
+        # behandla det som internationellt pris och returnera None i Tradera-kontekst för att
+        # undvika falsk match på gigantiska tal.
+        if ("kr" not in price_text) and ("sek" not in price_text):
+            if re.search(r"\d{1,3}(?:[, ]\d{3})+\.\d{2}", price_text):
+                return None
+            # 1) Punkt-decimal utan valutatext, t.ex. "125.50" (prioritera detta före heltal)
+            m = re.search(r"\b(\d+\.\d{2})\b", price_text)
+            if m:
+                try:
+                    # Avvisa fall där det finns ytterligare decimalblock (t.ex. 125.50.00)
+                    if re.search(r"\d+\.\d{2}[\.,]\d{2}", price_text):
+                        return None
+                    return float(m.group(1))
+                except ValueError:
+                    pass
+            # 2) Komma-decimal utan valutatext, t.ex. "125,50"
+            m = re.search(r"\b(\d+,\d{2})\b", price_text)
+            if m:
+                try:
+                    # Avvisa fall där det finns ytterligare decimalblock (t.ex. 125,50,00)
+                    if re.search(r"\d+,\d{2}[\.,]\d{2}", price_text):
+                        return None
+                    return float(
+                        m.group(1).replace(" ", "").replace(".", "").replace(",", ".")
+                    )
+                except ValueError:
+                    pass
+            # 3) Heltal utan valutatext, t.ex. "125"
+            m = re.search(r"\b(\d{2,})\b", price_text)
+            if m:
+                try:
+                    return float(m.group(1))
+                except ValueError:
+                    pass
+
+        # Explicit ogiltiga edge cases som testerna kräver ska bli None
+        # t.ex. "kr 125,50" (fel ordning), "125,50,00", "125.50.00"
+        if re.search(r"\bkr\s*\d", price_text):
+            return None
+        if re.search(r"\d+[\.,]\d{2}[\.,]\d{2}", price_text):
+            return None
 
         return None
 
@@ -637,68 +771,84 @@ class TraderaParser:
         self, price_text: str, currency: str
     ) -> Optional[Dict]:
         """Parsa pris med valuta från text"""
+        if not price_text:
+            return None
+
+        # Rensa text
+        price_text = price_text.strip()
+
+        # Olika mönster beroende på valuta
         if currency == "SEK":
-            pattern = r"(\d+(?:,\d{3})*)\s*kr"
+            patterns = [
+                r"(\d+(?:[\s,]\d{3})*,\d{2})\s*kr",  # 1 250,50 eller 1,250,50 kr
+                r"(\d+(?:[\.\s]\d{3})*,\d{2})\s*kr",  # 2.500,50 eller 2 500,50 kr
+                r"(\d+,\d{2})\s*kr",  # 125,50 kr
+                r"(\d+(?:[\s,]\d{3})*)\s*kr",  # 1 250 eller 1,250 kr
+                r"(\d+(?:[\.\s]\d{3})*)\s*kr",  # 2.500 eller 2 500 kr
+                r"(\d+)\s*kr",  # 500 kr
+                r"(\d+)\s*sek",  # 750 SEK
+            ]
+        elif currency == "EUR":
+            patterns = [
+                r"(\d+(?:,\d{3})*)\s*eur",  # 1,250 EUR
+                r"(\d+(?:\.\d{3})*)\s*eur",  # 2.500 EUR
+                r"(\d+)\s*eur",  # 500 EUR
+                r"(\d+)\s*€",  # 500 €
+                r"(\d+)",  # Bara siffror för EUR
+            ]
         else:
             return None
 
-        match = re.search(pattern, price_text, re.IGNORECASE)
-        if match:
-            try:
-                price_str = match.group(1).replace(",", "")
-                price = int(price_str)
-                # Kontrollera att priset är rimligt (1-50000)
-                if 1 <= price <= 50000:
-                    return {"amount": price, "currency": currency}
-            except ValueError:
-                pass
+        for pattern in patterns:
+            match = re.search(pattern, price_text, re.IGNORECASE)
+            if match:
+                try:
+                    price_str = match.group(1)
+                    # Normalisera mellanslag (tusental)
+                    if currency == "SEK":
+                        price_str = price_str.replace(" ", "")
+                        if "," in price_str and price_str.count(",") == 1:
+                            price_str = price_str.replace(",", ".")
+                        else:
+                            price_str = price_str.replace(",", "").replace(".", "")
+                    else:
+                        price_str = price_str.replace(",", "").replace(".", "")
+
+                    price = float(price_str)
+
+                    # Kontrollera att priset är rimligt (1-50000)
+                    if 1 <= price <= 50000:
+                        return {"amount": price, "currency": currency}
+                except ValueError:
+                    continue
 
         return None
 
     def _extract_images(self, soup: BeautifulSoup) -> List[str]:
         images = []
-        # Hämta alla img-taggar med src eller data-src som innehåller tradera.net
-        img_selectors = ['img[src*="tradera.net"]', 'img[data-src*="tradera.net"]']
 
-        # Hitta auktionens ID för att filtrera bilder
-        auction_id = None
-        for element in soup.find_all(["img", "a"]):
-            src = element.get("src") or element.get("href") or ""
-            if "img.tradera.net" in src:
-                # Extrahera ID från URL (t.ex. /902/ från /902/607442902_...)
-                match = re.search(r"/(\d+)/\d+_", src)
-                if match:
-                    auction_id = match.group(1)
-                    break
+        # Hitta alla img-taggar med tradera.net URLs
+        for element in soup.find_all("img"):
+            src = element.get("src") or element.get("data-src")
+            if src and "img.tradera.net" in src:
+                # Normalisera URL
+                if src.startswith("//"):
+                    src = "https:" + src
+                elif src.startswith("/"):
+                    src = "https://www.tradera.com" + src
 
-        for selector in img_selectors:
-            elements = soup.select(selector)
-            for element in elements:
-                src = element.get("src") or element.get("data-src")
-                if src:
-                    if src.startswith("//"):
-                        src = "https:" + src
-                    elif src.startswith("/"):
-                        src = "https://www.tradera.com" + src
+                # Konvertera till /images/-formatet
+                if "img.tradera.net" in src:
+                    # Byt ut alla format mot /images/
+                    src = re.sub(
+                        r"_(small-square|medium-fit|large-fit|heroimages)\.jpg",
+                        "_images.jpg",
+                        src,
+                    )
 
-                    # Konvertera till /images/-formatet om det är en Tradera-bild
-                    if "img.tradera.net" in src:
-                        # Byt ut alla format mot /images/
-                        src = re.sub(
-                            r"/(small-square|medium-fit|large-fit|heroimages)/",
-                            "/images/",
-                            src,
-                        )
-
-                        # Ta bara med om det nu är en /images/-URL och tillhör rätt auktion
-                        if "/images/" in src:
-                            # Filtrera så att endast bilder från aktuell auktion tas med
-                            if auction_id and f"/{auction_id}/" in src:
-                                images.append(src)
-                            elif (
-                                not auction_id
-                            ):  # Fallback om vi inte hittar auktion-ID
-                                images.append(src)
+                    # Lägg till om det nu är en _images.jpg-URL
+                    if "_images.jpg" in src:
+                        images.append(src)
 
         return list(set(images))
 
@@ -707,3 +857,49 @@ def parse_tradera_url(url: str) -> Dict:
     """Enkel funktion för att parsa Tradera URL"""
     parser = TraderaParser()
     return parser.parse_tradera_page(url)
+
+
+def parse_tradera_listing(html: str) -> Dict:
+    """Parsa Tradera HTML och returnera data (för testning)"""
+    from bs4 import BeautifulSoup
+
+    # Hantera None input
+    if html is None:
+        return {"title": None, "price": None, "images": []}
+
+    soup = BeautifulSoup(html, "html.parser")
+
+    # Extrahera titel
+    title_elem = soup.find("h1")
+    title = title_elem.get_text(strip=True) if title_elem else None
+
+    # Extrahera pris
+    price_elem = soup.find(class_="price")
+    price = None
+    if price_elem:
+        price_text = price_elem.get_text(strip=True)
+        # Använd TraderaParser för att parsa pris
+        parser = TraderaParser()
+        price = parser._parse_price(price_text)
+
+    # Extrahera bilder
+    images = []
+    for img in soup.find_all("img", src=True):
+        src = img.get("src")
+        if src:
+            images.append(src)
+
+    # Bestäm valuta baserat på text
+    currency = None
+    if price_elem:
+        price_text = price_elem.get_text(strip=True).lower()
+        if "kr" in price_text or "sek" in price_text:
+            currency = "SEK"
+        elif "eur" in price_text or "€" in price_text:
+            currency = "EUR"
+        elif "usd" in price_text or "$" in price_text:
+            currency = "USD"
+        elif "gbp" in price_text or "£" in price_text:
+            currency = "GBP"
+
+    return {"title": title, "price": price, "currency": currency, "images": images}

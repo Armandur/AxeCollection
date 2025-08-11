@@ -43,27 +43,27 @@ class TemplateFiltersTest(TestCase):
     def test_format_decimal(self):
         """Test format_decimal filter"""
         # Test heltal
-        self.assertEqual(format_decimal(1000), mark_safe("1\u00A0000"))
-        self.assertEqual(format_decimal(1234567), mark_safe("1\u00A0234\u00A0567"))
+        self.assertEqual(format_decimal(1000), mark_safe("1\u00a0000"))
+        self.assertEqual(format_decimal(1234567), mark_safe("1\u00a0234\u00a0567"))
 
         # Test decimaltal
-        self.assertEqual(format_decimal(1000.50), mark_safe("1\u00A0000,50"))
-        self.assertEqual(format_decimal(1234.56), mark_safe("1\u00A0234,56"))
+        self.assertEqual(format_decimal(1000.50), mark_safe("1\u00a0000,50"))
+        self.assertEqual(format_decimal(1234.56), mark_safe("1\u00a0234,56"))
 
         # Test None
         self.assertEqual(format_decimal(None), "0")
 
         # Test Decimal-objekt
-        self.assertEqual(format_decimal(Decimal("1234.56")), mark_safe("1\u00A0234,56"))
+        self.assertEqual(format_decimal(Decimal("1234.56")), mark_safe("1\u00a0234,56"))
 
     def test_format_currency(self):
         """Test format_currency filter"""
         # Test med standardvaluta (kr)
-        self.assertEqual(format_currency(1000), mark_safe("1\u00A0000\u00A0kr"))
-        self.assertEqual(format_currency(1234.56), mark_safe("1\u00A0234,56\u00A0kr"))
+        self.assertEqual(format_currency(1000), mark_safe("1\u00a0000\u00a0kr"))
+        self.assertEqual(format_currency(1234.56), mark_safe("1\u00a0234,56\u00a0kr"))
 
         # Test med annan valuta
-        self.assertEqual(format_currency(1000, "€"), mark_safe("1\u00A0000\u00A0€"))
+        self.assertEqual(format_currency(1000, "€"), mark_safe("1\u00a0000\u00a0€"))
 
         # Test None
         self.assertEqual(format_currency(None), "")

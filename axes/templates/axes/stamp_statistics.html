@@ -1,0 +1,311 @@
+{% extends 'axes/base.html' %}
+{% load static %}
+
+{% block title %}Stämpelstatistik{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'stamp_list' %}">Stämplar</a></li>
+            <li class="breadcrumb-item active">Statistik</li>
+        </ol>
+    </nav>
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Stämpelstatistik</h1>
+        <div>
+            <a href="{% url 'stamp_list' %}" class="btn btn-secondary">Tillbaka till stämplar</a>
+            <a href="{% url 'axes_without_stamps' %}" class="btn btn-info">Yxor utan stämplar</a>
+        </div>
+    </div>
+
+    <!-- Översikt -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h3 class="card-title">{{ total_stamps }}</h3>
+                    <p class="card-text">Totalt antal stämplar</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h3 class="card-title">{{ known_stamps }}</h3>
+                    <p class="card-text">Kända stämplar</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h3 class="card-title">{{ unknown_stamps }}</h3>
+                    <p class="card-text">Okända stämplar</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h3 class="card-title">{{ total_axes }}</h3>
+                    <p class="card-text">Totalt antal yxor</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h3 class="card-title">{{ axes_with_stamps }}</h3>
+                    <p class="card-text">Yxor med stämplar</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h3 class="card-title">{{ axes_without_stamps }}</h3>
+                    <p class="card-text">Yxor utan stämplar</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h3 class="card-title">{{ percentage_with_stamps|floatformat:1 }}%</h3>
+                    <p class="card-text">% yxor med stämplar</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h3 class="card-title">{{ total_transcriptions }}</h3>
+                    <p class="card-text">Transkriptioner</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stämplar per tillverkare -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Stämplar per tillverkare</h5>
+                </div>
+                <div class="card-body">
+                    {% if stamps_by_manufacturer %}
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Tillverkare</th>
+                                        <th>Antal stämplar</th>
+                                        <th>%</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for item in stamps_by_manufacturer %}
+                                        <tr>
+                                            <td>
+                                                {% if item.manufacturer %}
+                                                    <a href="{% url 'manufacturer_detail' item.manufacturer.id %}">{{ item.manufacturer.name }}</a>
+                                                {% else %}
+                                                    <span class="text-muted">Okänd</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>{{ item.count }}</td>
+                                            <td>{{ item.percentage|floatformat:1 }}%</td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <p class="text-muted">Ingen data tillgänglig</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Stämplar per typ</h5>
+                </div>
+                <div class="card-body">
+                    {% if stamps_by_type %}
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Typ</th>
+                                        <th>Antal stämplar</th>
+                                        <th>%</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for item in stamps_by_type %}
+                                        <tr>
+                                            <td>{{ item.get_stamp_type_display }}</td>
+                                            <td>{{ item.count }}</td>
+                                            <td>{{ item.percentage|floatformat:1 }}%</td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <p class="text-muted">Ingen data tillgänglig</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stämplar per status -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Stämplar per status</h5>
+                </div>
+                <div class="card-body">
+                    {% if stamps_by_status %}
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Status</th>
+                                        <th>Antal stämplar</th>
+                                        <th>%</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for item in stamps_by_status %}
+                                        <tr>
+                                            <td>
+                                                <span class="badge {% if item.status == 'known' %}bg-success{% else %}bg-warning{% endif %}">
+                                                    {{ item.get_status_display }}
+                                                </span>
+                                            </td>
+                                            <td>{{ item.count }}</td>
+                                            <td>{{ item.percentage|floatformat:1 }}%</td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <p class="text-muted">Ingen data tillgänglig</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Stämplar per källa</h5>
+                </div>
+                <div class="card-body">
+                    {% if stamps_by_source %}
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Källa</th>
+                                        <th>Antal stämplar</th>
+                                        <th>%</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for item in stamps_by_source %}
+                                        <tr>
+                                            <td>{{ item.get_source_category_display }}</td>
+                                            <td>{{ item.count }}</td>
+                                            <td>{{ item.percentage|floatformat:1 }}%</td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <p class="text-muted">Ingen data tillgänglig</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Senaste aktivitet -->
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Senaste stämplar</h5>
+                </div>
+                <div class="card-body">
+                    {% if recent_stamps %}
+                        <div class="list-group list-group-flush">
+                            {% for stamp in recent_stamps %}
+                                <div class="list-group-item">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div>
+                                            <h6 class="mb-1">
+                                                <a href="{% url 'stamp_detail' stamp.id %}">{{ stamp.name }}</a>
+                                            </h6>
+                                            <small class="text-muted">
+                                                {% if stamp.manufacturer %}{{ stamp.manufacturer.name }}{% else %}Okänd tillverkare{% endif %}
+                                            </small>
+                                        </div>
+                                        <small class="text-muted">{{ stamp.created_at|date:"Y-m-d" }}</small>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-muted">Inga stämplar skapade än</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Stämplar med flest yxor</h5>
+                </div>
+                <div class="card-body">
+                    {% if stamps_with_most_axes %}
+                        <div class="list-group list-group-flush">
+                            {% for item in stamps_with_most_axes %}
+                                <div class="list-group-item">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div>
+                                            <h6 class="mb-1">
+                                                <a href="{% url 'stamp_detail' item.stamp.id %}">{{ item.stamp.name }}</a>
+                                            </h6>
+                                            <small class="text-muted">
+                                                {% if item.stamp.manufacturer %}{{ item.stamp.manufacturer.name }}{% else %}Okänd tillverkare{% endif %}
+                                            </small>
+                                        </div>
+                                        <span class="badge bg-primary">{{ item.axe_count }} yxor</span>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-muted">Ingen data tillgänglig</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

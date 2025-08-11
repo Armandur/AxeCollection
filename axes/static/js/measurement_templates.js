@@ -603,7 +603,7 @@ class MeasurementTemplateManager {
     loadTemplate(templateName) {
         const template = this.measurementTemplates[templateName];
         if (!template) {
-            alert(`Mall "${templateName}" hittades inte.`);
+            if (window.showToast) showToast(`Mall "${templateName}" hittades inte.`, 'warning'); else alert(`Mall "${templateName}" hittades inte.`);
             return;
         }
         

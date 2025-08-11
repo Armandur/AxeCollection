@@ -1,0 +1,179 @@
+{% extends 'axes/base.html' %}
+{% load static %}
+
+{% block title %}Yxor utan stämplar{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'stamp_list' %}">Stämplar</a></li>
+            <li class="breadcrumb-item active">Yxor utan stämplar</li>
+        </ol>
+    </nav>
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Yxor utan stämplar</h1>
+        <div>
+            <a href="{% url 'stamp_list' %}" class="btn btn-secondary">Tillbaka till stämplar</a>
+            <a href="{% url 'stamp_statistics' %}" class="btn btn-info">Statistik</a>
+        </div>
+    </div>
+
+    <!-- Sök och filter -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-4">
+                    <label for="search" class="form-label">Sök</label>
+                    <input type="text" class="form-control" id="search" name="search" 
+                           value="{{ request.GET.search }}" placeholder="Sök i namn, beskrivning...">
+                </div>
+                <div class="col-md-3">
+                    <label for="manufacturer" class="form-label">Tillverkare</label>
+                    <select class="form-select" id="manufacturer" name="manufacturer">
+                        <option value="">Alla tillverkare</option>
+                        {% for mfr in manufacturers %}
+                            <option value="{{ mfr.id }}" {% if request.GET.manufacturer == mfr.id|stringformat:"s" %}selected{% endif %}>
+                                {{ mfr.name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="status" class="form-label">Status</label>
+                    <select class="form-select" id="status" name="status">
+                        <option value="">Alla status</option>
+                        <option value="received" {% if request.GET.status == 'received' %}selected{% endif %}>Mottagen</option>
+                        <option value="not_received" {% if request.GET.status == 'not_received' %}selected{% endif %}>Ej mottagen</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label for="sort" class="form-label">Sortering</label>
+                    <select class="form-select" id="sort" name="sort">
+                        <option value="name" {% if request.GET.sort == 'name' %}selected{% endif %}>Namn</option>
+                        <option value="-name" {% if request.GET.sort == '-name' %}selected{% endif %}>Namn (fallande)</option>
+                        <option value="manufacturer" {% if request.GET.sort == 'manufacturer' %}selected{% endif %}>Tillverkare</option>
+                        <option value="-manufacturer" {% if request.GET.sort == '-manufacturer' %}selected{% endif %}>Tillverkare (fallande)</option>
+                        <option value="axe_id" {% if request.GET.sort == 'axe_id' %}selected{% endif %}>Yxa ID</option>
+                        <option value="-axe_id" {% if request.GET.sort == '-axe_id' %}selected{% endif %}>Yxa ID (fallande)</option>
+                    </select>
+                </div>
+                <div class="col-12">
+                    <button type="submit" class="btn btn-primary">Filtrera</button>
+                    <a href="{% url 'axes_without_stamps' %}" class="btn btn-outline-secondary">Rensa</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Statistik -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h5 class="card-title">{{ total_count }}</h5>
+                    <p class="card-text">Totalt antal yxor</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h5 class="card-title">{{ without_stamps_count }}</h5>
+                    <p class="card-text">Utan stämplar</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h5 class="card-title">{{ with_stamps_count }}</h5>
+                    <p class="card-text">Med stämplar</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h5 class="card-title">{{ percentage_without|floatformat:1 }}%</h5>
+                    <p class="card-text">% utan stämplar</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Yxlista -->
+    {% if axes %}
+        <div class="row">
+            {% for axe in axes %}
+                <div class="col-md-6 col-lg-4 mb-4">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <h5 class="card-title">
+                                <a href="{% url 'axe_detail' axe.id %}">{{ axe.name }}</a>
+                            </h5>
+                            <p class="card-text">
+                                <strong>ID:</strong> {{ axe.axe_id }}<br>
+                                <strong>Tillverkare:</strong> 
+                                {% if axe.manufacturer %}
+                                    <a href="{% url 'manufacturer_detail' axe.manufacturer.id %}">{{ axe.manufacturer.name }}</a>
+                                {% else %}
+                                    <span class="text-muted">Okänd</span>
+                                {% endif %}<br>
+                                <strong>Status:</strong> 
+                                <span class="badge {% if axe.status == 'received' %}bg-success{% else %}bg-warning{% endif %}">
+                                    {% if axe.status == 'received' %}Mottagen{% else %}Ej mottagen{% endif %}
+                                </span>
+                            </p>
+                            {% if axe.description %}
+                                <p class="card-text"><small class="text-muted">{{ axe.description|truncatewords:20 }}</small></p>
+                            {% endif %}
+                        </div>
+                        <div class="card-footer">
+                            <div class="d-flex justify-content-between">
+                                <a href="{% url 'axe_detail' axe.id %}" class="btn btn-sm btn-outline-primary">Visa detaljer</a>
+                                <a href="{% url 'add_axe_stamp' axe.id %}" class="btn btn-sm btn-success">Lägg till stämpel</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+
+        <!-- Paginering -->
+        {% if is_paginated %}
+            <nav aria-label="Paginering">
+                <ul class="pagination justify-content-center">
+                    {% if page_obj.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page=1{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.manufacturer %}&manufacturer={{ request.GET.manufacturer }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.sort %}&sort={{ request.GET.sort }}{% endif %}">Första</a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.manufacturer %}&manufacturer={{ request.GET.manufacturer }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.sort %}&sort={{ request.GET.sort }}{% endif %}">Föregående</a>
+                        </li>
+                    {% endif %}
+
+                    <li class="page-item active">
+                        <span class="page-link">Sida {{ page_obj.number }} av {{ page_obj.paginator.num_pages }}</span>
+                    </li>
+
+                    {% if page_obj.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.manufacturer %}&manufacturer={{ request.GET.manufacturer }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.sort %}&sort={{ request.GET.sort }}{% endif %}">Nästa</a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.manufacturer %}&manufacturer={{ request.GET.manufacturer }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.sort %}&sort={{ request.GET.sort }}{% endif %}">Sista</a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        {% endif %}
+    {% else %}
+        <div class="alert alert-info">
+            <h4>Inga yxor utan stämplar hittades</h4>
+            <p>Alla yxor har stämplar definierade eller så matchar inga yxor dina sökvillkor.</p>
+        </div>
+    {% endif %}
+</div>
+{% endblock %} 

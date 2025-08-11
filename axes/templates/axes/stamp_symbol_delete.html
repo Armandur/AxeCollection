@@ -1,0 +1,12 @@
+{% extends 'axes/base.html' %}
+{% block content %}
+<div class="container py-4">
+  <h1>Bekräfta borttagning</h1>
+  <p>Vill du ta bort symbolen "{{ symbol.name }}"?</p>
+  <form method="post">
+    {% csrf_token %}
+    <a href="{% url 'stamp_symbols_manage' %}" class="btn btn-secondary">Avbryt</a>
+    <button class="btn btn-danger" type="submit">Ta bort</button>
+  </form>
+</div>
+{% endblock %}

@@ -6,6 +6,7 @@ from . import views_contact
 from . import views_manufacturer
 from . import views_transaction
 from . import views_platform
+from . import views_stamp
 
 urlpatterns = [
     path("", views_axe.axe_list, name="axe_list"),
@@ -235,5 +236,170 @@ urlpatterns = [
         "api/measurement-types/<int:type_id>/delete/",
         views.api_delete_measurement_type,
         name="api_delete_measurement_type",
+    ),
+    # Stämpelregister URL:er
+    path("stamplar/", views_stamp.stamp_list, name="stamp_list"),
+    path("stamplar/ny/", views_stamp.stamp_create, name="stamp_create"),
+    path("stamplar/<int:stamp_id>/", views_stamp.stamp_detail, name="stamp_detail"),
+    path(
+        "stamplar/<int:stamp_id>/redigera/", views_stamp.stamp_edit, name="stamp_edit"
+    ),
+    path("stamplar/sok/", views_stamp.stamp_search, name="stamp_search"),
+    path("stamplar/statistik/", views_stamp.stamp_statistics, name="stamp_statistics"),
+    path(
+        "yxor-utan-stamplar/",
+        views_stamp.axes_without_stamps,
+        name="axes_without_stamps",
+    ),
+    path(
+        "yxor/<int:axe_id>/stampel/lagg-till/",
+        views_stamp.add_axe_stamp,
+        name="add_axe_stamp",
+    ),
+    path(
+        "yxor/<int:axe_id>/stampel/<int:axe_stamp_id>/redigera/",
+        views_stamp.edit_axe_stamp,
+        name="edit_axe_stamp",
+    ),
+    path(
+        "yxor/<int:axe_id>/stampel/<int:axe_stamp_id>/ta-bort/",
+        views_stamp.remove_axe_stamp,
+        name="remove_axe_stamp",
+    ),
+    path(
+        "stamplar/<int:stamp_id>/bild/lagg-till/",
+        views_stamp.stamp_image_upload,
+        name="stamp_image_upload",
+    ),
+    path(
+        "stamplar/<int:stamp_id>/bild/<int:image_id>/redigera/",
+        views_stamp.stamp_image_edit,
+        name="stamp_image_edit",
+    ),
+    path(
+        "stamplar/<int:stamp_id>/bild/<int:image_id>/ta-bort/",
+        views_stamp.stamp_image_delete,
+        name="stamp_image_delete",
+    ),
+    # StampImage URL:er (konsoliderade från AxeImageStamp)
+    path(
+        "yxor/<int:axe_id>/bild/<int:image_id>/markera-stampel/",
+        views_stamp.mark_axe_image_as_stamp,
+        name="mark_axe_image_as_stamp",
+    ),
+    path(
+        "yxor/<int:axe_id>/bild/<int:image_id>/ta-bort-stampel-markering/",
+        views_stamp.unmark_axe_image_stamp,
+        name="unmark_axe_image_stamp",
+    ),
+    path(
+        "yxor/<int:axe_id>/stampel-markering/<int:mark_id>/redigera/",
+        views_stamp.edit_axe_image_stamp,
+        name="edit_axe_image_stamp",
+    ),
+    path(
+        "yxor/<int:axe_id>/bild/<int:image_id>/stampel/redigera-via-axe-stamp/",
+        views_stamp.edit_axe_image_stamp_via_axe_stamp,
+        name="edit_axe_image_stamp_via_axe_stamp",
+    ),
+    path(
+        "yxor/<int:axe_id>/stampel-markering/<int:mark_id>/ta-bort/",
+        views_stamp.remove_axe_image_stamp,
+        name="remove_axe_image_stamp",
+    ),
+    path(
+        "stamplar/<int:stamp_id>/beskarning/",
+        views_stamp.stamp_image_crop,
+        name="stamp_image_crop",
+    ),
+    path(
+        "stamplar/<int:stamp_id>/huvudbild/<int:mark_id>/",
+        views_stamp.set_primary_stamp_image,
+        name="set_primary_stamp_image",
+    ),
+    path(
+        "yxor/stampel-markering/<int:mark_id>/uppdatera-visa-hela/",
+        views_stamp.update_axe_image_stamp_show_full,
+        name="update_axe_image_stamp_show_full",
+    ),
+    # StampTranscription URL:er (endast kopplade till stämplar)
+    path(
+        "stamplar/<int:stamp_id>/transkriberingar/",
+        views_stamp.stamp_transcriptions,
+        name="stamp_transcriptions",
+    ),
+    path(
+        "stamplar/<int:stamp_id>/transkriberingar/ny/",
+        views_stamp.transcription_create,
+        name="stamp_transcription_create",
+    ),
+    # Bakåtkompatibla namn för tester
+    path(
+        "transkriberingar/ny/",
+        views_stamp.transcription_create,
+        name="transcription_create",
+    ),
+    path(
+        "stamplar/<int:stamp_id>/transkriberingar/<int:transcription_id>/redigera/",
+        views_stamp.transcription_edit,
+        name="stamp_transcription_edit",
+    ),
+    path(
+        "transkriberingar/<int:stamp_id>/<int:transcription_id>/redigera/",
+        views_stamp.transcription_edit,
+        name="transcription_edit",
+    ),
+    path(
+        "stamplar/<int:stamp_id>/transkriberingar/<int:transcription_id>/ta-bort/",
+        views_stamp.transcription_delete,
+        name="stamp_transcription_delete",
+    ),
+    path(
+        "transkriberingar/<int:stamp_id>/<int:transcription_id>/ta-bort/",
+        views_stamp.transcription_delete,
+        name="transcription_delete",
+    ),
+    # Symbolhantering
+    path(
+        "stamplar/symboler/",
+        views_stamp.stamp_symbols_manage,
+        name="stamp_symbols_manage",
+    ),
+    # API endpoints
+    path(
+        "api/stamp-symbols/",
+        views_stamp.stamp_symbols_api,
+        name="stamp_symbols_api",
+    ),
+    path(
+        "api/stamp-symbols/<int:symbol_id>/update/",
+        views_stamp.stamp_symbol_update,
+        name="stamp_symbol_update",
+    ),
+    path(
+        "api/stamp-symbols/<int:symbol_id>/delete/",
+        views_stamp.stamp_symbol_delete,
+        name="stamp_symbol_delete",
+    ),
+    path(
+        "api/stamp-symbols/create/",
+        views_stamp.stamp_symbol_create,
+        name="stamp_symbol_create",
+    ),
+    # Kategorier (CRUD via AJAX)
+    path(
+        "api/symbol-categories/create/",
+        views_stamp.symbol_category_create,
+        name="symbol_category_create",
+    ),
+    path(
+        "api/symbol-categories/<int:category_id>/update/",
+        views_stamp.symbol_category_update,
+        name="symbol_category_update",
+    ),
+    path(
+        "api/symbol-categories/<int:category_id>/delete/",
+        views_stamp.symbol_category_delete,
+        name="symbol_category_delete",
     ),
 ]

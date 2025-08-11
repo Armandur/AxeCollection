@@ -1,0 +1,75 @@
+<div class="modal-header">
+    <h5 class="modal-title">
+        <i class="fas fa-exclamation-triangle text-warning"></i>
+        Ta bort stämpelmarkering
+    </h5>
+    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Stäng"></button>
+</div>
+<div class="modal-body">
+    <div class="alert alert-warning">
+        <strong>Varning:</strong> Du är på väg att ta bort stämpelmarkeringen från bilden.
+    </div>
+    
+    <div class="row">
+        <div class="col-md-6">
+            <h6>Bild från {{ axe.display_id }}</h6>
+            <img src="{{ axe_image.image_url_with_cache_busting }}" 
+                 class="img-fluid" 
+                 alt="Yxbild">
+        </div>
+        <div class="col-md-6">
+            <h6>Stämpelinformation</h6>
+            <dl class="row">
+                <dt class="col-sm-4">Stämpel:</dt>
+                <dd class="col-sm-8">{{ stamp_mark.stamp.name }}</dd>
+                
+                {% if stamp_mark.stamp.manufacturer %}
+                <dt class="col-sm-4">Tillverkare:</dt>
+                <dd class="col-sm-8">{{ stamp_mark.stamp.manufacturer.name }}</dd>
+                {% endif %}
+                
+                {% if stamp_mark.comment %}
+                <dt class="col-sm-4">Kommentar:</dt>
+                <dd class="col-sm-8">{{ stamp_mark.comment }}</dd>
+                {% endif %}
+                
+                {% if stamp_mark.has_coordinates %}
+                <dt class="col-sm-4">Koordinater:</dt>
+                <dd class="col-sm-8">
+                    X: {{ stamp_mark.x_coordinate }}%, Y: {{ stamp_mark.y_coordinate }}%<br>
+Bredd: {{ stamp_mark.width }}%, Höjd: {{ stamp_mark.height }}%
+                </dd>
+                {% endif %}
+                
+                <dt class="col-sm-4">Huvudbild:</dt>
+                <dd class="col-sm-8">
+                    {% if stamp_mark.is_primary %}
+                        <span class="badge bg-success">Ja</span>
+                    {% else %}
+                        <span class="badge bg-secondary">Nej</span>
+                    {% endif %}
+                </dd>
+                
+                <dt class="col-sm-4">Visa hela bild:</dt>
+                <dd class="col-sm-8">
+                    {% if stamp_mark.show_full_image %}
+                        <span class="badge bg-info">Ja</span>
+                    {% else %}
+                        <span class="badge bg-secondary">Nej</span>
+                    {% endif %}
+                </dd>
+            </dl>
+        </div>
+    </div>
+</div>
+<div class="modal-footer">
+    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+        <i class="fas fa-times"></i> Avbryt
+    </button>
+    <form method="post" class="d-inline" action="{% url 'remove_axe_image_stamp' axe.id stamp_mark.id %}">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-danger">
+            <i class="fas fa-trash"></i> Ta bort stämpelmarkering
+        </button>
+    </form>
+</div> 

@@ -1,0 +1,391 @@
+{% extends 'axes/base.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'axe_list' %}">Yxor</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'axe_detail' axe.id %}">{{ axe.display_id }}</a></li>
+            <li class="breadcrumb-item active">Redigera stämpel</li>
+        </ol>
+    </nav>
+
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h4>
+                        <i class="fas fa-edit me-2"></i>
+                        Redigera stämpel för {{ axe.display_id }}
+                    </h4>
+                </div>
+                <div class="card-body">
+                    {% if not selected_image %}
+                        <!-- Steg 1: Välj bild -->
+                        <div class="mb-4">
+                            <h5>Välj bild för stämpelmarkering</h5>
+                            <p class="text-muted">Välj en bild där stämpeln finns för att kunna markera den exakta positionen.</p>
+                            
+                            {% if existing_images %}
+                                <form method="post">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="action" value="select_image">
+                                    
+                                    <div class="row">
+                                        {% for image in existing_images %}
+                                            <div class="col-md-4 col-lg-3 mb-3">
+                                                <div class="card h-100">
+                                                    <img src="{{ image.image_url_with_cache_busting }}" 
+                                                         class="card-img-top" 
+                                                         alt="Yxbild"
+                                                         style="height: 200px; object-fit: cover;">
+                                                    <div class="card-body">
+                                                        <h6 class="card-title">Bild {{ forloop.counter }}</h6>
+                                                        {% if image.description %}
+                                                            <p class="card-text small text-muted">{{ image.description }}</p>
+                                                        {% endif %}
+                                                        <button type="submit" 
+                                                                name="selected_image_id" 
+                                                                value="{{ image.id }}"
+                                                                class="btn btn-primary btn-sm w-100">
+                                                            Välj denna bild
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        {% endfor %}
+                                    </div>
+                                </form>
+                            {% else %}
+                                <div class="alert alert-warning">
+                                    <i class="fas fa-exclamation-triangle me-2"></i>
+                                    Inga bilder finns för denna yxa. 
+                                    <a href="{% url 'axe_edit' axe.id %}" class="alert-link">Lägg till bilder först</a>.
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Alternativ: Redigera utan bildmarkering -->
+                        <div class="mt-4">
+                            <h5>Alternativt: Redigera utan bildmarkering</h5>
+                            <p class="text-muted">Du kan också redigera stämpelinformationen utan att markera på en bild.</p>
+                            <form method="post">
+                                {% csrf_token %}
+                                
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="{{ form.stamp.id_for_label }}" class="form-label">Stämpel *</label>
+                                            {{ form.stamp }}
+                                            {% if form.stamp.errors %}
+                                                <div class="text-danger">{{ form.stamp.errors }}</div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="{{ form.position.id_for_label }}" class="form-label">Position på yxan</label>
+                                            {{ form.position }}
+                                            {% if form.position.errors %}
+                                                <div class="text-danger">{{ form.position.errors }}</div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="{{ form.uncertainty_level.id_for_label }}" class="form-label">Osäkerhet</label>
+                                            {{ form.uncertainty_level }}
+                                            {% if form.uncertainty_level.errors %}
+                                                <div class="text-danger">{{ form.uncertainty_level.errors }}</div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="{{ form.comment.id_for_label }}" class="form-label">Kommentar</label>
+                                            {{ form.comment }}
+                                            {% if form.comment.errors %}
+                                                <div class="text-danger">{{ form.comment.errors }}</div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="d-flex justify-content-between">
+                                    <a href="{% url 'axe_detail' axe.id %}" class="btn btn-secondary">Avbryt</a>
+                                    <button type="submit" class="btn btn-primary">Spara ändringar</button>
+                                </div>
+                            </form>
+                        </div>
+                    {% else %}
+                        <!-- Steg 2: Markera stämpel på bild -->
+                        <form method="post">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="save_stamp">
+                            <input type="hidden" name="selected_image_id" value="{{ selected_image.id }}">
+                            
+                            <div class="row">
+                                <div class="col-md-8">
+                                    <div class="mb-4">
+                                        <h5>Markera stämpel på bild</h5>
+                                        <p class="text-muted">Klicka och dra för att markera området där stämpeln finns.</p>
+                                        
+                                        <div class="position-relative" style="max-width: 100%; overflow: hidden;">
+                                            <img id="stampImage" 
+                                                 src="{{ selected_image.image_url_with_cache_busting }}" 
+                                                 class="img-fluid" 
+                                                 alt="Yxbild för stämpelmarkering"
+                                                 style="max-width: 100%; height: auto;">
+                                            
+                                            <!-- Markeringsoverlay -->
+                                            <div id="markingOverlay" 
+                                                 class="position-absolute" 
+                                                 style="top: 0; left: 0; width: 100%; height: 100%; pointer-events: auto; cursor: crosshair;">
+                                                <div id="stampMarking" 
+                                                     class="position-absolute border border-danger bg-danger bg-opacity-25"
+                                                     style="display: none; min-width: 20px; min-height: 20px;">
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- Koordinatfält -->
+                                        <div class="row mt-3">
+                                            <div class="col-md-3">
+                                                <label for="x_coordinate" class="form-label">X-koordinat (%)</label>
+                                                <input type="number" id="x_coordinate" name="x_coordinate" class="form-control" readonly 
+                                                       value="{% if existing_axe_image_stamp %}{{ existing_axe_image_stamp.x_coordinate }}{% endif %}">
+                                            </div>
+                                            <div class="col-md-3">
+                                                <label for="y_coordinate" class="form-label">Y-koordinat (%)</label>
+                                                <input type="number" id="y_coordinate" name="y_coordinate" class="form-control" readonly
+                                                       value="{% if existing_axe_image_stamp %}{{ existing_axe_image_stamp.y_coordinate }}{% endif %}">
+                                            </div>
+                                            <div class="col-md-3">
+                                                <label for="width" class="form-label">Bredd (%)</label>
+                                                <input type="number" id="width" name="width" class="form-control" readonly
+                                                       value="{% if existing_axe_image_stamp %}{{ existing_axe_image_stamp.width }}{% endif %}">
+                                            </div>
+                                            <div class="col-md-3">
+                                                <label for="height" class="form-label">Höjd (%)</label>
+                                                <input type="number" id="height" name="height" class="form-control" readonly
+                                                       value="{% if existing_axe_image_stamp %}{{ existing_axe_image_stamp.height }}{% endif %}">
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="mt-3">
+                                            <button type="button" id="clearMarking" class="btn btn-outline-secondary btn-sm">
+                                                <i class="fas fa-eraser me-1"></i>Rensa markering
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-4">
+                                    <div class="card">
+                                        <div class="card-header">
+                                            <h6 class="mb-0">Stämpelinformation</h6>
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="mb-3">
+                                                <label for="{{ form.stamp.id_for_label }}" class="form-label">Stämpel *</label>
+                                                {{ form.stamp }}
+                                                {% if form.stamp.errors %}
+                                                    <div class="text-danger">{{ form.stamp.errors }}</div>
+                                                {% endif %}
+                                            </div>
+                                            
+                                            <div class="mb-3">
+                                                <label for="{{ form.position.id_for_label }}" class="form-label">Position på yxan</label>
+                                                {{ form.position }}
+                                                {% if form.position.errors %}
+                                                    <div class="text-danger">{{ form.position.errors }}</div>
+                                                {% endif %}
+                                            </div>
+                                            
+                                            <div class="mb-3">
+                                                <label for="{{ form.uncertainty_level.id_for_label }}" class="form-label">Osäkerhet</label>
+                                                {{ form.uncertainty_level }}
+                                                {% if form.uncertainty_level.errors %}
+                                                    <div class="text-danger">{{ form.uncertainty_level.errors }}</div>
+                                                {% endif %}
+                                            </div>
+                                            
+                                            <div class="mb-3">
+                                                <label for="{{ form.comment.id_for_label }}" class="form-label">Kommentar</label>
+                                                {{ form.comment }}
+                                                {% if form.comment.errors %}
+                                                    <div class="text-danger">{{ form.comment.errors }}</div>
+                                                {% endif %}
+                                            </div>
+                                            
+                                            <div class="mb-3">
+                                                <label for="image_comment" class="form-label">Bildkommentar</label>
+                                                <textarea id="image_comment" name="image_comment" class="form-control" rows="3" placeholder="Kommentar om stämpelområdet på bilden">{% if existing_axe_image_stamp %}{{ existing_axe_image_stamp.comment }}{% endif %}</textarea>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="card mt-3">
+                                        <div class="card-header">
+                                            <h6 class="mb-0">Yxinformation</h6>
+                                        </div>
+                                        <div class="card-body">
+                                            <p><strong>Yxa:</strong> {{ axe.display_id }}</p>
+                                            <p><strong>Tillverkare:</strong> {{ axe.manufacturer.name }}</p>
+                                            <p><strong>Modell:</strong> {{ axe.model }}</p>
+                                            {% if axe.comment %}
+                                                <p><strong>Kommentar:</strong> {{ axe.comment }}</p>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="d-flex justify-content-between mt-4">
+                                <a href="{% url 'axe_detail' axe.id %}" class="btn btn-secondary">Avbryt</a>
+                                <button type="submit" class="btn btn-primary">Spara stämpel</button>
+                            </div>
+                        </form>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if selected_image %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const image = document.getElementById('stampImage');
+    const overlay = document.getElementById('markingOverlay');
+    const marking = document.getElementById('stampMarking');
+    const clearButton = document.getElementById('clearMarking');
+    
+    let isDrawing = false;
+    let startX, startY;
+    
+    // Sätt overlay-storlek till bildstorlek
+    function updateOverlaySize() {
+        const rect = image.getBoundingClientRect();
+        overlay.style.width = rect.width + 'px';
+        overlay.style.height = rect.height + 'px';
+    }
+    
+    // Visa befintlig markering om den finns
+    function showExistingMarking() {
+        const xCoord = document.getElementById('x_coordinate').value;
+        const yCoord = document.getElementById('y_coordinate').value;
+        const width = document.getElementById('width').value;
+        const height = document.getElementById('height').value;
+        
+        if (xCoord && yCoord && width && height) {
+            const rect = image.getBoundingClientRect();
+            // Konvertera procent till pixlar för visning
+            const x = (parseFloat(xCoord) / 100) * rect.width;
+            const y = (parseFloat(yCoord) / 100) * rect.height;
+            const w = (parseFloat(width) / 100) * rect.width;
+            const h = (parseFloat(height) / 100) * rect.height;
+            
+            marking.style.left = x + 'px';
+            marking.style.top = y + 'px';
+            marking.style.width = w + 'px';
+            marking.style.height = h + 'px';
+            marking.style.display = 'block';
+        }
+    }
+    
+    // Uppdatera storlek när bilden laddas
+    image.addEventListener('load', function() {
+        updateOverlaySize();
+        showExistingMarking();
+    });
+    window.addEventListener('resize', function() {
+        updateOverlaySize();
+        showExistingMarking();
+    });
+    updateOverlaySize();
+    
+    // Visa befintlig markering direkt om bilden redan är laddad
+    if (image.complete) {
+        showExistingMarking();
+    }
+    
+    // Hantera musinteraktion
+    overlay.addEventListener('mousedown', function(e) {
+        e.preventDefault();
+        isDrawing = true;
+        const rect = image.getBoundingClientRect();
+        startX = e.clientX - rect.left;
+        startY = e.clientY - rect.top;
+        
+        marking.style.left = startX + 'px';
+        marking.style.top = startY + 'px';
+        marking.style.width = '0px';
+        marking.style.height = '0px';
+        marking.style.display = 'block';
+    });
+    
+    overlay.addEventListener('mousemove', function(e) {
+        if (!isDrawing) return;
+        
+        e.preventDefault();
+        const rect = image.getBoundingClientRect();
+        const currentX = e.clientX - rect.left;
+        const currentY = e.clientY - rect.top;
+        
+        const width = Math.abs(currentX - startX);
+        const height = Math.abs(currentY - startY);
+        const left = Math.min(startX, currentX);
+        const top = Math.min(startY, currentY);
+        
+        marking.style.left = left + 'px';
+        marking.style.top = top + 'px';
+        marking.style.width = width + 'px';
+        marking.style.height = height + 'px';
+    });
+    
+    overlay.addEventListener('mouseup', function(e) {
+        if (!isDrawing) return;
+        
+        e.preventDefault();
+        isDrawing = false;
+        
+        // Uppdatera koordinatfält - konvertera till procent
+        const rect = image.getBoundingClientRect();
+        const markingRect = marking.getBoundingClientRect();
+        
+        const x = Math.round(((markingRect.left - rect.left) / rect.width) * 100);
+        const y = Math.round(((markingRect.top - rect.top) / rect.height) * 100);
+        const width = Math.round((markingRect.width / rect.width) * 100);
+        const height = Math.round((markingRect.height / rect.height) * 100);
+        
+        document.getElementById('x_coordinate').value = x;
+        document.getElementById('y_coordinate').value = y;
+        document.getElementById('width').value = width;
+        document.getElementById('height').value = height;
+    });
+    
+    // Global mouseup-hanterare för att hantera när musen släpps utanför overlay
+    document.addEventListener('mouseup', function(e) {
+        if (isDrawing) {
+            isDrawing = false;
+        }
+    });
+    
+    // Rensa markering
+    clearButton.addEventListener('click', function() {
+        marking.style.display = 'none';
+        document.getElementById('x_coordinate').value = '';
+        document.getElementById('y_coordinate').value = '';
+        document.getElementById('width').value = '';
+        document.getElementById('height').value = '';
+    });
+});
+</script>
+{% endif %}
+{% endblock %} 

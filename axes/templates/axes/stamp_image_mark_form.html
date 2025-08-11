@@ -1,0 +1,265 @@
+{% extends 'axes/base.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'axe_list' %}">Yxor</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'axe_detail' axe.id %}">{{ axe.display_id }}</a></li>
+            <li class="breadcrumb-item active">Redigera stämpelmarkering</li>
+        </ol>
+    </nav>
+
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h4>
+                        <i class="fas fa-stamp me-2"></i>
+                        Redigera stämpelmarkering för {{ axe.display_id }}
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Stämpelmarkering</h6>
+                            <div class="position-relative" style="max-width: 100%; overflow: hidden;">
+                                <img id="stampImage" 
+                                     src="{{ selected_image.image_url_with_cache_busting }}" 
+                                     class="img-fluid" 
+                                     alt="Yxbild för stämpelmarkering"
+                                     style="max-width: 100%; height: auto;">
+                                
+                                <!-- Markeringsoverlay -->
+                                <div id="markingOverlay" 
+                                     class="position-absolute" 
+                                     style="top: 0; left: 0; width: 100%; height: 100%; pointer-events: auto; cursor: crosshair;">
+                                    <div id="stampMarking" 
+                                         class="position-absolute border border-danger bg-danger bg-opacity-25"
+                                         style="display: none; min-width: 20px; min-height: 20px;">
+                                    </div>
+                                </div>
+                            </div>
+                            <small class="text-muted">Klicka och dra för att markera stämpelområde</small>
+                        </div>
+                        <div class="col-md-6">
+                            <form method="post" id="stamp-mark-form">
+                                {% csrf_token %}
+                                
+                                <!-- Dolda fält för datahantering -->
+                                <div style="display: none;">
+                                    {{ form.image_type }}
+                                    {{ form.axe_image }}
+                                    {{ form.x_coordinate }}
+                                    {{ form.y_coordinate }}
+                                    {{ form.width }}
+                                    {{ form.height }}
+                                    {# Aliasfält stöd – om formuläret exponeras, inkludera dolda inputs #}
+                                    {% if form.x %}{{ form.x.as_hidden }}{% endif %}
+                                    {% if form.y %}{{ form.y.as_hidden }}{% endif %}
+                                    {% if form.width %}{{ form.width.as_hidden }}{% endif %}
+                                    {% if form.height %}{{ form.height.as_hidden }}{% endif %}
+                                    {{ form.external_source }}
+                                </div>
+
+                                <!-- Övriga fält -->
+                                <div class="mb-3">
+                                    <label for="{{ form.caption.id_for_label }}" class="form-label">{{ form.caption.label }}</label>
+                                    {{ form.caption }}
+                                    {% if form.caption.errors %}
+                                        <div class="text-danger">{{ form.caption.errors }}</div>
+                                    {% endif %}
+                                    <div class="form-text">{{ form.caption.help_text }}</div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="{{ form.description.id_for_label }}" class="form-label">{{ form.description.label }}</label>
+                                    {{ form.description }}
+                                    {% if form.description.errors %}
+                                        <div class="text-danger">{{ form.description.errors }}</div>
+                                    {% endif %}
+                                    <div class="form-text">{{ form.description.help_text }}</div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="{{ form.position.id_for_label }}" class="form-label">{{ form.position.label }}</label>
+                                    {{ form.position }}
+                                    {% if form.position.errors %}
+                                        <div class="text-danger">{{ form.position.errors }}</div>
+                                    {% endif %}
+                                    <div class="form-text">{{ form.position.help_text }}</div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="{{ form.comment.id_for_label }}" class="form-label">{{ form.comment.label }}</label>
+                                    {{ form.comment }}
+                                    {% if form.comment.errors %}
+                                        <div class="text-danger">{{ form.comment.errors }}</div>
+                                    {% endif %}
+                                    <div class="form-text">{{ form.comment.help_text }}</div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="{{ form.uncertainty_level.id_for_label }}" class="form-label">{{ form.uncertainty_level.label }}</label>
+                                    {{ form.uncertainty_level }}
+                                    {% if form.uncertainty_level.errors %}
+                                        <div class="text-danger">{{ form.uncertainty_level.errors }}</div>
+                                    {% endif %}
+                                    <div class="form-text">{{ form.uncertainty_level.help_text }}</div>
+                                </div>
+
+                                <div class="d-flex justify-content-between">
+                                    <a href="{% url 'axe_detail' axe.id %}" class="btn btn-secondary">Avbryt</a>
+                                    <button type="submit" class="btn btn-primary">Uppdatera stämpelmarkering</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const image = document.getElementById('stampImage');
+    const overlay = document.getElementById('markingOverlay');
+    const marking = document.getElementById('stampMarking');
+    
+    if (!image || !overlay || !marking) {
+        console.error('Kunde inte hitta alla nödvändiga element');
+        return;
+    }
+    
+    let isDrawing = false;
+    let startX, startY;
+    
+    // Sätt overlay-storlek till bildstorlek
+    function updateOverlaySize() {
+        const rect = image.getBoundingClientRect();
+        overlay.style.width = rect.width + 'px';
+        overlay.style.height = rect.height + 'px';
+    }
+    
+    // Uppdatera storlek när bilden laddas
+    image.addEventListener('load', updateOverlaySize);
+    window.addEventListener('resize', updateOverlaySize);
+    updateOverlaySize();
+    
+    // Visa befintlig markering om den finns
+    function showExistingMarking() {
+        const xCoordField = document.getElementById('{{ form.x_coordinate.id_for_label }}');
+        const yCoordField = document.getElementById('{{ form.y_coordinate.id_for_label }}');
+        const widthField = document.getElementById('{{ form.width.id_for_label }}');
+        const heightField = document.getElementById('{{ form.height.id_for_label }}');
+        
+        if (xCoordField && yCoordField && widthField && heightField) {
+            const x = parseFloat(xCoordField.value);
+            const y = parseFloat(yCoordField.value);
+            const width = parseFloat(widthField.value);
+            const height = parseFloat(heightField.value);
+            
+            if (x && y && width && height && !isNaN(x) && !isNaN(y) && !isNaN(width) && !isNaN(height)) {
+                // Vänta tills bilden är laddad och storleken är uppdaterad
+                if (image.complete && image.naturalWidth > 0) {
+                    const rect = image.getBoundingClientRect();
+                    
+                    // Konvertera procent till pixlar för visning
+                    const displayX = (x / 100) * rect.width;
+                    const displayY = (y / 100) * rect.height;
+                    const displayWidth = (width / 100) * rect.width;
+                    const displayHeight = (height / 100) * rect.height;
+                    
+                    marking.style.left = displayX + 'px';
+                    marking.style.top = displayY + 'px';
+                    marking.style.width = displayWidth + 'px';
+                    marking.style.height = displayHeight + 'px';
+                    marking.style.display = 'block';
+                } else {
+                    // Om bilden inte är laddad än, vänta och försök igen
+                    setTimeout(showExistingMarking, 100);
+                }
+            }
+        }
+    }
+    
+    // Visa befintlig markering när bilden laddas
+    image.addEventListener('load', showExistingMarking);
+    // Försök också direkt om bilden redan är laddad
+    if (image.complete) {
+        showExistingMarking();
+    }
+    
+    // Hantera musinteraktion
+    overlay.addEventListener('mousedown', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        isDrawing = true;
+        const rect = image.getBoundingClientRect();
+        startX = e.clientX - rect.left;
+        startY = e.clientY - rect.top;
+        
+        marking.style.left = startX + 'px';
+        marking.style.top = startY + 'px';
+        marking.style.width = '0px';
+        marking.style.height = '0px';
+        marking.style.display = 'block';
+    });
+    
+    overlay.addEventListener('mousemove', function(e) {
+        if (!isDrawing) return;
+        
+        e.preventDefault();
+        e.stopPropagation();
+        const rect = image.getBoundingClientRect();
+        const currentX = e.clientX - rect.left;
+        const currentY = e.clientY - rect.top;
+        
+        const width = Math.abs(currentX - startX);
+        const height = Math.abs(currentY - startY);
+        const left = Math.min(startX, currentX);
+        const top = Math.min(startY, currentY);
+        
+        marking.style.left = left + 'px';
+        marking.style.top = top + 'px';
+        marking.style.width = width + 'px';
+        marking.style.height = height + 'px';
+    });
+    
+    overlay.addEventListener('mouseup', function(e) {
+        if (!isDrawing) return;
+        
+        e.preventDefault();
+        e.stopPropagation();
+        isDrawing = false;
+        
+        // Uppdatera koordinatfält - konvertera till procent
+        const rect = image.getBoundingClientRect();
+        const markingRect = marking.getBoundingClientRect();
+        
+        // Beräkna koordinater som procent av bildens naturliga storlek
+        const x = Math.round(((markingRect.left - rect.left) / rect.width) * 100);
+        const y = Math.round(((markingRect.top - rect.top) / rect.height) * 100);
+        const width = Math.round((markingRect.width / rect.width) * 100);
+        const height = Math.round((markingRect.height / rect.height) * 100);
+        
+        document.getElementById('{{ form.x_coordinate.id_for_label }}').value = x;
+        document.getElementById('{{ form.y_coordinate.id_for_label }}').value = y;
+        document.getElementById('{{ form.width.id_for_label }}').value = width;
+        document.getElementById('{{ form.height.id_for_label }}').value = height;
+    });
+    
+    // Global mouseup-hanterare för att hantera när musen släpps utanför overlay
+    document.addEventListener('mouseup', function(e) {
+        if (isDrawing) {
+            isDrawing = false;
+        }
+    });
+});
+</script>
+{% endblock %} 

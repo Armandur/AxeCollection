@@ -1,4 +1,5 @@
 {% extends 'axes/base.html' %}
+{% load static %}
 {% load axe_filters %}
 
 {% block title %}{{ manufacturer.name }} - {{ block.super }}{% endblock %}
@@ -356,82 +357,265 @@
 </div>
 {% endif %}
 
-{% if images_by_type or user.is_authenticated %}
+{% if images_by_type.OTHER or user.is_authenticated %}
 <!-- Tillverkarens bilder -->
 <div class="row mb-4">
     <div class="col-12">
         <div class="card">
             <div class="card-header d-flex justify-content-between align-items-center">
-                <h5 class="card-title mb-0">Bilder för {{ manufacturer.name }}</h5>
-                <div>
-                    {% if user.is_authenticated %}
-                    <button type="button" class="btn btn-outline-primary btn-sm me-2" onclick="openUploadModal()">
-                        <i class="bi bi-image"></i> Lägg till bild
-                    </button>
-                    <button type="button" class="btn btn-outline-secondary btn-sm me-2" onclick="toggleReorderMode()" id="reorderBtn">
-                        <i class="bi bi-arrow-down-up"></i> Ändra ordning
-                    </button>
-                    {% endif %}
-                </div>
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-images me-2"></i>Bilder för {{ manufacturer.name }}
+                </h5>
+                {% if user.is_authenticated %}
+                <button type="button" class="btn btn-outline-primary btn-sm me-2" onclick="openUploadModal()">
+                    <i class="bi bi-image"></i> Lägg till bild
+                </button>
+                <button type="button" class="btn btn-outline-secondary btn-sm me-2" onclick="toggleReorderMode()" id="reorderBtn">
+                    <i class="bi bi-arrow-down-up"></i> Ändra ordning
+                </button>
+                {% endif %}
             </div>
             <div class="card-body">
-                {% if images_by_type %}
-                    {% for image_type, images in images_by_type.items %}
-                    <div class="mb-4">
-                        <h6 class="text-muted mb-3">
-                            {% if image_type == 'STAMP' %}
-                                <i class="bi bi-stamp"></i> Stämplar
-                            {% else %}
-                                <i class="bi bi-images"></i> Övriga bilder
-                            {% endif %}
-                        </h6>
-                        <div class="row">
-                            {% for image in images %}
-                            <div class="col-md-4 mb-3 manufacturer-image-card" data-image-id="{{ image.id }}" data-order="{{ image.order }}">
-                                <div class="card h-100" onclick="openImageLightbox({{ image.id }})" style="cursor: pointer;">
-                                    <div class="position-relative">
-                                        <picture>
-                                            {% if image.webp_url %}
-                                                <source srcset="{{ image.webp_url }}" type="image/webp">
-                                            {% endif %}
-                                            <img src="{{ image.image_url_with_cache_busting }}" 
-                                                 class="card-img-top manufacturer-image" 
-                                                 alt="{{ image.caption|default:'Bild' }}" 
-                                                 style="max-height: 200px; object-fit: contain;" 
-                                                 loading="lazy"
-                                                 data-image-id="{{ image.id }}"
-                                                 data-image-url="{{ image.image_url_with_cache_busting }}"
-                                                 data-webp-url="{{ image.webp_url|default:'' }}"
-                                                 data-caption="{{ image.caption|default:'' }}"
-                                                 data-description="{{ image.description|default:'' }}"
-                                                 data-image-type="{{ image.image_type }}">
-                                        </picture>
-                                        {% if user.is_authenticated %}
-                                        <div class="position-absolute top-0 end-0 p-2">
-                                            <button class="btn btn-sm btn-outline-secondary" 
-                                                    onclick="event.stopPropagation(); editImage({{ image.id }})"
-                                                    title="Redigera bild">
-                                                <i class="bi bi-pencil"></i>
-                                            </button>
-                                        </div>
+                {% if images_by_type.OTHER %}
+                    <div class="row">
+                        {% for item in images_by_type.OTHER %}
+                        <div class="col-md-4 mb-3 manufacturer-image-card" data-image-id="{{ item.id }}" data-order="{{ item.order }}">
+                            <div class="card h-100" onclick="openImageLightbox({{ item.id }})" style="cursor: pointer;">
+                                <div class="position-relative">
+                                    <picture>
+                                        {% if item.webp_url %}
+                                            <source srcset="{{ item.webp_url }}" type="image/webp">
                                         {% endif %}
+                                        <img src="{{ item.image_url_with_cache_busting }}" 
+                                             class="card-img-top manufacturer-image" 
+                                             alt="{{ item.caption|default:'Bild' }}" 
+                                             style="max-height: 200px; object-fit: contain;" 
+                                             loading="lazy"
+                                             data-image-id="{{ item.id }}"
+                                             data-image-url="{{ item.image_url_with_cache_busting }}"
+                                             data-webp-url="{{ item.webp_url|default:'' }}"
+                                             data-caption="{{ item.caption|default:'' }}"
+                                             data-description="{{ item.description|default:'' }}"
+                                             data-image-type="{{ item.image_type }}">
+                                    </picture>
+                                    {% if user.is_authenticated %}
+                                    <div class="position-absolute top-0 end-0 p-2">
+                                        <button class="btn btn-sm btn-outline-secondary" 
+                                                onclick="event.stopPropagation(); editImage({{ item.id }})"
+                                                title="Redigera bild">
+                                            <i class="bi bi-pencil"></i>
+                                        </button>
                                     </div>
-                                    <div class="card-body">
-                                        {% if image.caption %}
-                                            <h6 class="card-title">{{ image.caption }}</h6>
+                                    {% endif %}
+                                </div>
+                                <div class="card-body">
+                                    {% if item.caption %}
+                                        <h6 class="card-title">{{ item.caption }}</h6>
+                                    {% endif %}
+                                    {% if item.description %}
+                                        <p class="card-text small text-muted">{{ item.description|markdown }}</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="bi bi-images fa-3x text-muted mb-3"></i>
+                        <p class="text-muted">Inga bilder tillagda ännu.</p>
+                        {% if user.is_authenticated %}
+                        <div class="mt-3">
+                            <button type="button" class="btn btn-primary" onclick="openUploadModal()">
+                                <i class="bi bi-image"></i> Lägg till bild
+                            </button>
+                        </div>
+                        {% endif %}
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% if stamps or user.is_authenticated %}
+<!-- Tillverkarens stämplar -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-stamp me-2"></i>Stämplar för {{ manufacturer.name }}
+                </h5>
+                {% if user.is_authenticated %}
+                <a href="{% url 'stamp_create' %}?manufacturer={{ manufacturer.id }}" class="btn btn-outline-success btn-sm">
+                    <i class="bi bi-stamp"></i> Ny stämpel
+                </a>
+                {% endif %}
+            </div>
+            <div class="card-body">
+                {% if stamps %}
+                    <div class="row">
+                        {% for stamp in stamps %}
+                        <div class="col-md-6 col-lg-4 mb-3">
+                            <div class="card h-100">
+                                <div class="position-relative">
+                                    {% if stamp.primary_image %}
+                                        {% if stamp.primary_image.image_type == 'axe_mark' %}
+                                            {% if stamp.primary_image.axe_image %}
+                                                {% if stamp.primary_image.has_coordinates and stamp.primary_image.axe_image.image %}
+                                                    <!-- Visa beskuren stämpelmarkering -->
+                                                    <div class="stamp-crop-container" style="height: 200px; overflow: hidden;">
+                                                        <img src="{{ stamp.primary_image.axe_image.image_url_with_cache_busting }}"
+                                                             class="card-img-top"
+                                                             alt="Stämpel från {{ stamp.primary_image.axe_image.axe.display_id }}"
+                                                             data-crop-x="{{ stamp.primary_image.x_coordinate }}"
+                                                             data-crop-y="{{ stamp.primary_image.y_coordinate }}"
+                                                             data-stamp-width="{{ stamp.primary_image.width }}"
+                                                             data-stamp-height="{{ stamp.primary_image.height }}"
+                                                            style="object-fit: contain; object-position: center; height: 200px; width: 100%; max-width: none;">
+                                                    </div>
+                                                {% else %}
+                                                    <!-- Visa hela yxbild med stämpelmarkering -->
+                                                    <img src="{{ stamp.primary_image.axe_image.image_url_with_cache_busting }}"
+                                                         class="card-img-top"
+                                                         alt="Stämpel från {{ stamp.primary_image.axe_image.axe.display_id }}"
+                                                         style="height: 200px; object-fit: contain; object-position: center;">
+                                                {% endif %}
+                                            {% else %}
+                                                <!-- Visa fristående stämpelbild -->
+                                                {% if stamp.primary_image.has_coordinates and stamp.primary_image.image %}
+                                                    <!-- Visa beskuren fristående bild -->
+                                                    <div class="stamp-crop-container" style="height: 200px; overflow: hidden;">
+                                                        <img src="{{ stamp.primary_image.image_url_with_cache_busting }}"
+                                                             class="card-img-top"
+                                                             alt="{{ stamp.primary_image.caption|default:stamp.name }}"
+                                                             data-crop-x="{{ stamp.primary_image.x_coordinate }}"
+                                                             data-crop-y="{{ stamp.primary_image.y_coordinate }}"
+                                                             data-stamp-width="{{ stamp.primary_image.width }}"
+                                                             data-stamp-height="{{ stamp.primary_image.height }}"
+                                                            style="object-fit: contain; object-position: center; height: 200px; width: 100%; max-width: none;">
+                                                    </div>
+                                                {% else %}
+                                                    <!-- Visa hela fristående bild -->
+                                                    <img src="{% if stamp.primary_image.webp_url %}{{ stamp.primary_image.webp_url }}{% else %}{{ stamp.primary_image.image_url_with_cache_busting }}{% endif %}"
+                                                         class="card-img-top"
+                                                         alt="{{ stamp.primary_image.caption|default:stamp.name }}"
+                                                         style="height: 200px; object-fit: contain; object-position: center;">
+                                                {% endif %}
+                                            {% endif %}
+                                        {% else %}
+                                            <!-- Visa fristående stämpelbild -->
+                                            {% if stamp.primary_image.has_coordinates %}
+                                                <!-- Visa beskuren fristående bild -->
+                                                <div class="stamp-crop-container" style="height: 200px; overflow: hidden;">
+                                                    <img src="{{ stamp.primary_image.image_url_with_cache_busting }}"
+                                                         class="card-img-top"
+                                                         alt="{{ stamp.primary_image.caption|default:stamp.name }}"
+                                                         data-crop-x="{{ stamp.primary_image.x_coordinate }}"
+                                                         data-crop-y="{{ stamp.primary_image.y_coordinate }}"
+                                                         data-stamp-width="{{ stamp.primary_image.width }}"
+                                                         data-stamp-height="{{ stamp.primary_image.height }}"
+                                                        style="object-fit: contain; object-position: center; height: 200px; width: 100%; max-width: none;">
+                                                </div>
+                                            {% else %}
+                                                <!-- Visa hela fristående bild -->
+                                                <img src="{% if stamp.primary_image.webp_url %}{{ stamp.primary_image.webp_url }}{% else %}{{ stamp.primary_image.image_url_with_cache_busting }}{% endif %}"
+                                                     class="card-img-top"
+                                                     alt="{{ stamp.primary_image.caption|default:stamp.name }}"
+                                                     style="height: 200px; object-fit: contain; object-position: center;">
+                                            {% endif %}
                                         {% endif %}
-                                        {% if image.description %}
-                                            <p class="card-text small text-muted">{{ image.description|markdown }}</p>
-                                        {% endif %}
+                                    {% else %}
+                                        <div class="card-img-top d-flex align-items-center justify-content-center" 
+                                             style="height: 200px; background-color: #f8f9fa;">
+                                            <i class="bi bi-stamp fa-3x text-muted"></i>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-start mb-2">
+                                        <h6 class="card-title mb-0">
+                                            <a href="{% url 'stamp_detail' stamp.id %}" class="text-decoration-none">
+                                                {{ stamp.name }}
+                                            </a>
+                                        </h6>
+                                        <span class="badge bg-{% if stamp.status == 'known' %}success{% else %}warning{% endif %}">
+                                            {{ stamp.get_status_display }}
+                                        </span>
+                                    </div>
+                                    
+                                    {% if stamp.description %}
+                                        <p class="card-text small text-muted">{{ stamp.description|truncatewords:15 }}</p>
+                                    {% endif %}
+                                    
+                                    <div class="row text-muted small mb-2">
+                                        <div class="col-6">
+                                            <i class="bi bi-tag"></i> {{ stamp.get_stamp_type_display }}
+                                        </div>
+                                        <div class="col-6">
+                                            <i class="bi bi-calendar3"></i> {{ stamp.year_range }}
+                                        </div>
+                                    </div>
+                                    {% if stamp.year_notes %}
+                                        <div class="row text-muted small mb-2">
+                                            <div class="col-6">
+                                            </div>
+                                            <div class="col-6">
+                                                <i class="bi bi-sticky-note"></i> {{ stamp.year_notes|truncatechars:50 }}
+                                            </div>
+                                        </div>
+                                    {% endif %}
+                                    
+                                    {% if stamp.transcriptions.all %}
+                                        <div class="mb-2">
+                                            <small class="text-muted">
+                                                <i class="bi bi-fonts"></i> 
+                                                {% for transcription in stamp.transcriptions.all|sort_by_quality|slice:":2" %}
+                                                    {{ transcription.full_transcription_for_cards|safe }}{% if not forloop.last %} | {% endif %}
+                                                {% endfor %}
+                                                {% if stamp.transcriptions.count > 2 %}...{% endif %}
+                                            </small>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                <div class="card-footer">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <small class="text-muted">
+                                            {{ stamp.axes.count }} yx{{ stamp.axes.count|pluralize:"a,or" }}
+                                            {% if stamp.images.count %}
+                                                • {{ stamp.images.count }} bild{{ stamp.images.count|pluralize:"er" }}
+                                            {% endif %}
+                                        </small>
+                                        <div>
+                                            <a href="{% url 'stamp_detail' stamp.id %}" class="btn btn-sm btn-outline-primary">
+                                                <i class="bi bi-eye"></i> Visa
+                                            </a>
+                                            {% if user.is_authenticated %}
+                                            <a href="{% url 'stamp_edit' stamp.id %}" class="btn btn-sm btn-outline-secondary">
+                                                <i class="bi bi-pencil"></i> Redigera
+                                            </a>
+                                            {% endif %}
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                            {% endfor %}
                         </div>
+                        {% endfor %}
                     </div>
-                    {% endfor %}
                 {% else %}
-                    <p class="text-muted">Inga bilder tillagda ännu. Klicka på "Lägg till bild" för att börja.</p>
+                    <div class="text-center py-4">
+                        <i class="bi bi-stamp fa-3x text-muted mb-3"></i>
+                        <p class="text-muted">Inga stämplar registrerade ännu.</p>
+                        {% if user.is_authenticated %}
+                        <div class="mt-3">
+                            <a href="{% url 'stamp_create' %}?manufacturer={{ manufacturer.id }}" class="btn btn-success">
+                                <i class="bi bi-stamp"></i> Skapa första stämpeln
+                            </a>
+                        </div>
+                        {% endif %}
+                    </div>
                 {% endif %}
             </div>
         </div>
@@ -869,6 +1053,7 @@
 {% endblock %}
 
 {% block scripts %}
+<script src="{% static 'js/stamp_crop_canvas.js' %}?v={{ request.GET.v|default:'1.0' }}"></script>
 <script>
 let easyMDE = null;
 
@@ -1407,54 +1592,72 @@ function saveImageEdit() {
 }
 
 function deleteImage(imageId) {
-    if (!confirm('Är du säker på att du vill ta bort denna bild?')) {
-        return;
-    }
-    
-    const deleteBtn = document.querySelector('#editImageModal .btn-danger');
-    const originalText = deleteBtn.innerHTML;
-    deleteBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Tar bort...';
-    deleteBtn.disabled = true;
-    
-    fetch(`/tillverkare/bild/${imageId}/ta-bort/`, {
-        method: 'POST',
-        headers: {
-            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+    // Visa confirm-modal i stället för confirm()
+    const body = document.querySelector('body');
+    const modalId = 'confirmDeleteImageModal';
+    const existing = document.getElementById(modalId);
+    if (existing) existing.remove();
+    const modalHtml = `
+    <div class="modal fade" id="${modalId}" tabindex="-1">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title"><i class="bi bi-trash me-2"></i>Ta bort bild</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <div class="alert alert-warning mb-0"><i class="bi bi-exclamation-triangle me-2"></i>Är du säker på att du vill ta bort denna bild?</div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Avbryt</button>
+            <button type="button" class="btn btn-danger" id="confirmDeleteImageBtn"><i class="bi bi-trash me-1"></i>Ta bort</button>
+          </div>
+        </div>
+      </div>
+    </div>`;
+    body.insertAdjacentHTML('beforeend', modalHtml);
+    const m = new bootstrap.Modal(document.getElementById(modalId));
+    m.show();
+
+    document.getElementById('confirmDeleteImageBtn').addEventListener('click', function() {
+        const deleteBtn = document.querySelector('#editImageModal .btn-danger');
+        const originalText = deleteBtn ? deleteBtn.innerHTML : '';
+        if (deleteBtn) {
+            deleteBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Tar bort...';
+            deleteBtn.disabled = true;
         }
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            // Ta bort bildkortet från DOM
-            const imageElement = document.querySelector(`[data-image-id="${imageId}"]`);
-            if (imageElement) {
-                const card = imageElement.closest('.col-md-4');
-                card.remove();
-                
-                // Kontrollera om det finns fler bilder
-                const remainingImages = document.querySelectorAll('.manufacturer-image');
-                if (remainingImages.length === 0) {
-                    // Ladda om sidan för att visa "Inga bilder"-meddelandet
-                    location.reload();
+        fetch(`/tillverkare/bild/${imageId}/ta-bort/`, {
+            method: 'POST',
+            headers: { 'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value }
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                const imageElement = document.querySelector(`[data-image-id="${imageId}"]`);
+                if (imageElement) {
+                    const card = imageElement.closest('.col-md-4');
+                    card.remove();
+                    const remainingImages = document.querySelectorAll('.manufacturer-image');
+                    if (remainingImages.length === 0) location.reload();
                 }
+                const editM = bootstrap.Modal.getInstance(document.getElementById('editImageModal'));
+                if (editM) editM.hide();
+                m.hide();
+                if (window.showToast) showToast('Bild borttagen!', 'success');
+            } else {
+                if (window.showToast) showToast('Fel: ' + (data.error || 'Okänt fel'), 'danger');
             }
-            
-            // Stäng modal
-            const modal = bootstrap.Modal.getInstance(document.getElementById('editImageModal'));
-            modal.hide();
-            
-            showNotification('Bild borttagen!', 'success');
-        } else {
-            showNotification('Fel: ' + data.error, 'error');
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        showNotification('Ett fel uppstod vid borttagning', 'error');
-    })
-    .finally(() => {
-        deleteBtn.innerHTML = originalText;
-        deleteBtn.disabled = false;
+        })
+        .catch(err => {
+            console.error(err);
+            if (window.showToast) showToast('Ett fel uppstod vid borttagning', 'danger');
+        })
+        .finally(() => {
+            if (deleteBtn) {
+                deleteBtn.innerHTML = originalText;
+                deleteBtn.disabled = false;
+            }
+        });
     });
 }
 

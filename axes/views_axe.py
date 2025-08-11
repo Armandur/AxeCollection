@@ -10,6 +10,17 @@ from .models import (
     Contact,
     Platform,
     Manufacturer,
+    ManufacturerImage,
+    ManufacturerLink,
+    MeasurementType,
+    MeasurementTemplateItem,
+    Stamp,
+    StampTranscription,
+    StampTag,
+    StampImage,
+    AxeStamp,
+    StampVariant,
+    StampUncertaintyGroup,
 )
 from .forms import AxeForm, MeasurementForm, TransactionForm
 from django.db.models import Sum, Count, Max
@@ -302,8 +313,14 @@ def axe_list(request):
 def axe_detail(request, pk):
     axe = get_object_or_404(
         Axe.objects.select_related("manufacturer")
-        .prefetch_related("measurements", "images")
-        .prefetch_related("images"),
+        .prefetch_related(
+            "measurements", "images", "images__stamp_markings__stamp__manufacturer"
+        )
+        .prefetch_related(
+            "stamps__stamp__manufacturer",
+            "stamps__stamp__transcriptions",
+            "stamps__stamp__images",
+        ),
         pk=pk,
     )
     # Hämta transaktioner för denna yxa
@@ -382,9 +399,43 @@ def axe_detail(request, pk):
             return redirect("axe_detail", pk=axe.pk)
     else:
         transaction_form = TransactionForm()
+
+    # Hämta alla StampImage för denna yxa och skapa kort för varje
+    stamp_images = (
+        StampImage.objects.filter(axe_image__axe=axe, image_type="axe_mark")
+        .select_related("stamp__manufacturer", "axe_image")
+        .prefetch_related("stamp__transcriptions")
+        .order_by("-uploaded_at")
+    )
+
+    # För varje StampImage, hitta motsvarande AxeStamp för att få position, uncertainty_level, etc.
+    for stamp_image in stamp_images:
+        # Hitta motsvarande AxeStamp (ta första om flera finns)
+        try:
+            axe_stamp = axe.stamps.filter(stamp=stamp_image.stamp).first()
+            if axe_stamp:
+                # Kopiera AxeStamp-data till StampImage-objektet
+                stamp_image.axe_stamp_id = axe_stamp.id
+                stamp_image.position = axe_stamp.position
+                stamp_image.uncertainty_level = axe_stamp.uncertainty_level
+                stamp_image.axe_stamp_comment = axe_stamp.comment
+            else:
+                # Om ingen AxeStamp finns, sätt standardvärden
+                stamp_image.axe_stamp_id = None
+                stamp_image.position = ""
+                stamp_image.uncertainty_level = "certain"
+                stamp_image.axe_stamp_comment = ""
+        except Exception:
+            # Fallback om något går fel
+            stamp_image.axe_stamp_id = None
+            stamp_image.position = ""
+            stamp_image.uncertainty_level = "certain"
+            stamp_image.axe_stamp_comment = ""
+
     context = {
         "axe": axe,
         "transactions": transactions,
+        "axe_stamps": stamp_images,  # Använd stamp_images istället för axe_image_stamps
         "total_cost": total_cost,
         "total_shipping_cost": total_shipping_cost,
         "total_revenue": total_revenue,
@@ -916,7 +967,10 @@ def _rename_axe_images_for_edit(axe):
 
 @login_required
 def axe_edit(request, pk):
-    axe = get_object_or_404(Axe, pk=pk)
+    axe = get_object_or_404(
+        Axe.objects.prefetch_related("images__stamp_markings__stamp__manufacturer"),
+        pk=pk,
+    )
     if request.method == "POST":
         form = AxeForm(request.POST, request.FILES, instance=axe)
         if form.is_valid():

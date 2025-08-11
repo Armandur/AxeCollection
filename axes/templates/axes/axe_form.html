@@ -460,7 +460,7 @@ tr.editing .form-control-sm {
 
                         <!-- Befintliga bilder (endast i redigeringsläge) -->
                         {% if is_edit and axe.images.all %}
-                            <div class="mb-4">
+                            <div class="mb-4" id="stampel-sektion">
                                 <h6>Befintliga bilder:</h6>
                                 <div class="row" id="existingImagesContainer">
                                     {% for image in axe.images.all %}
@@ -1870,7 +1870,9 @@ document.addEventListener('DOMContentLoaded', function() {
                         `;
                     }
                 } else {
-                    alert('Ange ett giltigt belopp i SEK');
+                    if (window.showToast) showToast('Ange ett giltigt belopp i SEK', 'warning'); else alert('Ange ett giltigt belopp i SEK');
+                    const amountEl = document.getElementById('id_amount') || document.querySelector('[name="amount"]');
+                    if (amountEl) amountEl.classList.add('is-invalid');
                 }
             });
         }
@@ -2152,9 +2154,32 @@ document.addEventListener('DOMContentLoaded', function() {
     // window.axeId = {{ axe.pk }}; // Moved to extra_head
     // const measurementTemplates = {{ measurement_templates|safe }}; // Moved to extra_head
 
+    // === STÄMPEL-MODAL-HANTERING ===
+    function showUnmarkStampModal(url) {
+        fetch(url)
+            .then(response => response.text())
+            .then(html => {
+                const modal = document.getElementById('unmarkStampModal');
+                const modalBody = modal.querySelector('.modal-content');
+                modalBody.innerHTML = html;
+                new bootstrap.Modal(modal).show();
+            })
+            .catch(error => {
+                console.error('Fel vid laddning av modal:', error);
+                if (window.showToast) showToast('Ett fel uppstod vid laddning av bekräftelsen.', 'danger'); else alert('Ett fel uppstod vid laddning av bekräftelsen.');
+            });
+    }
+
 });
 </script>
 
-
+<!-- Modal för stämpelmarkering -->
+<div class="modal fade" id="unmarkStampModal" tabindex="-1" aria-labelledby="unmarkStampModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <!-- Modal-innehåll laddas dynamiskt -->
+        </div>
+    </div>
+</div>
 
 {% endblock %}

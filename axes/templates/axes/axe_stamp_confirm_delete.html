@@ -1,0 +1,68 @@
+{% extends "axes/base.html" %}
+
+{% block title %}Ta bort stämpel från yxa{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'axe_list' %}">Yxor</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'axe_detail' axe.id %}">{{ axe.display_id }}</a></li>
+            <li class="breadcrumb-item active">Ta bort stämpel</li>
+        </ol>
+    </nav>
+
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-exclamation-triangle text-warning"></i>
+                        Ta bort stämpel från yxa
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-warning">
+                        <strong>Varning:</strong> Du är på väg att ta bort stämpeln från yxan.
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <strong>Yxa:</strong><br>
+                            {{ axe.display_id }} - {{ axe.model }}
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Stämpel:</strong><br>
+                            {{ stamp.name }}
+                            {% if stamp.manufacturer %}
+                                <br><small class="text-muted">{{ stamp.manufacturer.name }}</small>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    {% if axe_stamp.comment %}
+                    <div class="mt-3">
+                        <strong>Kommentar:</strong><br>
+                        {{ axe_stamp.comment }}
+                    </div>
+                    {% endif %}
+                    
+                    <div class="mt-4">
+                        <form method="post">
+                            {% csrf_token %}
+                            <div class="d-flex justify-content-between">
+                                <a href="{% url 'axe_detail' axe.id %}" class="btn btn-secondary">
+                                    <i class="fas fa-arrow-left"></i> Avbryt
+                                </a>
+                                <button type="submit" class="btn btn-danger">
+                                    <i class="fas fa-trash"></i> Ta bort stämpel
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

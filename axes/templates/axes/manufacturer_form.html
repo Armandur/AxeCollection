@@ -476,7 +476,9 @@ document.addEventListener('DOMContentLoaded', function() {
         const name = nameInput.value.trim();
         if (!name) {
             e.preventDefault();
-            alert('Tillverkarnamn är obligatoriskt');
+            if (window.showToast) showToast('Tillverkarnamn är obligatoriskt', 'warning'); else alert('Tillverkarnamn är obligatoriskt');
+            const nameEl = document.getElementById('id_name') || document.querySelector('[name="name"]');
+            if (nameEl) nameEl.classList.add('is-invalid');
             nameInput.focus();
             return false;
         }

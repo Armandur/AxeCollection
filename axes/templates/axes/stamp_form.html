@@ -1,0 +1,162 @@
+{% extends 'axes/base.html' %}
+{% load static %}
+
+{% block title %}
+    {% if form.instance.pk %}Redigera stämpel{% else %}Ny stämpel{% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'stamp_list' %}">Stämplar</a></li>
+            <li class="breadcrumb-item active">
+                {% if form.instance.pk %}Redigera stämpel{% else %}Ny stämpel{% endif %}
+            </li>
+        </ol>
+    </nav>
+
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h2>{% if form.instance.pk %}Redigera stämpel{% else %}Ny stämpel{% endif %}</h2>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.name.id_for_label }}" class="form-label">Namn *</label>
+                                    {{ form.name }}
+                                    {% if form.name.errors %}
+                                        <div class="text-danger">{{ form.name.errors }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.manufacturer.id_for_label }}" class="form-label">Tillverkare</label>
+                                    {{ form.manufacturer }}
+                                    {% if form.manufacturer.errors %}
+                                        <div class="text-danger">{{ form.manufacturer.errors }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.stamp_type.id_for_label }}" class="form-label">Typ</label>
+                                    {{ form.stamp_type }}
+                                    {% if form.stamp_type.errors %}
+                                        <div class="text-danger">{{ form.stamp_type.errors }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.status.id_for_label }}" class="form-label">Status</label>
+                                    {{ form.status }}
+                                    {% if form.status.errors %}
+                                        <div class="text-danger">{{ form.status.errors }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    <label for="{{ form.year_from.id_for_label }}" class="form-label">År från</label>
+                                    {{ form.year_from }}
+                                    {% if form.year_from.errors %}
+                                        <div class="text-danger">{{ form.year_from.errors }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    <label for="{{ form.year_to.id_for_label }}" class="form-label">År till</label>
+                                    {{ form.year_to }}
+                                    {% if form.year_to.errors %}
+                                        <div class="text-danger">{{ form.year_to.errors }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    <label for="{{ form.year_uncertainty.id_for_label }}" class="form-label">Osäkerhet</label>
+                                    {{ form.year_uncertainty }}
+                                    {% if form.year_uncertainty.errors %}
+                                        <div class="text-danger">{{ form.year_uncertainty.errors }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    <label for="{{ form.source_category.id_for_label }}" class="form-label">Källa</label>
+                                    {{ form.source_category }}
+                                    {% if form.source_category.errors %}
+                                        <div class="text-danger">{{ form.source_category.errors }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.description.id_for_label }}" class="form-label">Beskrivning</label>
+                            {{ form.description }}
+                            {% if form.description.errors %}
+                                <div class="text-danger">{{ form.description.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.year_notes.id_for_label }}" class="form-label">Årnoteringar</label>
+                            {{ form.year_notes }}
+                            {% if form.year_notes.errors %}
+                                <div class="text-danger">{{ form.year_notes.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.source_reference.id_for_label }}" class="form-label">Källreferens</label>
+                            {{ form.source_reference }}
+                            {% if form.source_reference.errors %}
+                                <div class="text-danger">{{ form.source_reference.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'stamp_list' %}" class="btn btn-secondary">Avbryt</a>
+                            <button type="submit" class="btn btn-primary">
+                                {% if form.instance.pk %}Spara ändringar{% else %}Skapa stämpel{% endif %}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Hjälp</h5>
+                </div>
+                <div class="card-body">
+                    <p><strong>Namn:</strong> Ange ett beskrivande namn för stämpeln.</p>
+                    <p><strong>Tillverkare:</strong> Den som tillverkade yxan eller stämpeln.</p>
+                    <p><strong>Typ:</strong> Kategorisera stämpeln (t.ex. tillverkare, kontroll, etc.).</p>
+                    <p><strong>Status:</strong> Känd = identifierad, Okänd = ej identifierad.</p>
+                    <p><strong>År:</strong> Tidsperiod för stämpeln. Lämna tomt om osäker.</p>
+                    <p><strong>Källa:</strong> Varifrån informationen kommer.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

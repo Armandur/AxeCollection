@@ -1,0 +1,59 @@
+{% extends "axes/base.html" %}
+
+{% block title %}Ta bort transkribering - {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h1>Ta bort transkribering</h1>
+                <a href="{% url 'stamp_detail' transcription.stamp.id %}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Tillbaka till stämpel
+                </a>
+            </div>
+
+            <div class="card">
+                <div class="card-body">
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <strong>Varning:</strong> Denna åtgärd kan inte ångras.
+                    </div>
+
+                    <h5>Är du säker på att du vill ta bort denna transkribering?</h5>
+                    
+                    <div class="card mt-3">
+                        <div class="card-body">
+                            <h6>Transkribering:</h6>
+                            <p class="mb-2">
+                                <strong>Komplett transkribering:</strong> {{ transcription.full_transcription|safe }}
+                            </p>
+                            <p class="mb-2">
+                                <strong>Kvalitet:</strong> {{ transcription.get_quality_display }}
+                            </p>
+                            <p class="mb-0">
+                                <strong>Skapad:</strong> {{ transcription.created_at|date:"Y-m-d H:i" }}
+                                {% if transcription.created_by %}
+                                av {{ transcription.created_by.username }}
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+
+                    <form method="post" class="mt-4">
+                        {% csrf_token %}
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'stamp_detail' transcription.stamp.id %}" class="btn btn-secondary">
+                                <i class="fas fa-times"></i> Avbryt
+                            </a>
+                            <button type="submit" class="btn btn-danger">
+                                <i class="fas fa-trash"></i> Ta bort transkribering
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

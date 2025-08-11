@@ -1,4 +1,5 @@
 {% extends 'axes/base.html' %}
+{% load static %}
 {% load axe_filters %}
 
 {% block title %}{{ axe.manufacturer.name }} - {{ axe.model }} - {{ block.super }}{% endblock %}
@@ -36,6 +37,24 @@
         margin-right: 0.25rem;
         margin-bottom: 0;
         vertical-align: middle;
+    }
+    .stamp-card {
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .stamp-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+    .stamp-image-container {
+        position: relative;
+        overflow: hidden;
+        border-radius: 0.375rem;
+    }
+    .stamp-image-container img {
+        transition: transform 0.3s;
+    }
+    .stamp-image-container:hover img {
+        transform: scale(1.05);
     }
     @media (max-width: 480px) {
         .edit-col {
@@ -195,6 +214,159 @@
                 </div>
             </div>
         {% endif %}
+
+        <!-- Stämplar -->
+        <div class="card mt-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h4 class="mb-0">Stämplar</h4>
+                {% if user.is_authenticated %}
+                <a href="{% url 'add_axe_stamp' axe.id %}" class="btn btn-primary btn-sm" title="Ange stämpel">
+                    <i class="fas fa-plus"></i>
+                    <span class="d-none d-md-inline">Ange stämpel</span>
+                </a>
+                {% endif %}
+            </div>
+            <div class="card-body">
+                {% if axe_stamps %}
+                    <div class="row">
+                        {% for axe_stamp in axe_stamps %}
+                            <div class="col-md-6 col-lg-4 mb-3">
+                                <div class="card h-100 stamp-card">
+                                    <div class="card-body p-3">
+                                        <!-- Stämpelbilder -->
+                                        <div class="text-center mb-3 stamp-image-container">
+                                            {% if axe_stamp.has_coordinates and axe_stamp.axe_image.image %}
+                                                <!-- Visa beskuren stämpelmarkering -->
+                                                <div class="stamp-crop-container" style="height: 200px; overflow: hidden; cursor: pointer;" 
+                                                     onclick="showStampModal('{{ axe_stamp.axe_image.image_url_with_cache_busting }}', {{ axe_stamp.x_coordinate }}, {{ axe_stamp.y_coordinate }}, {{ axe_stamp.width }}, {{ axe_stamp.height }}, '{{ axe_stamp.stamp.name }}', '{{ axe_stamp.axe_image.axe.display_id }}')">
+                                                    <img src="{{ axe_stamp.axe_image.image_url_with_cache_busting }}"
+                                                         class="card-img-top"
+                                                         data-crop-x="{{ axe_stamp.x_coordinate }}"
+                                                         data-crop-y="{{ axe_stamp.y_coordinate }}"
+                                                         data-stamp-width="{{ axe_stamp.width }}"
+                                                         data-stamp-height="{{ axe_stamp.height }}"
+                                                         style="object-fit: cover; object-position: -{{ axe_stamp.x_coordinate }}% -{{ axe_stamp.y_coordinate }}%; width: 100%; height: 100%;"
+                                                         alt="{{ axe_stamp.stamp.name }}">
+                                                </div>
+                                            {% else %}
+                                                <!-- Visa hela yxbild med stämpelmarkering -->
+                                                <img src="{{ axe_stamp.axe_image.image_url_with_cache_busting }}"
+                                                     class="card-img-top"
+                                                     style="height: 200px; object-fit: cover; cursor: pointer;"
+                                                     onclick="showStampModal('{{ axe_stamp.axe_image.image_url_with_cache_busting }}', null, null, null, null, '{{ axe_stamp.stamp.name }}', '{{ axe_stamp.axe_image.axe.display_id }}')"
+                                                     alt="{{ axe_stamp.stamp.name }}">
+                                            {% endif %}
+                                        </div>
+                                        
+                                        <!-- Stämpelinformation -->
+                                        <h6 class="card-title mb-2">
+                                            <a href="{% url 'stamp_detail' axe_stamp.stamp.id %}" class="text-decoration-none">
+                                                {{ axe_stamp.stamp.name }}
+                                            </a>
+                                            {% if axe_stamp.stamp.status == 'unknown' %}
+                                                <span class="badge bg-warning ms-1">Okänd</span>
+                                            {% endif %}
+                                        </h6>
+                                        
+                                        <div class="mb-2">
+                                            <span class="badge bg-info">{{ axe_stamp.stamp.get_stamp_type_display }}</span>
+                                            {% if axe_stamp.uncertainty_level == 'uncertain' %}
+                                                <span class="badge bg-warning">Osäker</span>
+                                            {% elif axe_stamp.uncertainty_level == 'tentative' %}
+                                                <span class="badge bg-secondary">Preliminär</span>
+                                            {% else %}
+                                                <span class="badge bg-success">Säker</span>
+                                            {% endif %}
+                                        </div>
+                                        
+                                        <!-- År och årnoter -->
+                                        {% if axe_stamp.stamp.year_range %}
+                                            <div class="mb-2">
+                                                <small class="text-muted">
+                                                    <i class="fas fa-calendar me-1"></i>
+                                                    {{ axe_stamp.stamp.year_range }}
+                                                    {% if axe_stamp.stamp.year_notes %}
+                                                        <br><i class="fas fa-sticky-note me-1"></i>
+                                                        {{ axe_stamp.stamp.year_notes|truncatechars:50 }}
+                                                    {% endif %}
+                                                </small>
+                                            </div>
+                                        {% endif %}
+                                        
+                                        {% if axe_stamp.position %}
+                                            <div class="mb-2">
+                                                <small class="text-muted">
+                                                    <i class="fas fa-map-marker-alt me-1"></i>
+                                                    {{ axe_stamp.position }}
+                                                </small>
+                                            </div>
+                                        {% endif %}
+                                        
+                                        {% if axe_stamp.comment %}
+                                            <div class="mb-2">
+                                                <small class="text-muted">
+                                                    {{ axe_stamp.comment|truncatewords:8 }}
+                                                </small>
+                                            </div>
+                                        {% endif %}
+                                        
+                                        {% if axe_stamp.axe_stamp_comment %}
+                                            <div class="mb-2">
+                                                <small class="text-muted">
+                                                    <i class="fas fa-comment me-1"></i>
+                                                    {{ axe_stamp.axe_stamp_comment|truncatewords:8 }}
+                                                </small>
+                                            </div>
+                                        {% endif %}
+                                        
+                                        <!-- Transkriberingar -->
+                                        {% if axe_stamp.stamp.transcriptions.all %}
+                                            <div class="mb-2">
+                                                <small class="text-muted">
+                                                    <strong>Transkriberingar:</strong><br>
+                                                    {% for transcription in axe_stamp.stamp.transcriptions.all|sort_by_quality %}
+                                                        {{ transcription.full_transcription_for_cards|safe }}{% if not forloop.last %} | {% endif %}
+                                                    {% endfor %}
+                                                </small>
+                                            </div>
+                                        {% endif %}
+                                        
+                                        {% if user.is_authenticated %}
+                                            <div class="mt-auto">
+                                                <div class="btn-group btn-group-sm w-100" role="group">
+                                                    <a href="{% url 'edit_axe_image_stamp' axe.id axe_stamp.id %}" class="btn btn-outline-primary" title="Redigera">
+                                                        <i class="fas fa-edit"></i>
+                                                    </a>
+                                                    <a href="{% url 'stamp_detail' axe_stamp.stamp.id %}" class="btn btn-outline-info" title="Visa stämpel">
+                                                        <i class="fas fa-eye"></i>
+                                                    </a>
+                                                    <button type="button" class="btn btn-outline-danger" title="Ta bort markering"
+                                                            onclick="showRemoveStampModal('{% url 'remove_axe_image_stamp' axe.id axe_stamp.id %}')">
+                                                        <i class="fas fa-times"></i>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-stamp fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">Inga stämplar definierade</h5>
+                        <p class="text-muted">Denna yxa har inga stämplar kopplade än.</p>
+                        {% if user.is_authenticated %}
+                            <a href="{% url 'add_axe_stamp' axe.id %}" class="btn btn-primary" title="Ange stämpel">
+                                <i class="fas fa-plus"></i>
+                                Ange stämpel
+                            </a>
+                        {% endif %}
+                    </div>
+                {% endif %}
+            </div>
+        </div>
     </div>
 
     <!-- Högra kolumnen -->
@@ -211,14 +383,29 @@
                             <div class="carousel-inner">
                                 {% for image in axe.images.all %}
                                     <div class="carousel-item {% if forloop.first %}active{% endif %}">
-                                        <a href="{{ image.image_url_with_cache_busting }}" data-pswp-width="{{ image.image.width }}" data-pswp-height="{{ image.image.height }}">
-                                            <picture>
-                                                {% if image.webp_url %}
-                                                    <source srcset="{{ image.webp_url }}" type="image/webp">
-                                                {% endif %}
-                                                <img src="{{ image.image_url_with_cache_busting }}" class="d-block w-100" alt="Yxa {{ forloop.counter }}" loading="lazy">
-                                            </picture>
-                                        </a>
+                                        <div class="position-relative">
+                                           <a href="{{ image.image_url_with_cache_busting }}">
+                                                <picture>
+                                                    {% if image.webp_url %}
+                                                        <source srcset="{{ image.webp_url }}" type="image/webp">
+                                                    {% endif %}
+                                                    <img src="{{ image.image_url_with_cache_busting }}" class="d-block w-100" alt="Yxa {{ forloop.counter }}" loading="lazy">
+                                                </picture>
+                                            </a>
+                                            
+                                            <!-- Stämpelmarkeringar -->
+                                            {% for stamp_mark in image.stamp_marks.all %}
+                                                <div class="position-absolute border border-warning bg-warning bg-opacity-25" 
+                                                     style="left: {{ stamp_mark.x_coordinate }}px; top: {{ stamp_mark.y_coordinate }}px; width: {{ stamp_mark.width }}px; height: {{ stamp_mark.height }}px;"
+                                                     title="{{ stamp_mark.stamp.name }}">
+                                                    {% if stamp_mark.is_primary %}
+                                                        <span class="position-absolute top-0 start-0 badge bg-success">★</span>
+                                                    {% endif %}
+                                                </div>
+                                            {% endfor %}
+                                            
+
+                                        </div>
                                     </div>
                                 {% endfor %}
                             </div>
@@ -393,6 +580,7 @@
 {% endblock %}
 
 {% block scripts %}
+<script src="{% static 'js/stamp_crop_canvas.js' %}?v={{ request.GET.v|default:'1.0' }}"></script>
 <script type="module">
 import PhotoSwipeLightbox from 'https://unpkg.com/photoswipe@5.4.4/dist/photoswipe-lightbox.esm.js';
 import PhotoSwipe from 'https://unpkg.com/photoswipe@5.4.4/dist/photoswipe.esm.js';
@@ -663,11 +851,11 @@ document.addEventListener('DOMContentLoaded', function() {
                         } else if (data.error) {
                             errorMsg += '\n' + data.error;
                         }
-                        alert(errorMsg);
+                        if (window.showToast) showToast(errorMsg, 'danger'); else alert(errorMsg);
                     }
                 })
                 .catch(() => {
-                    alert('Något gick fel vid uppdatering.');
+                    if (window.showToast) showToast('Något gick fel vid uppdatering.', 'danger'); else alert('Något gick fel vid uppdatering.');
                 });
             } else {
                 // Skicka som vanligt (lägg till ny transaktion)
@@ -867,4 +1055,354 @@ document.addEventListener('DOMContentLoaded', function() {
 </div>
 {% endif %}
 
+<!-- Modal för att ta bort stämpel från yxa -->
+<div class="modal fade" id="removeStampModal" tabindex="-1" aria-labelledby="removeStampModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content" id="removeStampModalContent">
+            <!-- Innehåll laddas dynamiskt -->
+        </div>
+    </div>
+</div>
+
+<!-- Modal för att ta bort stämpelmarkering från bild -->
+<div class="modal fade" id="unmarkStampModal" tabindex="-1" aria-labelledby="unmarkStampModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content" id="unmarkStampModalContent">
+            <!-- Innehåll laddas dynamiskt -->
+        </div>
+    </div>
+</div>
+
+<script>
+// Funktioner för stämpelmodaler
+function showRemoveStampModal(url) {
+    fetch(url, {
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => response.text())
+    .then(html => {
+        document.getElementById('removeStampModalContent').innerHTML = html;
+        const modal = new bootstrap.Modal(document.getElementById('removeStampModal'));
+        modal.show();
+    })
+    .catch(error => {
+        console.error('Fel vid laddning av modal:', error);
+        if (window.showToast) showToast('Ett fel uppstod vid laddning av bekräftelsedialog.', 'danger'); else alert('Ett fel uppstod vid laddning av bekräftelsedialog.');
+    });
+}
+
+function showUnmarkStampModal(url) {
+    fetch(url, {
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => response.text())
+    .then(html => {
+        document.getElementById('unmarkStampModalContent').innerHTML = html;
+        const modal = new bootstrap.Modal(document.getElementById('unmarkStampModal'));
+        modal.show();
+    })
+    .catch(error => {
+        console.error('Fel vid laddning av modal:', error);
+        if (window.showToast) showToast('Ett fel uppstod vid laddning av bekräftelsedialog.', 'danger'); else alert('Ett fel uppstod vid laddning av bekräftelsedialog.');
+    });
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Hantera submit för remove stamp modal
+    document.addEventListener('submit', function(e) {
+        if (e.target.closest('#removeStampModal')) {
+            e.preventDefault();
+            const form = e.target;
+            const formData = new FormData(form);
+            
+            fetch(form.action, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Stäng modal och ladda om sidan
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('removeStampModal'));
+                    modal.hide();
+                    location.reload();
+                } else {
+                    if (window.showToast) showToast('Ett fel uppstod: ' + (data.message || 'Okänt fel'), 'danger'); else alert('Ett fel uppstod: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Fel vid submit:', error);
+                if (window.showToast) showToast('Ett fel uppstod vid borttagning av stämpel.', 'danger'); else alert('Ett fel uppstod vid borttagning av stämpel.');
+            });
+        }
+        
+        // Hantera submit för unmark stamp modal
+        if (e.target.closest('#unmarkStampModal')) {
+            e.preventDefault();
+            const form = e.target;
+            const formData = new FormData(form);
+            
+            fetch(form.action, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Stäng modal och ladda om sidan
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('unmarkStampModal'));
+                    modal.hide();
+                    location.reload();
+                } else {
+                    if (window.showToast) showToast('Ett fel uppstod: ' + (data.message || 'Okänt fel'), 'danger'); else alert('Ett fel uppstod: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Fel vid submit:', error);
+                if (window.showToast) showToast('Ett fel uppstod vid borttagning av stämpelmarkering.', 'danger'); else alert('Ett fel uppstod vid borttagning av stämpelmarkering.');
+            });
+        }
+    });
+});
+
+// Modal för stämpelbilder
+function showStampModal(imageUrl, xCoord, yCoord, width, height, stampName, axeId) {
+    const modal = document.getElementById('stampImageModal');
+    const modalImage = document.getElementById('stampModalImage');
+    const modalTitle = document.getElementById('stampModalTitle');
+    const toggleButton = document.getElementById('stampModalToggleButton');
+    
+    console.log('showStampModal called with:', { imageUrl, xCoord, yCoord, width, height, stampName, axeId });
+    
+    // Spara ursprungliga bild-URL för återställning
+    modalImage.dataset.originalImageUrl = imageUrl;
+    
+    // Sätt bild och titel
+    modalImage.src = imageUrl;
+    modalTitle.textContent = `${stampName} på yxa ${axeId}`;
+    
+    // Spara ursprungliga koordinater för återställning
+    if (xCoord !== null && yCoord !== null && width !== null && height !== null) {
+        modalImage.dataset.originalCoords = `${xCoord},${yCoord},${width},${height}`;
+        toggleButton.style.display = 'block';
+        toggleButton.textContent = 'Visa hela bilden';
+        
+        // Skapa en separat bild för canvas-ritning för att undvika CORS-problem
+        const canvasImage = new Image();
+        canvasImage.crossOrigin = 'anonymous';
+        
+        canvasImage.onload = function() {
+            console.log('Canvas image loaded, dimensions:', { width: this.width, height: this.height });
+            
+            // Konvertera procentkoordinater till pixlar
+            const pixelX = Math.round((xCoord / 100) * this.width);
+            const pixelY = Math.round((yCoord / 100) * this.height);
+            const pixelWidth = Math.round((width / 100) * this.width);
+            const pixelHeight = Math.round((height / 100) * this.height);
+            
+            console.log('Crop coordinates (pixels):', { x: pixelX, y: pixelY, width: pixelWidth, height: pixelHeight });
+            
+            try {
+                // Skapa canvas för att extrahera den beskurna delen
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                
+                // Sätt canvas-storlek till crop-området
+                canvas.width = pixelWidth;
+                canvas.height = pixelHeight;
+                
+                // Rita den beskurna delen på canvas
+                ctx.drawImage(this, pixelX, pixelY, pixelWidth, pixelHeight, 0, 0, pixelWidth, pixelHeight);
+                
+                // Konvertera canvas till data URL
+                const croppedImageUrl = canvas.toDataURL('image/jpeg', 0.9);
+                
+                // Sätt den beskurna bilden som src för modal-bilden
+                modalImage.src = croppedImageUrl;
+                
+                // Sätt stilarna för att visa den beskurna bilden
+                modalImage.style.width = 'auto';
+                modalImage.style.height = 'auto';
+                modalImage.style.maxWidth = '100%';
+                modalImage.style.maxHeight = '80vh';
+                modalImage.style.objectFit = 'contain';
+                
+                console.log('Successfully applied cropped image');
+            } catch (error) {
+                console.error('Error creating cropped image:', error);
+                // Fallback: visa originalbilden
+                modalImage.src = imageUrl;
+                modalImage.style.width = 'auto';
+                modalImage.style.height = 'auto';
+                modalImage.style.maxWidth = '100%';
+                modalImage.style.maxHeight = '80vh';
+                modalImage.style.objectFit = 'contain';
+            }
+        };
+        
+        canvasImage.onerror = function() {
+            console.error('Failed to load image for canvas cropping');
+            // Fallback: visa originalbilden
+            modalImage.src = imageUrl;
+            modalImage.style.width = 'auto';
+            modalImage.style.height = 'auto';
+            modalImage.style.maxWidth = '100%';
+            modalImage.style.maxHeight = '80vh';
+            modalImage.style.objectFit = 'contain';
+        };
+        
+        // Ladda bilden för canvas
+        canvasImage.src = imageUrl;
+        
+    } else {
+        modalImage.dataset.originalCoords = '';
+        toggleButton.style.display = 'none';
+        modalImage.style.width = 'auto';
+        modalImage.style.height = 'auto';
+        modalImage.style.maxWidth = '100%';
+        modalImage.style.maxHeight = '80vh';
+        modalImage.style.objectFit = 'contain';
+    }
+    
+    // Visa modalen
+    const bootstrapModal = new bootstrap.Modal(modal);
+    bootstrapModal.show();
+}
+
+// Toggle för att växla mellan beskuren och hela bilden i modalen
+function toggleStampModalView() {
+    const modalImage = document.getElementById('stampModalImage');
+    const toggleButton = document.getElementById('stampModalToggleButton');
+    
+    console.log('toggleStampModalView called, current button text:', toggleButton.textContent);
+    
+    if (toggleButton.textContent === 'Visa hela bilden') {
+        // Visa hela bilden
+        console.log('Switching to full image view');
+        
+        // Återställ till originalbilden
+        const originalImageUrl = modalImage.dataset.originalImageUrl || modalImage.src;
+        modalImage.src = originalImageUrl;
+        
+        modalImage.style.width = 'auto';
+        modalImage.style.height = 'auto';
+        modalImage.style.maxWidth = '100%';
+        modalImage.style.maxHeight = '80vh';
+        modalImage.style.objectFit = 'contain';
+        toggleButton.textContent = 'Visa beskuren del';
+    } else {
+        // Visa beskuren del
+        const originalCoords = modalImage.dataset.originalCoords;
+        console.log('Switching to cropped view, originalCoords:', originalCoords);
+        
+        if (originalCoords) {
+            const [x, y, width, height] = originalCoords.split(',').map(Number);
+            const originalImageUrl = modalImage.dataset.originalImageUrl;
+            
+            // Skapa en separat bild för canvas-ritning
+            const canvasImage = new Image();
+            canvasImage.crossOrigin = 'anonymous';
+            
+            canvasImage.onload = function() {
+                // Konvertera procentkoordinater till pixlar
+                const pixelX = Math.round((x / 100) * this.width);
+                const pixelY = Math.round((y / 100) * this.height);
+                const pixelWidth = Math.round((width / 100) * this.width);
+                const pixelHeight = Math.round((height / 100) * this.height);
+                
+                console.log('Toggle cropping with:', { 
+                    original: { x, y, width, height },
+                    converted: { x: pixelX, y: pixelY, width: pixelWidth, height: pixelHeight },
+                    imageSize: { width: this.width, height: this.height }
+                });
+                
+                try {
+                    // Skapa canvas för att extrahera den beskurna delen
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d');
+                    
+                    // Sätt canvas-storlek till crop-området
+                    canvas.width = pixelWidth;
+                    canvas.height = pixelHeight;
+                    
+                    // Rita den beskurna delen på canvas
+                    ctx.drawImage(this, pixelX, pixelY, pixelWidth, pixelHeight, 0, 0, pixelWidth, pixelHeight);
+                    
+                    // Konvertera canvas till data URL
+                    const croppedImageUrl = canvas.toDataURL('image/jpeg', 0.9);
+                    
+                    // Sätt den beskurna bilden som src
+                    modalImage.src = croppedImageUrl;
+                    
+                    // Sätt stilarna för att visa den beskurna bilden
+                    modalImage.style.width = 'auto';
+                    modalImage.style.height = 'auto';
+                    modalImage.style.maxWidth = '100%';
+                    modalImage.style.maxHeight = '80vh';
+                    modalImage.style.objectFit = 'contain';
+                    
+                    console.log('Successfully applied toggle cropped image');
+                } catch (error) {
+                    console.error('Error creating cropped image in toggle:', error);
+                    // Fallback: visa originalbilden
+                    modalImage.src = originalImageUrl;
+                    modalImage.style.width = 'auto';
+                    modalImage.style.height = 'auto';
+                    modalImage.style.maxWidth = '100%';
+                    modalImage.style.maxHeight = '80vh';
+                    modalImage.style.objectFit = 'contain';
+                }
+            };
+            
+            canvasImage.onerror = function() {
+                console.error('Failed to load image for canvas cropping in toggle');
+                // Fallback: visa originalbilden
+                modalImage.src = originalImageUrl;
+                modalImage.style.width = 'auto';
+                modalImage.style.height = 'auto';
+                modalImage.style.maxWidth = '100%';
+                modalImage.style.maxHeight = '80vh';
+                modalImage.style.objectFit = 'contain';
+            };
+            
+            // Ladda bilden för canvas
+            canvasImage.src = originalImageUrl;
+        }
+        toggleButton.textContent = 'Visa hela bilden';
+    }
+}
+
+// Canvas-funktionen för beskurna stämpelbilder laddas från extern fil
+</script>
+
+<!-- Modal för stämpelbilder -->
+<div class="modal fade" id="stampImageModal" tabindex="-1" aria-labelledby="stampModalTitle" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="stampModalTitle">Stämpelbild</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Stäng"></button>
+            </div>
+            <div class="modal-body text-center">
+                <img id="stampModalImage" src="" alt="Stämpelbild" class="img-fluid">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Stäng</button>
+                <button type="button" class="btn btn-primary" id="stampModalToggleButton" onclick="toggleStampModalView()" style="display: none;">
+                    Visa hela bilden
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %} 

@@ -1,0 +1,541 @@
+{% extends 'axes/base.html' %}
+{% load static %}
+{% load axe_filters %}
+
+{% block title %}Hantera stämpelsymboler - AxeCollection{% endblock %}
+
+{% block content %}
+{% csrf_token %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1>Hantera stämpelsymboler</h1>
+                <div>
+                    <a href="{% url 'stamp_list' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left"></i> Tillbaka till stämplar
+                    </a>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-icons"></i> Symbolpiktogram
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3 d-flex justify-content-end">
+                        <button class="btn btn-primary" onclick="showCreateModal()">
+                            <i class="fas fa-plus"></i> Lägg till symbol
+                        </button>
+                    </div>
+                    <p class="text-muted">
+                        Här kan du se alla symbolpiktogram som används i stämplar. 
+                        Piktogrammen visas som komplement till symbolnamnen för tydligare identifiering.
+                    </p>
+
+                    {% for category_name, symbols in symbols_by_category.items %}
+                    <div class="mb-4">
+                        <h6 class="text-primary border-bottom pb-2 mb-3">
+                            <i class="fas fa-folder"></i> {{ category_name }}
+                        </h6>
+                        
+                        <div class="row">
+                            {% for symbol in symbols %}
+                            <div class="col-md-6 col-lg-4 mb-3">
+                                <div class="card h-100 border">
+                                    <div class="card-body">
+                                        <div class="d-flex align-items-center mb-2">
+                                            {% if symbol.pictogram %}
+                                                <span class="symbol-pictogram fs-4 me-2" title="Piktogram">
+                                                    {{ symbol.pictogram }}
+                                                </span>
+                                            {% else %}
+                                                <span class="text-muted me-2" title="Inget piktogram">
+                                                    <i class="fas fa-question-circle"></i>
+                                                </span>
+                                            {% endif %}
+                                            <h6 class="card-title mb-0">{{ symbol.name }}</h6>
+                                            {% if symbol.is_predefined %}
+                                                <span class="badge bg-success ms-auto" title="Fördefinierad symbol">
+                                                    <i class="fas fa-star"></i>
+                                                </span>
+                                            {% endif %}
+                                        </div>
+                                        
+                                        {% if symbol.description %}
+                                            <p class="card-text text-muted small mb-2">
+                                                {{ symbol.description }}
+                                            </p>
+                                        {% endif %}
+                                        
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            {% if symbol.category %}
+                                                <small class="text-muted">Kategori: {{ symbol.category.name }}</small>
+                                            {% else %}
+                                                <small class="text-muted">Kategori: Övrigt</small>
+                                            {% endif %}
+                                             <div class="btn-group btn-group-sm">
+                                                 <button class="btn btn-outline-primary btn-sm" 
+                                                         onclick="editSymbol({{ symbol.id }})"
+                                                         title="Redigera symbol">
+                                                     <i class="fas fa-edit"></i>
+                                                 </button>
+                                                <button class="btn btn-outline-danger btn-sm" 
+                                                        onclick="showDeleteSymbolModal(this)"
+                                                        data-symbol-id="{{ symbol.id }}"
+                                                        data-symbol-name="{{ symbol.name|escapejs }}"
+                                                        title="Ta bort symbol">
+                                                     <i class="fas fa-trash"></i>
+                                                 </button>
+                                             </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i> Inga symboler hittades.
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Kategorier -->
+            <div class="card mt-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-list"></i> Kategorier</h5>
+                    <button class="btn btn-sm btn-outline-primary" onclick="showCreateCategoryModal()">
+                        <i class="fas fa-plus"></i> Lägg till kategori
+                    </button>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-sm align-middle">
+                            <thead>
+                                <tr>
+                                    <th>Namn</th>
+                                    <th>Beskrivning</th>
+                                    <th>Aktiv</th>
+                                    <th>Sortering</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for cat in categories %}
+                                <tr data-id="{{ cat.id }}">
+                                    <td><input class="form-control form-control-sm" value="{{ cat.name }}" data-field="name"></td>
+                                    <td><input class="form-control form-control-sm" value="{{ cat.description }}" data-field="description"></td>
+                                    <td class="text-center"><input type="checkbox" class="form-check-input" {% if cat.is_active %}checked{% endif %} data-field="is_active"></td>
+                                    <td style="max-width:120px"><input type="number" class="form-control form-control-sm" value="{{ cat.sort_order }}" data-field="sort_order"></td>
+                                    <td class="text-end">
+                                        <div class="btn-group btn-group-sm">
+                                            <button class="btn btn-outline-primary" onclick="saveCategory(this)" title="Spara"><i class="fas fa-save"></i></button>
+                                            <button class="btn btn-outline-danger" onclick="deleteCategory(this)" title="Ta bort"><i class="fas fa-trash"></i></button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr><td colspan="5" class="text-muted">Inga kategorier</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Statistik -->
+            <div class="row mt-4">
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-body text-center">
+                            <h3 class="text-primary">{{ categories_count }}</h3>
+                            <p class="text-muted mb-0">Kategorier</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-body text-center">
+                            <h3 class="text-success">{{ total_symbols }}</h3>
+                            <p class="text-muted mb-0">Totalt antal symboler</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-body text-center">
+                            <h3 class="text-info">{{ symbols_with_pictograms }}</h3>
+                            <p class="text-muted mb-0">Symboler med piktogram</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal för att redigera symbol -->
+<div class="modal fade" id="editSymbolModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Redigera symbol</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editSymbolForm">
+                    <div class="mb-3">
+                        <label for="symbolName" class="form-label">Namn</label>
+                        <input type="text" class="form-control" id="symbolName" name="name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="symbolDescription" class="form-label">Beskrivning</label>
+                        <textarea class="form-control" id="symbolDescription" name="description" rows="3"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="symbolPictogram" class="form-label">Piktogram (Unicode)</label>
+                        <input type="text" class="form-control" id="symbolPictogram" name="pictogram" 
+                               placeholder="t.ex. 👑 för krona, ⭕ för cirkel">
+                        <div class="form-text">
+                            Ange Unicode-piktogram för att visa symbolen visuellt
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="symbolCategory" class="form-label">Kategori</label>
+                        <select class="form-select" id="symbolCategory" name="category">
+                            <option value="">— Ingen —</option>
+                            {% for cat in categories %}
+                                <option value="{{ cat.id }}">{{ cat.name }}</option>
+                            {% endfor %}
+                        </select>
+                        <div class="form-text">Frivilligt. Standard är "Övrigt".</div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Avbryt</button>
+                <button type="button" class="btn btn-primary" onclick="saveSymbol()">Spara</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal för att skapa symbol -->
+<div class="modal fade" id="createSymbolModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Lägg till symbol</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="createSymbolForm">
+                    <div class="mb-3">
+                        <label for="createSymbolName" class="form-label">Namn</label>
+                        <input type="text" class="form-control" id="createSymbolName" name="name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="createSymbolDescription" class="form-label">Beskrivning</label>
+                        <textarea class="form-control" id="createSymbolDescription" name="description" rows="3"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="createSymbolPictogram" class="form-label">Piktogram (Unicode)</label>
+                        <input type="text" class="form-control" id="createSymbolPictogram" name="pictogram" placeholder="t.ex. 👑 för krona, ⭕ för cirkel">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="createSymbolCategory" class="form-label">Kategori</label>
+                        <select class="form-select" id="createSymbolCategory" name="category">
+                            <option value="">— Ingen —</option>
+                            {% for cat in categories %}
+                                <option value="{{ cat.id }}">{{ cat.name }}</option>
+                            {% endfor %}
+                        </select>
+                        <div class="form-text">Frivilligt. Standard är "Övrigt".</div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Avbryt</button>
+                <button type="button" class="btn btn-primary" onclick="createSymbol()">Spara</button>
+            </div>
+        </div>
+    </div>
+    
+</div>
+
+<!-- Modal för att ta bort symbol -->
+<div class="modal fade" id="deleteSymbolModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Ta bort symbol</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    Är du säker på att du vill ta bort symbolen <strong id="deleteSymbolName"></strong>?
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Avbryt</button>
+                <button type="button" class="btn btn-danger" onclick="confirmDeleteSymbol()">
+                    <i class="fas fa-trash me-1"></i>Ta bort
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let currentSymbolId = null;
+
+function editSymbol(symbolId) {
+    currentSymbolId = symbolId;
+    
+    // Hämta symboldata via AJAX
+    fetch(`/api/stamp-symbols/`)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('Hämtade symboldata:', data); // Debug-logg
+                const symbol = data.symbols.find(s => s.id === symbolId);
+            if (symbol) {
+                document.getElementById('symbolName').value = symbol.name;
+                document.getElementById('symbolDescription').value = symbol.description || '';
+                document.getElementById('symbolPictogram').value = symbol.pictogram || '';
+                    const catSelect = document.getElementById('symbolCategory');
+                    if (catSelect) { catSelect.value = symbol.category_id || ''; }
+                
+                const modal = new bootstrap.Modal(document.getElementById('editSymbolModal'));
+                modal.show();
+            } else {
+                console.error('Symbol hittades inte:', symbolId);
+                if (window.showToast) showToast('Kunde inte hitta symbolen', 'warning'); else alert('Kunde inte hitta symbolen');
+            }
+        })
+        .catch(error => {
+            console.error('Fel vid hämtning av symboldata:', error);
+            if (window.showToast) showToast('Kunde inte hämta symboldata: ' + error.message, 'danger'); else alert('Kunde inte hämta symboldata: ' + error.message);
+        });
+}
+
+function saveSymbol() {
+    if (!currentSymbolId) return;
+    
+    const formData = new FormData(document.getElementById('editSymbolForm'));
+    
+    fetch(`/api/stamp-symbols/${currentSymbolId}/update/`, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': document.querySelector('input[name=csrfmiddlewaretoken]').value,
+            'X-Requested-With': 'XMLHttpRequest',
+            'Accept': 'application/json'
+        }
+    })
+    .then(response => {
+        return response.text().then(text => {
+            try {
+                const data = text ? JSON.parse(text) : {};
+                if (!response.ok || data.success === false) {
+                    const msg = (data && (data.error || (data.errors && data.errors.join(' ')))) || 'Kunde inte uppdatera symbol';
+                    throw new Error(msg);
+                }
+                return data;
+            } catch (e) {
+                // Om svaret inte är JSON, kasta fel med råtext
+                throw new Error('Kunde inte uppdatera symbol');
+            }
+        });
+    })
+    .then(data => {
+        console.log('Symbol uppdaterad:', data);
+        location.reload();
+    })
+    .catch(error => {
+        console.error('Fel vid uppdatering:', error);
+        if (window.showToast) showToast('Kunde inte uppdatera symbol: ' + error.message, 'danger'); else alert('Kunde inte uppdatera symbol: ' + error.message);
+    });
+}
+
+let deleteModalInstance = null;
+function showDeleteSymbolModal(buttonEl) {
+    currentSymbolId = buttonEl.dataset.symbolId;
+    const name = buttonEl.dataset.symbolName || '';
+    document.getElementById('deleteSymbolName').textContent = name;
+    deleteModalInstance = new bootstrap.Modal(document.getElementById('deleteSymbolModal'));
+    deleteModalInstance.show();
+}
+
+function confirmDeleteSymbol() {
+    if (!currentSymbolId) return;
+    fetch(`/api/stamp-symbols/${currentSymbolId}/delete/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': document.querySelector('input[name=csrfmiddlewaretoken]').value,
+            'X-Requested-With': 'XMLHttpRequest',
+            'Accept': 'application/json'
+        }
+    })
+    .then(response => response.text().then(text => {
+        try {
+            const data = text ? JSON.parse(text) : {};
+            if (!response.ok || data.success === false) {
+                const msg = (data && (data.error || (data.errors && data.errors.join(' ')))) || 'Kunde inte ta bort symbol';
+                throw new Error(msg);
+            }
+            return data;
+        } catch (e) {
+            throw new Error('Kunde inte ta bort symbol');
+        }
+    }))
+    .then(() => {
+        if (deleteModalInstance) deleteModalInstance.hide();
+        location.reload();
+    })
+    .catch(err => alert('Kunde inte ta bort symbol: ' + err.message));
+}
+
+function showCreateModal() {
+    const modal = new bootstrap.Modal(document.getElementById('createSymbolModal'));
+    modal.show();
+}
+
+function createSymbol() {
+    const form = document.getElementById('createSymbolForm');
+    const formData = new FormData(form);
+    fetch('/api/stamp-symbols/create/', {
+        method: 'POST',
+        body: formData,
+        headers: { 
+            'X-CSRFToken': document.querySelector('input[name=csrfmiddlewaretoken]').value,
+            'X-Requested-With': 'XMLHttpRequest',
+            'Accept': 'application/json'
+        }
+    })
+    .then(response => response.text().then(text => {
+        try {
+            const data = text ? JSON.parse(text) : {};
+            if (!response.ok || data.success === false) {
+                const msg = (data && (data.error || (data.errors && data.errors.join(' ')))) || 'Kunde inte skapa symbol';
+                throw new Error(msg);
+            }
+            return data;
+        } catch (e) {
+            throw new Error('Kunde inte skapa symbol');
+        }
+    }))
+    .then((data) => {
+        // Visa hint om symbolen redan fanns
+        if (data.created === false) {
+            const name = document.getElementById('createSymbolName').value;
+            const hint = document.createElement('div');
+            hint.className = 'alert alert-info mt-2';
+            hint.innerHTML = `<i class="fas fa-info-circle me-2"></i>Symbolen "${name}" fanns redan och har uppdaterats.`;
+            const formWrap = document.getElementById('createSymbolForm').parentElement;
+            formWrap.insertBefore(hint, formWrap.firstChild);
+            setTimeout(() => location.reload(), 1000);
+        } else {
+            location.reload();
+        }
+    })
+    .catch(err => {
+        const formWrap = document.getElementById('createSymbolForm').parentElement;
+        const error = document.createElement('div');
+        error.className = 'alert alert-danger mt-2';
+        error.innerText = 'Fel vid skapande: ' + err.message;
+        formWrap.insertBefore(error, formWrap.firstChild);
+    });
+}
+
+function showCreateCategoryModal() {
+    const row = document.createElement('tr');
+    row.innerHTML = `
+        <td><input class="form-control form-control-sm" placeholder="Namn" data-field="name"></td>
+        <td><input class="form-control form-control-sm" placeholder="Beskrivning" data-field="description"></td>
+        <td class="text-center"><input type="checkbox" class="form-check-input" data-field="is_active" checked></td>
+        <td style="max-width:120px"><input type="number" class="form-control form-control-sm" value="0" data-field="sort_order"></td>
+        <td class="text-end">
+            <div class="btn-group btn-group-sm">
+                <button class="btn btn-outline-primary" onclick="saveNewCategory(this)"><i class="fas fa-save"></i></button>
+                <button class="btn btn-outline-secondary" onclick="this.closest('tr').remove()"><i class="fas fa-times"></i></button>
+            </div>
+        </td>`;
+    const tbody = document.querySelector('.card-body table tbody');
+    if (tbody) tbody.prepend(row);
+}
+
+function collectCategoryData(tr) {
+    const data = new FormData();
+    tr.querySelectorAll('[data-field]').forEach(el => {
+        const field = el.getAttribute('data-field');
+        let value;
+        if (el.type === 'checkbox') { value = el.checked ? '1' : '0'; }
+        else { value = el.value; }
+        data.append(field, value);
+    });
+    return data;
+}
+
+function saveNewCategory(btn) {
+    const tr = btn.closest('tr');
+    const data = collectCategoryData(tr);
+    fetch('/api/symbol-categories/create/', {
+        method: 'POST',
+        body: data,
+        headers: { 'X-CSRFToken': document.querySelector('input[name=csrfmiddlewaretoken]').value, 'X-Requested-With': 'XMLHttpRequest' }
+    }).then(r => r.json()).then(res => {
+        if (!res.success) throw new Error(res.error || 'Misslyckades');
+        location.reload();
+    }).catch(err => { if (window.showToast) showToast('Kunde inte skapa kategori: ' + err.message, 'danger'); else alert('Kunde inte skapa kategori: ' + err.message); });
+}
+
+function saveCategory(btn) {
+    const tr = btn.closest('tr');
+    const id = tr.getAttribute('data-id');
+    const data = collectCategoryData(tr);
+    fetch(`/api/symbol-categories/${id}/update/`, {
+        method: 'POST',
+        body: data,
+        headers: { 'X-CSRFToken': document.querySelector('input[name=csrfmiddlewaretoken]').value, 'X-Requested-With': 'XMLHttpRequest' }
+    }).then(r => r.json()).then(res => {
+        if (!res.success) throw new Error(res.error || 'Misslyckades');
+    }).catch(err => { if (window.showToast) showToast('Kunde inte spara kategori: ' + err.message, 'danger'); else alert('Kunde inte spara kategori: ' + err.message); });
+}
+
+function deleteCategory(btn) {
+    const tr = btn.closest('tr');
+    const id = tr.getAttribute('data-id');
+    const name = tr.querySelector('[data-field="name"]').value || '';
+    showConfirm({
+      title: '<i class="bi bi-trash me-2"></i>Ta bort kategori',
+      message: `Ta bort kategori "<strong>${name}</strong>"?`,
+      confirmText: 'Ta bort',
+      confirmLevel: 'danger'
+    }).then(ok => {
+      if (!ok) return;
+      fetch(`/api/symbol-categories/${id}/delete/`, {
+        method: 'POST',
+        headers: { 'X-CSRFToken': document.querySelector('input[name=csrfmiddlewaretoken]').value, 'X-Requested-With': 'XMLHttpRequest' }
+      }).then(r => r.json()).then(res => {
+        if (!res.success) throw new Error(res.error || 'Misslyckades');
+        location.reload();
+      }).catch(err => { if (window.showToast) showToast('Kunde inte ta bort kategori: ' + err.message, 'danger'); else alert('Kunde inte ta bort kategori: ' + err.message); });
+    });
+}
+</script>
+{% endblock %} 
