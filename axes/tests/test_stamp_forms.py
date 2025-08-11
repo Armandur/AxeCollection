@@ -611,10 +611,8 @@ class StampImageMarkFormTest(TestCase):
 
         self.assertFalse(form.is_valid())
         self.assertIn("stamp", form.errors)
-        self.assertIn("x", form.errors)
-        self.assertIn("y", form.errors)
-        self.assertIn("width", form.errors)
-        self.assertIn("height", form.errors)
+        # Alias-koordinater (x, y, width, height) är valfria i nya policyn
+        # och ska därför inte krävas för att formuläret ska validera övriga fält.
 
     def test_stamp_image_mark_form_coordinate_validation(self):
         """Testa koordinatvalidering"""
