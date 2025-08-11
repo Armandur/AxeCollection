@@ -31,6 +31,8 @@ if [ ! -f "/app/data/db.sqlite3" ]; then
     # Create database and run migrations
     cd /app
     python manage.py migrate
+    echo "📦 Collecting static files..."
+    python manage.py collectstatic --noinput
     
     # Check if DEMO_MODE is enabled
     if [ "$DEMO_MODE" = "true" ]; then
@@ -61,6 +63,8 @@ else
         echo "🔄 Running pending migrations..."
         python manage.py migrate
     }
+    echo "📦 Collecting static files..."
+    python manage.py collectstatic --noinput
     
     # Check if DEMO_MODE is enabled for existing database
     if [ "$DEMO_MODE" = "true" ]; then

@@ -202,9 +202,6 @@
     {% block content %}{% endblock %}
 </div>
 
-{% include 'axes/_toast.html' %}
-{% include 'axes/_confirm.html' %}
-
 <!-- Footer -->
 <footer class="footer mt-5 py-4 border-top">
     <div class="container">
@@ -339,6 +336,9 @@
 <script src="https://cdn.datatables.net/buttons/3.0.2/js/buttons.colVis.min.js"></script>
 <script src="https://cdn.datatables.net/responsive/3.0.2/js/dataTables.responsive.js"></script>
 <script src="https://cdn.datatables.net/responsive/3.0.2/js/responsive.bootstrap5.js"></script>
+
+{% include 'axes/_toast.html' %}
+{% include 'axes/_confirm.html' %}
 
 <script>
 // Bootstrap 5.3 color mode hantering med tre lägen
