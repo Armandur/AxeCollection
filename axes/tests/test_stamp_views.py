@@ -651,6 +651,15 @@ class StampTranscriptionViewTest(StampViewsBaseTest):
             ).exists()
         )
 
+    def test_transcription_create_allows_empty_text(self):
+        """Tom text ska vara giltigt (symboler-only)."""
+        self.login_user()
+        response = self.client.post(
+            reverse("stamp_transcription_create", kwargs={"stamp_id": self.stamp.id}),
+            {"text": "", "quality": "high"},
+        )
+        self.assertEqual(response.status_code, 302)
+
     def test_transcription_edit_requires_login(self):
         """Testa att redigering av transkribering kräver inloggning"""
         transcription = StampTranscription.objects.create(

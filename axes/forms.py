@@ -970,6 +970,10 @@ class StampTranscriptionForm(forms.ModelForm):
         self.pre_selected_stamp = kwargs.pop("pre_selected_stamp", None)
         super().__init__(*args, **kwargs)
 
+        # Gör textfältet frivilligt (vissa stämplar har enbart symboler)
+        if "text" in self.fields:
+            self.fields["text"].required = False
+
         # Om stämpel är förvald, ta bort stamp-fältet från formuläret
         if self.pre_selected_stamp:
             if "stamp" in self.fields:

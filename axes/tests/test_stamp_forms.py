@@ -229,7 +229,8 @@ class StampTranscriptionFormTest(TestCase):
 
         self.assertFalse(form.is_valid())
         self.assertIn("stamp", form.errors)
-        self.assertIn("text", form.errors)
+        # text är inte längre obligatoriskt
+        self.assertNotIn("text", form.errors)
 
     def test_transcription_form_quality_choices(self):
         """Testa alla giltiga kvalitetsnivåer"""

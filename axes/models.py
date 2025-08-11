@@ -1108,7 +1108,7 @@ class StampTranscription(models.Model):
         related_name="transcriptions",
         verbose_name="Stämpel",
     )
-    text = models.TextField(verbose_name="Text")
+    text = models.TextField(verbose_name="Text", blank=True, null=True)
     quality = models.CharField(
         max_length=20,
         choices=QUALITY_CHOICES,

@@ -70,12 +70,12 @@ class StampTranscriptionViewsTest(TestCase):
         self.assertEqual(transcription.created_by, self.user)
 
     def test_stamp_transcription_create_view_post_invalid(self):
-        """Testa skapande av transkription med ogiltig data"""
+        """Testa skapande av transkription med ogiltig data (kvalitet ogiltig)"""
         self.client.login(username="testuser", password="testpass123")
 
         url = reverse("stamp_transcription_create", kwargs={"stamp_id": self.stamp.id})
         data = {
-            "text": "",  # Tomt text-fält
+            "text": "",  # Tom text är OK numera
             "quality": "invalid_quality",
         }
 
@@ -252,11 +252,10 @@ class StampTranscriptionViewsTest(TestCase):
         form = StampTranscriptionForm(data=valid_data, pre_selected_stamp=self.stamp)
         self.assertTrue(form.is_valid())
 
-        # Ogiltig data - tomt text-fält
-        invalid_data = {"text": "", "quality": "high"}
-        form = StampTranscriptionForm(data=invalid_data, pre_selected_stamp=self.stamp)
-        self.assertFalse(form.is_valid())
-        self.assertIn("text", form.errors)
+        # Tomt text-fält ska vara giltigt
+        valid_without_text = {"text": "", "quality": "high"}
+        form = StampTranscriptionForm(data=valid_without_text, pre_selected_stamp=self.stamp)
+        self.assertTrue(form.is_valid())
 
         # Ogiltig kvalitetsnivå
         invalid_quality_data = {"text": "Valid text", "quality": "invalid_quality"}
