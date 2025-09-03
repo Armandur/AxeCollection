@@ -341,6 +341,41 @@
 {% include 'axes/_confirm.html' %}
 
 <script>
+// Visa Django-meddelanden globalt som Bootstrap-toasts på varje sida
+(function() {
+    document.addEventListener('DOMContentLoaded', function () {
+        try {
+            // messages-injektion från Django
+            {% if messages %}
+            const toasts = [
+                {% for message in messages %}
+                { text: "{{ message|escapejs }}", level: "{{ message.tags|default:'info' }}" },
+                {% endfor %}
+            ];
+
+            // Översätt Django-levels till Bootstrap-färger
+            const mapLevel = (level) => {
+                if (!level) return 'info';
+                if (level.includes('error')) return 'danger';
+                if (level.includes('warning')) return 'warning';
+                if (level.includes('success')) return 'success';
+                if (level.includes('info')) return 'info';
+                return 'primary';
+            };
+
+            // Visa i mild följd så de inte krockar
+            let delay = 0;
+            toasts.forEach(({ text, level }) => {
+                setTimeout(() => window.showToast(text, mapLevel(level), 4000), delay);
+                delay += 400; // kedja lätt så de inte startar exakt samtidigt
+            });
+            {% endif %}
+        } catch (e) {
+            // Svälj ev. fel tyst – toasts är kosmetik
+        }
+    });
+})();
+
 // Bootstrap 5.3 color mode hantering med tre lägen
 (function() {
     function setTheme(theme) {
