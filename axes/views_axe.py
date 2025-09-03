@@ -471,8 +471,12 @@ def _handle_uploaded_images(axe, request):
             try:
                 axe_image = AxeImage(axe=axe, image=image_file)
                 axe_image.save()
-            except Exception:
-                pass
+            except Exception as e:
+                logger.exception(
+                    "Fel vid bilduppladdning för yxa %s (filnamn: %s)",
+                    getattr(axe, "id", "okänd"),
+                    getattr(image_file, "name", "okänt"),
+                )
 
 
 def _handle_url_images(axe, request):
@@ -490,8 +494,19 @@ def _handle_url_images(axe, request):
                         image_file = ContentFile(response.content, name=filename)
                         axe_image = AxeImage(axe=axe, image=image_file)
                         axe_image.save()
-                except Exception:
-                    pass
+                    else:
+                        logger.error(
+                            "Kunde inte hämta bild från URL (status %s) för yxa %s: %s",
+                            response.status_code,
+                            getattr(axe, "id", "okänd"),
+                            image_url,
+                        )
+                except Exception as e:
+                    logger.exception(
+                        "Fel vid hämtning/sparning av URL-bild för yxa %s: %s",
+                        getattr(axe, "id", "okänd"),
+                        image_url,
+                    )
 
 
 def _rename_axe_images(axe):
@@ -830,8 +845,12 @@ def _handle_new_images_for_edit(axe, request):
             try:
                 axe_image = AxeImage(axe=axe, image=image_file, order=max_order + i)
                 axe_image.save()
-            except Exception:
-                pass
+            except Exception as e:
+                logger.exception(
+                    "Fel vid uppladdning (edit) för yxa %s (filnamn: %s)",
+                    getattr(axe, "id", "okänd"),
+                    getattr(image_file, "name", "okänt"),
+                )
 
 
 def _handle_url_images_for_edit(axe, request):
@@ -852,8 +871,19 @@ def _handle_url_images_for_edit(axe, request):
                             axe=axe, image=image_file, order=max_order + i
                         )
                         axe_image.save()
-                except Exception:
-                    pass
+                    else:
+                        logger.error(
+                            "Kunde inte hämta bild (edit) från URL (status %s) för yxa %s: %s",
+                            response.status_code,
+                            getattr(axe, "id", "okänd"),
+                            image_url,
+                        )
+                except Exception as e:
+                    logger.exception(
+                        "Fel vid URL-bilduppladdning (edit) för yxa %s: %s",
+                        getattr(axe, "id", "okänd"),
+                        image_url,
+                    )
 
 
 def _handle_image_order_changes(axe, request):
@@ -1150,8 +1180,12 @@ def receiving_workflow(request, pk):
                             axe=axe, image=image_file, order=max_order + i
                         )
                         axe_image.save()
-                    except Exception:
-                        pass
+                    except Exception as e:
+                        logger.exception(
+                            "Fel vid bilduppladdning i mottagningsflöde för yxa %s (filnamn: %s)",
+                            getattr(axe, "id", "okänd"),
+                            getattr(image_file, "name", "okänt"),
+                        )
 
             # Hantera URL-bilder
             if "image_urls" in request.POST:
@@ -1175,8 +1209,12 @@ def receiving_workflow(request, pk):
                                     axe=axe, image=image_file, order=max_order + i
                                 )
                                 axe_image.save()
-                        except Exception:
-                            pass
+                        except Exception as e:
+                            logger.exception(
+                                "Fel vid URL-bilduppladdning i mottagningsflöde för yxa %s: %s",
+                                getattr(axe, "id", "okänd"),
+                                image_url,
+                            )
 
             # Omdöpning av bilder (samma logik som i axe_edit)
             remaining_images = list(axe.images.all().order_by("order"))

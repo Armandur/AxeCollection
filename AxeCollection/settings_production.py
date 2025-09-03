@@ -236,10 +236,15 @@ LOGOUT_REDIRECT_URL = "/"
 # File upload settings for large backup files
 DATA_UPLOAD_MAX_MEMORY_SIZE = 2 * 1024 * 1024 * 1024  # 2GB
 FILE_UPLOAD_MAX_MEMORY_SIZE = 2 * 1024 * 1024 * 1024  # 2GB
-FILE_UPLOAD_TEMP_DIR = None  # Use system temp directory
+# Dedikerad temporär katalog för filuppladdning
+FILE_UPLOAD_TEMP_DIR = BASE_DIR / "tmp"
+# Standardisera filrättigheter för uppladdningar
+FILE_UPLOAD_PERMISSIONS = 0o644
+FILE_UPLOAD_DIRECTORY_PERMISSIONS = 0o755
 
 # Create necessary directories
 os.makedirs(BASE_DIR / "data", exist_ok=True)
 os.makedirs(BASE_DIR / "logs", exist_ok=True)
 os.makedirs(BASE_DIR / "media", exist_ok=True)
 os.makedirs(BASE_DIR / "staticfiles", exist_ok=True)
+os.makedirs(BASE_DIR / "tmp", exist_ok=True)

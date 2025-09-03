@@ -11,7 +11,7 @@ echo "================================"
 # Fix permissions for all app directories (Unraid: nobody:users)
 echo "🔐 Fixing permissions..."
 # Create directories if they don't exist
-mkdir -p /app/data/ /app/logs/ /app/media/ /app/backups/ /app/staticfiles/
+mkdir -p /app/data/ /app/logs/ /app/media/ /app/backups/ /app/staticfiles/ /app/tmp/
 
 chown -R nobody:users /app/data/
 chmod -R 755 /app/data/
@@ -23,6 +23,8 @@ chown -R nobody:users /app/backups/
 chmod -R 755 /app/backups/
 chown -R nobody:users /app/staticfiles/
 chmod -R 755 /app/staticfiles/
+chown -R nobody:users /app/tmp/
+chmod -R 1777 /app/tmp/
 
 # Check if database exists
 if [ ! -f "/app/data/db.sqlite3" ]; then
