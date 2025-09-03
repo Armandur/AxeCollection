@@ -127,15 +127,11 @@ jobs:
         
         # Bestäm taggar baserat på branch
         if [[ "$GITHUB_REF" == "refs/heads/main" ]]; then
-          echo "tags=latest,main" >> $GITHUB_OUTPUT
+          # Endast :latest på main (ingen :main)
+          echo "tags=latest" >> $GITHUB_OUTPUT
           echo "is_main=true" >> $GITHUB_OUTPUT
-        elif [[ "$GITHUB_REF" == "refs/heads/develop" ]]; then
-          echo "tags=dev,develop" >> $GITHUB_OUTPUT
-          echo "is_main=false" >> $GITHUB_OUTPUT
-        elif [[ "$GITHUB_REF" == refs/heads/feature/* ]]; then
-          echo "tags=feature-$BRANCH_NAME_CLEAN" >> $GITHUB_OUTPUT
-          echo "is_main=false" >> $GITHUB_OUTPUT
         else
+          # Övriga branches: endast branchnamnet
           echo "tags=$BRANCH_NAME_CLEAN" >> $GITHUB_OUTPUT
           echo "is_main=false" >> $GITHUB_OUTPUT
         fi
@@ -155,17 +151,33 @@ jobs:
         password: ${{ secrets.DOCKER_PASSWORD }}
     
     - name: Push Docker images
+      shell: bash
       run: |
+        set -e
+        # Funktion för retry
+        retry_push() {
+          local image_ref="$1"
+          for i in 1 2 3; do
+            if docker push "$image_ref"; then
+              echo "Pushed: $image_ref"
+              return 0
+            fi
+            echo "Retry $i/3 for: $image_ref"; sleep 10
+          done
+          echo "Failed to push after retries: $image_ref" >&2
+          return 1
+        }
+
         # Push SHA-tag först (alltid)
         docker tag axecollection:${{ steps.docker_tags.outputs.sha_tag }} ${{ secrets.DOCKER_USERNAME }}/axecollection:${{ steps.docker_tags.outputs.sha_tag }}
-        docker push ${{ secrets.DOCKER_USERNAME }}/axecollection:${{ steps.docker_tags.outputs.sha_tag }}
+        retry_push "${{ secrets.DOCKER_USERNAME }}/axecollection:${{ steps.docker_tags.outputs.sha_tag }}"
         
-        # Push branch-specifika taggar
+        # Push branch-/main-specifika taggar
         IFS=',' read -ra TAGS <<< "${{ steps.docker_tags.outputs.tags }}"
         for tag in "${TAGS[@]}"; do
           echo "Tagging and pushing: $tag"
           docker tag axecollection:${{ steps.docker_tags.outputs.sha_tag }} ${{ secrets.DOCKER_USERNAME }}/axecollection:$tag
-          docker push ${{ secrets.DOCKER_USERNAME }}/axecollection:$tag
+          retry_push "${{ secrets.DOCKER_USERNAME }}/axecollection:$tag"
         done
         
 
