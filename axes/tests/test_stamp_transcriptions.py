@@ -254,7 +254,9 @@ class StampTranscriptionViewsTest(TestCase):
 
         # Tomt text-fält ska vara giltigt
         valid_without_text = {"text": "", "quality": "high"}
-        form = StampTranscriptionForm(data=valid_without_text, pre_selected_stamp=self.stamp)
+        form = StampTranscriptionForm(
+            data=valid_without_text, pre_selected_stamp=self.stamp
+        )
         self.assertTrue(form.is_valid())
 
         # Ogiltig kvalitetsnivå
