@@ -25,6 +25,56 @@
     border-color: #86b7fe;
     box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
 }
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+    #stamp_search_results {
+        background-color: #212529 !important;
+        border-color: #495057 !important;
+        color: #f8f9fa !important;
+    }
+    
+    .stamp-search-item {
+        color: #f8f9fa !important;
+        border-color: #495057 !important;
+    }
+    
+    .stamp-search-item:hover {
+        background-color: #343a40 !important;
+    }
+    
+    .stamp-search-item .fw-bold {
+        color: #ffffff !important;
+    }
+    
+    .stamp-search-item .text-muted {
+        color: #adb5bd !important;
+    }
+}
+
+/* Bootstrap dark mode support */
+[data-bs-theme="dark"] #stamp_search_results {
+    background-color: #212529 !important;
+    border-color: #495057 !important;
+    color: #f8f9fa !important;
+}
+
+[data-bs-theme="dark"] .stamp-search-item {
+    color: #f8f9fa !important;
+    border-color: #495057 !important;
+}
+
+[data-bs-theme="dark"] .stamp-search-item:hover {
+    background-color: #343a40 !important;
+}
+
+[data-bs-theme="dark"] .stamp-search-item .fw-bold {
+    color: #ffffff !important;
+}
+
+[data-bs-theme="dark"] .stamp-search-item .text-muted {
+    color: #adb5bd !important;
+}
 </style>
 <div class="container mt-4">
     <nav aria-label="breadcrumb">
@@ -249,13 +299,17 @@ document.addEventListener('DOMContentLoaded', function() {
         if (stamps.length === 0) {
             stampSearchResults.innerHTML = '<div class="p-3 text-muted">Inga stämplar hittades</div>';
         } else {
+            // Kontrollera om dark mode är aktivt
+            const isDarkMode = document.documentElement.getAttribute('data-bs-theme') === 'dark' || 
+                              window.matchMedia('(prefers-color-scheme: dark)').matches;
+            
             let html = '';
             stamps.forEach(stamp => {
                 const manufacturerInfo = stamp.manufacturer ? 
                     `${stamp.manufacturer} (${stamp.manufacturer_type})` : 'Okänd tillverkare';
                 const imageHtml = stamp.has_image ? 
                     `<img src="${stamp.image_url}" class="stamp-thumbnail me-2" style="width: 40px; height: 40px; object-fit: cover; border-radius: 4px;" alt="${stamp.name}">` :
-                    `<div class="stamp-thumbnail me-2 d-inline-flex align-items-center justify-content-center" style="width: 40px; height: 40px; background: #f8f9fa; border-radius: 4px;"><i class="fas fa-stamp text-muted"></i></div>`;
+                    `<div class="stamp-thumbnail me-2 d-inline-flex align-items-center justify-content-center" style="width: 40px; height: 40px; background: ${isDarkMode ? '#343a40' : '#f8f9fa'}; border-radius: 4px;"><i class="fas fa-stamp text-muted"></i></div>`;
                 
                 html += `
                     <div class="stamp-search-item p-3 border-bottom" data-stamp-id="${stamp.id}" style="cursor: pointer;">
@@ -280,12 +334,18 @@ document.addEventListener('DOMContentLoaded', function() {
         selectedStamp = stamp;
         stampHidden.value = stamp.id;
         
+        // Kontrollera om dark mode är aktivt
+        const isDarkMode = document.documentElement.getAttribute('data-bs-theme') === 'dark' || 
+                          window.matchMedia('(prefers-color-scheme: dark)').matches;
+        
         // Uppdatera förhandsvisning
         const imageContainer = document.getElementById('selected_stamp_image');
         if (stamp.has_image) {
             imageContainer.innerHTML = `<img src="${stamp.image_url}" style="width: 80px; height: 80px; object-fit: cover; border-radius: 4px;" alt="${stamp.name}">`;
         } else {
-            imageContainer.innerHTML = '<i class="fas fa-stamp fa-2x text-muted"></i>';
+            const bgColor = isDarkMode ? '#343a40' : '#f8f9fa';
+            imageContainer.innerHTML = `<i class="fas fa-stamp fa-2x text-muted"></i>`;
+            imageContainer.style.backgroundColor = bgColor;
         }
         
         document.getElementById('selected_stamp_name').textContent = stamp.name;
@@ -356,6 +416,14 @@ document.addEventListener('DOMContentLoaded', function() {
     document.addEventListener('click', function(e) {
         if (!stampSearch.contains(e.target) && !stampSearchResults.contains(e.target)) {
             stampSearchResults.style.display = 'none';
+        }
+    });
+    
+    // Lyssna på ändringar i tema
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function() {
+        // Om sökresultat är synliga, uppdatera dem
+        if (stampSearchResults.style.display === 'block' && stampSearch.value.length >= 2) {
+            searchStamps(stampSearch.value);
         }
     });
     
