@@ -3,6 +3,29 @@
 {% block title %}{{ title }}{% endblock %}
 
 {% block content %}
+<style>
+.stamp-search-item:hover {
+    background-color: #f8f9fa;
+}
+
+.stamp-search-item:last-child {
+    border-bottom: none !important;
+}
+
+.stamp-thumbnail {
+    flex-shrink: 0;
+}
+
+#stamp_search_results {
+    border-top: none;
+    border-radius: 0 0 0.375rem 0.375rem;
+}
+
+#stamp_search:focus + #stamp_search_results {
+    border-color: #86b7fe;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+</style>
 <div class="container mt-4">
     <nav aria-label="breadcrumb">
         <ol class="breadcrumb">
@@ -53,19 +76,44 @@
                                     <input type="hidden" name="selected_image" value="{{ selected_image.id }}">
                                     
                                     <div class="mb-3">
-                                        <label for="stamp" class="form-label">Välj stämpel *</label>
-                                        <select name="stamp" id="stamp" class="form-select" required>
-                                            <option value="">-- Välj stämpel --</option>
-                                            {% for stamp in available_stamps %}
-                                                <option value="{{ stamp.id }}" {% if stamp_mark and stamp_mark.stamp.id == stamp.id %}selected{% endif %}>
-                                                    {{ stamp.name }}
-                                                    {% if stamp.manufacturer %}
-                                                        ({{ stamp.manufacturer.name }})
-                                                    {% endif %}
-                                                </option>
-                                            {% endfor %}
-                                        </select>
-                                        <div class="form-text">Välj vilken stämpel som finns på bilden</div>
+                                        <label for="stamp_search" class="form-label">Sök stämpel *</label>
+                                        <div class="position-relative">
+                                            <input type="text" 
+                                                   id="stamp_search" 
+                                                   class="form-control" 
+                                                   placeholder="Skriv för att söka stämplar..."
+                                                   autocomplete="off">
+                                            <div id="stamp_search_results" class="position-absolute w-100 bg-white border border-top-0 rounded-bottom shadow-lg" 
+                                                 style="z-index: 1000; max-height: 400px; overflow-y: auto; display: none;">
+                                            </div>
+                                        </div>
+                                        <input type="hidden" name="stamp" id="stamp" required>
+                                        <div class="form-text">Skriv minst 2 tecken för att söka stämplar</div>
+                                        
+                                        <!-- Förhandsvisning av vald stämpel -->
+                                        <div id="selected_stamp_preview" class="mt-3" style="display: none;">
+                                            <div class="card">
+                                                <div class="card-body p-3">
+                                                    <div class="row">
+                                                        <div class="col-auto">
+                                                            <div id="selected_stamp_image" class="stamp-thumbnail" style="width: 80px; height: 80px; background: #f8f9fa; border-radius: 4px; display: flex; align-items: center; justify-content: center;">
+                                                                <i class="fas fa-stamp fa-2x text-muted"></i>
+                                                            </div>
+                                                        </div>
+                                                        <div class="col">
+                                                            <h6 class="mb-1" id="selected_stamp_name">Stämpelnamn</h6>
+                                                            <p class="text-muted mb-1 small" id="selected_stamp_manufacturer">Tillverkare</p>
+                                                            <p class="text-muted mb-0 small" id="selected_stamp_details">Detaljer</p>
+                                                        </div>
+                                                        <div class="col-auto">
+                                                            <button type="button" class="btn btn-sm btn-outline-secondary" id="clear_stamp_selection">
+                                                                <i class="fas fa-times"></i>
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
 
                                     <div class="mb-3">
@@ -160,6 +208,175 @@
 {% block scripts %}
 {% if selected_image %}
 <script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Stämpelsökning
+    const stampSearch = document.getElementById('stamp_search');
+    const stampSearchResults = document.getElementById('stamp_search_results');
+    const stampHidden = document.getElementById('stamp');
+    const selectedStampPreview = document.getElementById('selected_stamp_preview');
+    const clearStampSelection = document.getElementById('clear_stamp_selection');
+    
+    let searchTimeout;
+    let selectedStamp = null;
+    
+    // Debounced search function
+    function searchStamps(query) {
+        if (query.length < 2) {
+            stampSearchResults.style.display = 'none';
+            return;
+        }
+        
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => {
+            fetch(`{% url 'search_stamps_ajax' %}?q=${encodeURIComponent(query)}&axe_id={{ axe.id }}`, {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                displaySearchResults(data.stamps);
+            })
+            .catch(error => {
+                console.error('Sökfel:', error);
+                stampSearchResults.innerHTML = '<div class="p-3 text-muted">Ett fel uppstod vid sökning</div>';
+                stampSearchResults.style.display = 'block';
+            });
+        }, 300);
+    }
+    
+    function displaySearchResults(stamps) {
+        if (stamps.length === 0) {
+            stampSearchResults.innerHTML = '<div class="p-3 text-muted">Inga stämplar hittades</div>';
+        } else {
+            let html = '';
+            stamps.forEach(stamp => {
+                const manufacturerInfo = stamp.manufacturer ? 
+                    `${stamp.manufacturer} (${stamp.manufacturer_type})` : 'Okänd tillverkare';
+                const imageHtml = stamp.has_image ? 
+                    `<img src="${stamp.image_url}" class="stamp-thumbnail me-2" style="width: 40px; height: 40px; object-fit: cover; border-radius: 4px;" alt="${stamp.name}">` :
+                    `<div class="stamp-thumbnail me-2 d-inline-flex align-items-center justify-content-center" style="width: 40px; height: 40px; background: #f8f9fa; border-radius: 4px;"><i class="fas fa-stamp text-muted"></i></div>`;
+                
+                html += `
+                    <div class="stamp-search-item p-3 border-bottom" data-stamp-id="${stamp.id}" style="cursor: pointer;">
+                        <div class="d-flex align-items-center">
+                            ${imageHtml}
+                            <div class="flex-grow-1">
+                                <div class="fw-bold">${stamp.name}</div>
+                                <div class="text-muted small">${manufacturerInfo}</div>
+                                <div class="text-muted small">${stamp.stamp_type} • ${stamp.status}</div>
+                                ${stamp.description ? `<div class="text-muted small mt-1">${stamp.description}</div>` : ''}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            stampSearchResults.innerHTML = html;
+        }
+        stampSearchResults.style.display = 'block';
+    }
+    
+    function selectStamp(stamp) {
+        selectedStamp = stamp;
+        stampHidden.value = stamp.id;
+        
+        // Uppdatera förhandsvisning
+        const imageContainer = document.getElementById('selected_stamp_image');
+        if (stamp.has_image) {
+            imageContainer.innerHTML = `<img src="${stamp.image_url}" style="width: 80px; height: 80px; object-fit: cover; border-radius: 4px;" alt="${stamp.name}">`;
+        } else {
+            imageContainer.innerHTML = '<i class="fas fa-stamp fa-2x text-muted"></i>';
+        }
+        
+        document.getElementById('selected_stamp_name').textContent = stamp.name;
+        document.getElementById('selected_stamp_manufacturer').textContent = 
+            stamp.manufacturer ? `${stamp.manufacturer} (${stamp.manufacturer_type})` : 'Okänd tillverkare';
+        document.getElementById('selected_stamp_details').textContent = 
+            `${stamp.stamp_type} • ${stamp.status}${stamp.year_range ? ' • ' + stamp.year_range : ''}`;
+        
+        selectedStampPreview.style.display = 'block';
+        stampSearchResults.style.display = 'none';
+        stampSearch.value = stamp.name;
+    }
+    
+    function clearSelection() {
+        selectedStamp = null;
+        stampHidden.value = '';
+        selectedStampPreview.style.display = 'none';
+        stampSearch.value = '';
+        stampSearchResults.style.display = 'none';
+    }
+    
+    // Event listeners
+    stampSearch.addEventListener('input', function() {
+        searchStamps(this.value);
+    });
+    
+    stampSearch.addEventListener('focus', function() {
+        if (this.value.length >= 2) {
+            searchStamps(this.value);
+        }
+    });
+    
+    stampSearchResults.addEventListener('click', function(e) {
+        const item = e.target.closest('.stamp-search-item');
+        if (item) {
+            const stampId = item.dataset.stampId;
+            const stamp = Array.from(item.parentNode.children).find(child => 
+                child.dataset.stampId === stampId
+            );
+            if (stamp) {
+                // Hitta stamp-data från sökresultatet
+                const name = stamp.querySelector('.fw-bold').textContent;
+                const manufacturerText = stamp.querySelector('.text-muted.small').textContent;
+                const detailsText = stamp.querySelectorAll('.text-muted.small')[1].textContent;
+                const description = stamp.querySelector('.text-muted.small.mt-1')?.textContent || '';
+                
+                // Skapa stamp-objekt
+                const stampData = {
+                    id: stampId,
+                    name: name,
+                    manufacturer: manufacturerText.split(' (')[0],
+                    manufacturer_type: manufacturerText.includes('(') ? manufacturerText.split(' (')[1].replace(')', '') : '',
+                    stamp_type: detailsText.split(' • ')[0],
+                    status: detailsText.split(' • ')[1],
+                    description: description,
+                    has_image: stamp.querySelector('img') !== null,
+                    image_url: stamp.querySelector('img')?.src || null
+                };
+                
+                selectStamp(stampData);
+            }
+        }
+    });
+    
+    clearStampSelection.addEventListener('click', clearSelection);
+    
+    // Dölj sökresultat när man klickar utanför
+    document.addEventListener('click', function(e) {
+        if (!stampSearch.contains(e.target) && !stampSearchResults.contains(e.target)) {
+            stampSearchResults.style.display = 'none';
+        }
+    });
+    
+    // Visa befintlig vald stämpel om den finns
+    {% if stamp_mark and stamp_mark.stamp %}
+    const existingStamp = {
+        id: {{ stamp_mark.stamp.id }},
+        name: "{{ stamp_mark.stamp.name }}",
+        manufacturer: "{{ stamp_mark.stamp.manufacturer.name|default:'' }}",
+        manufacturer_type: "{{ stamp_mark.stamp.manufacturer.manufacturer_type|default:'' }}",
+        stamp_type: "{{ stamp_mark.stamp.get_stamp_type_display }}",
+        status: "{{ stamp_mark.stamp.get_status_display }}",
+        year_range: "{{ stamp_mark.stamp.year_range|default:'' }}",
+        description: "{{ stamp_mark.stamp.description|default:'' }}",
+        has_image: {% if stamp_mark.stamp.primary_image %}true{% else %}false{% endif %},
+        image_url: "{% if stamp_mark.stamp.primary_image %}{{ stamp_mark.stamp.primary_image.image_url_with_cache_busting }}{% endif %}"
+    };
+    selectStamp(existingStamp);
+    {% endif %}
+});
+
 document.addEventListener('DOMContentLoaded', function() {
     const image = document.getElementById('stampImage');
     const overlay = document.getElementById('markingOverlay');

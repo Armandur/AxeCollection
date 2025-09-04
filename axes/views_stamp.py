@@ -665,6 +665,93 @@ def stamp_image_edit(request, stamp_id, image_id):
 
 
 @login_required
+def search_stamps_ajax(request):
+    """AJAX-endpoint för att söka stämplar med bilder och information"""
+    if not request.headers.get("X-Requested-With") == "XMLHttpRequest":
+        return JsonResponse({"error": "Endast AJAX-requests tillåts"}, status=400)
+
+    query = request.GET.get("q", "").strip()
+    axe_id = request.GET.get("axe_id")
+
+    if not query:
+        return JsonResponse({"stamps": []})
+
+    # Hämta yxan för att prioritera tillverkarens stämplar
+    axe = None
+    if axe_id:
+        try:
+            axe = Axe.objects.get(id=axe_id)
+        except Axe.DoesNotExist:
+            pass
+
+    # Sök stämplar som matchar query
+    stamps = (
+        Stamp.objects.filter(
+            Q(name__icontains=query)
+            | Q(description__icontains=query)
+            | Q(manufacturer__name__icontains=query)
+        )
+        .select_related("manufacturer")
+        .prefetch_related("images")
+    )
+
+    # Prioritera tillverkarens stämplar om yxan har tillverkare
+    if axe and axe.manufacturer:
+        from django.db.models import Case, When, Value, IntegerField
+
+        stamps = stamps.annotate(
+            priority=Case(
+                When(manufacturer=axe.manufacturer, then=Value(0)),
+                default=Value(1),
+                output_field=IntegerField(),
+            )
+        ).order_by("priority", "name")
+    else:
+        stamps = stamps.order_by("name")
+
+    # Begränsa till 20 resultat för prestanda
+    stamps = stamps[:20]
+
+    # Bygg JSON-svar
+    stamps_data = []
+    for stamp in stamps:
+        stamp_data = {
+            "id": stamp.id,
+            "name": stamp.name,
+            "manufacturer": stamp.manufacturer.name if stamp.manufacturer else None,
+            "manufacturer_type": (
+                stamp.manufacturer.manufacturer_type if stamp.manufacturer else None
+            ),
+            "country_code": (
+                stamp.manufacturer.country_code if stamp.manufacturer else None
+            ),
+            "stamp_type": stamp.get_stamp_type_display(),
+            "status": stamp.get_status_display(),
+            "year_range": stamp.year_range,
+            "description": (
+                stamp.description[:100] + "..."
+                if stamp.description and len(stamp.description) > 100
+                else stamp.description
+            ),
+            "image_url": None,
+            "has_image": False,
+        }
+
+        # Hämta primärbild eller första tillgängliga bild
+        if stamp.primary_image:
+            stamp_data["image_url"] = stamp.primary_image.image_url_with_cache_busting
+            stamp_data["has_image"] = True
+        elif stamp.images.exists():
+            first_image = stamp.images.first()
+            stamp_data["image_url"] = first_image.image_url_with_cache_busting
+            stamp_data["has_image"] = True
+
+        stamps_data.append(stamp_data)
+
+    return JsonResponse({"stamps": stamps_data})
+
+
+@login_required
 def add_axe_stamp(request, axe_id):
     """Lägg till stämpel på yxa - integrerat flöde med bildval och markering"""
 

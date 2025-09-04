@@ -367,6 +367,9 @@ urlpatterns = [
     ),
     # API endpoints
     path(
+        "api/stamplar/sok/", views_stamp.search_stamps_ajax, name="search_stamps_ajax"
+    ),
+    path(
         "api/stamp-symbols/",
         views_stamp.stamp_symbols_api,
         name="stamp_symbols_api",
