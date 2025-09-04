@@ -1,4 +1,5 @@
 {% extends 'axes/base.html' %}
+{% load static %}
 
 {% block title %}{{ title }}{% endblock %}
 
@@ -26,54 +27,52 @@
     box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
 }
 
-/* Dark mode support */
-@media (prefers-color-scheme: dark) {
-    #stamp_search_results {
-        background-color: #212529 !important;
-        border-color: #495057 !important;
-        color: #f8f9fa !important;
-    }
-    
-    .stamp-search-item {
-        color: #f8f9fa !important;
-        border-color: #495057 !important;
-    }
-    
-    .stamp-search-item:hover {
-        background-color: #343a40 !important;
-    }
-    
-    .stamp-search-item .fw-bold {
-        color: #ffffff !important;
-    }
-    
-    .stamp-search-item .text-muted {
-        color: #adb5bd !important;
-    }
+/* Light mode (default) */
+#stamp_search_results.stamp-search-dropdown {
+    background-color: #ffffff;
+    border-color: #dee2e6;
+    color: #212529;
 }
 
-/* Bootstrap dark mode support */
-[data-bs-theme="dark"] #stamp_search_results {
-    background-color: #212529 !important;
-    border-color: #495057 !important;
-    color: #f8f9fa !important;
+#stamp_search_results.stamp-search-dropdown .stamp-search-item {
+    color: #212529;
+    border-color: #dee2e6;
 }
 
-[data-bs-theme="dark"] .stamp-search-item {
-    color: #f8f9fa !important;
-    border-color: #495057 !important;
+#stamp_search_results.stamp-search-dropdown .stamp-search-item:hover {
+    background-color: #f8f9fa;
 }
 
-[data-bs-theme="dark"] .stamp-search-item:hover {
-    background-color: #343a40 !important;
+#stamp_search_results.stamp-search-dropdown .stamp-search-item .fw-bold {
+    color: #000000;
 }
 
-[data-bs-theme="dark"] .stamp-search-item .fw-bold {
-    color: #ffffff !important;
+#stamp_search_results.stamp-search-dropdown .stamp-search-item .text-muted {
+    color: #6c757d;
 }
 
-[data-bs-theme="dark"] .stamp-search-item .text-muted {
-    color: #adb5bd !important;
+/* Dark mode (Bootstrap theme) */
+[data-bs-theme="dark"] #stamp_search_results.stamp-search-dropdown {
+    background-color: #212529;
+    border-color: #495057;
+    color: #f8f9fa;
+}
+
+[data-bs-theme="dark"] #stamp_search_results.stamp-search-dropdown .stamp-search-item {
+    color: #f8f9fa;
+    border-color: #495057;
+}
+
+[data-bs-theme="dark"] #stamp_search_results.stamp-search-dropdown .stamp-search-item:hover {
+    background-color: #343a40;
+}
+
+[data-bs-theme="dark"] #stamp_search_results.stamp-search-dropdown .stamp-search-item .fw-bold {
+    color: #ffffff;
+}
+
+[data-bs-theme="dark"] #stamp_search_results.stamp-search-dropdown .stamp-search-item .text-muted {
+    color: #adb5bd;
 }
 </style>
 <div class="container mt-4">
@@ -133,7 +132,7 @@
                                                    class="form-control" 
                                                    placeholder="Skriv för att söka stämplar..."
                                                    autocomplete="off">
-                                            <div id="stamp_search_results" class="position-absolute w-100 bg-white border border-top-0 rounded-bottom shadow-lg" 
+                                            <div id="stamp_search_results" class="stamp-search-dropdown position-absolute w-100 border border-top-0 rounded-bottom shadow-lg" 
                                                  style="z-index: 1000; max-height: 400px; overflow-y: auto; display: none;">
                                             </div>
                                         </div>
@@ -257,6 +256,7 @@
 
 {% block scripts %}
 {% if selected_image %}
+<script src="{% static 'js/stamp_crop_canvas.js' %}"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     // Stämpelsökning
@@ -303,13 +303,37 @@ document.addEventListener('DOMContentLoaded', function() {
             const isDarkMode = document.documentElement.getAttribute('data-bs-theme') === 'dark' || 
                               window.matchMedia('(prefers-color-scheme: dark)').matches;
             
+            // Ingen inline-styling; låt CSS hantera temat
+            stampSearchResults.style.backgroundColor = '';
+            stampSearchResults.style.color = '';
+            stampSearchResults.style.borderColor = '';
+            
             let html = '';
             stamps.forEach(stamp => {
                 const manufacturerInfo = stamp.manufacturer ? 
                     `${stamp.manufacturer} (${stamp.manufacturer_type})` : 'Okänd tillverkare';
-                const imageHtml = stamp.has_image ? 
-                    `<img src="${stamp.image_url}" class="stamp-thumbnail me-2" style="width: 40px; height: 40px; object-fit: cover; border-radius: 4px;" alt="${stamp.name}">` :
-                    `<div class="stamp-thumbnail me-2 d-inline-flex align-items-center justify-content-center" style="width: 40px; height: 40px; background: ${isDarkMode ? '#343a40' : '#f8f9fa'}; border-radius: 4px;"><i class="fas fa-stamp text-muted"></i></div>`;
+                let imageHtml;
+                if (stamp.has_image) {
+                    if (stamp.has_coordinates && stamp.x_coordinate !== null && stamp.y_coordinate !== null && stamp.width !== null && stamp.height !== null) {
+                        // Beskuren bild - använd CSS för att visa rätt del
+                        const xPos = -stamp.x_coordinate;
+                        const yPos = -stamp.y_coordinate;
+                        imageHtml = `<div class="stamp-crop-container me-3" style="width: 60px; height: 60px; overflow: hidden; border-radius: 4px;">
+                            <img src="${stamp.image_url}" 
+                                 style="width: 100%; height: 100%; object-fit: cover; object-position: ${xPos}% ${yPos}%;" 
+                                 alt="${stamp.name}"
+                                 data-crop-x="${stamp.x_coordinate}"
+                                 data-crop-y="${stamp.y_coordinate}"
+                                 data-stamp-width="${stamp.width}"
+                                 data-stamp-height="${stamp.height}">
+                        </div>`;
+                    } else {
+                        // Hela bilden
+                        imageHtml = `<img src="${stamp.image_url}" class="stamp-thumbnail me-3" style="width: 60px; height: 60px; object-fit: cover; border-radius: 4px;" alt="${stamp.name}">`;
+                    }
+                } else {
+                    imageHtml = `<div class="stamp-thumbnail me-3 d-inline-flex align-items-center justify-content-center" style="width: 60px; height: 60px; background: ${isDarkMode ? '#343a40' : '#f8f9fa'}; border-radius: 4px;"><i class="fas fa-stamp text-muted"></i></div>`;
+                }
                 
                 html += `
                     <div class="stamp-search-item p-3 border-bottom" data-stamp-id="${stamp.id}" style="cursor: pointer;">
@@ -326,6 +350,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 `;
             });
             stampSearchResults.innerHTML = html;
+            
+            // Använd befintlig funktion för att beskära bilder
+            setTimeout(() => {
+                if (typeof createCroppedStampImages === 'function') {
+                    createCroppedStampImages();
+                }
+            }, 100);
         }
         stampSearchResults.style.display = 'block';
     }
@@ -341,7 +372,21 @@ document.addEventListener('DOMContentLoaded', function() {
         // Uppdatera förhandsvisning
         const imageContainer = document.getElementById('selected_stamp_image');
         if (stamp.has_image) {
-            imageContainer.innerHTML = `<img src="${stamp.image_url}" style="width: 80px; height: 80px; object-fit: cover; border-radius: 4px;" alt="${stamp.name}">`;
+            if (stamp.has_coordinates && stamp.x_coordinate !== null && stamp.y_coordinate !== null && stamp.width !== null && stamp.height !== null) {
+                // Beskuren bild - använd CSS för att visa rätt del
+                const xPos = -stamp.x_coordinate;
+                const yPos = -stamp.y_coordinate;
+                imageContainer.innerHTML = `<img src="${stamp.image_url}" 
+                    style="width: 80px; height: 80px; object-fit: cover; object-position: ${xPos}% ${yPos}%; border-radius: 4px;" 
+                    alt="${stamp.name}"
+                    data-crop-x="${stamp.x_coordinate}"
+                    data-crop-y="${stamp.y_coordinate}"
+                    data-stamp-width="${stamp.width}"
+                    data-stamp-height="${stamp.height}">`;
+            } else {
+                // Hela bilden
+                imageContainer.innerHTML = `<img src="${stamp.image_url}" style="width: 80px; height: 80px; object-fit: cover; border-radius: 4px;" alt="${stamp.name}">`;
+            }
         } else {
             const bgColor = isDarkMode ? '#343a40' : '#f8f9fa';
             imageContainer.innerHTML = `<i class="fas fa-stamp fa-2x text-muted"></i>`;
@@ -357,6 +402,13 @@ document.addEventListener('DOMContentLoaded', function() {
         selectedStampPreview.style.display = 'block';
         stampSearchResults.style.display = 'none';
         stampSearch.value = stamp.name;
+        
+        // Använd befintlig funktion för att beskära bilder i förhandsvisningen
+        setTimeout(() => {
+            if (typeof createCroppedStampImages === 'function') {
+                createCroppedStampImages();
+            }
+        }, 100);
     }
     
     function clearSelection() {
@@ -439,7 +491,13 @@ document.addEventListener('DOMContentLoaded', function() {
         year_range: "{{ stamp_mark.stamp.year_range|default:'' }}",
         description: "{{ stamp_mark.stamp.description|default:'' }}",
         has_image: {% if stamp_mark.stamp.primary_image %}true{% else %}false{% endif %},
-        image_url: "{% if stamp_mark.stamp.primary_image %}{{ stamp_mark.stamp.primary_image.image_url_with_cache_busting }}{% endif %}"
+        image_url: "{% if stamp_mark.stamp.primary_image %}{% if stamp_mark.stamp.primary_image.image_type == 'axe_mark' and stamp_mark.stamp.primary_image.axe_image %}{{ stamp_mark.stamp.primary_image.axe_image.image_url_with_cache_busting }}{% else %}{{ stamp_mark.stamp.primary_image.image_url_with_cache_busting }}{% endif %}{% endif %}",
+        has_coordinates: {% if stamp_mark.stamp.primary_image and stamp_mark.stamp.primary_image.has_coordinates %}true{% else %}false{% endif %},
+        x_coordinate: {% if stamp_mark.stamp.primary_image and stamp_mark.stamp.primary_image.x_coordinate %}{{ stamp_mark.stamp.primary_image.x_coordinate }}{% else %}null{% endif %},
+        y_coordinate: {% if stamp_mark.stamp.primary_image and stamp_mark.stamp.primary_image.y_coordinate %}{{ stamp_mark.stamp.primary_image.y_coordinate }}{% else %}null{% endif %},
+        width: {% if stamp_mark.stamp.primary_image and stamp_mark.stamp.primary_image.width %}{{ stamp_mark.stamp.primary_image.width }}{% else %}null{% endif %},
+        height: {% if stamp_mark.stamp.primary_image and stamp_mark.stamp.primary_image.height %}{{ stamp_mark.stamp.primary_image.height }}{% else %}null{% endif %},
+        image_type: "{% if stamp_mark.stamp.primary_image %}{{ stamp_mark.stamp.primary_image.image_type }}{% endif %}"
     };
     selectStamp(existingStamp);
     {% endif %}

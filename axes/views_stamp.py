@@ -735,16 +735,113 @@ def search_stamps_ajax(request):
             ),
             "image_url": None,
             "has_image": False,
+            "has_coordinates": False,
+            "x_coordinate": None,
+            "y_coordinate": None,
+            "width": None,
+            "height": None,
+            "image_type": None,
         }
 
         # Hämta primärbild eller första tillgängliga bild
-        if stamp.primary_image:
-            stamp_data["image_url"] = stamp.primary_image.image_url_with_cache_busting
+        primary_image = stamp.primary_image
+        if primary_image:
             stamp_data["has_image"] = True
+            stamp_data["image_type"] = primary_image.image_type
+
+            # Hantera olika bildtyper
+            if primary_image.image_type == "axe_mark" and primary_image.axe_image:
+                # Yxbildmarkering - använd yxbilden
+                stamp_data["image_url"] = (
+                    primary_image.axe_image.image_url_with_cache_busting
+                )
+                if primary_image.has_coordinates:
+                    stamp_data["has_coordinates"] = True
+                    stamp_data["x_coordinate"] = (
+                        float(primary_image.x_coordinate)
+                        if primary_image.x_coordinate
+                        else None
+                    )
+                    stamp_data["y_coordinate"] = (
+                        float(primary_image.y_coordinate)
+                        if primary_image.y_coordinate
+                        else None
+                    )
+                    stamp_data["width"] = (
+                        float(primary_image.width) if primary_image.width else None
+                    )
+                    stamp_data["height"] = (
+                        float(primary_image.height) if primary_image.height else None
+                    )
+            else:
+                # Fristående bild
+                stamp_data["image_url"] = primary_image.image_url_with_cache_busting
+                if primary_image.has_coordinates:
+                    stamp_data["has_coordinates"] = True
+                    stamp_data["x_coordinate"] = (
+                        float(primary_image.x_coordinate)
+                        if primary_image.x_coordinate
+                        else None
+                    )
+                    stamp_data["y_coordinate"] = (
+                        float(primary_image.y_coordinate)
+                        if primary_image.y_coordinate
+                        else None
+                    )
+                    stamp_data["width"] = (
+                        float(primary_image.width) if primary_image.width else None
+                    )
+                    stamp_data["height"] = (
+                        float(primary_image.height) if primary_image.height else None
+                    )
         elif stamp.images.exists():
+            # Fallback till första tillgängliga bild
             first_image = stamp.images.first()
-            stamp_data["image_url"] = first_image.image_url_with_cache_busting
             stamp_data["has_image"] = True
+            stamp_data["image_type"] = first_image.image_type
+
+            if first_image.image_type == "axe_mark" and first_image.axe_image:
+                stamp_data["image_url"] = (
+                    first_image.axe_image.image_url_with_cache_busting
+                )
+                if first_image.has_coordinates:
+                    stamp_data["has_coordinates"] = True
+                    stamp_data["x_coordinate"] = (
+                        float(first_image.x_coordinate)
+                        if first_image.x_coordinate
+                        else None
+                    )
+                    stamp_data["y_coordinate"] = (
+                        float(first_image.y_coordinate)
+                        if first_image.y_coordinate
+                        else None
+                    )
+                    stamp_data["width"] = (
+                        float(first_image.width) if first_image.width else None
+                    )
+                    stamp_data["height"] = (
+                        float(first_image.height) if first_image.height else None
+                    )
+            else:
+                stamp_data["image_url"] = first_image.image_url_with_cache_busting
+                if first_image.has_coordinates:
+                    stamp_data["has_coordinates"] = True
+                    stamp_data["x_coordinate"] = (
+                        float(first_image.x_coordinate)
+                        if first_image.x_coordinate
+                        else None
+                    )
+                    stamp_data["y_coordinate"] = (
+                        float(first_image.y_coordinate)
+                        if first_image.y_coordinate
+                        else None
+                    )
+                    stamp_data["width"] = (
+                        float(first_image.width) if first_image.width else None
+                    )
+                    stamp_data["height"] = (
+                        float(first_image.height) if first_image.height else None
+                    )
 
         stamps_data.append(stamp_data)
 
