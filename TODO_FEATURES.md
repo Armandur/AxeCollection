@@ -1,4 +1,9 @@
 # Projektidéer & förbättringsförslag
+
+> **Notera (2026-07-19):** De öppna punkterna har migrerats till backlog-verktyget
+> (projekt-alias `axecollection`, se portalens todos-vy). Denna fil behålls som
+> historik över genomfört arbete. Lägg nya todos i backlog, inte här.
+
 En checklista för vidareutveckling av AxeCollection. Bocka av med [x] när klart!
 ## 1. Bildhantering
 
