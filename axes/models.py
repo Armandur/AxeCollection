@@ -469,6 +469,23 @@ class ManufacturerImage(models.Model):
             except Exception:
                 pass  # Kan logga fel om så önskas
 
+    def delete(self, *args, **kwargs):
+        # Ta bort både originalfilen och .webp-filen (annars blir de kvar på disk)
+        if self.image and self.image.name:
+            if os.path.exists(self.image.path):
+                try:
+                    os.remove(self.image.path)
+                except Exception:
+                    pass  # Kan logga fel om så önskas
+
+            webp_path = os.path.splitext(self.image.path)[0] + ".webp"
+            if os.path.exists(webp_path):
+                try:
+                    os.remove(webp_path)
+                except Exception:
+                    pass  # Kan logga fel om så önskas
+        super().delete(*args, **kwargs)
+
     def __str__(self):
         return f"{self.manufacturer.name} - {self.caption or 'Bild'}"
 
