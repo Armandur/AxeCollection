@@ -20,7 +20,26 @@ Uppladdning av backupfiler via webbgränssnittet fungerar inte för stora filer.
 
 ---
 
-## [P3][todo] [axecollection] Lägg till Open Graph-taggar på yxdetaljsidan för delningskort (Discord/Slack)
+## [P3][todo] [axecollection] Se över testkörning: snabbare och mer robust (parallellism, långsamma/nätberoende tester)
+
+Todo från Rasmus 2026-07-19: se över hur tester körs och om det kan göras bättre/snabbare.
+
+Observationer denna session:
+- Full svit ~942 tester, ~11.5 min i CI (test-jobbet blockerar build). test_models ensam ~250s, test_management_commands drar igång generate_test_data (tungt).
+- Nätberoende/långsamma tester: eBay-parser hämtar riktig URL (403 i CI), currency 'live'-tester, Tradera 'Network error' - gör sviten långsam och potentiellt flaky. Bör mockas hårt eller markeras (@pytest.mark.slow/network) och exkluderas från snabb-körning.
+- Ett väggklocksberoende test fixades redan (eBay slutdatum, commit cada52d) - leta fler tidsberoende antaganden.
+- pytest-xdist/parallell körning finns delvis (commit 745466d 'Aktivera parallell pytest-körning'); verifiera att den faktiskt används i CI och lokalt, och att DB-setup inte serialiserar.
+- Blandning av 'manage.py test' och 'pytest' i docs - standardisera.
+
+Mål: en snabb standardkörning (sekunder-minut) för inner loop + full svit i CI. Överväg markers, mocka nät, dela upp tunga management-command-tester, och pytest -n auto.
+
+- ID: `01KXY31Z1VHW4GAPDDF9CGPA4E`
+- Type: chore
+- Actor: ai:claude-opus-4-8
+
+---
+
+## [P3][done] [axecollection] Lägg till Open Graph-taggar på yxdetaljsidan för delningskort (Discord/Slack)
 
 ## Context
 Att dela en yxa-länk (`/yxor/N`) i Discord, Slack, iMessage m.fl. visar idag bara en naken URL. Med Open Graph-metataggar unfurlas länken till ett snyggt kort med bild, titel och korta stats - betydligt trevligare att dela.
@@ -71,7 +90,7 @@ cleanup_old_backups() raderar idag allt äldre än keep_days (30). Risk: har ing
 
 ---
 
-## [P3][doing] [axecollection] Bulk-redigering av bilder (redigera flera bilder samtidigt)
+## [P3][done] [axecollection] Bulk-redigering av bilder (redigera flera bilder samtidigt)
 
 Bulk-redigering: markera flera bilder + åtgärda alla. Bekräftad omfattning (Rasmus 2026-07-19):
 
