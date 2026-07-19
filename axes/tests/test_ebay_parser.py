@@ -123,8 +123,16 @@ class EbayParserTestCase(SimpleTestCase):
         self.assertIn("Frakt", price_labels)
 
     def test_extract_auction_end_date(self):
-        """Testa extrahering av auktionsslutdatum"""
+        """Testa extrahering av auktionsslutdatum (deterministiskt: fryst nu-datum)"""
         from bs4 import BeautifulSoup
+        import datetime as _dt
+
+        # Frys "nu" så testet inte beror på väggklockan (parsern använder
+        # datetime.now() för att gissa år på datum utan explicit årtal)
+        class _FrozenDateTime(_dt.datetime):
+            @classmethod
+            def now(cls, tz=None):
+                return cls(2025, 6, 15)
 
         html = """
         <div>
@@ -134,21 +142,11 @@ class EbayParserTestCase(SimpleTestCase):
         """
         soup = BeautifulSoup(html, "html.parser")
 
-        end_date = self.parser._extract_auction_end_date(soup)
+        with patch("axes.utils.ebay_parser.datetime", _FrozenDateTime):
+            end_date = self.parser._extract_auction_end_date(soup)
 
-        # Verifiera att datum extraheras korrekt
-        # Koden använder aktuellt år (2025) för "Jan 27" utan år
-        # Men logiken för kring nyår kan göra att det blir 2026 om vi är i augusti
-        current_year = datetime.now().year
-        current_month = datetime.now().month
-
-        # Om vi är i augusti och datumet är "Jan 27", så blir det 2026
-        # beroende på kring nyår-logiken (januari är 7 månader bakåt)
-        expected_year = current_year
-        if current_month >= 7:  # Juli eller senare
-            expected_year = current_year + 1
-
-        self.assertEqual(end_date, f"{expected_year}-01-27")
+        # Med fryst nu = 2025-06-15 blir "Jan 27" tolkat som 2025-01-27
+        self.assertEqual(end_date, "2025-01-27")
 
     def test_parse_ebay_url_function(self):
         """Testa den enkla parse_ebay_url-funktionen"""
