@@ -20,7 +20,25 @@ Uppladdning av backupfiler via webbgränssnittet fungerar inte för stora filer.
 
 ---
 
-## [P3][todo] [axecollection] Se över testkörning: snabbare och mer robust (parallellism, långsamma/nätberoende tester)
+## [P3][todo] [axecollection] Slimma tunga testfixtures (ersätt generate_test_data i setUp med lätt data)
+
+Uppföljning av TASK-175. Den riktiga CI-speed-fixen.
+
+Problem: många testklasser kör 'generate_test_data --clear' (eller reset_complete_system) i setUp = ~7-33s PER testmetod. Det är därför full svit tar ~14 min även parallellt: pytest --dist=loadscope pinnar varje klass till EN worker, så tunga per-test-fixtures kan inte räddas av fler kärnor - de körs seriellt inom klassen. När fixturerna blir lätta faller både serial och parallell tid kraftigt.
+
+Gör: ersätt generate_test_data-i-setUp med per-test skapande av bara de rader testet faktiskt behöver (eller setUpTestData där det är transaktionssäkert). OBS: generate_test_data skriver BILDFILER till disk och --clear raderar dem, så naiv setUpTestData är inte transaktionssäker - skapa minimala objekt direkt i stället.
+
+Berörda (markerade @pytest.mark.slow tills detta är gjort): test_models, test_management_commands, test_stamp_management_commands, test_views_integration, test_templatetags (rena filtertester som INTE behöver data alls!), test_reset_complete_system. Ta bort slow-markern per modul när den slimmats.
+
+Bonus: pytest.ini tvingar --cov + --cov-fail-under=70 på VARJE körning, så 'pytest <enskild fil>' faller på coverage-gaten. Överväg att flytta --cov till en explicit CI-körning så riktade körningar är snabba utan --no-cov.
+
+- ID: `01KXY831P21A1QNASRNQY9H8YB`
+- Type: chore
+- Actor: ai:claude-opus-4-8
+
+---
+
+## [P3][done] [axecollection] Se över testkörning: snabbare och mer robust (parallellism, långsamma/nätberoende tester)
 
 Todo från Rasmus 2026-07-19: se över hur tester körs och om det kan göras bättre/snabbare.
 
