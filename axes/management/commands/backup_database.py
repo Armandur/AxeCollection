@@ -27,6 +27,16 @@ class Command(BaseCommand):
             default=30,
             help="Antal dagar att behålla gamla backuper (standard: 30)",
         )
+        parser.add_argument(
+            "--keep-last",
+            type=int,
+            default=3,
+            help=(
+                "Antal senaste backuper att alltid behålla oavsett ålder "
+                "(standard: 3). Skyddsnät så att inte alla backuper rensas "
+                "om ingen ny skapats på keep-days dagar."
+            ),
+        )
 
     def handle(self, *args, **options):
         self.stdout.write("Startar automatisk backup...")
@@ -63,7 +73,7 @@ class Command(BaseCommand):
                 json.dump(stats, f, indent=2, ensure_ascii=False)
 
         # Rensa gamla backuper
-        self.cleanup_old_backups(backup_dir, options["keep_days"])
+        self.cleanup_old_backups(backup_dir, options["keep_days"], options["keep_last"])
 
         self.stdout.write(
             self.style.SUCCESS(f"Backup slutförd! Timestamp: {timestamp}")
@@ -186,24 +196,38 @@ class Command(BaseCommand):
 
         self.stdout.write(f"  Komprimerad backup: {zip_name}")
 
-    def cleanup_old_backups(self, backup_dir, keep_days):
-        """Rensa gamla backup-filer"""
+    def cleanup_old_backups(self, backup_dir, keep_days, keep_last=3):
+        """Rensa gamla backup-filer.
+
+        Raderar filer äldre än keep_days, men behåller alltid de keep_last
+        senaste (efter modifieringstid) oavsett ålder som skyddsnät.
+        """
         cutoff_date = datetime.now().timestamp() - (keep_days * 24 * 60 * 60)
         removed_count = 0
 
+        # Samla alla backup-filer med modifieringstid, nyast först
+        files = []
         for filename in os.listdir(backup_dir):
             file_path = os.path.join(backup_dir, filename)
             if os.path.isfile(file_path):
-                file_time = os.path.getmtime(file_path)
-                if file_time < cutoff_date:
-                    try:
-                        os.remove(file_path)
-                        removed_count += 1
-                        self.stdout.write(f"  Raderade gammal backup: {filename}")
-                    except Exception as e:
-                        self.stdout.write(
-                            self.style.WARNING(f"  Kunde inte radera {filename}: {e}")
-                        )
+                files.append((file_path, filename, os.path.getmtime(file_path)))
+        files.sort(key=lambda item: item[2], reverse=True)
+
+        # Skydda de keep_last senaste från rensning
+        protected = {item[0] for item in files[:keep_last]} if keep_last > 0 else set()
+
+        for file_path, filename, file_time in files:
+            if file_path in protected:
+                continue
+            if file_time < cutoff_date:
+                try:
+                    os.remove(file_path)
+                    removed_count += 1
+                    self.stdout.write(f"  Raderade gammal backup: {filename}")
+                except Exception as e:
+                    self.stdout.write(
+                        self.style.WARNING(f"  Kunde inte radera {filename}: {e}")
+                    )
 
         if removed_count > 0:
             self.stdout.write(f"  Raderade {removed_count} gamla backup-filer")
