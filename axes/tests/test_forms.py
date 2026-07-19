@@ -649,6 +649,22 @@ class BackupUploadFormTest(TestCase):
         form = BackupUploadForm(data=form_data, files=file_data)
         self.assertTrue(form.is_valid())
 
+    def test_backup_upload_form_valid_zip_file(self):
+        """Testa BackupUploadForm med en riktig .zip-fil (fulla backuper)"""
+        from axes.forms import BackupUploadForm
+        from django.core.files.uploadedfile import SimpleUploadedFile
+
+        form_data = {}
+        file_data = {
+            "backup_file": SimpleUploadedFile(
+                "full_backup.zip",
+                b"PK\x03\x04 test zip content",
+                content_type="application/zip",
+            )
+        }
+        form = BackupUploadForm(data=form_data, files=file_data)
+        self.assertTrue(form.is_valid())
+
     def test_backup_upload_form_valid_sqlite3(self):
         """Testa BackupUploadForm med giltig sqlite3-fil"""
         from axes.forms import BackupUploadForm

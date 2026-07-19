@@ -805,20 +805,22 @@ class BackupUploadForm(forms.Form):
     backup_file = forms.FileField(
         widget=forms.FileInput(attrs={"class": "form-control"}),
         label="Backupfil",
-        help_text="Välj en .sqlite3-fil att återställa från",
+        help_text="Välj en .zip- eller .sqlite3-fil att återställa från",
     )
 
     def clean_backup_file(self):
         backup_file = self.cleaned_data.get("backup_file")
         if backup_file:
-            # Kontrollera filtyp
-            if not backup_file.name.endswith(".sqlite3"):
-                raise forms.ValidationError("Endast .sqlite3-filer är tillåtna.")
-
-            # Kontrollera filstorlek (max 100MB)
-            if backup_file.size > 100 * 1024 * 1024:
+            # Kontrollera filtyp (fulla backuper är .zip, rena databaser .sqlite3)
+            if not backup_file.name.endswith((".zip", ".sqlite3")):
                 raise forms.ValidationError(
-                    "Filen är för stor. Maximal storlek är 100MB."
+                    "Endast .zip- och .sqlite3-filer är tillåtna."
+                )
+
+            # Kontrollera filstorlek (max 2GB, matchar nginx client_max_body_size)
+            if backup_file.size > 2 * 1024 * 1024 * 1024:
+                raise forms.ValidationError(
+                    "Filen är för stor. Maximal storlek är 2GB."
                 )
 
         return backup_file
