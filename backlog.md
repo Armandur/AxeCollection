@@ -1,5 +1,15 @@
 # Backlog Export
 
+## [P2][todo] [axecollection] Sänk FILE_UPLOAD_MAX_MEMORY_SIZE så stora uppladdningar streamas till disk
+
+FILE_UPLOAD_MAX_MEMORY_SIZE=2GB gör att hela uppladdade filen hålls i RAM innan den spills till disk - kan spränga minnet i containern vid stora backup-uppladdningar. Sänk till Django-default (~2.5MB) så filer streamas till FILE_UPLOAD_TEMP_DIR. FÖRUTSÄTTNING: i prod är TEMP_DIR /app/tmp - verifiera att den finns och är skrivbar för nobody:users (deploy-setup skapar data/media/logs/staticfiles/backups men INTE tmp), annars blir det FileNotFoundError vid varje stor uppladdning. Gäller settings_production.py + settings_production_http.py. Deploy-gated.
+
+- ID: `01KXXJCGQKX83PTCEWTH3Y2JJD`
+- Type: improvement
+- Actor: ai:claude-opus-4-8
+
+---
+
 ## [P2][done] [axecollection] Backup-uppladdning via webbgränssnitt - lösa stora filer (>100MB, upp till 2GB)
 
 Uppladdning av backupfiler via webbgränssnittet fungerar inte för stora filer. Kräver fix av nginx-konfig och förbättrat AJAX-flöde. Berör produktion (yxor.pettersson-vik.se).
@@ -27,16 +37,6 @@ Kvar att göra: live-verifiera mot riktiga eBay/Tradera-annonser (CI mockar nät
 
 ---
 
-## [P3][todo] [axecollection] Sänk FILE_UPLOAD_MAX_MEMORY_SIZE så stora uppladdningar streamas till disk
-
-FILE_UPLOAD_MAX_MEMORY_SIZE=2GB gör att hela uppladdade filen hålls i RAM innan den spills till disk - kan spränga minnet i containern vid stora backup-uppladdningar. Sänk till Django-default (~2.5MB) så filer streamas till FILE_UPLOAD_TEMP_DIR. FÖRUTSÄTTNING: i prod är TEMP_DIR /app/tmp - verifiera att den finns och är skrivbar för nobody:users (deploy-setup skapar data/media/logs/staticfiles/backups men INTE tmp), annars blir det FileNotFoundError vid varje stor uppladdning. Gäller settings_production.py + settings_production_http.py. Deploy-gated.
-
-- ID: `01KXXJCGQKX83PTCEWTH3Y2JJD`
-- Type: improvement
-- Actor: ai:claude-opus-4-8
-
----
-
 ## [P3][done] [axecollection] Behåll senaste X backuper oavsett ålder (keep-last-N)
 
 cleanup_old_backups() raderar idag allt äldre än keep_days (30). Risk: har ingen ny backup skapats på 30 dagar rensas allt bort. Lägg till en keep-last-N-retention (t.ex. --keep-last N) som alltid sparar de N senaste oavsett ålder, som komplement till ålderregeln.
@@ -55,18 +55,10 @@ cleanup_old_backups() raderar idag allt äldre än keep_days (30). Risk: har ing
 
 ---
 
-## [P3][todo] [axecollection] Förbättrad felhantering och validering i formulär
+## [P3][todo] [axecollection] Automatisk bildrotation baserat på EXIF-data
 
-- ID: `01KXX7K2MVSS0593YYJ3XE21C6`
-- Type: improvement
-- Actor: ai:claude-opus-4-8
-
----
-
-## [P3][todo] [axecollection] Prestandaoptimering (caching, lazy loading, etc.)
-
-- ID: `01KXX7K2MDRSX13KZ2957G8K9T`
-- Type: improvement
+- ID: `01KXX7K2N582QQ0TQT7YWMB1Q3`
+- Type: feature
 - Actor: ai:claude-opus-4-8
 
 ---
@@ -107,14 +99,6 @@ På inställningssidan (backup-upload) ligger 'Ladda upp backup'-knappen snett m
 
 ---
 
-## [P4][todo] [axecollection] Automatisk bildrotation baserat på EXIF-data
-
-- ID: `01KXX7K2N582QQ0TQT7YWMB1Q3`
-- Type: feature
-- Actor: ai:claude-opus-4-8
-
----
-
 ## [P4][done] [axecollection] Zoom-funktionalitet i lightbox för att se bilder i full storlek
 
 - ID: `01KXX7K2N3NM33F2NVCS9TYVKD`
@@ -147,6 +131,14 @@ På inställningssidan (backup-upload) ligger 'Ladda upp backup'-knappen snett m
 
 ---
 
+## [P4][todo] [axecollection] Förbättrad felhantering och validering i formulär
+
+- ID: `01KXX7K2MVSS0593YYJ3XE21C6`
+- Type: improvement
+- Actor: ai:claude-opus-4-8
+
+---
+
 ## [P4][todo] [axecollection] Kommentarsystem för yxor och tillverkare
 
 Framtida funktion.
@@ -157,10 +149,10 @@ Framtida funktion.
 
 ---
 
-## [P4][todo] [axecollection] Implementera Django REST Framework och ViewSets
+## [P4][todo] [axecollection] Prestandaoptimering (caching, lazy loading, etc.)
 
-- ID: `01KXX7K2MMB13XV325X6C4PFSM`
-- Type: feature
+- ID: `01KXX7K2MDRSX13KZ2957G8K9T`
+- Type: improvement
 - Actor: ai:claude-opus-4-8
 
 ---
@@ -170,6 +162,14 @@ Framtida funktion.
 PAUSAD - kräver vidare diskussion och behovsanalys innan implementation.
 
 - ID: `01KXX7K2MN245BFY6ZSTXCXB3X`
+- Type: feature
+- Actor: ai:claude-opus-4-8
+
+---
+
+## [P5][todo] [axecollection] Implementera Django REST Framework och ViewSets
+
+- ID: `01KXX7K2MMB13XV325X6C4PFSM`
 - Type: feature
 - Actor: ai:claude-opus-4-8
 
