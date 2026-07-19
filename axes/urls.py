@@ -100,6 +100,21 @@ urlpatterns = [
         name="reorder_manufacturer_images",
     ),
     path(
+        "tillverkare/bild/bulk-ta-bort/",
+        views_manufacturer.bulk_delete_manufacturer_images,
+        name="bulk_delete_manufacturer_images",
+    ),
+    path(
+        "tillverkare/bild/bulk-flytta-okopplade/",
+        views_manufacturer.bulk_move_manufacturer_images_to_unlinked,
+        name="bulk_move_manufacturer_images_to_unlinked",
+    ),
+    path(
+        "tillverkare/bild/bulk-ladda-ner/",
+        views_manufacturer.bulk_download_manufacturer_images,
+        name="bulk_download_manufacturer_images",
+    ),
+    path(
         "tillverkare/lank/<int:link_id>/redigera/",
         views_manufacturer.edit_manufacturer_link,
         name="edit_manufacturer_link",
@@ -186,6 +201,16 @@ urlpatterns = [
         "okopplade-bilder/ladda-ner/",
         views_axe.download_unlinked_images,
         name="download_unlinked_images",
+    ),
+    path(
+        "yxor/bild/bulk-flytta-okopplade/",
+        views_axe.bulk_move_axe_images_to_unlinked,
+        name="bulk_move_axe_images_to_unlinked",
+    ),
+    path(
+        "yxor/bild/bulk-ladda-ner/",
+        views_axe.bulk_download_axe_images,
+        name="bulk_download_axe_images",
     ),
     # Auth URLs
     path(

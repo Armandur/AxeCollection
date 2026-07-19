@@ -58,6 +58,24 @@
     color: var(--bs-body-color);
 }
 
+/* Bulk-val av tillverkarbilder */
+.manufacturer-image-checkbox-wrap {
+    z-index: 5;
+}
+
+.manufacturer-image-checkbox-wrap .form-check-input {
+    width: 1.25em;
+    height: 1.25em;
+    cursor: pointer;
+    box-shadow: 0 0 3px rgba(0, 0, 0, 0.6);
+}
+
+/* Dölj bulk-val i ändra ordning-läge så det inte krockar med drag & drop */
+body.manufacturer-image-reorder-active .manufacturer-image-checkbox-wrap,
+body.manufacturer-image-reorder-active #manufacturerBulkActionsBar {
+    display: none !important;
+}
+
 /* Navigationsknappar styling */
 #prevImageBtn:hover,
 #nextImageBtn:hover {
@@ -391,6 +409,27 @@
             </div>
             <div class="card-body">
                 {% if images_by_type.OTHER %}
+                    {% if user.is_authenticated %}
+                    <div id="manufacturerBulkActionsBar" class="d-none bg-body-tertiary rounded p-2 mb-3 d-flex flex-wrap justify-content-between align-items-center gap-2">
+                        <div>
+                            <button type="button" class="btn btn-outline-secondary btn-sm" id="manufacturerSelectAllBtn">
+                                <i class="bi bi-check-square"></i> Välj alla
+                            </button>
+                            <span class="ms-2 text-muted" id="manufacturerBulkSelectedCount">0 valda</span>
+                        </div>
+                        <div>
+                            <button type="button" class="btn btn-outline-danger btn-sm me-2" id="manufacturerBulkDeleteBtn">
+                                <i class="bi bi-trash"></i> Ta bort valda
+                            </button>
+                            <button type="button" class="btn btn-outline-primary btn-sm me-2" id="manufacturerBulkDownloadBtn">
+                                <i class="bi bi-download"></i> Ladda ner valda
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary btn-sm" id="manufacturerBulkMoveBtn">
+                                <i class="bi bi-box-arrow-right"></i> Flytta till okopplade valda
+                            </button>
+                        </div>
+                    </div>
+                    {% endif %}
                     <div class="row">
                         {% for item in images_by_type.OTHER %}
                         <div class="col-md-4 mb-3 manufacturer-image-card" data-image-id="{{ item.id }}" data-order="{{ item.order }}">
@@ -400,10 +439,10 @@
                                         {% if item.webp_url %}
                                             <source srcset="{{ item.webp_url }}" type="image/webp">
                                         {% endif %}
-                                        <img src="{{ item.image_url_with_cache_busting }}" 
-                                             class="card-img-top manufacturer-image" 
-                                             alt="{{ item.caption|default:'Bild' }}" 
-                                             style="max-height: 200px; object-fit: contain;" 
+                                        <img src="{{ item.image_url_with_cache_busting }}"
+                                             class="card-img-top manufacturer-image"
+                                             alt="{{ item.caption|default:'Bild' }}"
+                                             style="max-height: 200px; object-fit: contain;"
                                              loading="lazy"
                                              data-image-id="{{ item.id }}"
                                              data-image-url="{{ item.image_url_with_cache_busting }}"
@@ -413,8 +452,11 @@
                                              data-image-type="{{ item.image_type }}">
                                     </picture>
                                     {% if user.is_authenticated %}
+                                    <div class="position-absolute top-0 start-0 p-2 manufacturer-image-checkbox-wrap" onclick="event.stopPropagation();">
+                                        <input type="checkbox" class="form-check-input manufacturer-image-checkbox" value="{{ item.id }}" title="Välj bild för massåtgärd">
+                                    </div>
                                     <div class="position-absolute top-0 end-0 p-2">
-                                        <button class="btn btn-sm btn-outline-secondary" 
+                                        <button class="btn btn-sm btn-outline-secondary"
                                                 onclick="event.stopPropagation(); editImage({{ item.id }})"
                                                 title="Redigera bild">
                                             <i class="bi bi-pencil"></i>
@@ -1328,7 +1370,9 @@ function toggleReorderMode() {
         reorderBtn.innerHTML = '<i class="bi bi-check"></i> Spara ordning';
         reorderBtn.className = 'btn btn-success btn-sm';
         document.querySelector('.card-body').classList.add('reorder-mode');
-        
+        document.body.classList.add('manufacturer-image-reorder-active');
+        if (typeof resetManufacturerBulkSelection === 'function') resetManufacturerBulkSelection();
+
         // Aktivera drag & drop
         imageCards.forEach(card => {
             card.draggable = true;
@@ -1343,7 +1387,8 @@ function toggleReorderMode() {
         reorderBtn.innerHTML = '<i class="bi bi-arrow-down-up"></i> Ändra ordning';
         reorderBtn.className = 'btn btn-outline-secondary btn-sm';
         document.querySelector('.card-body').classList.remove('reorder-mode');
-        
+        document.body.classList.remove('manufacturer-image-reorder-active');
+
         // Inaktivera drag & drop
         imageCards.forEach(card => {
             card.draggable = false;
@@ -2834,4 +2879,188 @@ function deleteManufacturer() {
 }
 </script>
 
+<!-- Massåtgärder för tillverkarbilder -->
+<script>
+(function() {
+    const bulkBar = document.getElementById('manufacturerBulkActionsBar');
+    const selectAllBtn = document.getElementById('manufacturerSelectAllBtn');
+    const deleteBtn = document.getElementById('manufacturerBulkDeleteBtn');
+    const downloadBtn = document.getElementById('manufacturerBulkDownloadBtn');
+    const moveBtn = document.getElementById('manufacturerBulkMoveBtn');
+    const countLabel = document.getElementById('manufacturerBulkSelectedCount');
+
+    if (!bulkBar) return; // Inga bilder/inte inloggad - inget att koppla upp
+
+    function getCheckboxes() {
+        return Array.from(document.querySelectorAll('.manufacturer-image-checkbox'));
+    }
+
+    function getSelectedIds() {
+        return getCheckboxes().filter(cb => cb.checked).map(cb => cb.value);
+    }
+
+    function updateBulkBar() {
+        const checkboxes = getCheckboxes();
+        const selected = checkboxes.filter(cb => cb.checked);
+        bulkBar.classList.toggle('d-none', selected.length === 0);
+        countLabel.textContent = `${selected.length} valda`;
+        const allChecked = checkboxes.length > 0 && selected.length === checkboxes.length;
+        selectAllBtn.innerHTML = allChecked
+            ? '<i class="bi bi-square"></i> Avmarkera alla'
+            : '<i class="bi bi-check-square"></i> Välj alla';
+    }
+
+    window.resetManufacturerBulkSelection = function() {
+        getCheckboxes().forEach(cb => { cb.checked = false; });
+        updateBulkBar();
+    };
+
+    document.addEventListener('change', function(e) {
+        if (e.target.classList && e.target.classList.contains('manufacturer-image-checkbox')) {
+            updateBulkBar();
+        }
+    });
+
+    selectAllBtn.addEventListener('click', function() {
+        const checkboxes = getCheckboxes();
+        const allChecked = checkboxes.length > 0 && checkboxes.every(cb => cb.checked);
+        checkboxes.forEach(cb => { cb.checked = !allChecked; });
+        updateBulkBar();
+    });
+
+    function notify(message, level) {
+        if (window.showToast) {
+            showToast(message, level);
+        } else {
+            alert(message);
+        }
+    }
+
+    function removeCardsFromDom(ids) {
+        ids.forEach(id => {
+            const card = document.querySelector(`.manufacturer-image-card[data-image-id="${id}"]`);
+            if (card) card.remove();
+        });
+        updateBulkBar();
+    }
+
+    deleteBtn.addEventListener('click', function() {
+        const ids = getSelectedIds();
+        if (ids.length === 0) return;
+
+        const modalId = 'confirmBulkDeleteManufacturerImagesModal';
+        const existing = document.getElementById(modalId);
+        if (existing) existing.remove();
+        const modalHtml = `
+        <div class="modal fade" id="${modalId}" tabindex="-1">
+          <div class="modal-dialog">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-trash me-2"></i>Ta bort valda bilder</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+              </div>
+              <div class="modal-body">
+                <div class="alert alert-warning mb-0"><i class="bi bi-exclamation-triangle me-2"></i>Är du säker på att du vill ta bort ${ids.length} ${ids.length === 1 ? 'bild' : 'bilder'}? Detta går inte att ångra.</div>
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Avbryt</button>
+                <button type="button" class="btn btn-danger" id="confirmBulkDeleteManufacturerImagesBtn"><i class="bi bi-trash me-1"></i>Ta bort</button>
+              </div>
+            </div>
+          </div>
+        </div>`;
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+        const modal = new bootstrap.Modal(document.getElementById(modalId));
+        modal.show();
+
+        document.getElementById('confirmBulkDeleteManufacturerImagesBtn').addEventListener('click', function() {
+            const confirmBtn = this;
+            confirmBtn.disabled = true;
+            fetch('{% url "bulk_delete_manufacturer_images" %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                },
+                body: JSON.stringify({ image_ids: ids })
+            })
+            .then(response => response.json())
+            .then(data => {
+                modal.hide();
+                if (data.success) {
+                    removeCardsFromDom(ids);
+                    notify(`${data.deleted_count} ${data.deleted_count === 1 ? 'bild' : 'bilder'} borttagna`, 'success');
+                } else {
+                    notify('Fel vid borttagning: ' + (data.error || 'Okänt fel'), 'danger');
+                }
+            })
+            .catch(error => {
+                modal.hide();
+                notify('Ett fel uppstod vid borttagning: ' + error.message, 'danger');
+            });
+        });
+    });
+
+    moveBtn.addEventListener('click', function() {
+        const ids = getSelectedIds();
+        if (ids.length === 0) return;
+
+        moveBtn.disabled = true;
+        const originalText = moveBtn.innerHTML;
+        moveBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Flyttar...';
+
+        fetch('{% url "bulk_move_manufacturer_images_to_unlinked" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            },
+            body: JSON.stringify({ image_ids: ids })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                removeCardsFromDom(ids);
+                notify(`${data.moved_count} ${data.moved_count === 1 ? 'bild' : 'bilder'} flyttade till okopplade bilder`, 'success');
+            } else {
+                notify('Fel vid flytt: ' + (data.error || 'Okänt fel'), 'danger');
+            }
+        })
+        .catch(error => {
+            notify('Ett fel uppstod vid flytt: ' + error.message, 'danger');
+        })
+        .finally(() => {
+            moveBtn.disabled = false;
+            moveBtn.innerHTML = originalText;
+        });
+    });
+
+    downloadBtn.addEventListener('click', function() {
+        const ids = getSelectedIds();
+        if (ids.length === 0) return;
+
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '{% url "bulk_download_manufacturer_images" %}';
+
+        const csrfInput = document.createElement('input');
+        csrfInput.type = 'hidden';
+        csrfInput.name = 'csrfmiddlewaretoken';
+        csrfInput.value = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        form.appendChild(csrfInput);
+
+        ids.forEach(id => {
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'image_ids';
+            input.value = id;
+            form.appendChild(input);
+        });
+
+        document.body.appendChild(form);
+        form.submit();
+        document.body.removeChild(form);
+    });
+})();
+</script>
 {% endblock %} 

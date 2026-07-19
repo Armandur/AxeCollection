@@ -2107,6 +2107,85 @@ def download_unlinked_images(request):
         return JsonResponse({"success": False, "error": str(e)})
 
 
+@require_POST
+def bulk_move_axe_images_to_unlinked(request):
+    """Flyttar flera yxbilder till okopplade bilder via AJAX i en transaktion"""
+    try:
+        data = json.loads(request.body)
+        image_ids = data.get("image_ids", [])
+        if not image_ids:
+            return JsonResponse(
+                {"success": False, "error": "Inga bilder valda"}, status=400
+            )
+
+        images = AxeImage.objects.filter(id__in=image_ids)
+        if not images.exists():
+            return JsonResponse(
+                {"success": False, "error": "Inga bilder hittades"}, status=404
+            )
+
+        with transaction.atomic():
+            result = move_images_to_unlinked_folder(images)
+
+        return JsonResponse(
+            {
+                "success": True,
+                "moved_count": result["moved"],
+                "error_count": result["errors"],
+            }
+        )
+    except json.JSONDecodeError:
+        return JsonResponse(
+            {"success": False, "error": "Ogiltig JSON-data"}, status=400
+        )
+    except Exception as e:
+        return JsonResponse({"success": False, "error": str(e)}, status=500)
+
+
+@require_POST
+def bulk_download_axe_images(request):
+    """Ladda ner valda yxbilder som ZIP-fil"""
+    import zipfile
+    import tempfile
+
+    try:
+        image_ids = request.POST.getlist("image_ids")
+        if not image_ids:
+            return JsonResponse(
+                {"success": False, "error": "Inga bilder valda"}, status=400
+            )
+
+        images = AxeImage.objects.filter(id__in=image_ids)
+        if not images.exists():
+            return JsonResponse(
+                {"success": False, "error": "Inga bilder hittades"}, status=404
+            )
+
+        used_names = set()
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".zip") as tmp_file:
+            with zipfile.ZipFile(tmp_file.name, "w") as zipf:
+                for image in images:
+                    if (
+                        image.image
+                        and image.image.name
+                        and os.path.exists(image.image.path)
+                    ):
+                        arcname = os.path.basename(image.image.name)
+                        if arcname in used_names:
+                            arcname = f"{image.id}_{arcname}"
+                        used_names.add(arcname)
+                        zipf.write(image.image.path, arcname)
+
+        with open(tmp_file.name, "rb") as f:
+            response = HttpResponse(f.read(), content_type="application/zip")
+            response["Content-Disposition"] = 'attachment; filename="yxbilder.zip"'
+
+        os.unlink(tmp_file.name)
+        return response
+    except Exception as e:
+        return JsonResponse({"success": False, "error": str(e)}, status=500)
+
+
 def _download_auction_images(axe, image_urls):
     """Ladda ner och spara auktionsbilder automatiskt"""
     if not image_urls:

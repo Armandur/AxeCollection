@@ -462,6 +462,22 @@ tr.editing .form-control-sm {
                         {% if is_edit and axe.images.all %}
                             <div class="mb-4" id="stampel-sektion">
                                 <h6>Befintliga bilder:</h6>
+                                <div id="axeImageBulkActionsBar" class="d-none bg-body-tertiary rounded p-2 mb-3 d-flex flex-wrap justify-content-between align-items-center gap-2">
+                                    <div>
+                                        <button type="button" class="btn btn-outline-secondary btn-sm" id="axeImageSelectAllBtn">
+                                            <i class="fas fa-check-square"></i> Välj alla
+                                        </button>
+                                        <span class="ms-2 text-muted" id="axeImageBulkSelectedCount">0 valda</span>
+                                    </div>
+                                    <div>
+                                        <button type="button" class="btn btn-outline-primary btn-sm me-2" id="axeImageBulkDownloadBtn">
+                                            <i class="fas fa-download"></i> Ladda ner valda
+                                        </button>
+                                        <button type="button" class="btn btn-outline-secondary btn-sm" id="axeImageBulkMoveBtn">
+                                            <i class="fas fa-share-square"></i> Flytta till okopplade valda
+                                        </button>
+                                    </div>
+                                </div>
                                 <div class="row" id="existingImagesContainer">
                                     {% for image in axe.images.all %}
                                         <div class="col-6 col-md-3 mb-3 existing-image-item" data-image-id="{{ image.id }}" draggable="true">
@@ -474,6 +490,9 @@ tr.editing .form-control-sm {
                                                 </picture>
                                                 <div class="position-absolute" style="top: 5px; left: 5px; background: rgba(0,0,0,0.7); color: white; padding: 2px 6px; border-radius: 3px; font-size: 10px;">
                                                     {{ image.image.name|basename }}
+                                                </div>
+                                                <div class="position-absolute axe-image-checkbox-wrap" draggable="false" style="bottom: 5px; left: 5px; z-index: 5;" onclick="event.stopPropagation();">
+                                                    <input type="checkbox" class="form-check-input axe-image-checkbox" value="{{ image.id }}" title="Välj bild för massåtgärd">
                                                 </div>
                                                 <button type="button" class="btn btn-danger btn-sm position-absolute delete-image-btn" style="top: 5px; right: 5px; width: 30px; height: 30px; border-radius: 50%;" onclick="removeExistingImage({{ image.id }})" title="Ta bort bild">
                                                     <i class="fas fa-times"></i>
@@ -831,6 +850,22 @@ tr.editing .form-control-sm {
 .existing-image-item:hover {
     transform: translateY(-2px);
     box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+/* Bulk-val av yxbilder */
+.axe-image-checkbox-wrap {
+    cursor: pointer;
+}
+
+.axe-image-checkbox-wrap .form-check-input {
+    width: 1.25em;
+    height: 1.25em;
+    cursor: pointer;
+    box-shadow: 0 0 3px rgba(0, 0, 0, 0.6);
+}
+
+.existing-image-item.marked-for-deletion .axe-image-checkbox-wrap {
+    display: none;
 }
 
 /* Stilar för bilder markerade för borttagning */
@@ -2181,5 +2216,163 @@ document.addEventListener('DOMContentLoaded', function() {
         </div>
     </div>
 </div>
+
+<!-- Massåtgärder för yxbilder -->
+<script>
+(function() {
+    const bulkBar = document.getElementById('axeImageBulkActionsBar');
+    if (!bulkBar) return; // Inget redigeringsläge / inga befintliga bilder
+
+    const selectAllBtn = document.getElementById('axeImageSelectAllBtn');
+    const downloadBtn = document.getElementById('axeImageBulkDownloadBtn');
+    const moveBtn = document.getElementById('axeImageBulkMoveBtn');
+    const countLabel = document.getElementById('axeImageBulkSelectedCount');
+
+    function getCheckboxes() {
+        return Array.from(document.querySelectorAll('.axe-image-checkbox'));
+    }
+
+    function getSelectedIds() {
+        return getCheckboxes().filter(cb => cb.checked).map(cb => cb.value);
+    }
+
+    function updateBulkBar() {
+        const checkboxes = getCheckboxes();
+        const selected = checkboxes.filter(cb => cb.checked);
+        bulkBar.classList.toggle('d-none', selected.length === 0);
+        countLabel.textContent = `${selected.length} valda`;
+        const allChecked = checkboxes.length > 0 && selected.length === checkboxes.length;
+        selectAllBtn.innerHTML = allChecked
+            ? '<i class="fas fa-square"></i> Avmarkera alla'
+            : '<i class="fas fa-check-square"></i> Välj alla';
+    }
+
+    function notify(message, level) {
+        if (window.showToast) {
+            showToast(message, level);
+        } else {
+            alert(message);
+        }
+    }
+
+    document.addEventListener('change', function(e) {
+        if (e.target.classList && e.target.classList.contains('axe-image-checkbox')) {
+            updateBulkBar();
+        }
+    });
+
+    selectAllBtn.addEventListener('click', function() {
+        const checkboxes = getCheckboxes();
+        const allChecked = checkboxes.length > 0 && checkboxes.every(cb => cb.checked);
+        checkboxes.forEach(cb => { cb.checked = !allChecked; });
+        updateBulkBar();
+    });
+
+    function removeCardsFromDom(ids) {
+        const hiddenInputs = document.getElementById('hiddenInputs');
+        ids.forEach(id => {
+            const card = document.querySelector(`.existing-image-item[data-image-id="${id}"]`);
+            if (card) card.remove();
+            // Städa bort ev. kvarvarande "markerad för borttagning"-fält för samma bild,
+            // eftersom bilden nu redan är flyttad och inte längre finns kvar på yxan.
+            if (hiddenInputs) {
+                hiddenInputs.querySelectorAll(`input[name="remove_images"][value="${id}"]`).forEach(input => input.remove());
+            }
+        });
+        updateBulkBar();
+    }
+
+    moveBtn.addEventListener('click', function() {
+        const ids = getSelectedIds();
+        if (ids.length === 0) return;
+
+        moveBtn.disabled = true;
+        const originalText = moveBtn.innerHTML;
+        moveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Flyttar...';
+
+        fetch('{% url "bulk_move_axe_images_to_unlinked" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            },
+            body: JSON.stringify({ image_ids: ids })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                removeCardsFromDom(ids);
+                notify(`${data.moved_count} ${data.moved_count === 1 ? 'bild' : 'bilder'} flyttade till okopplade bilder`, 'success');
+            } else {
+                notify('Fel vid flytt: ' + (data.error || 'Okänt fel'), 'danger');
+            }
+        })
+        .catch(error => {
+            notify('Ett fel uppstod vid flytt: ' + error.message, 'danger');
+        })
+        .finally(() => {
+            moveBtn.disabled = false;
+            moveBtn.innerHTML = originalText;
+        });
+    });
+
+    downloadBtn.addEventListener('click', function() {
+        const ids = getSelectedIds();
+        if (ids.length === 0) return;
+
+        // Skickas till en dold iframe istället för att navigera bort sidan -
+        // formuläret för yxredigering har osparat tillstånd (nya bilder,
+        // markerade för borttagning, ordning) som annars skulle gå förlorat
+        // om nedladdningen misslyckas och servern svarar med en vanlig sida/JSON.
+        const iframeName = 'axeImageBulkDownloadFrame';
+        let iframe = document.querySelector(`iframe[name="${iframeName}"]`);
+        if (!iframe) {
+            iframe = document.createElement('iframe');
+            iframe.name = iframeName;
+            iframe.style.display = 'none';
+            document.body.appendChild(iframe);
+        }
+
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '{% url "bulk_download_axe_images" %}';
+        form.target = iframeName;
+
+        const csrfInput = document.createElement('input');
+        csrfInput.type = 'hidden';
+        csrfInput.name = 'csrfmiddlewaretoken';
+        csrfInput.value = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        form.appendChild(csrfInput);
+
+        ids.forEach(id => {
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'image_ids';
+            input.value = id;
+            form.appendChild(input);
+        });
+
+        iframe.onload = function() {
+            // Om servern svarade med JSON (felfall) istället för en ZIP-fil,
+            // visa felet - annars var nedladdningen (troligen) lyckad.
+            try {
+                const text = iframe.contentDocument.body.innerText.trim();
+                if (text.startsWith('{')) {
+                    const data = JSON.parse(text);
+                    if (!data.success) {
+                        notify('Fel vid nedladdning: ' + (data.error || 'Okänt fel'), 'danger');
+                    }
+                }
+            } catch (e) {
+                // Går inte att läsa innehållet (binär ZIP) - det är det förväntade lyckade fallet.
+            }
+        };
+
+        document.body.appendChild(form);
+        form.submit();
+        document.body.removeChild(form);
+    });
+})();
+</script>
 
 {% endblock %}

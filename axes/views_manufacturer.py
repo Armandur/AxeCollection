@@ -1,5 +1,5 @@
 from django.shortcuts import render, get_object_or_404, redirect
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.decorators import login_required
@@ -14,9 +14,12 @@ from .models import (
     Stamp,
 )
 from django.db.models import Sum, Max
+from django.db import transaction
 import json
 import os
 import shutil
+import zipfile
+import tempfile
 from django.conf import settings
 
 
@@ -733,6 +736,122 @@ def delete_manufacturer_image(request, image_id):
 
 
 @require_http_methods(["POST"])
+def bulk_delete_manufacturer_images(request):
+    """Ta bort flera tillverkarbilder via AJAX i en transaktion"""
+    try:
+        data = json.loads(request.body)
+        image_ids = data.get("image_ids", [])
+        if not image_ids:
+            return JsonResponse(
+                {"success": False, "error": "Inga bilder valda"}, status=400
+            )
+
+        images = ManufacturerImage.objects.filter(id__in=image_ids)
+
+        deleted_count = 0
+        with transaction.atomic():
+            for image in images:
+                image.delete()
+                deleted_count += 1
+
+        return JsonResponse({"success": True, "deleted_count": deleted_count})
+    except json.JSONDecodeError:
+        return JsonResponse(
+            {"success": False, "error": "Ogiltig JSON-data"}, status=400
+        )
+    except Exception as e:
+        return JsonResponse({"success": False, "error": str(e)}, status=500)
+
+
+@require_http_methods(["POST"])
+def bulk_move_manufacturer_images_to_unlinked(request):
+    """Flyttar flera tillverkarbilder till okopplade bilder via AJAX i en transaktion"""
+    try:
+        data = json.loads(request.body)
+        image_ids = data.get("image_ids", [])
+        if not image_ids:
+            return JsonResponse(
+                {"success": False, "error": "Inga bilder valda"}, status=400
+            )
+
+        images = ManufacturerImage.objects.filter(id__in=image_ids).select_related(
+            "manufacturer"
+        )
+        if not images.exists():
+            return JsonResponse(
+                {"success": False, "error": "Inga bilder hittades"}, status=404
+            )
+
+        total_moved = 0
+        total_errors = 0
+        with transaction.atomic():
+            manufacturer_ids = images.values_list(
+                "manufacturer_id", flat=True
+            ).distinct()
+            for manufacturer_id in manufacturer_ids:
+                manufacturer = Manufacturer.objects.get(id=manufacturer_id)
+                manufacturer_images = images.filter(manufacturer_id=manufacturer_id)
+                moved, errors = _move_manufacturer_image_queryset_to_unlinked(
+                    manufacturer, manufacturer_images
+                )
+                total_moved += moved
+                total_errors += errors
+
+        return JsonResponse(
+            {"success": True, "moved_count": total_moved, "error_count": total_errors}
+        )
+    except json.JSONDecodeError:
+        return JsonResponse(
+            {"success": False, "error": "Ogiltig JSON-data"}, status=400
+        )
+    except Exception as e:
+        return JsonResponse({"success": False, "error": str(e)}, status=500)
+
+
+@require_http_methods(["POST"])
+def bulk_download_manufacturer_images(request):
+    """Ladda ner valda tillverkarbilder som ZIP-fil"""
+    try:
+        image_ids = request.POST.getlist("image_ids")
+        if not image_ids:
+            return JsonResponse(
+                {"success": False, "error": "Inga bilder valda"}, status=400
+            )
+
+        images = ManufacturerImage.objects.filter(id__in=image_ids)
+        if not images.exists():
+            return JsonResponse(
+                {"success": False, "error": "Inga bilder hittades"}, status=404
+            )
+
+        used_names = set()
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".zip") as tmp_file:
+            with zipfile.ZipFile(tmp_file.name, "w") as zipf:
+                for image in images:
+                    if (
+                        image.image
+                        and image.image.name
+                        and os.path.exists(image.image.path)
+                    ):
+                        arcname = os.path.basename(image.image.name)
+                        if arcname in used_names:
+                            arcname = f"{image.id}_{arcname}"
+                        used_names.add(arcname)
+                        zipf.write(image.image.path, arcname)
+
+        with open(tmp_file.name, "rb") as f:
+            response = HttpResponse(f.read(), content_type="application/zip")
+            response["Content-Disposition"] = (
+                'attachment; filename="tillverkarbilder.zip"'
+            )
+
+        os.unlink(tmp_file.name)
+        return response
+    except Exception as e:
+        return JsonResponse({"success": False, "error": str(e)}, status=500)
+
+
+@require_http_methods(["POST"])
 def add_manufacturer_image(request):
     """Lägg till ny tillverkarbild via AJAX"""
     try:
@@ -1132,7 +1251,13 @@ def check_manufacturer_name(request):
 
 
 def move_manufacturer_images_to_unlinked(manufacturer):
-    """Flyttar tillverkarbilder till unlinked_images-mappen med tillverkarnamn"""
+    """Flyttar tillverkarens samtliga bilder till unlinked_images-mappen med tillverkarnamn"""
+    sorted_images = manufacturer.images.order_by("image_type", "order")
+    return _move_manufacturer_image_queryset_to_unlinked(manufacturer, sorted_images)
+
+
+def _move_manufacturer_image_queryset_to_unlinked(manufacturer, images_queryset):
+    """Flyttar valda tillverkarbilder (queryset) till unlinked_images-mappen med tillverkarnamn"""
     timestamp = timezone.now().strftime("%Y%m%d_%H%M%S")
 
     # Skapa mapp för okopplade tillverkarbilder
@@ -1150,10 +1275,7 @@ def move_manufacturer_images_to_unlinked(manufacturer):
     ).rstrip()
     safe_manufacturer_name = safe_manufacturer_name.replace(" ", "_")
 
-    # Sortera bilder efter typ och ordning
-    sorted_images = manufacturer.images.order_by("image_type", "order")
-
-    for index, manufacturer_image in enumerate(sorted_images):
+    for index, manufacturer_image in enumerate(images_queryset):
         try:
             if manufacturer_image.image and manufacturer_image.image.name:
                 # Bestäm filnamn (a, b, c, etc.)
