@@ -1,6 +1,6 @@
 # Backlog Export
 
-## [P2][todo] [axecollection] Backup-uppladdning via webbgränssnitt - lösa stora filer (>100MB, upp till 2GB)
+## [P2][done] [axecollection] Backup-uppladdning via webbgränssnitt - lösa stora filer (>100MB, upp till 2GB)
 
 Uppladdning av backupfiler via webbgränssnittet fungerar inte för stora filer. Kräver fix av nginx-konfig och förbättrat AJAX-flöde. Berör produktion (yxor.pettersson-vik.se).
 
@@ -10,7 +10,7 @@ Uppladdning av backupfiler via webbgränssnittet fungerar inte för stora filer.
 
 ---
 
-## [P3][todo] [axecollection] Behåll senaste X backuper oavsett ålder (keep-last-N)
+## [P3][done] [axecollection] Behåll senaste X backuper oavsett ålder (keep-last-N)
 
 cleanup_old_backups() raderar idag allt äldre än keep_days (30). Risk: har ingen ny backup skapats på 30 dagar rensas allt bort. Lägg till en keep-last-N-retention (t.ex. --keep-last N) som alltid sparar de N senaste oavsett ålder, som komplement till ålderregeln.
 
@@ -62,7 +62,7 @@ Utöka CI/CD (GitHub Actions) med automatisk deployment till en testmiljö.
 
 ---
 
-## [P4][todo] [axecollection] Backup-uppladdning: 'Ladda upp'-knappen linjerar inte med filfältet
+## [P4][done] [axecollection] Backup-uppladdning: 'Ladda upp'-knappen linjerar inte med filfältet
 
 På inställningssidan (backup-upload) ligger 'Ladda upp backup'-knappen snett mot filinput-fältet. Orsak: knappkolumnen har 'd-flex align-items-end' och bottenlinjerar mot en högre grannkolumn (filinput + hjälptext + dold progress-bar), så knappen hamnar i fel höjd. Fix: linjera knappen mot själva input-raden, inte kolumnbotten.
 
