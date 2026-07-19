@@ -137,6 +137,14 @@ Approach: nya bulk-endpoints (lista av bild-id, atomiskt i transaktion), kryssru
 
 ---
 
+## [P3][todo] [axecollection] Prestandaoptimering (caching, lazy loading, etc.)
+
+- ID: `01KXX7K2MDRSX13KZ2957G8K9T`
+- Type: improvement
+- Actor: ai:claude-opus-4-8
+
+---
+
 ## [P3][todo] [axecollection] Konfigurera automatisk deployment till testmiljö
 
 Utöka CI/CD (GitHub Actions) med automatisk deployment till en testmiljö.
@@ -229,14 +237,6 @@ Framtida funktion.
 
 - ID: `01KXX7K2MQAFSNYPXFCX62BM1X`
 - Type: feature
-- Actor: ai:claude-opus-4-8
-
----
-
-## [P4][todo] [axecollection] Prestandaoptimering (caching, lazy loading, etc.)
-
-- ID: `01KXX7K2MDRSX13KZ2957G8K9T`
-- Type: improvement
 - Actor: ai:claude-opus-4-8
 
 ---
