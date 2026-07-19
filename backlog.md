@@ -98,7 +98,7 @@ På inställningssidan (backup-upload) ligger 'Ladda upp backup'-knappen snett m
 
 ---
 
-## [P4][todo] [axecollection] Zoom-funktionalitet i lightbox för att se bilder i full storlek
+## [P4][done] [axecollection] Zoom-funktionalitet i lightbox för att se bilder i full storlek
 
 - ID: `01KXX7K2N3NM33F2NVCS9TYVKD`
 - Type: improvement
@@ -106,7 +106,7 @@ På inställningssidan (backup-upload) ligger 'Ladda upp backup'-knappen snett m
 
 ---
 
-## [P4][todo] [axecollection] Touch-gester för mobil navigering i lightbox (swipe)
+## [P4][done] [axecollection] Touch-gester för mobil navigering i lightbox (swipe)
 
 - ID: `01KXX7K2N1C0710WFTWPY6HN21`
 - Type: improvement
@@ -114,7 +114,7 @@ På inställningssidan (backup-upload) ligger 'Ladda upp backup'-knappen snett m
 
 ---
 
-## [P4][todo] [axecollection] Tangentbordsnavigering i lightbox (piltangenter mellan bilder)
+## [P4][done] [axecollection] Tangentbordsnavigering i lightbox (piltangenter mellan bilder)
 
 - ID: `01KXX7K2MZFMR1VRZ7MATVXMHA`
 - Type: improvement
