@@ -165,6 +165,20 @@
     color: var(--bs-body-color) !important;
     border-color: var(--bs-border-color) !important;
 }
+
+/* Lightbox zoom: klick växlar mellan anpassad och naturlig storlek */
+#lightboxImage {
+    cursor: zoom-in;
+}
+#lightboxImage.zoomed {
+    cursor: zoom-out;
+    max-height: none !important;
+    max-width: none !important;
+}
+.modal-body.lightbox-zoomed {
+    overflow: auto;
+    max-height: 85vh;
+}
 </style>
 {% endblock %}
 
@@ -1465,6 +1479,9 @@ function openImageLightbox(imageId) {
 }
 
 function showImageInLightbox(imageElement) {
+    // Nollställ zoom när en ny bild visas
+    resetLightboxZoom();
+
     const modalImage = document.getElementById('lightboxImage');
     const modalCaption = document.getElementById('lightboxCaption');
     const modalDescription = document.getElementById('lightboxDescription');
@@ -1507,6 +1524,81 @@ function showNextImage() {
         showImageInLightbox(imageElement);
     }
 }
+
+// Lightbox: zoom, tangentbord och swipe
+let isLightboxZoomed = false;
+
+function toggleLightboxZoom() {
+    const img = document.getElementById('lightboxImage');
+    if (!img) return;
+    const body = img.closest('.modal-body');
+    isLightboxZoomed = !isLightboxZoomed;
+    img.classList.toggle('zoomed', isLightboxZoomed);
+    if (body) body.classList.toggle('lightbox-zoomed', isLightboxZoomed);
+}
+
+function resetLightboxZoom() {
+    const img = document.getElementById('lightboxImage');
+    const body = img ? img.closest('.modal-body') : null;
+    isLightboxZoomed = false;
+    if (img) img.classList.remove('zoomed');
+    if (body) body.classList.remove('lightbox-zoomed');
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    const modal = document.getElementById('imageLightboxModal');
+    if (!modal) return;
+
+    let lightboxOpen = false;
+    modal.addEventListener('shown.bs.modal', function() { lightboxOpen = true; });
+    modal.addEventListener('hidden.bs.modal', function() {
+        lightboxOpen = false;
+        resetLightboxZoom();
+    });
+
+    // Piltangenter bläddrar; Escape stänger via Bootstrap
+    document.addEventListener('keydown', function(e) {
+        if (!lightboxOpen) return;
+        if (e.key === 'ArrowLeft') {
+            e.preventDefault();
+            showPreviousImage();
+        } else if (e.key === 'ArrowRight') {
+            e.preventDefault();
+            showNextImage();
+        }
+    });
+
+    // Klick på bilden växlar zoom
+    const img = document.getElementById('lightboxImage');
+    if (img) {
+        img.addEventListener('click', toggleLightboxZoom);
+    }
+
+    // Swipe för att bläddra (avstängt vid zoom så native pan fungerar)
+    let touchStartX = 0;
+    let touchStartY = 0;
+    const body = modal.querySelector('.modal-body');
+    if (body) {
+        body.addEventListener('touchstart', function(e) {
+            if (isLightboxZoomed) return;
+            touchStartX = e.changedTouches[0].clientX;
+            touchStartY = e.changedTouches[0].clientY;
+        }, { passive: true });
+        body.addEventListener('touchend', function(e) {
+            if (isLightboxZoomed) return;
+            const dx = e.changedTouches[0].clientX - touchStartX;
+            const dy = e.changedTouches[0].clientY - touchStartY;
+            // Horisontell svep, minst 50px och tydligt horisontell
+            if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy)) {
+                if (dx > 0) {
+                    showPreviousImage();
+                } else {
+                    showNextImage();
+                }
+            }
+        }, { passive: true });
+    }
+});
 
 function editImage(imageId) {
     // Hämta bilddata från DOM - leta efter img-elementet med rätt data-image-id
