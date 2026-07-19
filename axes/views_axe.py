@@ -352,17 +352,31 @@ def _build_og_context(request, axe):
     description_parts.append("I samlingen" if axe.status == "MOTTAGEN" else "Köpt")
 
     image_url = None
+    image_width = None
+    image_height = None
     first_image = axe.images.all().first()
     if first_image and first_image.image:
         try:
             image_url = request.build_absolute_uri(first_image.image.url)
+            # Läs bilddimensioner så unfurlers renderar stor bild, inte miniatyr.
+            # og:image är originalet och roteras av unfurlern via EXIF, så måtten
+            # måste matcha den VISADE orienteringen (swappa vid liggande EXIF).
+            from PIL import Image
+
+            with Image.open(first_image.image.path) as im:
+                width, height = im.size
+                if im.getexif().get(0x0112, 1) in (5, 6, 7, 8):
+                    width, height = height, width
+                image_width, image_height = width, height
         except Exception:
-            image_url = None
+            pass  # Saknas bilden på disk hoppar vi bara dimensionerna
 
     return {
         "title": str(axe),  # "Tillverkare - Modell", se Axe.__str__
         "description": " · ".join(description_parts),
         "image": image_url,
+        "image_width": image_width,
+        "image_height": image_height,
         "url": og_url,
     }
 
