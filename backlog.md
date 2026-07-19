@@ -10,6 +10,23 @@ Uppladdning av backupfiler via webbgränssnittet fungerar inte för stora filer.
 
 ---
 
+## [P3][todo] [axecollection] Verifiera att eBay- och Tradera-parsern fungerar (live + edge-cases)
+
+Todo från Rasmus 2026-07-19: kontrollera att båda auktionsparsrarna fungerar.
+
+Redan hittat under CI-felsökning:
+1. FIXAT (commit cada52d): test_extract_auction_end_date var väggklocksberoende och sprack i juli - frös nu-datum. Blockerade CI.
+2. VERKLIG SVAGHET (ej åtgärdad): ebay_parser._extract_auction_end_date tappar explicit årtal. HTML 'Ended Jan 27, 2025' fångas av regex (\w+ \d+) som 'Jan 27' FÖRE den år-bärande grenen, så 2025 ignoreras och aktuellt år sätts i stället. Bör fånga 'Mon DD, YYYY' först.
+3. Testsviterna för båda parsrarna passerar annars (tradera-testerna gick igenom i CI).
+
+Kvar att göra: live-verifiera mot riktiga eBay/Tradera-annonser (CI mockar nätverk; eBay ger 403 utan riktig session - ev. via pia-proxy). Kolla att titel/pris/datum/bilder extraheras korrekt på nuvarande sidlayouter.
+
+- ID: `01KXXQ13YQHCQFYDV7665P5YTR`
+- Type: task
+- Actor: ai:claude-opus-4-8
+
+---
+
 ## [P3][todo] [axecollection] Sänk FILE_UPLOAD_MAX_MEMORY_SIZE så stora uppladdningar streamas till disk
 
 FILE_UPLOAD_MAX_MEMORY_SIZE=2GB gör att hela uppladdade filen hålls i RAM innan den spills till disk - kan spränga minnet i containern vid stora backup-uppladdningar. Sänk till Django-default (~2.5MB) så filer streamas till FILE_UPLOAD_TEMP_DIR. FÖRUTSÄTTNING: i prod är TEMP_DIR /app/tmp - verifiera att den finns och är skrivbar för nobody:users (deploy-setup skapar data/media/logs/staticfiles/backups men INTE tmp), annars blir det FileNotFoundError vid varje stor uppladdning. Gäller settings_production.py + settings_production_http.py. Deploy-gated.
