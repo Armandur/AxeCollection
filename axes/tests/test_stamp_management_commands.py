@@ -6,6 +6,13 @@ from axes.models import Manufacturer, Stamp, AxeStamp, Axe, AxeImage, StampImage
 from decimal import Decimal
 
 
+import pytest
+
+# Tunga tester (generate_test_data i setUp) - hoppas i snabb inner-loop med
+# `pytest -m "not slow"`. manage.py test/CI ignorerar markern och kör alla.
+pytestmark = pytest.mark.slow
+
+
 class StampManagementCommandTestBase(TestCase):
     """Bas-klass för management command tester med gemensam setup"""
 

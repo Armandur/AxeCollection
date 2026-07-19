@@ -1,5 +1,33 @@
 # Testning och Kodkvalitet
 
+## Köra tester
+
+```bash
+# Snabb inner-loop under utveckling: hoppa tunga tester, ingen coverage.
+# ~800 tester på ~2-3 min i stället för ~14 min för hela sviten.
+pytest -m "not slow" --no-cov
+
+# Ännu snabbare: kör bara filen/klassen du jobbar med
+pytest axes/tests/test_forms.py --no-cov
+pytest "axes/tests/test_forms.py::BackupUploadFormTest" --no-cov
+
+# Full svit med coverage (som CI, fast parallellt via pytest.ini -n auto)
+pytest
+
+# CI kör Django-runnern (ignorerar pytest-markers, kör ALLA tester):
+python manage.py test
+```
+
+**`slow`-markern:** tunga testmoduler (de som kör `generate_test_data`/
+`reset_complete_system` i `setUp`) är märkta `pytestmark = pytest.mark.slow`
+så de kan hoppas i inner-loopen. `manage.py test` och CI ignorerar markern
+och kör allt - att märka slow påverkar alltså aldrig CI-täckningen.
+Se backlog för refaktorn som ska göra dessa tester lätta (och ta bort markern).
+
+> OBS: `pytest.ini` tvingar `--cov` + `--cov-fail-under=70` som default, så
+> `--no-cov` behövs för snabba/riktade körningar (annars faller
+> coverage-gaten på en delmängd).
+
 ## Aktuell Status
 
 ### Linting-problem

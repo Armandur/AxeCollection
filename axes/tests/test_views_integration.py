@@ -1,5 +1,8 @@
 from decimal import Decimal
+import pytest
 from django.test import TestCase, Client
+from django.test.utils import CaptureQueriesContext
+from django.db import connection
 from django.urls import reverse
 from django.contrib.auth.models import User
 from django.core.management import call_command
@@ -14,6 +17,10 @@ from axes.models import (
     MeasurementTemplate,
     Settings,
 )
+
+# Tunga tester (generate_test_data i setUp) - hoppas i snabb inner-loop med
+# `pytest -m "not slow"`. manage.py test/CI ignorerar markern och kör alla.
+pytestmark = pytest.mark.slow
 
 
 class ViewIntegrationTest(TestCase):
@@ -263,41 +270,33 @@ class ViewPerformanceTest(TestCase):
 
         self.client = Client()
 
+    # Prestandatesterna mäter antal databasqueries i stället för väggklockstid.
+    # Väggklocka är flaky (bryts under parallell körning + coverage-last).
+    # Query-antal är deterministiskt och fångar N+1-regressioner.
+    # OBS: taken är höga för att de nuvarande list-vyerna har N+1 (axe_list
+    # ~347, manufacturer_list ~706 vid detta testdata) - se TASK-127. Testerna
+    # låser fast nuläget och larmar om det blir VÄRRE; sänk taken när N+1 fixas.
+
     def test_large_axe_list_performance(self):
-        """Test prestanda för stor yxlista"""
-        import time
-
-        start_time = time.time()
-        response = self.client.get(reverse("axe_list"))
-        end_time = time.time()
-
+        """Yxlistan ska inte regrediera i antal queries (N+1-vakt)"""
+        with CaptureQueriesContext(connection) as ctx:
+            response = self.client.get(reverse("axe_list"))
         self.assertEqual(response.status_code, 200)
-        # Ska ta mindre än 1 sekund
-        self.assertLess(end_time - start_time, 1.0)
+        self.assertLess(len(ctx.captured_queries), 400)
 
     def test_large_manufacturer_list_performance(self):
-        """Test prestanda för stor tillverkarlista"""
-        import time
-
-        start_time = time.time()
-        response = self.client.get(reverse("manufacturer_list"))
-        end_time = time.time()
-
+        """Tillverkarlistan ska inte regrediera i antal queries (N+1-vakt)"""
+        with CaptureQueriesContext(connection) as ctx:
+            response = self.client.get(reverse("manufacturer_list"))
         self.assertEqual(response.status_code, 200)
-        # Ska ta mindre än 1 sekund
-        self.assertLess(end_time - start_time, 1.0)
+        self.assertLess(len(ctx.captured_queries), 800)
 
     def test_search_performance(self):
-        """Test prestanda för sökning"""
-        import time
-
-        start_time = time.time()
-        response = self.client.get(reverse("global_search"), {"q": "test"})
-        end_time = time.time()
-
+        """Global sökning ska hålla nere antalet queries (N+1-vakt)"""
+        with CaptureQueriesContext(connection) as ctx:
+            response = self.client.get(reverse("global_search"), {"q": "test"})
         self.assertEqual(response.status_code, 200)
-        # Ska ta mindre än 0.5 sekunder
-        self.assertLess(end_time - start_time, 0.5)
+        self.assertLess(len(ctx.captured_queries), 20)
 
 
 class ViewContextTest(TestCase):

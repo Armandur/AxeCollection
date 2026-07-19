@@ -16,6 +16,13 @@ from axes.models import (
 )
 
 
+import pytest
+
+# Tunga tester (generate_test_data i setUp) - hoppas i snabb inner-loop med
+# `pytest -m "not slow"`. manage.py test/CI ignorerar markern och kör alla.
+pytestmark = pytest.mark.slow
+
+
 class ManufacturerModelTest(TestCase):
     """Tester för Manufacturer-modellen"""
 

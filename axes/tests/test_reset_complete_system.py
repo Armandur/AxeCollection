@@ -22,6 +22,14 @@ from axes.models import (
 from unittest.mock import patch
 
 
+import pytest
+
+# Tunga tester (reset_complete_system regenererar hela systemet) - hoppas i
+# snabb inner-loop med `pytest -m "not slow"`. manage.py test/CI ignorerar
+# markern och kör alla.
+pytestmark = pytest.mark.slow
+
+
 class ResetCompleteSystemCommandTest(TestCase):
     """Tester för reset_complete_system management command"""
 

@@ -25,6 +25,11 @@ from axes.models import Settings
 from axes.models import Measurement, ManufacturerLink, AxeImage
 
 
+# Tunga tester (generate_test_data m.m. i setUp) - hoppas i snabb inner-loop
+# med `pytest -m "not slow"`. manage.py test/CI ignorerar markern och kör alla.
+pytestmark = pytest.mark.slow
+
+
 class ClearTransactionsCommandTest(TestCase):
     def setUp(self):
         # Skapa testdata
