@@ -20,6 +20,23 @@ Uppladdning av backupfiler via webbgränssnittet fungerar inte för stora filer.
 
 ---
 
+## [P3][todo] [axecollection] Open Graph-embed: fint delningskort för /yxor/N (Discord, Slack m.fl.)
+
+Todo från Rasmus 2026-07-19: när man delar en yxa-länk (/yxor/N) i t.ex. Discord ska det visas ett snyggt kort med bild och stats istället för bara en naken URL.
+
+Approach: Open Graph-meta i <head> på yxdetaljsidan (og:title, og:description, og:image, og:url, twitter:card=summary_large_image). Discord/Slack/iMessage unfurlar via Open Graph.
+- og:image = yxans primärbild med ABSOLUT URL (https://yxor.pettersson-vik.se/media/...), inte relativ.
+- og:title = yxans namn/tillverkare; og:description = korta stats (tillverkare, ev. mått, status köpt/i samling).
+- Respektera publik/privat: bygg bara embed för yxor som är publika enligt Settings (annars läcker privata uppgifter till den som unfurlar). Icke-publik yxa -> generiskt/inget kort.
+- base.html har troligen ett head-block att haka i per sida.
+- Verifiera med t.ex. opengraph.xyz eller genom att klistra länken i Discord efter deploy (kräver publik prod-URL).
+
+- ID: `01KXXZ6D6TR8H42KTWJQA3W67B`
+- Type: feature
+- Actor: ai:claude-opus-4-8
+
+---
+
 ## [P3][todo] [axecollection] Verifiera att eBay- och Tradera-parsern fungerar (live + edge-cases)
 
 Todo från Rasmus 2026-07-19: kontrollera att båda auktionsparsrarna fungerar.
@@ -47,7 +64,20 @@ cleanup_old_backups() raderar idag allt äldre än keep_days (30). Risk: har ing
 
 ---
 
-## [P3][todo] [axecollection] Bulk-redigering av bilder (redigera flera bilder samtidigt)
+## [P3][doing] [axecollection] Bulk-redigering av bilder (redigera flera bilder samtidigt)
+
+Bulk-redigering: markera flera bilder + åtgärda alla. Bekräftad omfattning (Rasmus 2026-07-19):
+
+Operationer (alla tre):
+1. Ändra bildtyp på markerade (STAMP <-> OTHER)
+2. Ta bort flera markerade (med bekräftelse)
+3. Ladda ner / flytta markerade till unlinked
+
+Galleri: BÅDA - tillverkarbilder (manufacturer_detail) OCH yxbilder (axe_form/axe_detail).
+
+Ej bulk: caption/beskrivning (unika per bild) - lämnas i enskild-redigeringen.
+
+Approach: nya bulk-endpoints (lista av bild-id, atomiskt i transaktion), kryssrute-UI + åtgärdsrad i respektive galleri. Browser-verifiera vid 390px + 1280px mot speglad data.
 
 - ID: `01KXX7K2N8NNTVYC1F343Y2ZS8`
 - Type: feature
