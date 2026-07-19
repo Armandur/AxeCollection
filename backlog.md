@@ -62,6 +62,16 @@ Utöka CI/CD (GitHub Actions) med automatisk deployment till en testmiljö.
 
 ---
 
+## [P4][todo] [axecollection] Backup-uppladdning: 'Ladda upp'-knappen linjerar inte med filfältet
+
+På inställningssidan (backup-upload) ligger 'Ladda upp backup'-knappen snett mot filinput-fältet. Orsak: knappkolumnen har 'd-flex align-items-end' och bottenlinjerar mot en högre grannkolumn (filinput + hjälptext + dold progress-bar), så knappen hamnar i fel höjd. Fix: linjera knappen mot själva input-raden, inte kolumnbotten.
+
+- ID: `01KXX9Y3GN2GR5GFSFR5BHMEWX`
+- Type: bug
+- Actor: ai:claude-opus-4-8
+
+---
+
 ## [P4][todo] [axecollection] Bildkommentarer med @-mentions (länka till tillverkare eller yxor)
 
 - ID: `01KXX7K2N94Y53WJK9HSX36Z6D`
