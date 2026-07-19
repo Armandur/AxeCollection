@@ -20,16 +20,23 @@ Uppladdning av backupfiler via webbgränssnittet fungerar inte för stora filer.
 
 ---
 
-## [P3][todo] [axecollection] Open Graph-embed: fint delningskort för /yxor/N (Discord, Slack m.fl.)
+## [P3][todo] [axecollection] Lägg till Open Graph-taggar på yxdetaljsidan för delningskort (Discord/Slack)
 
-Todo från Rasmus 2026-07-19: när man delar en yxa-länk (/yxor/N) i t.ex. Discord ska det visas ett snyggt kort med bild och stats istället för bara en naken URL.
+## Context
+Att dela en yxa-länk (`/yxor/N`) i Discord, Slack, iMessage m.fl. visar idag bara en naken URL. Med Open Graph-metataggar unfurlas länken till ett snyggt kort med bild, titel och korta stats - betydligt trevligare att dela.
 
-Approach: Open Graph-meta i <head> på yxdetaljsidan (og:title, og:description, og:image, og:url, twitter:card=summary_large_image). Discord/Slack/iMessage unfurlar via Open Graph.
-- og:image = yxans primärbild med ABSOLUT URL (https://yxor.pettersson-vik.se/media/...), inte relativ.
-- og:title = yxans namn/tillverkare; og:description = korta stats (tillverkare, ev. mått, status köpt/i samling).
-- Respektera publik/privat: bygg bara embed för yxor som är publika enligt Settings (annars läcker privata uppgifter till den som unfurlar). Icke-publik yxa -> generiskt/inget kort.
-- base.html har troligen ett head-block att haka i per sida.
-- Verifiera med t.ex. opengraph.xyz eller genom att klistra länken i Discord efter deploy (kräver publik prod-URL).
+## Acceptance criteria
+- [ ] Yxdetaljsidan (`axe_detail`) renderar `og:title`, `og:description`, `og:image`, `og:url` och `twitter:card=summary_large_image` i `<head>`.
+- [ ] `og:image` är en ABSOLUT URL (t.ex. `https://yxor.pettersson-vik.se/media/...`), byggd via `request.build_absolute_uri` - inte en relativ `/media/`-sökväg (unfurlers hämtar externt).
+- [ ] `og:title` = yxans namn/tillverkare; `og:description` = korta stats (tillverkare, ev. huvudmått, status köpt/i samling).
+- [ ] Publik/privat respekteras: taggarna byggs bara för yxor som är publika enligt `Settings`. För icke-publik yxa (eller utloggad + privat) visas inget känsligt - generiskt kort eller inga og-taggar.
+- [ ] Verifierat att kortet unfurlar korrekt (t.ex. opengraph.xyz eller genom att klistra prod-länken i Discord efter deploy).
+
+## Implementation hints
+- Lägg og-taggarna i ett per-sida head-block. Kontrollera blocknamnet i `axes/templates/axes/base.html` (t.ex. `{% block head_extra %}` / `{% block meta %}`) och överskugga det i `axes/templates/axes/axe_detail.html`.
+- Primärbild: yxan har `images` (ordnade på `order`); använd första bildens `image_url_with_cache_busting`/`webp_url` men gör den absolut. Obs: vissa unfurlers (Discord) stödjer inte webp bra - överväg original-JPEG för `og:image`.
+- Publik/privat-flaggan finns i `Settings`-modellen och exponeras via `axes/context_processors.py`; återanvänd samma logik som övriga vyer använder för att dölja känsliga uppgifter.
+- Kräver publik, extern-nåbar URL för att testas skarpt (prod). Kan förberedas och kodgranskas i dev, men själva unfurl-verifieringen sker efter deploy.
 
 - ID: `01KXXZ6D6TR8H42KTWJQA3W67B`
 - Type: feature
