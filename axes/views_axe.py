@@ -310,6 +310,63 @@ def axe_list(request):
     )
 
 
+def _build_og_context(request, axe):
+    """Bygg Open Graph/Twitter Card-data för yxdetaljsidan.
+
+    Följer samma publik/privat-logik som resten av appen (Settings +
+    show_only_received_axes_public): en icke-inloggad besökare ser bara
+    yxor med status MOTTAGEN i publika listor om inställningen är satt.
+    Om en yxa inte räknas som publik för en icke-inloggad besökare visar
+    vi ett generiskt kort utan yxans namn/bild, så inget läcker via
+    länkdelning.
+    """
+    from .models import Settings
+
+    site_settings_obj = Settings.get_settings()
+    axe_is_public = request.user.is_authenticated or not (
+        site_settings_obj.show_only_received_axes_public and axe.status != "MOTTAGEN"
+    )
+
+    og_url = request.build_absolute_uri()
+
+    if not axe_is_public:
+        return {
+            "title": site_settings_obj.site_title or "Yxsamling",
+            "description": site_settings_obj.site_description or "",
+            "image": None,
+            "url": og_url,
+        }
+
+    description_parts = [axe.manufacturer.name]
+
+    # Använd prefetch-cachen (axe.measurements.all().first() skulle göra en
+    # extra fråga eftersom Measurement saknar Meta.ordering)
+    measurements = list(axe.measurements.all())
+    first_measurement = measurements[0] if measurements else None
+    if first_measurement:
+        value_str = f"{first_measurement.value:.2f}".rstrip("0").rstrip(".")
+        description_parts.append(
+            f"{first_measurement.name}: {value_str} {first_measurement.unit}"
+        )
+
+    description_parts.append("I samlingen" if axe.status == "MOTTAGEN" else "Köpt")
+
+    image_url = None
+    first_image = axe.images.all().first()
+    if first_image and first_image.image:
+        try:
+            image_url = request.build_absolute_uri(first_image.image.url)
+        except Exception:
+            image_url = None
+
+    return {
+        "title": str(axe),  # "Tillverkare - Modell", se Axe.__str__
+        "description": " · ".join(description_parts),
+        "image": image_url,
+        "url": og_url,
+    }
+
+
 def axe_detail(request, pk):
     axe = get_object_or_404(
         Axe.objects.select_related("manufacturer")
@@ -444,6 +501,7 @@ def axe_detail(request, pk):
         "total_income": total_income,
         "profit_loss": profit_loss,
         "transaction_form": transaction_form,
+        "og": _build_og_context(request, axe),
         "breadcrumbs": [
             {"text": "Yxsamling", "url": "/yxor/"},
             {
