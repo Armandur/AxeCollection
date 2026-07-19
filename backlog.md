@@ -55,7 +55,7 @@ cleanup_old_backups() raderar idag allt äldre än keep_days (30). Risk: har ing
 
 ---
 
-## [P3][todo] [axecollection] Automatisk bildrotation baserat på EXIF-data
+## [P3][done] [axecollection] Automatisk bildrotation baserat på EXIF-data
 
 - ID: `01KXX7K2N582QQ0TQT7YWMB1Q3`
 - Type: feature
@@ -77,6 +77,16 @@ Utöka CI/CD (GitHub Actions) med automatisk deployment till en testmiljö.
 
 - ID: `01KXX7K2K2HTVBJWE5B4891HYP`
 - Type: feature
+- Actor: ai:claude-opus-4-8
+
+---
+
+## [P4][todo] [axecollection] Regenerera webp för befintliga bilder (applicera EXIF-rotation retroaktivt)
+
+TASK-136 roterar bilder enligt EXIF vid webp-generering, men bara för nya/omsparade bilder. Befintliga (redan genererade) webp:ar i prod/demo är oförändrade - telefonbilder som var felvända förblir felvända tills de sparas om. Lägg ett management-kommando som itererar AxeImage + ManufacturerImage och regenererar webp (Image.open -> exif_transpose -> spara webp). Kör sen gång i prod efter deploy av 5d2fabd.
+
+- ID: `01KXXTPM02D3WKYJ29590V9HCZ`
+- Type: chore
 - Actor: ai:claude-opus-4-8
 
 ---
