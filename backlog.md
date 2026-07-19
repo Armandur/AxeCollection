@@ -10,6 +10,16 @@ Uppladdning av backupfiler via webbgränssnittet fungerar inte för stora filer.
 
 ---
 
+## [P3][todo] [axecollection] Sänk FILE_UPLOAD_MAX_MEMORY_SIZE så stora uppladdningar streamas till disk
+
+FILE_UPLOAD_MAX_MEMORY_SIZE=2GB gör att hela uppladdade filen hålls i RAM innan den spills till disk - kan spränga minnet i containern vid stora backup-uppladdningar. Sänk till Django-default (~2.5MB) så filer streamas till FILE_UPLOAD_TEMP_DIR. FÖRUTSÄTTNING: i prod är TEMP_DIR /app/tmp - verifiera att den finns och är skrivbar för nobody:users (deploy-setup skapar data/media/logs/staticfiles/backups men INTE tmp), annars blir det FileNotFoundError vid varje stor uppladdning. Gäller settings_production.py + settings_production_http.py. Deploy-gated.
+
+- ID: `01KXXJCGQKX83PTCEWTH3Y2JJD`
+- Type: improvement
+- Actor: ai:claude-opus-4-8
+
+---
+
 ## [P3][done] [axecollection] Behåll senaste X backuper oavsett ålder (keep-last-N)
 
 cleanup_old_backups() raderar idag allt äldre än keep_days (30). Risk: har ingen ny backup skapats på 30 dagar rensas allt bort. Lägg till en keep-last-N-retention (t.ex. --keep-last N) som alltid sparar de N senaste oavsett ålder, som komplement till ålderregeln.
