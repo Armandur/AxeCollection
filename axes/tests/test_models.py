@@ -879,3 +879,39 @@ class ModelValidationTest(TestCase):
             type="KÖP",
         )
         self.assertIsNotNone(transaction3.id)
+
+
+class AxeImageExifRotationTest(TestCase):
+    """Testa att uppladdade bilder roteras enligt EXIF-orientering vid webp-generering"""
+
+    def test_webp_respects_exif_orientation(self):
+        import io
+        import os
+        import tempfile
+        from PIL import Image
+        from django.test import override_settings
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        from axes.models import AxeImage
+
+        # 100x60 landskap med EXIF-orientering 6 (=ska visas roterad till 60x100)
+        buf = io.BytesIO()
+        img = Image.new("RGB", (100, 60), "red")
+        exif = img.getexif()
+        exif[0x0112] = 6  # Orientation
+        img.save(buf, format="JPEG", exif=exif)
+
+        with tempfile.TemporaryDirectory() as media_root:
+            with override_settings(MEDIA_ROOT=media_root):
+                manufacturer = Manufacturer.objects.create(name="Test")
+                axe = Axe.objects.create(manufacturer=manufacturer, model="Test Axe")
+                axe_image = AxeImage.objects.create(
+                    axe=axe,
+                    image=SimpleUploadedFile(
+                        "exif_test.jpg", buf.getvalue(), content_type="image/jpeg"
+                    ),
+                )
+
+                webp_path = os.path.splitext(axe_image.image.path)[0] + ".webp"
+                self.assertTrue(os.path.exists(webp_path), "webp ska genereras")
+                # Rättvänd webp har transponerade mått (60x100), inte råpixlarnas 100x60
+                self.assertEqual(Image.open(webp_path).size, (60, 100))

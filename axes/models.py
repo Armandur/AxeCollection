@@ -1,5 +1,5 @@
 from django.db import models
-from PIL import Image
+from PIL import Image, ImageOps
 import os
 from django.conf import settings
 from django.db.models import Sum, Max
@@ -378,6 +378,9 @@ class AxeImage(models.Model):
             webp_path = os.path.splitext(img_path)[0] + ".webp"
             try:
                 img = Image.open(img_path)
+                # Rotera enligt EXIF-orientering (telefonbilder) så webp:en
+                # visas rättvänd - webbläsare auto-roterar JPEG men inte webp
+                img = ImageOps.exif_transpose(img)
                 img.save(webp_path, "WEBP", quality=85)
             except Exception:
                 pass  # Kan logga fel om så önskas
@@ -459,6 +462,9 @@ class ManufacturerImage(models.Model):
             webp_path = os.path.splitext(img_path)[0] + ".webp"
             try:
                 img = Image.open(img_path)
+                # Rotera enligt EXIF-orientering (telefonbilder) så webp:en
+                # visas rättvänd - webbläsare auto-roterar JPEG men inte webp
+                img = ImageOps.exif_transpose(img)
                 img.save(webp_path, "WEBP", quality=85)
             except Exception:
                 pass  # Kan logga fel om så önskas
