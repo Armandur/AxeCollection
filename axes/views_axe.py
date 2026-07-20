@@ -144,7 +144,7 @@ def axe_list(request):
     axes = (
         Axe.objects.all()
         .select_related("manufacturer")
-        .prefetch_related("measurements", "images", "transactions")
+        .prefetch_related("measurements", "images", "transactions__platform")
     )
 
     # Applicera publik filtrering om användaren inte är inloggad
@@ -163,15 +163,55 @@ def axe_list(request):
     if status_filter:
         axes = axes.filter(status=status_filter)
 
+    # Hämta alla tillverkare en gång och bygg en parent_id -> barn-karta.
+    # Både undertillverkar-uppslaget för filtret nedan och den hierarkiska
+    # dropdown-sorteringen jobbar sedan helt in-memory via parent_id, utan
+    # en DB-query per .parent-access (all_manufacturers hämtas utan
+    # select_related, så varje .parent/.hierarchy_level/.all_sub_manufacturers
+    # annars vore en egen query).
+    all_manufacturers = list(Manufacturer.objects.all().order_by("name"))
+    children_by_parent_id = {}
+    for m in all_manufacturers:
+        children_by_parent_id.setdefault(m.parent_id, []).append(m)
+
+    def get_descendant_ids(manufacturer_id):
+        """Alla underliggande tillverkar-ID:n (rekursivt), i minnet"""
+        ids = []
+        for child in children_by_parent_id.get(manufacturer_id, []):
+            ids.append(child.id)
+            ids.extend(get_descendant_ids(child.id))
+        return ids
+
+    def sort_hierarchically(manufacturers):
+        """Sorterar tillverkare hierarkiskt: huvudtillverkare först, sedan undertillverkare i korrekt ordning"""
+        for children in children_by_parent_id.values():
+            children.sort(key=lambda x: x.name)  # Sortera barn alfabetiskt
+
+        def build(parent_id):
+            result = []
+            for child in children_by_parent_id.get(parent_id, []):
+                result.append(child)
+                # Lägg till alla barn till detta barn rekursivt
+                result.extend(build(child.id))
+            return result
+
+        return build(None)
+
     if manufacturer_filter:
         # Filtrera på både huvud- och undertillverkare
-        manufacturer = Manufacturer.objects.filter(id=manufacturer_filter).first()
+        try:
+            manufacturer_filter_id = int(manufacturer_filter)
+        except (TypeError, ValueError):
+            manufacturer_filter_id = None
+        manufacturer = (
+            next((m for m in all_manufacturers if m.id == manufacturer_filter_id), None)
+            if manufacturer_filter_id is not None
+            else None
+        )
         if manufacturer:
             # Om det är en huvudtillverkare, inkludera alla undertillverkare
-            if manufacturer.is_main_manufacturer:
-                sub_manufacturer_ids = [
-                    sub.id for sub in manufacturer.all_sub_manufacturers
-                ]
+            if manufacturer.parent_id is None:
+                sub_manufacturer_ids = get_descendant_ids(manufacturer.id)
                 sub_manufacturer_ids.append(manufacturer.id)
                 axes = axes.filter(manufacturer_id__in=sub_manufacturer_ids)
             else:
@@ -188,44 +228,6 @@ def axe_list(request):
 
     # Sortera efter ID (senaste först)
     axes = axes.order_by("-id")
-
-    # Hämta alla tillverkare för filter-dropdown med hierarkisk sortering
-    all_manufacturers = Manufacturer.objects.all().order_by("name")
-
-    def _is_descendant(manufacturer, ancestor):
-        """Kontrollera om manufacturer är en efterkommande till ancestor"""
-        current = manufacturer
-        while current.parent:
-            if current.parent == ancestor:
-                return True
-            current = current.parent
-        return False
-
-    def sort_hierarchically(manufacturers):
-        """Sorterar tillverkare hierarkiskt: huvudtillverkare först, sedan undertillverkare i korrekt ordning"""
-        main_manufacturers = [m for m in manufacturers if m.hierarchy_level == 0]
-        sorted_list = []
-
-        for main in main_manufacturers:
-            sorted_list.append(main)
-            # Sortera undertillverkare hierarkiskt
-
-            def sort_children_recursive(parent=None):
-                """Sorterar barn rekursivt under en förälder"""
-                children = [m for m in manufacturers if m.parent == parent]
-                children.sort(key=lambda x: x.name)  # Sortera barn alfabetiskt
-                result = []
-                for child in children:
-                    result.append(child)
-                    # Lägg till alla barn till detta barn rekursivt
-                    result.extend(sort_children_recursive(child))
-                return result
-
-            # Sortera alla undertillverkare rekursivt
-            sorted_subs = sort_children_recursive(main)
-            sorted_list.extend(sorted_subs)
-
-        return sorted_list
 
     manufacturers = sort_hierarchically(all_manufacturers)
 

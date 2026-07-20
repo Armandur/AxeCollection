@@ -277,41 +277,42 @@ class Axe(models.Model):
     def transactions(self):
         return self.transaction_set.all()
 
-    @property
-    def total_buy_value(self):
+    def _sum_transactions(self, transaction_type, field):
+        """Summerar ett fält på transaktioner av given typ, i Python.
+
+        Itererar self.transactions.all() istället för att göra
+        .filter().aggregate() - det senare ignorerar alltid
+        prefetch-cachen och gör en ny query även när transactions
+        redan är prefetchade. Hoppar transaktioner där fältet är NULL,
+        precis som SQL-aggregatet gör vid summering.
+        """
         from decimal import Decimal
 
-        result = self.transactions.filter(type="KÖP").aggregate(total=Sum("price"))[
-            "total"
-        ]
-        return result if result is not None else Decimal("0")
+        total = None
+        for t in self.transactions.all():
+            if t.type != transaction_type:
+                continue
+            value = getattr(t, field)
+            if value is None:
+                continue
+            total = value if total is None else total + value
+        return total if total is not None else Decimal("0")
+
+    @property
+    def total_buy_value(self):
+        return self._sum_transactions("KÖP", "price")
 
     @property
     def total_buy_shipping(self):
-        from decimal import Decimal
-
-        result = self.transactions.filter(type="KÖP").aggregate(
-            total=Sum("shipping_cost")
-        )["total"]
-        return result if result is not None else Decimal("0")
+        return self._sum_transactions("KÖP", "shipping_cost")
 
     @property
     def total_sale_value(self):
-        from decimal import Decimal
-
-        result = self.transactions.filter(type="SÄLJ").aggregate(total=Sum("price"))[
-            "total"
-        ]
-        return result if result is not None else Decimal("0")
+        return self._sum_transactions("SÄLJ", "price")
 
     @property
     def total_sale_shipping(self):
-        from decimal import Decimal
-
-        result = self.transactions.filter(type="SÄLJ").aggregate(
-            total=Sum("shipping_cost")
-        )["total"]
-        return result if result is not None else Decimal("0")
+        return self._sum_transactions("SÄLJ", "shipping_cost")
 
     @property
     def net_value(self):
@@ -326,7 +327,7 @@ class Axe(models.Model):
     @property
     def measurement_count(self):
         """Returnerar antalet registrerade mått för yxan"""
-        return self.measurements.count()
+        return len(self.measurements.all())
 
     @property
     def is_latest(self):

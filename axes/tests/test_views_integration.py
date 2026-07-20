@@ -273,23 +273,23 @@ class ViewPerformanceTest(TestCase):
     # Prestandatesterna mäter antal databasqueries i stället för väggklockstid.
     # Väggklocka är flaky (bryts under parallell körning + coverage-last).
     # Query-antal är deterministiskt och fångar N+1-regressioner.
-    # OBS: taken är höga för att de nuvarande list-vyerna har N+1 (axe_list
-    # ~347, manufacturer_list ~706 vid detta testdata) - se TASK-127. Testerna
-    # låser fast nuläget och larmar om det blir VÄRRE; sänk taken när N+1 fixas.
+    # N+1-problemen är fixade (TASK-127): axe_list låg på ~347 queries,
+    # manufacturer_list på ~706, vid detta testdata. Nu ligger de på ~24
+    # respektive ~13 queries. Taken nedan är uppmätt värde + marginal.
 
     def test_large_axe_list_performance(self):
         """Yxlistan ska inte regrediera i antal queries (N+1-vakt)"""
         with CaptureQueriesContext(connection) as ctx:
             response = self.client.get(reverse("axe_list"))
         self.assertEqual(response.status_code, 200)
-        self.assertLess(len(ctx.captured_queries), 400)
+        self.assertLess(len(ctx.captured_queries), 45)
 
     def test_large_manufacturer_list_performance(self):
         """Tillverkarlistan ska inte regrediera i antal queries (N+1-vakt)"""
         with CaptureQueriesContext(connection) as ctx:
             response = self.client.get(reverse("manufacturer_list"))
         self.assertEqual(response.status_code, 200)
-        self.assertLess(len(ctx.captured_queries), 800)
+        self.assertLess(len(ctx.captured_queries), 35)
 
     def test_search_performance(self):
         """Global sökning ska hålla nere antalet queries (N+1-vakt)"""

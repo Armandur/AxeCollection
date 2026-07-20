@@ -75,7 +75,7 @@
             {% for manufacturer in manufacturers %}
             <tr data-href="{% url 'manufacturer_detail' manufacturer.id %}">
                 <td>
-                    {% if manufacturer.is_sub_manufacturer %}
+                    {% if manufacturer.is_sub %}
                         <div class="d-flex align-items-center">
                             <span class="text-muted me-2">{{ manufacturer|hierarchy_prefix:manufacturers }}</span>
                             {% if manufacturer.manufacturer_type == 'SMED' %}
@@ -109,18 +109,18 @@
                     {% endif %}
                 </td>
                 <td>{{ manufacturer.information|strip_markdown_and_truncate:150 }}</td>
-                <td data-order="{{ manufacturer.axe_count_including_sub_manufacturers }}">{{ manufacturer.axe_count_including_sub_manufacturers }}</td>
+                <td data-order="{{ manufacturer.axe_count_incl_sub }}">{{ manufacturer.axe_count_incl_sub }}</td>
                 <td>
-                    <span class="text-danger">{{ manufacturer.buy_count_including_sub_manufacturers }}</span> / <span class="text-success">{{ manufacturer.sale_count_including_sub_manufacturers }}</span>
+                    <span class="text-danger">{{ manufacturer.buy_count_incl_sub }}</span> / <span class="text-success">{{ manufacturer.sale_count_incl_sub }}</span>
                 </td>
                 {% if user.is_authenticated or public_settings.show_prices %}
                 <td>
-                    <span class="text-danger">{{ manufacturer.total_buy_value_including_sub_manufacturers|format_currency }}</span>
+                    <span class="text-danger">{{ manufacturer.total_buy_value_incl_sub|format_currency }}</span>
                     <br>
-                    <span class="text-success">{{ manufacturer.total_sale_value_including_sub_manufacturers|format_currency }}</span>
+                    <span class="text-success">{{ manufacturer.total_sale_value_incl_sub|format_currency }}</span>
                     <br>
-                    <span class="{% if manufacturer.net_value_including_sub_manufacturers >= 0 %}profit-positive{% else %}profit-negative{% endif %} fw-bold">
-                        {{ manufacturer.net_value_including_sub_manufacturers|format_currency }}
+                    <span class="{% if manufacturer.net_value_incl_sub >= 0 %}profit-positive{% else %}profit-negative{% endif %} fw-bold">
+                        {{ manufacturer.net_value_incl_sub|format_currency }}
                     </span>
                 </td>
                 {% endif %}

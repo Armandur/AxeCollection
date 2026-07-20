@@ -13,8 +13,9 @@ from .models import (
     Transaction,
     Stamp,
 )
-from django.db.models import Sum, Max
+from django.db.models import Sum, Max, Count
 from django.db import transaction
+from decimal import Decimal
 import json
 import os
 import shutil
@@ -85,51 +86,100 @@ def get_available_parents(current_manufacturer=None):
 
 def manufacturer_list(request):
     # Hämta alla tillverkare och sortera dem hierarkiskt
-    all_manufacturers = Manufacturer.objects.all()
+    all_manufacturers = list(Manufacturer.objects.all())
 
-    # Sortera hierarkiskt istället för alfabetiskt
-    def _is_descendant(manufacturer, ancestor):
-        """Kontrollera om manufacturer är en efterkommande till ancestor"""
-        current = manufacturer
-        while current.parent:
-            if current.parent == ancestor:
-                return True
-            current = current.parent
-        return False
+    # Bygg en parent_id -> barn-karta så hierarkin kan sorteras helt
+    # in-memory, utan en DB-query per .parent/.hierarchy_level-access
+    # (all_manufacturers hämtas utan select_related).
+    children_by_parent_id = {}
+    for m in all_manufacturers:
+        children_by_parent_id.setdefault(m.parent_id, []).append(m)
 
     def sort_hierarchically(manufacturers):
         """Sorterar tillverkare hierarkiskt: huvudtillverkare först, sedan undertillverkare i korrekt ordning"""
-        main_manufacturers = [m for m in manufacturers if m.hierarchy_level == 0]
-        sorted_list = []
+        for children in children_by_parent_id.values():
+            children.sort(key=lambda x: x.name)  # Sortera barn alfabetiskt
 
-        for main in main_manufacturers:
-            sorted_list.append(main)
-            # Hitta alla undertillverkare för denna huvudtillverkare
-            [
-                m
-                for m in manufacturers
-                if m.hierarchy_level > 0 and _is_descendant(m, main)
-            ]
+        def build(parent_id):
+            result = []
+            for child in children_by_parent_id.get(parent_id, []):
+                result.append(child)
+                # Lägg till alla barn till detta barn rekursivt
+                result.extend(build(child.id))
+            return result
 
-            # Sortera undertillverkare hierarkiskt
-            def sort_children_recursive(parent=None):
-                """Sorterar barn rekursivt under en förälder"""
-                children = [m for m in manufacturers if m.parent == parent]
-                children.sort(key=lambda x: x.name)  # Sortera barn alfabetiskt
-                result = []
-                for child in children:
-                    result.append(child)
-                    # Lägg till alla barn till detta barn rekursivt
-                    result.extend(sort_children_recursive(child))
-                return result
-
-            # Sortera alla undertillverkare rekursivt
-            sorted_subs = sort_children_recursive(main)
-            sorted_list.extend(sorted_subs)
-
-        return sorted_list
+        return build(None)
 
     manufacturers = sort_hierarchically(all_manufacturers)
+
+    # Räkna antal yxor/köp/sälj och köp-/säljvärde per tillverkare med
+    # grupperade queries, och rulla sedan upp summorna i subträdet med en
+    # DFS i Python. Ersätter *_including_sub_manufacturers-propertyerna
+    # (som annars gör en rekursiv DB-query per tillverkare i subträdet,
+    # ~35 queries/rad) - de propertyerna rörs inte, de har andra
+    # anropare i kodbasen.
+    direct_axe_counts = {
+        row["manufacturer_id"]: row["c"]
+        for row in Axe.objects.values("manufacturer_id").annotate(c=Count("id"))
+    }
+    direct_buy_counts = {
+        row["axe__manufacturer_id"]: row["c"]
+        for row in Transaction.objects.filter(type="KÖP")
+        .values("axe__manufacturer_id")
+        .annotate(c=Count("id"))
+    }
+    direct_sale_counts = {
+        row["axe__manufacturer_id"]: row["c"]
+        for row in Transaction.objects.filter(type="SÄLJ")
+        .values("axe__manufacturer_id")
+        .annotate(c=Count("id"))
+    }
+    direct_buy_values = {
+        row["axe__manufacturer_id"]: row["total"]
+        for row in Transaction.objects.filter(type="KÖP")
+        .values("axe__manufacturer_id")
+        .annotate(total=Sum("price"))
+    }
+    direct_sale_values = {
+        row["axe__manufacturer_id"]: row["total"]
+        for row in Transaction.objects.filter(type="SÄLJ")
+        .values("axe__manufacturer_id")
+        .annotate(total=Sum("price"))
+    }
+
+    def rollup_map(direct_map, zero=0):
+        """Rullar upp en tillverkares egna värde plus alla underliggande
+        tillverkares (redan uträknade) värden, en gång per tillverkare
+        (memoiserad DFS post-order via children_by_parent_id)."""
+        rolled = {}
+
+        def visit(manufacturer_id):
+            if manufacturer_id in rolled:
+                return rolled[manufacturer_id]
+            total = direct_map.get(manufacturer_id, zero)
+            for child in children_by_parent_id.get(manufacturer_id, []):
+                total += visit(child.id)
+            rolled[manufacturer_id] = total
+            return total
+
+        for m in all_manufacturers:
+            visit(m.id)
+        return rolled
+
+    axe_counts_rolled = rollup_map(direct_axe_counts)
+    buy_counts_rolled = rollup_map(direct_buy_counts)
+    sale_counts_rolled = rollup_map(direct_sale_counts)
+    buy_values_rolled = rollup_map(direct_buy_values, zero=Decimal("0"))
+    sale_values_rolled = rollup_map(direct_sale_values, zero=Decimal("0"))
+
+    for m in manufacturers:
+        m.axe_count_incl_sub = axe_counts_rolled.get(m.id, 0)
+        m.buy_count_incl_sub = buy_counts_rolled.get(m.id, 0)
+        m.sale_count_incl_sub = sale_counts_rolled.get(m.id, 0)
+        m.total_buy_value_incl_sub = buy_values_rolled.get(m.id, Decimal("0"))
+        m.total_sale_value_incl_sub = sale_values_rolled.get(m.id, Decimal("0"))
+        m.net_value_incl_sub = m.total_sale_value_incl_sub - m.total_buy_value_incl_sub
+        m.is_sub = m.parent_id is not None
 
     # Ta bort all tilldelning av statistikfält, använd properties direkt i template/context
     total_manufacturers = len(manufacturers)
