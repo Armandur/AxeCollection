@@ -137,7 +137,7 @@ Approach: nya bulk-endpoints (lista av bild-id, atomiskt i transaktion), kryssru
 
 ---
 
-## [P3][todo] [axecollection] Prestandaoptimering (caching, lazy loading, etc.)
+## [P3][done] [axecollection] Prestandaoptimering (caching, lazy loading, etc.)
 
 - ID: `01KXX7K2MDRSX13KZ2957G8K9T`
 - Type: improvement
