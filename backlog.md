@@ -215,14 +215,6 @@ På inställningssidan (backup-upload) ligger 'Ladda upp backup'-knappen snett m
 
 ---
 
-## [P4][todo] [axecollection] Snabbare AJAX-sökningar med caching
-
-- ID: `01KXX7K2MX507BWX56H389K8VB`
-- Type: improvement
-- Actor: ai:claude-opus-4-8
-
----
-
 ## [P4][todo] [axecollection] Förbättrad felhantering och validering i formulär
 
 - ID: `01KXX7K2MVSS0593YYJ3XE21C6`
@@ -237,6 +229,14 @@ Framtida funktion.
 
 - ID: `01KXX7K2MQAFSNYPXFCX62BM1X`
 - Type: feature
+- Actor: ai:claude-opus-4-8
+
+---
+
+## [P5][todo] [axecollection] Snabbare AJAX-sökningar med caching
+
+- ID: `01KXX7K2MX507BWX56H389K8VB`
+- Type: improvement
 - Actor: ai:claude-opus-4-8
 
 ---
