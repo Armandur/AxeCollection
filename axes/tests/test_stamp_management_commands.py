@@ -1,64 +1,20 @@
 from django.test import TestCase
 from django.core.management import call_command
-from django.contrib.auth.models import User
 from io import StringIO
-from axes.models import Manufacturer, Stamp, AxeStamp, Axe, AxeImage, StampImage
-from decimal import Decimal
-
-
-import pytest
-
-# Tunga tester (generate_test_data i setUp) - hoppas i snabb inner-loop med
-# `pytest -m "not slow"`. manage.py test/CI ignorerar markern och kör alla.
-pytestmark = pytest.mark.slow
+from axes.models import Stamp, AxeStamp, Axe, StampImage
+from axes.tests.factories import make_axe, make_manufacturer, make_stamp
 
 
 class StampManagementCommandTestBase(TestCase):
     """Bas-klass för management command tester med gemensam setup"""
 
     def setUp(self):
-        """Skapa gemensam testdata för alla management command tester"""
-        # Skapa användare
-        self.user = User.objects.create_user(
-            username="testuser", password="testpass123"
-        )
-
-        # Skapa tillverkare
-        self.manufacturer = Manufacturer.objects.create(
-            name="Test Tillverkare", manufacturer_type="TILLVERKARE"
-        )
-
-        # Skapa stämplar
-        self.stamp1 = Stamp.objects.create(
-            name="Test Stämpel 1",
-            description="Första teststämpeln",
-            manufacturer=self.manufacturer,
-            stamp_type="text",
-            status="known",
-            year_from=1900,
-            year_to=1950,
-            source_category="own_collection",
-        )
-
-        self.stamp2 = Stamp.objects.create(
-            name="Test Stämpel 2",
-            description="Andra teststämpeln",
-            stamp_type="symbol",
-            status="unknown",
-        )
-
-        # Skapa yxa
-        self.axe = Axe.objects.create(
-            id=1,
-            manufacturer=self.manufacturer,
-            model="Test Yxa",
-            comment="Test yxa för stämpeltester",
-        )
-
-        # Skapa yxbild
-        self.axe_image = AxeImage.objects.create(
-            axe=self.axe, image="test_images/axe1.jpg", description="Test yxbild"
-        )
+        """Skapa minimal testdata för management command-testerna"""
+        self.manufacturer = make_manufacturer()
+        self.stamp1 = make_stamp(manufacturer=self.manufacturer, name="Test Stämpel 1")
+        # Utan tillverkare - stämplar behöver inte ha en (manufacturer är nullable)
+        self.stamp2 = Stamp.objects.create(name="Test Stämpel 2")
+        self.axe = make_axe(manufacturer=self.manufacturer)
 
 
 class CheckAxeStampsCommandTest(StampManagementCommandTestBase):

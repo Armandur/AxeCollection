@@ -2,7 +2,6 @@ from decimal import Decimal
 from django.test import TestCase
 from django.template import Template, Context
 from django.utils.safestring import mark_safe
-from axes.models import Manufacturer, Axe, Contact, Platform, Transaction
 from axes.templatetags.axe_filters import (
     format_decimal,
     format_currency,
@@ -20,33 +19,11 @@ from axes.templatetags.axe_filters import (
     div,
     country_name,
 )
-
-
-import pytest
-
-# Tunga tester (generate_test_data i setUp - onödigt för rena filtertester,
-# se följd-task om att slimma detta). Hoppas i snabb inner-loop med
-# `pytest -m "not slow"`. manage.py test/CI ignorerar markern och kör alla.
-pytestmark = pytest.mark.slow
+from axes.tests.factories import make_manufacturer
 
 
 class TemplateFiltersTest(TestCase):
     """Tester för template filters"""
-
-    def setUp(self):
-        """Skapa testdata för varje test"""
-        from django.core.management import call_command
-
-        call_command(
-            "generate_test_data",
-            "--clear",
-            "--manufacturers",
-            "3",
-            "--axes",
-            "5",
-            "--contacts",
-            "3",
-        )
 
     def test_format_decimal(self):
         """Test format_decimal filter"""
@@ -200,8 +177,8 @@ class TemplateFiltersTest(TestCase):
     def test_hierarchy_prefix(self):
         """Test hierarchy_prefix filter"""
         # Skapa hierarkisk struktur
-        parent = Manufacturer.objects.create(name="Parent Manufacturer")
-        child = Manufacturer.objects.create(name="Child Manufacturer", parent=parent)
+        parent = make_manufacturer(name="Parent Manufacturer")
+        child = make_manufacturer(name="Child Manufacturer", parent=parent)
 
         manufacturers_list = [parent, child]
 
@@ -272,21 +249,6 @@ class TemplateFiltersTest(TestCase):
 class TemplateTagsIntegrationTest(TestCase):
     """Integrationstester för template tags i riktiga templates"""
 
-    def setUp(self):
-        """Skapa testdata för varje test"""
-        from django.core.management import call_command
-
-        call_command(
-            "generate_test_data",
-            "--clear",
-            "--manufacturers",
-            "3",
-            "--axes",
-            "5",
-            "--contacts",
-            "3",
-        )
-
     def test_template_with_filters(self):
         """Test att filters fungerar i riktiga templates"""
         # Skapa en enkel template med olika filters
@@ -334,10 +296,10 @@ class TemplateTagsIntegrationTest(TestCase):
     def test_template_with_hierarchy(self):
         """Test hierarchy_prefix filter i template"""
         # Skapa en hierarki av tillverkare
-        parent = Manufacturer.objects.create(
+        parent = make_manufacturer(
             name="Parent Tillverkare", manufacturer_type="TILLVERKARE"
         )
-        child = Manufacturer.objects.create(
+        child = make_manufacturer(
             name="Child Tillverkare", manufacturer_type="SMED", parent=parent
         )
 
@@ -365,12 +327,12 @@ class TemplateTagsIntegrationTest(TestCase):
     def test_template_with_country_flags_and_manufacturers(self):
         """Test att landskoder och flaggor fungerar med riktiga tillverkare"""
         # Skapa en tillverkare med landskod
-        manufacturer = Manufacturer.objects.create(
+        manufacturer = make_manufacturer(
             name="Test Tillverkare", country_code="SE", manufacturer_type="TILLVERKARE"
         )
 
         # Skapa en tillverkare utan landskod
-        manufacturer_no_code = Manufacturer.objects.create(
+        manufacturer_no_code = make_manufacturer(
             name="Test Tillverkare Utan Kod", manufacturer_type="TILLVERKARE"
         )
 

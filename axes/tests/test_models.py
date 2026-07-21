@@ -1,7 +1,6 @@
 from decimal import Decimal
 from datetime import date
 from django.test import TestCase
-from django.core.management import call_command
 from axes.models import (
     Manufacturer,
     Axe,
@@ -14,13 +13,14 @@ from axes.models import (
     Measurement,
     Transaction,
 )
-
-
-import pytest
-
-# Tunga tester (generate_test_data i setUp) - hoppas i snabb inner-loop med
-# `pytest -m "not slow"`. manage.py test/CI ignorerar markern och kör alla.
-pytestmark = pytest.mark.slow
+from axes.tests.factories import (
+    make_axe,
+    make_contact,
+    make_manufacturer,
+    make_measurement,
+    make_measurement_type,
+    make_platform,
+)
 
 
 class ManufacturerModelTest(TestCase):
@@ -28,16 +28,7 @@ class ManufacturerModelTest(TestCase):
 
     def setUp(self):
         """Skapa testdata för varje test"""
-        call_command(
-            "generate_test_data",
-            "--clear",
-            "--manufacturers",
-            "5",
-            "--axes",
-            "10",
-            "--contacts",
-            "5",
-        )
+        make_manufacturer()
 
     def test_manufacturer_creation(self):
         """Test att skapa en tillverkare"""
@@ -85,16 +76,7 @@ class AxeModelTest(TestCase):
 
     def setUp(self):
         """Skapa testdata för varje test"""
-        call_command(
-            "generate_test_data",
-            "--clear",
-            "--manufacturers",
-            "5",
-            "--axes",
-            "10",
-            "--contacts",
-            "5",
-        )
+        make_axe()
 
     def test_axe_creation(self):
         """Test att skapa en yxa"""
@@ -136,19 +118,6 @@ class AxeModelTest(TestCase):
 class NextAxeIDModelTest(TestCase):
     """Tester för NextAxeID-modellen"""
 
-    def setUp(self):
-        """Skapa testdata för varje test"""
-        call_command(
-            "generate_test_data",
-            "--clear",
-            "--manufacturers",
-            "5",
-            "--axes",
-            "10",
-            "--contacts",
-            "5",
-        )
-
     def test_get_next_id(self):
         """Test att hämta nästa ID"""
         next_id = NextAxeID.get_next_id()
@@ -183,16 +152,7 @@ class ContactModelTest(TestCase):
 
     def setUp(self):
         """Skapa testdata för varje test"""
-        call_command(
-            "generate_test_data",
-            "--clear",
-            "--manufacturers",
-            "5",
-            "--axes",
-            "10",
-            "--contacts",
-            "5",
-        )
+        make_contact(email="test@example.com")
 
     def test_contact_creation(self):
         """Test att skapa en kontakt"""
@@ -224,16 +184,7 @@ class PlatformModelTest(TestCase):
 
     def setUp(self):
         """Skapa testdata för varje test"""
-        call_command(
-            "generate_test_data",
-            "--clear",
-            "--manufacturers",
-            "5",
-            "--axes",
-            "10",
-            "--contacts",
-            "5",
-        )
+        make_platform()
 
     def test_platform_creation(self):
         """Test att skapa en plattform"""
@@ -286,19 +237,6 @@ class PlatformModelTest(TestCase):
 class SettingsModelTest(TestCase):
     """Tester för Settings-modellen"""
 
-    def setUp(self):
-        """Skapa testdata för varje test"""
-        call_command(
-            "generate_test_data",
-            "--clear",
-            "--manufacturers",
-            "5",
-            "--axes",
-            "10",
-            "--contacts",
-            "5",
-        )
-
     def test_settings_creation(self):
         """Test att skapa inställningar"""
         settings = Settings.objects.first()
@@ -331,16 +269,7 @@ class MeasurementTypeModelTest(TestCase):
 
     def setUp(self):
         """Skapa testdata för varje test"""
-        call_command(
-            "generate_test_data",
-            "--clear",
-            "--manufacturers",
-            "5",
-            "--axes",
-            "10",
-            "--contacts",
-            "5",
-        )
+        make_measurement_type()
 
     def test_measurement_type_creation(self):
         """Test att skapa en måtttyp"""
@@ -370,19 +299,6 @@ class MeasurementTypeModelTest(TestCase):
 class MeasurementTemplateModelTest(TestCase):
     """Tester för MeasurementTemplate-modellen"""
 
-    def setUp(self):
-        """Skapa testdata för varje test"""
-        call_command(
-            "generate_test_data",
-            "--clear",
-            "--manufacturers",
-            "5",
-            "--axes",
-            "10",
-            "--contacts",
-            "5",
-        )
-
     def test_measurement_template_creation(self):
         """Test att skapa en måttmall"""
         template = MeasurementTemplate.objects.first()
@@ -411,16 +327,7 @@ class MeasurementModelTest(TestCase):
 
     def setUp(self):
         """Skapa testdata för varje test"""
-        call_command(
-            "generate_test_data",
-            "--clear",
-            "--manufacturers",
-            "5",
-            "--axes",
-            "10",
-            "--contacts",
-            "5",
-        )
+        make_measurement()
 
     def test_measurement_creation(self):
         """Test att skapa ett mått"""
@@ -455,19 +362,6 @@ class MeasurementModelTest(TestCase):
 
 class ModelPropertiesTest(TestCase):
     """Omfattande tester för model properties och metoder"""
-
-    def setUp(self):
-        """Skapa testdata för varje test"""
-        call_command(
-            "generate_test_data",
-            "--clear",
-            "--manufacturers",
-            "5",
-            "--axes",
-            "10",
-            "--contacts",
-            "5",
-        )
 
     def test_manufacturer_hierarchy_validation(self):
         """Test validering av hierarkisk struktur"""
@@ -510,10 +404,7 @@ class ModelPropertiesTest(TestCase):
 
     def test_axe_transaction_properties(self):
         """Test transaktionsrelaterade properties för yxor"""
-        axe = Axe.objects.first()
-        if not axe:
-            manufacturer = Manufacturer.objects.first()
-            axe = Axe.objects.create(manufacturer=manufacturer, model="Test Axe")
+        axe = make_axe()
 
         # Test att properties returnerar rätt typ
         self.assertIsInstance(axe.total_buy_value, Decimal)
@@ -526,11 +417,7 @@ class ModelPropertiesTest(TestCase):
 
     def test_contact_transaction_properties(self):
         """Test transaktionsrelaterade properties för kontakter"""
-        contact = Contact.objects.first()
-        if not contact:
-            contact = Contact.objects.create(
-                name="Test Contact", email="test@example.com"
-            )
+        contact = make_contact(email="test@example.com")
 
         # Test att properties returnerar rätt typ
         self.assertIsInstance(contact.total_buy_value, Decimal)
@@ -542,11 +429,7 @@ class ModelPropertiesTest(TestCase):
 
     def test_platform_transaction_properties(self):
         """Test transaktionsrelaterade properties för plattformar"""
-        platform = Platform.objects.first()
-        if not platform:
-            platform = Platform.objects.create(
-                name="Test Platform", url="https://example.com"
-            )
+        platform = make_platform(url="https://example.com")
 
         # Test att properties returnerar rätt typ
         # Platform har metoder, inte properties
@@ -598,10 +481,7 @@ class ModelPropertiesTest(TestCase):
 
     def test_measurement_value_validation(self):
         """Test validering av måttvärden"""
-        axe = Axe.objects.first()
-        if not axe:
-            manufacturer = Manufacturer.objects.first()
-            axe = Axe.objects.create(manufacturer=manufacturer, model="Test Axe")
+        axe = make_axe()
 
         # Test att skapa mått med olika datatyper
         measurement1 = Measurement.objects.create(
@@ -622,19 +502,6 @@ class ModelPropertiesTest(TestCase):
 
 class ModelRelationshipsTest(TestCase):
     """Tester för modellrelationer och kaskadradering"""
-
-    def setUp(self):
-        """Skapa testdata för varje test"""
-        call_command(
-            "generate_test_data",
-            "--clear",
-            "--manufacturers",
-            "3",
-            "--axes",
-            "5",
-            "--contacts",
-            "3",
-        )
 
     def test_manufacturer_cascade_deletion(self):
         """Test kaskadradering av tillverkare"""
@@ -659,10 +526,7 @@ class ModelRelationshipsTest(TestCase):
 
     def test_axe_cascade_deletion(self):
         """Test kaskadradering av yxor"""
-        axe = Axe.objects.first()
-        if not axe:
-            manufacturer = Manufacturer.objects.first()
-            axe = Axe.objects.create(manufacturer=manufacturer, model="Test Axe")
+        axe = make_axe()
 
         # Skapa mått för yxan
         measurement = Measurement.objects.create(
@@ -708,13 +572,8 @@ class ModelRelationshipsTest(TestCase):
 
     def test_contact_transaction_relationship(self):
         """Test relation mellan kontakter och transaktioner"""
-        contact = Contact.objects.first()
-        if not contact:
-            contact = Contact.objects.create(
-                name="Test Contact", email="test@example.com"
-            )
-
-        axe = Axe.objects.first()
+        contact = make_contact(email="test@example.com")
+        axe = make_axe()
         platform = Platform.objects.first()
 
         # Skapa transaktioner
@@ -746,11 +605,8 @@ class ModelRelationshipsTest(TestCase):
 
     def test_platform_transaction_relationship(self):
         """Test relation mellan plattformar och transaktioner"""
-        platform = Platform.objects.first()
-        if not platform:
-            platform = Platform.objects.create(name="Test Platform")
-
-        axe = Axe.objects.first()
+        platform = make_platform()
+        axe = make_axe()
         contact = Contact.objects.first()
 
         # Skapa transaktioner
@@ -783,19 +639,6 @@ class ModelRelationshipsTest(TestCase):
 
 class ModelValidationTest(TestCase):
     """Tester för modellvalidering och constraints"""
-
-    def setUp(self):
-        """Skapa testdata för varje test"""
-        call_command(
-            "generate_test_data",
-            "--clear",
-            "--manufacturers",
-            "3",
-            "--axes",
-            "5",
-            "--contacts",
-            "3",
-        )
 
     def test_manufacturer_name_uniqueness(self):
         """Test att tillverkarnamn måste vara unika"""
@@ -831,10 +674,7 @@ class ModelValidationTest(TestCase):
 
     def test_measurement_value_validation(self):
         """Test validering av måttvärden"""
-        axe = Axe.objects.first()
-        if not axe:
-            manufacturer = Manufacturer.objects.first()
-            axe = Axe.objects.create(manufacturer=manufacturer, model="Test Axe")
+        axe = make_axe()
 
         # Test negativt värde (ska vara tillåtet för vissa mått)
         measurement = Measurement.objects.create(
@@ -850,7 +690,7 @@ class ModelValidationTest(TestCase):
 
     def test_transaction_price_validation(self):
         """Test validering av transaktionspriser"""
-        axe = Axe.objects.first()
+        axe = make_axe()
         contact = Contact.objects.first()
         platform = Platform.objects.first()
 

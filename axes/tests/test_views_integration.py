@@ -1,11 +1,9 @@
 from decimal import Decimal
-import pytest
 from django.test import TestCase, Client
 from django.test.utils import CaptureQueriesContext
 from django.db import connection
 from django.urls import reverse
 from django.contrib.auth.models import User
-from django.core.management import call_command
 from axes.models import (
     Manufacturer,
     Axe,
@@ -17,28 +15,26 @@ from axes.models import (
     MeasurementTemplate,
     Settings,
 )
-
-# Tunga tester (generate_test_data i setUp) - hoppas i snabb inner-loop med
-# `pytest -m "not slow"`. manage.py test/CI ignorerar markern och kör alla.
-pytestmark = pytest.mark.slow
+from axes.tests.factories import (
+    make_manufacturer,
+    make_axe,
+    make_contact,
+    make_platform,
+    make_transaction,
+    make_measurement,
+)
 
 
 class ViewIntegrationTest(TestCase):
     """Integrationstester för vyer med riktig data och användare"""
 
     def setUp(self):
-        """Skapa testdata och användare för varje test"""
-        # Skapa testdata
-        call_command(
-            "generate_test_data",
-            "--clear",
-            "--manufacturers",
-            "5",
-            "--axes",
-            "10",
-            "--contacts",
-            "5",
-        )
+        """Skapa minimal testdata och användare för varje test"""
+        self.manufacturer = make_manufacturer()
+        self.axe = make_axe(manufacturer=self.manufacturer)
+        make_axe(manufacturer=self.manufacturer)
+        make_platform()
+        make_contact()
 
         # Skapa testanvändare
         self.user = User.objects.create_user(
@@ -204,18 +200,7 @@ class ViewErrorHandlingTest(TestCase):
     """Tester för felhantering i vyer"""
 
     def setUp(self):
-        """Skapa testdata för varje test"""
-        call_command(
-            "generate_test_data",
-            "--clear",
-            "--manufacturers",
-            "3",
-            "--axes",
-            "5",
-            "--contacts",
-            "3",
-        )
-
+        """Skapa testanvändare för varje test - vyerna nedan behöver ingen data"""
         self.user = User.objects.create_user(
             username="testuser", password="testpass123"
         )
@@ -256,17 +241,14 @@ class ViewPerformanceTest(TestCase):
     """Tester för vy-prestanda"""
 
     def setUp(self):
-        """Skapa stort testdata för prestandatester"""
-        call_command(
-            "generate_test_data",
-            "--clear",
-            "--manufacturers",
-            "20",
-            "--axes",
-            "100",
-            "--contacts",
-            "50",
-        )
+        """Skapa måttlig testdata för prestandatester - tillräckligt för att en
+        N+1-regression fortfarande syns i query-antalet, men utan hundratals
+        objekt (se TASK-204)."""
+        manufacturers = [make_manufacturer() for _ in range(5)]
+        for i in range(20):
+            axe = make_axe(manufacturer=manufacturers[i % len(manufacturers)])
+            make_measurement(axe=axe)
+            make_transaction(axe=axe, type="KÖP" if i % 2 == 0 else "SÄLJ")
 
         self.client = Client()
 
@@ -303,17 +285,10 @@ class ViewContextTest(TestCase):
     """Tester för vy-kontext och template-variabler"""
 
     def setUp(self):
-        """Skapa testdata för varje test"""
-        call_command(
-            "generate_test_data",
-            "--clear",
-            "--manufacturers",
-            "5",
-            "--axes",
-            "10",
-            "--contacts",
-            "5",
-        )
+        """Skapa minimal testdata för varje test"""
+        manufacturer = make_manufacturer()
+        make_axe(manufacturer=manufacturer)
+        make_contact()
 
         self.client = Client()
 
