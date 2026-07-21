@@ -18,11 +18,13 @@ pytest
 python manage.py test
 ```
 
-**`slow`-markern:** tunga testmoduler (de som kör `generate_test_data`/
-`reset_complete_system` i `setUp`) är märkta `pytestmark = pytest.mark.slow`
-så de kan hoppas i inner-loopen. `manage.py test` och CI ignorerar markern
-och kör allt - att märka slow påverkar alltså aldrig CI-täckningen.
-Se backlog för refaktorn som ska göra dessa tester lätta (och ta bort markern).
+**`slow`-markern:** endast två moduler är kvar som `pytestmark =
+pytest.mark.slow` - `test_management_commands` och `test_reset_complete_system`
+- eftersom de TESTAR de tunga kommandona (`generate_test_data`/
+`reset_complete_system`) och därför är tunga i sig. Övriga moduler slimmades
+med lätta factories (`axes/tests/factories.py`) och är inte längre slow.
+`manage.py test` och CI ignorerar markern och kör allt - att märka slow
+påverkar alltså aldrig CI-täckningen.
 
 > OBS: `pytest.ini` tvingar `--cov` + `--cov-fail-under=70` som default, så
 > `--no-cov` behövs för snabba/riktade körningar (annars faller
