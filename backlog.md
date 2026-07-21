@@ -81,7 +81,7 @@ Att dela en yxa-länk (`/yxor/N`) i Discord, Slack, iMessage m.fl. visar idag ba
 
 ---
 
-## [P3][todo] [axecollection] Verifiera att eBay- och Tradera-parsern fungerar (live + edge-cases)
+## [P3][done] [axecollection] Verifiera att eBay- och Tradera-parsern fungerar (live + edge-cases)
 
 Todo från Rasmus 2026-07-19: kontrollera att båda auktionsparsrarna fungerar.
 
@@ -159,6 +159,18 @@ Utöka CI/CD (GitHub Actions) med automatisk deployment till en testmiljö.
 
 - ID: `01KXX7K2K2HTVBJWE5B4891HYP`
 - Type: feature
+- Actor: ai:claude-opus-4-8
+
+---
+
+## [P4][todo] [axecollection] Live-verifiera eBay/Tradera-parsrarna mot riktiga annonser (pia-proxy)
+
+Uppföljning av TASK-149 (kod/edge-case-fixarna är klara i commit af5ff9c). Kvar: verifiera att parsrarna extraherar titel/pris/slutdatum/säljare/bilder korrekt mot NUVARANDE riktiga sidlayouter.
+
+Kräver nät: eBay 403:ar utan riktig session/headers - gå via pia-proxy-skillen (svensk/roterande exit-IP). Tradera kan funka direkt. Hämta 1-2 riktiga yx-annonser per sajt, kör parse_ebay_url/parse_tradera_url, jämför mot vad sidan faktiskt visar. Layouter ändras över tid så detta är en periodisk koll, inte en engangssak - därav egen task.
+
+- ID: `01KY2J9V06GJ483X2HWN2YN7F7`
+- Type: task
 - Actor: ai:claude-opus-4-8
 
 ---
