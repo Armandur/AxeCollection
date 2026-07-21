@@ -20,7 +20,7 @@ Uppladdning av backupfiler via webbgränssnittet fungerar inte för stora filer.
 
 ---
 
-## [P3][todo] [axecollection] Slimma tunga testfixtures (ersätt generate_test_data i setUp med lätt data)
+## [P3][done] [axecollection] Slimma tunga testfixtures (ersätt generate_test_data i setUp med lätt data)
 
 Uppföljning av TASK-175. Den riktiga CI-speed-fixen.
 
