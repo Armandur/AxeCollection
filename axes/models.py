@@ -1827,3 +1827,41 @@ class SymbolCategory(models.Model):
 
     def __str__(self):
         return self.name
+
+
+class AuditLog(models.Model):
+    """Ändringslogg - loggar skapande, ändring och borttagning av kärnmodeller.
+
+    Fylls i automatiskt av signal-handlers i axes/signals.py, oavsett om
+    ändringen sker via vyer, admin eller Django-shell.
+    """
+
+    ACTION_CHOICES = [
+        ("CREATE", "Skapad"),
+        ("UPDATE", "Ändrad"),
+        ("DELETE", "Borttagen"),
+    ]
+
+    timestamp = models.DateTimeField(auto_now_add=True, db_index=True)
+    user = models.ForeignKey(
+        "auth.User",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        verbose_name="Användare",
+    )
+    action = models.CharField(
+        max_length=10, choices=ACTION_CHOICES, verbose_name="Åtgärd"
+    )
+    model_name = models.CharField(max_length=100, verbose_name="Modell")
+    object_id = models.CharField(max_length=100, verbose_name="Objekt-ID")
+    object_repr = models.CharField(max_length=255, verbose_name="Objektbeskrivning")
+    changes = models.JSONField(default=dict, blank=True, verbose_name="Ändringar")
+
+    class Meta:
+        ordering = ["-timestamp"]
+        verbose_name = "Ändringslogg"
+        verbose_name_plural = "Ändringsloggar"
+
+    def __str__(self):
+        return f"{self.get_action_display()} {self.model_name} #{self.object_id} ({self.timestamp:%Y-%m-%d %H:%M})"

@@ -45,6 +45,9 @@
                          <a class="nav-link" href="#backup-upload" style="color: var(--bs-body-color) !important;">
                              <i class="bi bi-upload"></i> Backup-uppladdning
                          </a>
+                         <a class="nav-link" href="#audit-log-section" style="color: var(--bs-body-color) !important;">
+                             <i class="bi bi-clock-history"></i> Ändringslogg
+                         </a>
                      </div>
                 </div>
             </nav>
@@ -417,6 +420,20 @@
         </div>
     </div>
 </div>
+
+            <!-- Ändringslogg -->
+            <div class="container-fluid mt-5" id="audit-log-section">
+                <div class="row">
+                    <div class="col-12">
+                        <h2 class="mb-4">
+                            <i class="bi bi-clock-history"></i> Ändringslogg
+                        </h2>
+                        <a href="{% url 'audit_log' %}" class="btn btn-outline-primary">
+                            <i class="bi bi-clock-history"></i> Visa ändringslogg
+                        </a>
+                    </div>
+                </div>
+            </div>
 
             <!-- Backup-hantering -->
             <div class="container-fluid mt-5" id="backup-management">
@@ -961,7 +978,8 @@ html {
  #host-settings,
  #measurement-templates,
  #backup-management,
- #backup-upload {
+ #backup-upload,
+ #audit-log-section {
      scroll-margin-top: 4rem;
  }
 
@@ -1060,7 +1078,7 @@ tr.editing-measurement-type td:last-child {
 <script>
 // Markera aktiv sektion i navigeringen
 function updateActiveNavLink() {
-    const sections = document.querySelectorAll('[id$="-settings"], [id="measurement-templates"], [id="backup-management"], [id="backup-upload"]');
+    const sections = document.querySelectorAll('[id$="-settings"], [id="measurement-templates"], [id="backup-management"], [id="backup-upload"], [id="audit-log-section"]');
     const navLinks = document.querySelectorAll('.settings-navbar .nav-link');
     
     let currentSection = '';

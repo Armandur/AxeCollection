@@ -7,6 +7,7 @@ from . import views_manufacturer
 from . import views_transaction
 from . import views_platform
 from . import views_stamp
+from . import views_audit
 
 urlpatterns = [
     path("", views_axe.axe_list, name="axe_list"),
@@ -221,6 +222,7 @@ urlpatterns = [
     path("logout/", auth_views.LogoutView.as_view(next_page="/"), name="logout"),
     # Settings
     path("installningar/", views.settings_view, name="settings"),
+    path("andringslogg/", views_audit.audit_log, name="audit_log"),
     # Måttmall-API
     path(
         "api/measurement-templates/",

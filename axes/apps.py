@@ -17,3 +17,5 @@ class AxesConfig(AppConfig):
             except Exception:
                 # Logga eller ignorera om det inte går (t.ex. under migrationer)
                 pass
+
+        import axes.signals  # noqa
