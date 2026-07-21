@@ -63,11 +63,15 @@ class StampSymbolAPITest(TestCase):
         self.assertEqual(response.status_code, 200)
         data = json.loads(response.content)
 
-        # Det kan finnas förifyllda symboler — säkerställ att Krona finns och att alla match är Krona
+        # Det kan finnas förifyllda symboler (migration 0047 seedar en "Krona"
+        # med typ "other") - så anta inte att data[0] är just crown-varianten.
+        # Säkerställ i stället att alla träffar heter Krona OCH att det finns
+        # en crown-Krona med rätt piktogram bland dem.
         self.assertGreaterEqual(len(data), 1)
         self.assertTrue(all(item["name"] == "Krona" for item in data))
-        self.assertEqual(data[0]["symbol_type"], "crown")
-        self.assertEqual(data[0]["pictogram"], "👑")
+        crown_kronor = [item for item in data if item["symbol_type"] == "crown"]
+        self.assertGreaterEqual(len(crown_kronor), 1)
+        self.assertEqual(crown_kronor[0]["pictogram"], "👑")
 
     def test_stamp_symbols_api_type_filter(self):
         """Testa API med typfilter"""
