@@ -155,7 +155,7 @@ Utöka CI/CD (GitHub Actions) med automatisk deployment till en testmiljö.
 
 ---
 
-## [P3][todo] [axecollection] Loggning av ändringar (audit trail)
+## [P3][done] [axecollection] Loggning av ändringar (audit trail)
 
 - ID: `01KXX7K2K2HTVBJWE5B4891HYP`
 - Type: feature
