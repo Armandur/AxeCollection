@@ -122,31 +122,39 @@ class EbayParserTestCase(SimpleTestCase):
         self.assertIn("Slutpris", price_labels)
         self.assertIn("Frakt", price_labels)
 
-    def test_extract_auction_end_date(self):
-        """Testa extrahering av auktionsslutdatum (deterministiskt: fryst nu-datum)"""
-        from bs4 import BeautifulSoup
+    def _frozen_datetime(self, year, month=6, day=15):
         import datetime as _dt
 
-        # Frys "nu" så testet inte beror på väggklockan (parsern använder
-        # datetime.now() för att gissa år på datum utan explicit årtal)
         class _FrozenDateTime(_dt.datetime):
             @classmethod
             def now(cls, tz=None):
-                return cls(2025, 6, 15)
+                return cls(year, month, day)
 
-        html = """
-        <div>
-            <span>Ended Jan 27, 2025</span>
-            <span>Sold for $199 on Jan 27, 2025</span>
-        </div>
-        """
+        return _FrozenDateTime
+
+    def test_extract_auction_end_date_explicit_year(self):
+        """Explicit årtal i annonsen ska respekteras, inte skrivas över med
+        aktuellt år (nu fryst till ETT ANNAT år för att bevisa det)."""
+        from bs4 import BeautifulSoup
+
+        html = "<div><span>Ended Jan 27, 2025</span></div>"
         soup = BeautifulSoup(html, "html.parser")
-
-        with patch("axes.utils.ebay_parser.datetime", _FrozenDateTime):
+        # Frys nu till 2027 - om årtalet inte respekterades skulle svaret bli 2027
+        with patch("axes.utils.ebay_parser.datetime", self._frozen_datetime(2027)):
             end_date = self.parser._extract_auction_end_date(soup)
-
-        # Med fryst nu = 2025-06-15 blir "Jan 27" tolkat som 2025-01-27
         self.assertEqual(end_date, "2025-01-27")
+
+    def test_extract_auction_end_date_no_year_uses_current(self):
+        """Datum utan årtal använder aktuellt (fryst) år."""
+        from bs4 import BeautifulSoup
+
+        html = "<div><span>Ended Jun 17</span></div>"
+        soup = BeautifulSoup(html, "html.parser")
+        with patch(
+            "axes.utils.ebay_parser.datetime", self._frozen_datetime(2026, month=6)
+        ):
+            end_date = self.parser._extract_auction_end_date(soup)
+        self.assertEqual(end_date, "2026-06-17")
 
     def test_parse_ebay_url_function(self):
         """Testa den enkla parse_ebay_url-funktionen"""

@@ -172,8 +172,13 @@ class TraderaParser:
                                 month = int(groups[1])
                                 year = int(groups[2])
 
-                        # Validera datum
-                        if 1 <= day <= 31 and 1 <= month <= 12 and 2020 <= year <= 2030:
+                        # Validera datum (år relativt till nu, inte hårdkodat
+                        # intervall som brister vid årsskiften bortom 2030)
+                        if (
+                            1 <= day <= 31
+                            and 1 <= month <= 12
+                            and 2000 <= year <= datetime.now().year + 1
+                        ):
                             return f"{year:04d}-{month:02d}-{day:02d}"
                 except (ValueError, IndexError):
                     continue

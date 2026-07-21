@@ -94,11 +94,14 @@ class EbayParser:
         current_year = datetime.now().year
         current_month = datetime.now().month
 
-        # Leta efter slutdatum i olika format
+        # Leta efter slutdatum i olika format. "Mon DD, YYYY" (explicit årtal)
+        # måste komma FÖRE "Mon DD", annars fångar det senare bara "Jan 27"
+        # och tappar årtalet.
         date_patterns = [
             r"sold on (\w+, \w+ \d+ at \d+:\d+ [AP]M)",
             r"ended on (\w+, \w+ \d+ at \d+:\d+ [AP]M)",
             r"(\w+, \w+ \d+ at \d+:\d+ [AP]M)",
+            r"(\w+ \d+, \d{4})",  # "Jan 27, 2025" - explicit årtal
             r"(\w+ \d+)",  # Bara månad och dag
         ]
 
@@ -107,31 +110,11 @@ class EbayParser:
         for pattern in date_patterns:
             match = re.search(pattern, page_text, re.IGNORECASE)
             if match:
-                date_str = match.group(1)
-                try:
-                    # Försök parsa olika datumformat
-                    if "at" in date_str:
-                        # Format: "Tue, Jun 17 at 11:33 AM"
-                        date_obj = datetime.strptime(date_str, "%a, %b %d at %I:%M %p")
-                        # Använd aktuellt år
-                        date_obj = date_obj.replace(year=current_year)
-                    elif "," in date_str and len(date_str.split(",")) == 2:
-                        # Format: "Jun 17, 2024" - använd året från texten
-                        date_obj = datetime.strptime(date_str, "%b %d, %Y")
-                    else:
-                        # Format: "Jun 17" - använd aktuellt år
-                        date_obj = datetime.strptime(date_str, "%b %d")
-                        date_obj = date_obj.replace(year=current_year)
-
-                    # Hantera kring nyår - om datum är flera månader framåt, använd föregående år
-                    if date_obj.month < current_month - 6:
-                        date_obj = date_obj.replace(year=current_year + 1)
-                    elif date_obj.month > current_month + 6:
-                        date_obj = date_obj.replace(year=current_year - 1)
-
-                    return date_obj.strftime("%Y-%m-%d")
-                except ValueError:
-                    continue
+                result = self._parse_end_date_string(
+                    match.group(1), current_year, current_month
+                )
+                if result:
+                    return result
 
         # Fallback: leta efter datum i specifika element
         date_selectors = [
@@ -148,31 +131,43 @@ class EbayParser:
                 for pattern in date_patterns:
                     match = re.search(pattern, text, re.IGNORECASE)
                     if match:
-                        date_str = match.group(1)
-                        try:
-                            if "at" in date_str:
-                                date_obj = datetime.strptime(
-                                    date_str, "%a, %b %d at %I:%M %p"
-                                )
-                                date_obj = date_obj.replace(year=current_year)
-                            elif "," in date_str and len(date_str.split(",")) == 2:
-                                date_obj = datetime.strptime(date_str, "%b %d, %Y")
-                            else:
-                                date_obj = datetime.strptime(date_str, "%b %d")
-                                date_obj = date_obj.replace(year=current_year)
-
-                            # Hantera kring nyår
-                            if date_obj.month < current_month - 6:
-                                date_obj = date_obj.replace(year=current_year + 1)
-                            elif date_obj.month > current_month + 6:
-                                date_obj = date_obj.replace(year=current_year - 1)
-
-                            return date_obj.strftime("%Y-%m-%d")
-                        except ValueError:
-                            continue
+                        result = self._parse_end_date_string(
+                            match.group(1), current_year, current_month
+                        )
+                        if result:
+                            return result
 
         # Fallback: använd dagens datum om inget hittas
         return datetime.now().strftime("%Y-%m-%d")
+
+    def _parse_end_date_string(self, date_str, current_year, current_month):
+        """Tolka en datumsträng till 'YYYY-MM-DD'. Returnerar None om formatet
+        inte matchar. Nyårs-heuristiken (gissa år ett steg fram/bak) tillämpas
+        bara på datum UTAN explicit årtal - ett explicit årtal respekteras."""
+        try:
+            explicit_year = False
+            if "at" in date_str:
+                # "Tue, Jun 17 at 11:33 AM"
+                date_obj = datetime.strptime(date_str, "%a, %b %d at %I:%M %p")
+                date_obj = date_obj.replace(year=current_year)
+            elif "," in date_str and len(date_str.split(",")) == 2:
+                # "Jun 17, 2024" - använd året från texten
+                date_obj = datetime.strptime(date_str, "%b %d, %Y")
+                explicit_year = True
+            else:
+                # "Jun 17" - använd aktuellt år
+                date_obj = datetime.strptime(date_str, "%b %d")
+                date_obj = date_obj.replace(year=current_year)
+
+            if not explicit_year:
+                if date_obj.month < current_month - 6:
+                    date_obj = date_obj.replace(year=current_year + 1)
+                elif date_obj.month > current_month + 6:
+                    date_obj = date_obj.replace(year=current_year - 1)
+
+            return date_obj.strftime("%Y-%m-%d")
+        except ValueError:
+            return None
 
     def _extract_title(self, soup: BeautifulSoup) -> str:
         """Extrahera auktionstitel"""
