@@ -85,6 +85,12 @@ SECURE_SSL_REDIRECT = True
 SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
 
+# Lita på X-Forwarded-Proto från proxyn (nginx/Caddy) så att
+# request.is_secure()/build_absolute_uri() ser https, inte http.
+# Utan denna tror Django alltid att requesten är http eftersom
+# TLS termineras uppströms, vilket gör t.ex. og:url/og:image http.
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+
 # Database configuration for production SQLite
 DATABASES = {
     "default": {
