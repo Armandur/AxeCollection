@@ -20,6 +20,24 @@ Uppladdning av backupfiler via webbgränssnittet fungerar inte för stora filer.
 
 ---
 
+## [P3][todo] [axecollection] Django ser http bakom proxy: sätt SECURE_PROXY_SSL_HEADER (OG-bild blir http)
+
+Upptäckt vid demo-deploy 2026-07-22: og:image/og:url renderas som http:// i stället för https:// (request.build_absolute_uri använder request-schemat). Discord unfurlar http-bild på en https-sida = mixed content / sämre unfurl.
+
+Rotorsak: SECURE_PROXY_SSL_HEADER saknas i ALLA settings (settings_production*.py), så Django litar inte på X-Forwarded-Proto och ser rå http från gunicorn.
+
+Nyans i nginx.integrated.conf rad 45: den sätter 'X-Forwarded-Proto $scheme'. Om TLS termineras av en YTTRE proxy (Caddy på Unraid-hosten?) är $scheme = http internt, så headern blir http även för https-requests. Fixen är alltså tvådelad:
+1. settings_production*.py: SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https').
+2. nginx: skicka igenom UPPSTRÖMS X-Forwarded-Proto (t.ex. via map $http_x_forwarded_proto) i stället för att skriva över med $scheme - annars vet den integrerade nginx:en inte att den externa requesten var https.
+
+Verifiera med curl mot demon att og:url/og:image blir https efter fix. Påverkar även ev. HTTPS-redirect/secure-cookie-logik som beror på request.is_secure(). Deploy-gated.
+
+- ID: `01KY4C7XBTTVTBN95J5WR7693R`
+- Type: bug
+- Actor: ai:claude-opus-4-8
+
+---
+
 ## [P3][done] [axecollection] Slimma tunga testfixtures (ersätt generate_test_data i setUp med lätt data)
 
 Uppföljning av TASK-175. Den riktiga CI-speed-fixen.
