@@ -20,7 +20,7 @@ Uppladdning av backupfiler via webbgränssnittet fungerar inte för stora filer.
 
 ---
 
-## [P3][done] [axecollection] Django ser http bakom proxy: sätt SECURE_PROXY_SSL_HEADER (OG-bild blir http)
+## [P3][todo] [axecollection] Django ser http bakom proxy: sätt SECURE_PROXY_SSL_HEADER (OG-bild blir http)
 
 Upptäckt vid demo-deploy 2026-07-22: og:image/og:url renderas som http:// i stället för https:// (request.build_absolute_uri använder request-schemat). Discord unfurlar http-bild på en https-sida = mixed content / sämre unfurl.
 
