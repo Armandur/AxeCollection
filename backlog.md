@@ -20,6 +20,27 @@ Uppladdning av backupfiler via webbgränssnittet fungerar inte för stora filer.
 
 ---
 
+## [P3][todo] [axecollection] Bättre modereringskontroller: kontextuella åtgärder, ta bort, inline-moderering på detaljsidor
+
+Rasmus 2026-07-23, två sammanhängande delar för kommentarsmodereringen:
+
+DEL 1 - Modereringssidan (/kommentarer/, comment_moderation.html + views_comment.py):
+- Visa inte åtgärder som matchar nuvarande status: en redan GODKÄND kommentar ska inte ha 'Godkänn'-knapp (analogt: ingen 'Avvisa' på avvisad, ingen 'Skräp' på skräp). Gör knapparna kontextuella mot comment.status.
+- Lägg en 'Ta bort'-åtgärd som hård-raderar kommentaren (med bekräftelse). Ny action i moderate_comment (action='delete' -> comment.delete()) eller separat delete-vy/url. Uppdatera JS att ta bort raden.
+
+DEL 2 - Inline-moderering på detaljsidorna (för INLOGGADE):
+- På yx-/tillverkar-/stämpeldetaljsidorna ska inloggade även se ICKE-godkända kommentarer (åtminstone PENDING; överväg rejected/spam) med statusmarkering OCH samma moderering-knappar (godkänn/avvisa/skräp/ta bort) som på /kommentarer - så man kan moderera i kontext där kommentaren postades, utan att gå till /kommentarer.
+- Detaljvyerna (axe_detail/manufacturer_detail/stamp_detail) skickar idag bara approved_comments (status=APPROVED). För inloggade: skicka alla (eller pending+approved) med status; anonyma ser bara approved. _comment_section.html visar då status-badge + inline-kontroller när user.is_authenticated.
+- Återanvänd moderate_comment-endpointen (fetch + showToast) från _comment_section.
+
+Bägge bygger på befintlig kod (TASK-130/350/367). Medelstort - bra att delegera med tight kontrakt.
+
+- ID: `01KY80HB11RKCJX9QMZWAXJFEN`
+- Type: improvement
+- Actor: ai:claude-opus-4-8
+
+---
+
 ## [P3][done] [axecollection] Modereringsfilter: auto-submit dropdown + tom Mål-kolumn för stämplar
 
 Rasmus 2026-07-23: kommentarer visas inte när man klickat godkänd och sedan ändrar status till Godkända/Alla.
