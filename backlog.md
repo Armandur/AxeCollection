@@ -30,7 +30,7 @@ Rasmus 2026-07-23: bygg om kommentarerna till ett TRÅDAT system (Reddit-likt) -
 
 ---
 
-## [P3][todo] [axecollection] Grafiska buggar i kommentarssektionen (marginal + stämpel-bredd)
+## [P3][done] [axecollection] Grafiska buggar i kommentarssektionen (marginal + stämpel-bredd)
 
 Rasmus 2026-07-23, två visuella buggar: (1) På /yxor/N saknar kommentarssektionen mellanrum/marginal till kortet/gruppen ovanför. (2) På stämpeldetaljsidan samma marginalproblem OCH kommentarssektionen är BREDARE än gruppen ovanför (troligen utanför en container/col med annan bredd - kolla hur includen placeras i stamp_detail.html vs axe_detail.html). Små CSS/layout-fixar (card mb-4 finns redan men något bryter). Kan ev. lösas i samband med trådnings-omdesignen.
 
@@ -40,7 +40,7 @@ Rasmus 2026-07-23, två visuella buggar: (1) På /yxor/N saknar kommentarssektio
 
 ---
 
-## [P3][todo] [axecollection] Auto-godkänn kommentarer från inloggad admin
+## [P3][done] [axecollection] Auto-godkänn kommentarer från inloggad admin
 
 Rasmus 2026-07-23: en inloggad admins egna kommentarer ska auto-godkännas (status APPROVED direkt), inte hamna i pending-kön. I _submit_comment/submit-vyerna: om request.user.is_authenticated -> status='APPROVED' (+ moderated_by=request.user, moderated_at=now). Litet.
 
