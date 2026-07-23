@@ -1,4 +1,4 @@
-from .models import Settings
+from .models import Settings, Comment
 from datetime import datetime
 import subprocess
 from django.conf import settings as django_settings
@@ -85,6 +85,12 @@ def settings_processor(request):
             "app_version": get_git_version(),
             # Demo mode
             "demo_mode": getattr(django_settings, "DEMO_MODE", False),
+            # Antal väntande kommentarer (badge i headern, bara för inloggade)
+            "pending_comments_count": (
+                Comment.objects.filter(status="PENDING").count()
+                if request.user.is_authenticated
+                else 0
+            ),
         }
     except Exception as e:
         # Fallback om Settings-modellen inte finns ännu
@@ -111,4 +117,5 @@ def settings_processor(request):
             "app_version": "v1.0.0",
             # Demo mode (fallback)
             "demo_mode": getattr(django_settings, "DEMO_MODE", False),
+            "pending_comments_count": 0,
         }

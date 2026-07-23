@@ -138,6 +138,16 @@
                 <li class="nav-item">
                     <a class="nav-link" href="{% url 'statistics_dashboard' %}">Statistik</a>
                 </li>
+                {% if user.is_authenticated %}
+                <li class="nav-item">
+                    <a class="nav-link position-relative" href="{% url 'comment_moderation' %}">
+                        Kommentarer
+                        {% if pending_comments_count %}
+                        <span class="badge rounded-pill bg-danger">{{ pending_comments_count }}</span>
+                        {% endif %}
+                    </a>
+                </li>
+                {% endif %}
             </ul>
             
             <!-- Global sökning -->
