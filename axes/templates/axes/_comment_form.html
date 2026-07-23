@@ -1,0 +1,23 @@
+<!-- Delat kommentarsformulär - används både för ny toppkommentar och för
+     svar (parent_id satt). Parametrar: form_id (obligatorisk), parent_id
+     (valfri), label (default "Kommentar"). -->
+<form method="post" action="{{ comment_submit_url }}" id="{{ form_id }}" class="mt-2 comment-form">
+    {% csrf_token %}
+    {% if parent_id %}<input type="hidden" name="parent_id" value="{{ parent_id }}">{% endif %}
+    <div class="mb-2">
+        <label class="form-label" for="{{ form_id }}-author">Namn (valfritt)</label>
+        <input type="text" class="form-control comment-author-input" id="{{ form_id }}-author" name="author_name" maxlength="80">
+    </div>
+    <div class="mb-2">
+        <label class="form-label" for="{{ form_id }}-body">{{ label|default:"Kommentar" }}</label>
+        <textarea class="form-control" id="{{ form_id }}-body" name="body" rows="3" maxlength="2000" required></textarea>
+    </div>
+    <div style="position:absolute; left:-9999px;" aria-hidden="true">
+        <label for="{{ form_id }}-website">Webbplats</label>
+        <input type="text" id="{{ form_id }}-website" name="website" autocomplete="off" tabindex="-1">
+    </div>
+    <button type="submit" class="btn btn-primary btn-sm">
+        <i class="bi bi-send"></i> Skicka
+    </button>
+    <div class="text-danger mt-2 comment-form-errors"></div>
+</form>

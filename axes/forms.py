@@ -1598,6 +1598,7 @@ class CommentForm(forms.Form):
         label="Kommentar",
     )
     website = forms.CharField(required=False, label="Webbplats")  # honeypot
+    parent_id = forms.IntegerField(required=False)
 
     def clean_body(self):
         body = self.cleaned_data.get("body", "").strip()

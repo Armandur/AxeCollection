@@ -23,6 +23,14 @@ def _is_ajax(request):
     return request.headers.get("X-Requested-With") == "XMLHttpRequest"
 
 
+def _bad_request(request, redirect_url, message):
+    """Gemensam 400-respons (AJAX-JSON eller redirect+messages)."""
+    if _is_ajax(request):
+        return JsonResponse({"success": False, "error": message}, status=400)
+    messages.error(request, message)
+    return redirect(redirect_url)
+
+
 def _submit_comment(request, target, target_field, redirect_url):
     """Delad logik för att ta emot en kommentar på en yxa eller tillverkare."""
     settings = Settings.get_settings()
@@ -58,10 +66,33 @@ def _submit_comment(request, target, target_field, redirect_url):
     else:
         status = "PENDING"
 
+    parent = None
+    parent_id = form.cleaned_data.get("parent_id")
+    if parent_id:
+        try:
+            parent = Comment.objects.get(pk=parent_id)
+        except Comment.DoesNotExist:
+            return _bad_request(
+                request, redirect_url, "Kommentaren att svara på finns inte."
+            )
+
+        if parent.target != target:
+            return _bad_request(
+                request, redirect_url, "Kommentaren att svara på finns inte."
+            )
+
+        if not request.user.is_authenticated and (
+            parent.status != "APPROVED" or parent.is_removed
+        ):
+            return _bad_request(
+                request, redirect_url, "Kommentaren att svara på finns inte."
+            )
+
     comment = Comment(
         author_name=form.cleaned_data["author_name"],
         body=form.cleaned_data["body"],
         status=status,
+        parent=parent,
     )
     if status == "APPROVED":
         comment.moderated_by = request.user

@@ -43,7 +43,7 @@
         {% if comment_tree %}
             <ul class="list-unstyled">
                 {% for node in comment_tree %}
-                {% include "axes/_comment_node.html" with comment=node %}
+                {% include "axes/_comment_node.html" with comment=node comments_enabled=comments_enabled comment_submit_url=comment_submit_url %}
                 {% endfor %}
             </ul>
         {% else %}
@@ -51,25 +51,7 @@
         {% endif %}
 
         {% if comments_enabled %}
-        <form method="post" action="{{ comment_submit_url }}" id="comment-form" class="mt-4">
-            {% csrf_token %}
-            <div class="mb-3">
-                <label for="comment-author-name" class="form-label">Namn (valfritt)</label>
-                <input type="text" class="form-control" id="comment-author-name" name="author_name" maxlength="80">
-            </div>
-            <div class="mb-3">
-                <label for="comment-body" class="form-label">Kommentar</label>
-                <textarea class="form-control" id="comment-body" name="body" rows="4" maxlength="2000" required></textarea>
-            </div>
-            <div style="position:absolute; left:-9999px;" aria-hidden="true">
-                <label for="comment-website">Webbplats</label>
-                <input type="text" id="comment-website" name="website" autocomplete="off" tabindex="-1">
-            </div>
-            <button type="submit" class="btn btn-primary" id="comment-submit-btn">
-                <i class="bi bi-send"></i> Skicka kommentar
-            </button>
-            <div id="comment-form-errors" class="text-danger mt-2"></div>
-        </form>
+        {% include "axes/_comment_form.html" with form_id="comment-form-root" %}
         {% else %}
         <div class="alert alert-info mt-4">
             <i class="bi bi-info-circle"></i> Kommentarer är avstängda just nu.
@@ -81,60 +63,64 @@
 {% if comments_enabled %}
 <script>
 (function () {
-    const form = document.getElementById('comment-form');
-    if (!form) return;
-
-    const authorInput = document.getElementById('comment-author-name');
     const savedName = localStorage.getItem('comment_author_name');
-    if (authorInput && savedName) { authorInput.value = savedName; }
 
-    form.addEventListener('submit', function (event) {
-        event.preventDefault();
+    // Binder på alla kommentarsformulär i sektionen - rot-formuläret och
+    // varje svarsformulär (ett per "Svara"-toggle i trädet), som alla delar
+    // markup via _comment_form.html.
+    document.querySelectorAll('#comments form.comment-form').forEach(function (form) {
+        const authorInput = form.querySelector('.comment-author-input');
+        if (authorInput && savedName) { authorInput.value = savedName; }
 
-        const submitBtn = document.getElementById('comment-submit-btn');
-        const errorsEl = document.getElementById('comment-form-errors');
-        errorsEl.textContent = '';
-        submitBtn.disabled = true;
+        form.addEventListener('submit', function (event) {
+            event.preventDefault();
 
-        fetch(form.action, {
-            method: 'POST',
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest',
-                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
-            },
-            body: new FormData(form),
-        })
-            .then(response => response.json().then(data => ({ ok: response.ok, data })))
-            .then(({ ok, data }) => {
-                submitBtn.disabled = false;
-                if (ok && data.success) {
-                    const nameToSave = document.getElementById('comment-author-name').value.trim();
-                    if (nameToSave) { localStorage.setItem('comment_author_name', nameToSave); }
-                    form.reset();
-                    // återställ namnet efter reset så användaren slipper skriva om det
-                    if (nameToSave) { document.getElementById('comment-author-name').value = nameToSave; }
-                    if (window.showToast) {
-                        window.showToast(data.message, 'success');
-                    } else {
-                        alert(data.message);
-                    }
-                } else {
-                    const message = data.error || 'Kommentaren kunde inte skickas.';
-                    if (window.showToast) {
-                        window.showToast(message, 'danger');
-                    } else {
-                        alert(message);
-                    }
-                }
+            const submitBtn = form.querySelector('button[type=submit]');
+            const errorsEl = form.querySelector('.comment-form-errors');
+            errorsEl.textContent = '';
+            submitBtn.disabled = true;
+
+            fetch(form.action, {
+                method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRFToken': form.querySelector('[name=csrfmiddlewaretoken]').value,
+                },
+                body: new FormData(form),
             })
-            .catch(function () {
-                submitBtn.disabled = false;
-                if (window.showToast) {
-                    window.showToast('Något gick fel. Försök igen.', 'danger');
-                } else {
-                    alert('Något gick fel. Försök igen.');
-                }
-            });
+                .then(response => response.json().then(data => ({ ok: response.ok, data })))
+                .then(({ ok, data }) => {
+                    if (ok && data.success) {
+                        const nameToSave = authorInput ? authorInput.value.trim() : '';
+                        if (nameToSave) { localStorage.setItem('comment_author_name', nameToSave); }
+                        if (window.showToast) {
+                            window.showToast(data.message, 'success');
+                        } else {
+                            alert(data.message);
+                        }
+                        // Trädet måste byggas om server-side för att svaret
+                        // ska hamna rätt nästlat - ladda om sidan.
+                        setTimeout(function () { window.location.reload(); }, 1200);
+                    } else {
+                        submitBtn.disabled = false;
+                        const message = data.error || 'Kommentaren kunde inte skickas.';
+                        if (window.showToast) {
+                            window.showToast(message, 'danger');
+                        } else {
+                            alert(message);
+                        }
+                        errorsEl.textContent = message;
+                    }
+                })
+                .catch(function () {
+                    submitBtn.disabled = false;
+                    if (window.showToast) {
+                        window.showToast('Något gick fel. Försök igen.', 'danger');
+                    } else {
+                        alert('Något gick fel. Försök igen.');
+                    }
+                });
+        });
     });
 })();
 </script>

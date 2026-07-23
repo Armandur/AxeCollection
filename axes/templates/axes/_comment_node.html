@@ -1,15 +1,17 @@
 <!-- Renderar en (1) kommentar i kommentarsträdet + dess barn rekursivt.
-     Fas 1: bara godkända kommentarer, ingen svara-toggle än (kommer i fas 2). -->
+     comments_enabled och comment_submit_url måste följa med genom hela
+     rekursionen, annars saknas de i djupare noder. -->
 <li class="mb-3 pb-3 border-bottom" id="comment-{{ comment.pk }}">
     <div class="d-flex justify-content-between">
         <strong>{{ comment.display_author }}</strong>
         <span class="text-muted small">{{ comment.created_at|date:"c" }}</span>
     </div>
     <div>{{ comment.body|linebreaks }}</div>
+    {% include "axes/_reply_toggle.html" with comments_enabled=comments_enabled comment_submit_url=comment_submit_url %}
     {% if comment.rendered_children %}
     <ul class="list-unstyled replies {{ comment.line_class }}">
         {% for child in comment.rendered_children %}
-        {% include "axes/_comment_node.html" with comment=child %}
+        {% include "axes/_comment_node.html" with comment=child comments_enabled=comments_enabled comment_submit_url=comment_submit_url %}
         {% endfor %}
     </ul>
     {% endif %}

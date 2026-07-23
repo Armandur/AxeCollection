@@ -257,6 +257,148 @@ class SubmitAxeCommentTest(TestCase):
         self.assertIn("&lt;script&gt;", content)
 
 
+class SubmitReplyCommentTest(TestCase):
+    def setUp(self):
+        cache.clear()
+        self.axe = make_axe()
+        self.url = reverse("submit_axe_comment", args=[self.axe.pk])
+
+    def tearDown(self):
+        cache.clear()
+
+    def test_anonymous_can_reply_to_approved_comment(self):
+        parent = Comment.objects.create(axe=self.axe, body="Rot", status="APPROVED")
+
+        response = self.client.post(
+            self.url,
+            {
+                "author_name": "Kalle",
+                "body": "Ett svar",
+                "website": "",
+                "parent_id": parent.pk,
+            },
+        )
+
+        self.assertEqual(response.status_code, 302)
+        reply = Comment.objects.get(body="Ett svar")
+        self.assertEqual(reply.status, "PENDING")
+        self.assertEqual(reply.parent_id, parent.pk)
+        self.assertEqual(reply.axe_id, self.axe.pk)
+        self.assertEqual(reply.depth, 1)
+
+    def test_anonymous_cannot_reply_to_pending_comment(self):
+        parent = Comment.objects.create(axe=self.axe, body="Väntar", status="PENDING")
+
+        response = self.client.post(
+            self.url,
+            {
+                "author_name": "Kalle",
+                "body": "Ett svar",
+                "website": "",
+                "parent_id": parent.pk,
+            },
+            HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertFalse(Comment.objects.filter(body="Ett svar").exists())
+
+    def test_anonymous_cannot_reply_to_rejected_comment(self):
+        parent = Comment.objects.create(axe=self.axe, body="Avvisad", status="REJECTED")
+
+        response = self.client.post(
+            self.url,
+            {
+                "author_name": "Kalle",
+                "body": "Ett svar",
+                "website": "",
+                "parent_id": parent.pk,
+            },
+            HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertFalse(Comment.objects.filter(body="Ett svar").exists())
+
+    def test_anonymous_cannot_reply_to_removed_comment(self):
+        parent = Comment.objects.create(
+            axe=self.axe, body="Borttagen", status="APPROVED", is_removed=True
+        )
+
+        response = self.client.post(
+            self.url,
+            {
+                "author_name": "Kalle",
+                "body": "Ett svar",
+                "website": "",
+                "parent_id": parent.pk,
+            },
+            HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertFalse(Comment.objects.filter(body="Ett svar").exists())
+
+    def test_reply_with_parent_from_another_target_is_rejected(self):
+        other_axe = make_axe()
+        parent = Comment.objects.create(
+            axe=other_axe, body="Annan yxas kommentar", status="APPROVED"
+        )
+
+        response = self.client.post(
+            self.url,
+            {
+                "author_name": "Kalle",
+                "body": "Ett svar",
+                "website": "",
+                "parent_id": parent.pk,
+            },
+            HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertFalse(Comment.objects.filter(body="Ett svar").exists())
+
+    def test_reply_with_nonexistent_parent_is_rejected(self):
+        response = self.client.post(
+            self.url,
+            {
+                "author_name": "Kalle",
+                "body": "Ett svar",
+                "website": "",
+                "parent_id": 999999,
+            },
+            HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertFalse(Comment.objects.filter(body="Ett svar").exists())
+
+    def test_authenticated_user_can_reply_to_pending_comment_and_is_auto_approved(
+        self,
+    ):
+        user = User.objects.create_user(username="admin", password="pass1234")
+        self.client.force_login(user)
+        parent = Comment.objects.create(axe=self.axe, body="Väntar", status="PENDING")
+
+        response = self.client.post(
+            self.url,
+            {
+                "author_name": "Admin",
+                "body": "Adminsvar",
+                "website": "",
+                "parent_id": parent.pk,
+            },
+        )
+
+        self.assertEqual(response.status_code, 302)
+        reply = Comment.objects.get(body="Adminsvar")
+        self.assertEqual(reply.status, "APPROVED")
+        self.assertEqual(reply.parent_id, parent.pk)
+        self.assertEqual(reply.depth, 1)
+        self.assertEqual(reply.moderated_by, user)
+
+
 class SubmitManufacturerCommentTest(TestCase):
     def setUp(self):
         cache.clear()

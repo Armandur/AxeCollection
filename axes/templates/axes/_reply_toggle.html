@@ -1,0 +1,9 @@
+<!-- Svara-knapp utan JS: <details>/<summary> togglar formuläret. -->
+{% if comments_enabled %}
+<details class="mt-1">
+    <summary class="text-primary" style="cursor:pointer">Svara</summary>
+    {% with pk_str=comment.pk|stringformat:"s" %}
+    {% include "axes/_comment_form.html" with form_id="reply-form-"|add:pk_str parent_id=comment.pk label="Svar" comment_submit_url=comment_submit_url %}
+    {% endwith %}
+</details>
+{% endif %}
