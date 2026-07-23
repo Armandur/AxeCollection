@@ -181,6 +181,25 @@ Utöka CI/CD (GitHub Actions) med automatisk deployment till en testmiljö.
 
 ---
 
+## [P4][todo] [axecollection] Utöka kommentarsystemet till stämplar
+
+Rasmus 2026-07-23: bygg kommentarer även på stämpel-funktionaliteten, som utökning av det publika kommentarsystemet (TASK-130, commit 9e28136).
+
+Nuvarande Comment-modell har två nullbara FK (axe, manufacturer) + clean() som kräver exakt en satt. Utökning:
+- Lägg nullbar FK 'stamp' (-> Stamp) på Comment, uppdatera clean() till exakt-en-av-tre, samt target/target_url-propertyerna.
+- Ny submit-vy + url (stamplar/<pk>/kommentar/), inkludera _comment_section.html på stämpeldetaljsidan (axes/templates/axes/stamp_detail.html).
+- Modereringssidan (/kommentarer/) hanterar redan target generiskt - verifiera att stämpel-target renderas/länkas rätt.
+- Migration + tester (samma mönster som test_comments: pending osynlig, godkänn->synlig, honeypot, XSS-escaping).
+- Överväg: ska det gälla enskilda stämplar (Stamp) eller även stämpelbilder/transkriptioner? Troligen Stamp räcker. Fråga om oklart.
+
+Allt säkerhetsskydd (escaping, honeypot, rate-limit, moderering) återanvänds från befintlig kod.
+
+- ID: `01KY7XBPS3HF7X8WSN2ZZG8B6F`
+- Type: feature
+- Actor: ai:claude-opus-4-8
+
+---
+
 ## [P4][todo] [axecollection] Live-verifiera eBay/Tradera-parsrarna mot riktiga annonser (pia-proxy)
 
 Uppföljning av TASK-149 (kod/edge-case-fixarna är klara i commit af5ff9c). Kvar: verifiera att parsrarna extraherar titel/pris/slutdatum/säljare/bilder korrekt mot NUVARANDE riktiga sidlayouter.
