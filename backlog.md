@@ -20,7 +20,7 @@ Uppladdning av backupfiler via webbgränssnittet fungerar inte för stora filer.
 
 ---
 
-## [P3][todo] [axecollection] Modereringsfilter: auto-submit dropdown + tom Mål-kolumn för stämplar
+## [P3][done] [axecollection] Modereringsfilter: auto-submit dropdown + tom Mål-kolumn för stämplar
 
 Rasmus 2026-07-23: kommentarer visas inte när man klickat godkänd och sedan ändrar status till Godkända/Alla.
 
