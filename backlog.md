@@ -20,6 +20,36 @@ Uppladdning av backupfiler via webbgränssnittet fungerar inte för stora filer.
 
 ---
 
+## [P3][todo] [axecollection] Trådat/nästlat kommentarssystem (Reddit-likt) med svara-per-nivå
+
+Rasmus 2026-07-23: bygg om kommentarerna till ett TRÅDAT system (Reddit-likt) - kommentarer ska kunna nästlas och besvaras på olika nivåer. Återanvänd hur nivåer visas med en färgad vänsterlinje från viva-engage-rescue-projektet (~/workspace/viva-engage-rescue). Separat UX för att skapa en helt ny TOPPKOMMENTAR, och en 'Svara'-knapp per kommentar för att besvara i tråden. Bygger på befintliga Comment (parent-FK för självreferens, depth/indent, rekursiv rendering, moderering per nod). STORT - designförslag efterfrågat av en kommentarssystem-expert (bifogas som plan på denna task). Överväg: modereringens interaktion med trådar (dölj underträd?), djup-tak, prestanda (prefetch), och att auto-godkänn (separat task) + inline-moderering (TASK-368) ska fungera i trådvyn.
+
+- ID: `01KY85QR1Q9MDA5EDH9C28PHMA`
+- Type: feature
+- Actor: ai:claude-opus-4-8
+
+---
+
+## [P3][todo] [axecollection] Grafiska buggar i kommentarssektionen (marginal + stämpel-bredd)
+
+Rasmus 2026-07-23, två visuella buggar: (1) På /yxor/N saknar kommentarssektionen mellanrum/marginal till kortet/gruppen ovanför. (2) På stämpeldetaljsidan samma marginalproblem OCH kommentarssektionen är BREDARE än gruppen ovanför (troligen utanför en container/col med annan bredd - kolla hur includen placeras i stamp_detail.html vs axe_detail.html). Små CSS/layout-fixar (card mb-4 finns redan men något bryter). Kan ev. lösas i samband med trådnings-omdesignen.
+
+- ID: `01KY85QR0NTY0V2NWPJKTTTDRH`
+- Type: bug
+- Actor: ai:claude-opus-4-8
+
+---
+
+## [P3][todo] [axecollection] Auto-godkänn kommentarer från inloggad admin
+
+Rasmus 2026-07-23: en inloggad admins egna kommentarer ska auto-godkännas (status APPROVED direkt), inte hamna i pending-kön. I _submit_comment/submit-vyerna: om request.user.is_authenticated -> status='APPROVED' (+ moderated_by=request.user, moderated_at=now). Litet.
+
+- ID: `01KY85QQYV7AH36APC2BARXWP6`
+- Type: improvement
+- Actor: ai:claude-opus-4-8
+
+---
+
 ## [P3][done] [axecollection] Bättre modereringskontroller: kontextuella åtgärder, ta bort, inline-moderering på detaljsidor
 
 Rasmus 2026-07-23, två sammanhängande delar för kommentarsmodereringen:
