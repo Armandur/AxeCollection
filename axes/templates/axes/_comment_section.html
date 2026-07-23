@@ -1,0 +1,105 @@
+<!-- Kommentarsektion - inkluderas i axe_detail.html och manufacturer_detail.html -->
+<div class="card mb-4" id="comments">
+    <div class="card-header">
+        <h5 class="card-title mb-0">
+            <i class="bi bi-chat-left-text"></i> Kommentarer ({{ approved_comments|length }})
+        </h5>
+    </div>
+    <div class="card-body">
+        {% if approved_comments %}
+            <ul class="list-unstyled">
+                {% for comment in approved_comments %}
+                <li class="mb-3 pb-3 border-bottom">
+                    <div class="d-flex justify-content-between">
+                        <strong>{{ comment.display_author }}</strong>
+                        <span class="text-muted small">{{ comment.created_at|date:"c" }}</span>
+                    </div>
+                    <div>{{ comment.body|linebreaks }}</div>
+                </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p class="text-muted">Inga kommentarer än - bli först!</p>
+        {% endif %}
+
+        {% if comments_enabled %}
+        <form method="post" action="{{ comment_submit_url }}" id="comment-form" class="mt-4">
+            {% csrf_token %}
+            <div class="mb-3">
+                <label for="comment-author-name" class="form-label">Namn (valfritt)</label>
+                <input type="text" class="form-control" id="comment-author-name" name="author_name" maxlength="80">
+            </div>
+            <div class="mb-3">
+                <label for="comment-body" class="form-label">Kommentar</label>
+                <textarea class="form-control" id="comment-body" name="body" rows="4" maxlength="2000" required></textarea>
+            </div>
+            <div style="position:absolute; left:-9999px;" aria-hidden="true">
+                <label for="comment-website">Webbplats</label>
+                <input type="text" id="comment-website" name="website" autocomplete="off" tabindex="-1">
+            </div>
+            <button type="submit" class="btn btn-primary" id="comment-submit-btn">
+                <i class="bi bi-send"></i> Skicka kommentar
+            </button>
+            <div id="comment-form-errors" class="text-danger mt-2"></div>
+        </form>
+        {% else %}
+        <div class="alert alert-info mt-4">
+            <i class="bi bi-info-circle"></i> Kommentarer är avstängda just nu.
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+{% if comments_enabled %}
+<script>
+(function () {
+    const form = document.getElementById('comment-form');
+    if (!form) return;
+
+    form.addEventListener('submit', function (event) {
+        event.preventDefault();
+
+        const submitBtn = document.getElementById('comment-submit-btn');
+        const errorsEl = document.getElementById('comment-form-errors');
+        errorsEl.textContent = '';
+        submitBtn.disabled = true;
+
+        fetch(form.action, {
+            method: 'POST',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+            },
+            body: new FormData(form),
+        })
+            .then(response => response.json().then(data => ({ ok: response.ok, data })))
+            .then(({ ok, data }) => {
+                submitBtn.disabled = false;
+                if (ok && data.success) {
+                    form.reset();
+                    if (window.showToast) {
+                        window.showToast(data.message, 'success');
+                    } else {
+                        alert(data.message);
+                    }
+                } else {
+                    const message = data.error || 'Kommentaren kunde inte skickas.';
+                    if (window.showToast) {
+                        window.showToast(message, 'danger');
+                    } else {
+                        alert(message);
+                    }
+                }
+            })
+            .catch(function () {
+                submitBtn.disabled = false;
+                if (window.showToast) {
+                    window.showToast('Något gick fel. Försök igen.', 'danger');
+                } else {
+                    alert('Något gick fel. Försök igen.');
+                }
+            });
+    });
+})();
+</script>
+{% endif %}

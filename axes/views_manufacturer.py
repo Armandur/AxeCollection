@@ -1,5 +1,6 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.http import JsonResponse, HttpResponse
+from django.urls import reverse
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.decorators import login_required
@@ -641,6 +642,10 @@ def manufacturer_detail(request, pk):
     ]
     sub_smeder = [m for m in sub_manufacturers if m.manufacturer_type == "SMED"]
 
+    from .models import Settings
+
+    comment_settings = Settings.get_settings()
+
     context = {
         "manufacturer": manufacturer,
         "axes": axes,
@@ -669,6 +674,11 @@ def manufacturer_detail(request, pk):
         "breadcrumbs": breadcrumbs,
         "sub_tillverkare": sub_tillverkare,
         "sub_smeder": sub_smeder,
+        "approved_comments": manufacturer.comments.filter(status="APPROVED"),
+        "comment_submit_url": reverse(
+            "submit_manufacturer_comment", args=[manufacturer.pk]
+        ),
+        "comments_enabled": comment_settings.comments_enabled_public,
     }
     return render(request, "axes/manufacturer_detail.html", context)
 

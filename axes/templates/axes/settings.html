@@ -45,6 +45,9 @@
                          <a class="nav-link" href="#backup-upload" style="color: var(--bs-body-color) !important;">
                              <i class="bi bi-upload"></i> Backup-uppladdning
                          </a>
+                         <a class="nav-link" href="#comment-moderation-section" style="color: var(--bs-body-color) !important;">
+                             <i class="bi bi-chat-left-text"></i> Kommentarsmoderering
+                         </a>
                          <a class="nav-link" href="#audit-log-section" style="color: var(--bs-body-color) !important;">
                              <i class="bi bi-clock-history"></i> Ändringslogg
                          </a>
@@ -117,8 +120,8 @@
                                 </div>
                                 
                                 <div class="form-check form-switch mb-3">
-                                    <input class="form-check-input" type="checkbox" id="show_only_received_axes_public" 
-                                           name="show_only_received_axes_public" 
+                                    <input class="form-check-input" type="checkbox" id="show_only_received_axes_public"
+                                           name="show_only_received_axes_public"
                                            {% if settings.show_only_received_axes_public %}checked{% endif %}>
                                     <label class="form-check-label" for="show_only_received_axes_public">
                                         <strong>Visa endast mottagna yxor publikt</strong>
@@ -127,11 +130,23 @@
                                         Om endast mottagna yxor ska visas i publika listor
                                     </div>
                                 </div>
+
+                                <div class="form-check form-switch mb-3">
+                                    <input class="form-check-input" type="checkbox" id="comments_enabled_public"
+                                           name="comments_enabled_public"
+                                           {% if settings.comments_enabled_public %}checked{% endif %}>
+                                    <label class="form-check-label" for="comments_enabled_public">
+                                        <strong>Tillåt publika kommentarer</strong>
+                                    </label>
+                                    <div class="form-text">
+                                        Om anonyma besökare får skicka in kommentarer på yxor och tillverkare
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
-                
+
                 <!-- Visningsinställningar -->
                 <div class="card mb-4" id="display-settings">
                     <div class="card-header">
@@ -420,6 +435,23 @@
         </div>
     </div>
 </div>
+
+            <!-- Kommentarsmoderering -->
+            <div class="container-fluid mt-5" id="comment-moderation-section">
+                <div class="row">
+                    <div class="col-12">
+                        <h2 class="mb-4">
+                            <i class="bi bi-chat-left-text"></i> Kommentarsmoderering
+                            {% if pending_comments_count %}
+                                <span class="badge bg-warning text-dark">{{ pending_comments_count }} väntar</span>
+                            {% endif %}
+                        </h2>
+                        <a href="{% url 'comment_moderation' %}" class="btn btn-outline-primary">
+                            <i class="bi bi-chat-left-text"></i> Hantera kommentarer
+                        </a>
+                    </div>
+                </div>
+            </div>
 
             <!-- Ändringslogg -->
             <div class="container-fluid mt-5" id="audit-log-section">

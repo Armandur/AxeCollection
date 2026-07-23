@@ -757,6 +757,9 @@ def settings_view(request):
         settings.show_only_received_axes_public = (
             request.POST.get("show_only_received_axes_public") == "on"
         )
+        settings.comments_enabled_public = (
+            request.POST.get("comments_enabled_public") == "on"
+        )
 
         # Visningsinställningar för publika användare
         settings.default_axes_rows_public = request.POST.get(
@@ -819,10 +822,13 @@ def settings_view(request):
     # Hämta backup-information
     backup_info = get_backup_info(django_settings.BASE_DIR)
 
+    from .models import Comment
+
     context = {
         "settings": settings,
         "backup_info": backup_info,
         "page_title": "Inställningar",
+        "pending_comments_count": Comment.objects.filter(status="PENDING").count(),
     }
 
     return render(request, "axes/settings.html", context)

@@ -1586,3 +1586,25 @@ class StampImageMarkForm(forms.ModelForm):
             return Stamp.objects.get(pk=value)
         except Exception:
             raise forms.ValidationError("Vald stämpel finns inte.")
+
+
+class CommentForm(forms.Form):
+    author_name = forms.CharField(
+        max_length=80, required=False, label="Namn (valfritt)"
+    )
+    body = forms.CharField(
+        max_length=2000,
+        widget=forms.Textarea(attrs={"rows": 4}),
+        label="Kommentar",
+    )
+    website = forms.CharField(required=False, label="Webbplats")  # honeypot
+
+    def clean_body(self):
+        body = self.cleaned_data.get("body", "").strip()
+        if not body:
+            raise forms.ValidationError("Kommentaren kan inte vara tom.")
+        return body
+
+    @property
+    def is_honeypot_filled(self):
+        return bool(self.cleaned_data.get("website"))

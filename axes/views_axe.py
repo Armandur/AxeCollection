@@ -1,4 +1,5 @@
 from django.shortcuts import render, get_object_or_404, redirect
+from django.urls import reverse
 from django.contrib.auth.decorators import login_required
 from .models import (
     Axe,
@@ -505,6 +506,10 @@ def axe_detail(request, pk):
             stamp_image.uncertainty_level = "certain"
             stamp_image.axe_stamp_comment = ""
 
+    from .models import Settings
+
+    comment_settings = Settings.get_settings()
+
     context = {
         "axe": axe,
         "transactions": transactions,
@@ -526,6 +531,9 @@ def axe_detail(request, pk):
             },
             {"text": f"{axe.display_id} - {axe.model}"},
         ],
+        "approved_comments": axe.comments.filter(status="APPROVED"),
+        "comment_submit_url": reverse("submit_axe_comment", args=[axe.pk]),
+        "comments_enabled": comment_settings.comments_enabled_public,
     }
     return render(request, "axes/axe_detail.html", context)
 

@@ -1,0 +1,217 @@
+{% extends 'axes/base.html' %}
+{% load static %}
+
+{% block title %}Kommentarsmoderering - {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'axe_list' %}">Hem</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'settings' %}">Inställningar</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Kommentarsmoderering</li>
+                </ol>
+            </nav>
+
+            <h1 class="mb-4">
+                <i class="bi bi-chat-left-text"></i> Kommentarsmoderering
+                {% if pending_count %}
+                    <span class="badge bg-warning text-dark">{{ pending_count }} väntar</span>
+                {% endif %}
+            </h1>
+
+            <!-- Filter -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <form method="get" class="row g-3 align-items-end">
+                        <div class="col-md-3">
+                            <label for="status" class="form-label">Status</label>
+                            <select class="form-select" id="status" name="status">
+                                <option value="ALL" {% if selected_status == "ALL" %}selected{% endif %}>Alla</option>
+                                {% for value, label in status_choices %}
+                                    <option value="{{ value }}" {% if selected_status == value %}selected{% endif %}>{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <button type="submit" class="btn btn-primary me-2">
+                                <i class="bi bi-funnel"></i> Filtrera
+                            </button>
+                            <a href="{% url 'comment_moderation' %}" class="btn btn-outline-secondary">
+                                <i class="bi bi-x-circle"></i> Rensa
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            {% if page_obj.object_list %}
+            <div class="table-responsive">
+                <table class="table table-hover align-middle" id="comment-table">
+                    <thead>
+                        <tr>
+                            <th>Tid</th>
+                            <th>Från</th>
+                            <th>Mål</th>
+                            <th>Text</th>
+                            <th>Status</th>
+                            <th>Åtgärder</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for comment in page_obj %}
+                        <tr id="comment-row-{{ comment.pk }}" data-comment-id="{{ comment.pk }}">
+                            <td class="text-nowrap">{{ comment.created_at|date:"Y-m-d H:i:s" }}</td>
+                            <td>{{ comment.display_author }}</td>
+                            <td>
+                                {% if comment.axe %}
+                                    <span class="badge bg-secondary">Yxa</span>
+                                    <a href="{{ comment.target_url }}">{{ comment.axe }}</a>
+                                {% elif comment.manufacturer %}
+                                    <span class="badge bg-secondary">Tillverkare</span>
+                                    <a href="{{ comment.target_url }}">{{ comment.manufacturer }}</a>
+                                {% endif %}
+                            </td>
+                            <td>{{ comment.body|truncatewords:20 }}</td>
+                            <td class="comment-status-cell">
+                                {% if comment.status == "PENDING" %}
+                                    <span class="badge bg-warning text-dark">{{ comment.get_status_display }}</span>
+                                {% elif comment.status == "APPROVED" %}
+                                    <span class="badge bg-success">{{ comment.get_status_display }}</span>
+                                {% elif comment.status == "REJECTED" %}
+                                    <span class="badge bg-secondary">{{ comment.get_status_display }}</span>
+                                {% else %}
+                                    <span class="badge bg-danger">{{ comment.get_status_display }}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="btn-group btn-group-sm" role="group">
+                                    <button type="button" class="btn btn-outline-success moderate-btn"
+                                            data-url="{% url 'moderate_comment' comment.pk %}"
+                                            data-action="approve" data-comment-id="{{ comment.pk }}">
+                                        <i class="bi bi-check-lg"></i> Godkänn
+                                    </button>
+                                    <button type="button" class="btn btn-outline-secondary moderate-btn"
+                                            data-url="{% url 'moderate_comment' comment.pk %}"
+                                            data-action="reject" data-comment-id="{{ comment.pk }}">
+                                        <i class="bi bi-x-lg"></i> Avvisa
+                                    </button>
+                                    <button type="button" class="btn btn-outline-danger moderate-btn"
+                                            data-url="{% url 'moderate_comment' comment.pk %}"
+                                            data-action="spam" data-comment-id="{{ comment.pk }}">
+                                        <i class="bi bi-shield-exclamation"></i> Skräp
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Paginering -->
+            {% if page_obj.has_other_pages %}
+            <nav aria-label="Kommentarsmoderering-paginering">
+                <ul class="pagination justify-content-center">
+                    {% if page_obj.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page=1{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                                <i class="bi bi-chevron-double-left"></i>
+                            </a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                                <i class="bi bi-chevron-left"></i>
+                            </a>
+                        </li>
+                    {% endif %}
+
+                    {% for num in page_obj.paginator.page_range %}
+                        {% if page_obj.number == num %}
+                            <li class="page-item active">
+                                <span class="page-link">{{ num }}</span>
+                            </li>
+                        {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ num }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">{{ num }}</a>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+
+                    {% if page_obj.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                                <i class="bi bi-chevron-right"></i>
+                            </a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                                <i class="bi bi-chevron-double-right"></i>
+                            </a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+
+            {% else %}
+            <div class="alert alert-info">
+                <i class="bi bi-info-circle"></i> Inga kommentarer matchar filtret.
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('.moderate-btn').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            const url = btn.dataset.url;
+            const action = btn.dataset.action;
+            const commentId = btn.dataset.commentId;
+
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                },
+                body: new URLSearchParams({ action: action }),
+            })
+                .then(response => response.json().then(data => ({ ok: response.ok, data })))
+                .then(({ ok, data }) => {
+                    if (ok && data.success) {
+                        const row = document.getElementById('comment-row-' + commentId);
+                        if (row) row.remove();
+                        const message = 'Kommentaren markerades som "' + data.status_display + '".';
+                        if (window.showToast) {
+                            window.showToast(message, 'success');
+                        } else {
+                            alert(message);
+                        }
+                    } else {
+                        const message = data.error || 'Kunde inte uppdatera kommentaren.';
+                        if (window.showToast) {
+                            window.showToast(message, 'danger');
+                        } else {
+                            alert(message);
+                        }
+                    }
+                })
+                .catch(function () {
+                    if (window.showToast) {
+                        window.showToast('Något gick fel. Försök igen.', 'danger');
+                    } else {
+                        alert('Något gick fel. Försök igen.');
+                    }
+                });
+        });
+    });
+});
+</script>
+{% endblock %}

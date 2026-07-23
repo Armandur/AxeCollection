@@ -8,6 +8,7 @@ from . import views_transaction
 from . import views_platform
 from . import views_stamp
 from . import views_audit
+from . import views_comment
 
 urlpatterns = [
     path("", views_axe.axe_list, name="axe_list"),
@@ -223,6 +224,22 @@ urlpatterns = [
     # Settings
     path("installningar/", views.settings_view, name="settings"),
     path("andringslogg/", views_audit.audit_log, name="audit_log"),
+    path(
+        "yxor/<int:pk>/kommentar/",
+        views_comment.submit_axe_comment,
+        name="submit_axe_comment",
+    ),
+    path(
+        "tillverkare/<int:pk>/kommentar/",
+        views_comment.submit_manufacturer_comment,
+        name="submit_manufacturer_comment",
+    ),
+    path("kommentarer/", views_comment.comment_moderation, name="comment_moderation"),
+    path(
+        "kommentarer/<int:pk>/modarera/",
+        views_comment.moderate_comment,
+        name="moderate_comment",
+    ),
     # Måttmall-API
     path(
         "api/measurement-templates/",

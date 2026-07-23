@@ -856,6 +856,11 @@ class Settings(models.Model):
         verbose_name="Visa endast mottagna yxor publikt",
         help_text="Om endast mottagna yxor ska visas i publika listor",
     )
+    comments_enabled_public = models.BooleanField(
+        default=True,
+        verbose_name="Tillåt publika kommentarer",
+        help_text="Om anonyma besökare får skicka in kommentarer på yxor och tillverkare",
+    )
 
     # Standardantal rader för publika användare
     default_axes_rows_public = models.CharField(
@@ -985,9 +990,78 @@ class Settings(models.Model):
                 "show_prices_public": True,
                 "show_platforms_public": True,
                 "show_only_received_axes_public": False,
+                "comments_enabled_public": True,
             },
         )
         return settings
+
+
+class Comment(models.Model):
+    """Publik kommentar på en yxa eller tillverkare, väntar på moderering."""
+
+    STATUS_CHOICES = [
+        ("PENDING", "Väntar"),
+        ("APPROVED", "Godkänd"),
+        ("REJECTED", "Avvisad"),
+        ("SPAM", "Skräp"),
+    ]
+
+    axe = models.ForeignKey(
+        "Axe",
+        null=True,
+        blank=True,
+        on_delete=models.CASCADE,
+        related_name="comments",
+    )
+    manufacturer = models.ForeignKey(
+        "Manufacturer",
+        null=True,
+        blank=True,
+        on_delete=models.CASCADE,
+        related_name="comments",
+    )
+    author_name = models.CharField(max_length=80, blank=True, verbose_name="Namn")
+    body = models.TextField(max_length=2000, verbose_name="Kommentar")
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default="PENDING")
+    created_at = models.DateTimeField(auto_now_add=True)
+    moderated_at = models.DateTimeField(null=True, blank=True)
+    moderated_by = models.ForeignKey(
+        "auth.User",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="+",
+    )
+
+    class Meta:
+        ordering = ["-created_at"]
+        verbose_name = "Kommentar"
+        verbose_name_plural = "Kommentarer"
+
+    def __str__(self):
+        return f"Kommentar av {self.display_author} på {self.target}"
+
+    def clean(self):
+        if bool(self.axe_id) == bool(self.manufacturer_id):
+            raise ValidationError("Exakt en av axe eller manufacturer måste vara satt.")
+
+    @property
+    def target(self):
+        return self.axe or self.manufacturer
+
+    @property
+    def target_url(self):
+        from django.urls import reverse
+
+        if self.axe_id:
+            return reverse("axe_detail", args=[self.axe_id])
+        if self.manufacturer_id:
+            return reverse("manufacturer_detail", args=[self.manufacturer_id])
+        return None
+
+    @property
+    def display_author(self):
+        return self.author_name or "Anonym"
 
 
 # Stämpelregister-modeller
