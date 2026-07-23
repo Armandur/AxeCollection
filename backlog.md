@@ -20,6 +20,23 @@ Uppladdning av backupfiler via webbgränssnittet fungerar inte för stora filer.
 
 ---
 
+## [P3][todo] [axecollection] Modereringsfilter: auto-submit dropdown + tom Mål-kolumn för stämplar
+
+Rasmus 2026-07-23: kommentarer visas inte när man klickat godkänd och sedan ändrar status till Godkända/Alla.
+
+DIAGNOS (verifierat): server-side funkar - ?status=APPROVED och ?status=ALL returnerar rätt rader och de renderas synligt. Buggen är UX: status-dropdownen (comment_moderation.html rad ~31) saknar auto-submit, så att bara ändra den gör inget - man måste klicka 'Filtrera'-knappen (lätt att missa). Man förväntar sig att ändra dropdown = filtrera direkt.
+FIX: lägg onchange='this.form.submit()' på <select id=status>. Behåll Filtrera-knappen för no-JS.
+
+BONUS-BUGG (upptäckt samtidigt): 'Mål'-kolumnen är TOM för stämpel-kommentarer - modereringsmallen har bara grenar för yxa/tillverkare, ingen för stamp. Lägg en stamp-gren (länk till stamp_detail via comment.target_url, badge 'Stämpel'). comment.target/target_url hanterar redan stamp i modellen.
+
+Bägge små, i nyss shippad kod (TASK-130/350).
+
+- ID: `01KY8065F1SSW41DA3P0HM7DAS`
+- Type: bug
+- Actor: ai:claude-opus-4-8
+
+---
+
 ## [P3][done] [axecollection] Django ser http bakom proxy: sätt SECURE_PROXY_SSL_HEADER (OG-bild blir http)
 
 Upptäckt vid demo-deploy 2026-07-22: og:image/og:url renderas som http:// i stället för https:// (request.build_absolute_uri använder request-schemat). Discord unfurlar http-bild på en https-sida = mixed content / sämre unfurl.
