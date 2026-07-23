@@ -181,7 +181,7 @@ Utöka CI/CD (GitHub Actions) med automatisk deployment till en testmiljö.
 
 ---
 
-## [P4][todo] [axecollection] Kom ihåg kommenterarens visningsnamn i localStorage
+## [P4][done] [axecollection] Kom ihåg kommenterarens visningsnamn i localStorage
 
 Rasmus 2026-07-23: låt en kommenterare slippa skriva sitt namn varje gång - spara author_name i localStorage och förifyll fältet nästa gång (surfar man runt och kommenterar på flera yxor/tillverkare).
 
@@ -205,7 +205,7 @@ Idéer/överväg: e-post till admin när en ny kommentar kommer in (smtplib + Le
 
 ---
 
-## [P4][todo] [axecollection] Utöka kommentarsystemet till stämplar
+## [P4][done] [axecollection] Utöka kommentarsystemet till stämplar
 
 Rasmus 2026-07-23: bygg kommentarer även på stämpel-funktionaliteten, som utökning av det publika kommentarsystemet (TASK-130, commit 9e28136).
 
