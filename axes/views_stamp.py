@@ -5,6 +5,7 @@ from django.db.models import Q, Count, Prefetch
 from django.core.paginator import Paginator
 from django.contrib import messages
 from django.core.exceptions import MultipleObjectsReturned
+from django.urls import reverse
 from .models import (
     Stamp,
     StampTranscription,
@@ -187,10 +188,17 @@ def stamp_detail(request, stamp_id):
         .order_by("-is_primary", "order", "-uploaded_at")
     )
 
+    from .models import Settings
+
+    comment_settings = Settings.get_settings()
+
     context = {
         "stamp": stamp,
         "related_stamps": related_stamps,
         "stamp_images": stamp_images,
+        "approved_comments": stamp.comments.filter(status="APPROVED"),
+        "comment_submit_url": reverse("submit_stamp_comment", args=[stamp.pk]),
+        "comments_enabled": comment_settings.comments_enabled_public,
     }
 
     return render(request, "axes/stamp_detail.html", context)

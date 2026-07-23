@@ -234,6 +234,11 @@ urlpatterns = [
         views_comment.submit_manufacturer_comment,
         name="submit_manufacturer_comment",
     ),
+    path(
+        "stamplar/<int:pk>/kommentar/",
+        views_comment.submit_stamp_comment,
+        name="submit_stamp_comment",
+    ),
     path("kommentarer/", views_comment.comment_moderation, name="comment_moderation"),
     path(
         "kommentarer/<int:pk>/modarera/",

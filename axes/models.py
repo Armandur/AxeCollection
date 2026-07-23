@@ -1020,6 +1020,13 @@ class Comment(models.Model):
         on_delete=models.CASCADE,
         related_name="comments",
     )
+    stamp = models.ForeignKey(
+        "Stamp",
+        null=True,
+        blank=True,
+        on_delete=models.CASCADE,
+        related_name="comments",
+    )
     author_name = models.CharField(max_length=80, blank=True, verbose_name="Namn")
     body = models.TextField(max_length=2000, verbose_name="Kommentar")
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default="PENDING")
@@ -1042,12 +1049,15 @@ class Comment(models.Model):
         return f"Kommentar av {self.display_author} på {self.target}"
 
     def clean(self):
-        if bool(self.axe_id) == bool(self.manufacturer_id):
-            raise ValidationError("Exakt en av axe eller manufacturer måste vara satt.")
+        targets = [bool(self.axe_id), bool(self.manufacturer_id), bool(self.stamp_id)]
+        if sum(targets) != 1:
+            raise ValidationError(
+                "Exakt en av axe, manufacturer eller stamp måste vara satt."
+            )
 
     @property
     def target(self):
-        return self.axe or self.manufacturer
+        return self.axe or self.manufacturer or self.stamp
 
     @property
     def target_url(self):
@@ -1057,6 +1067,8 @@ class Comment(models.Model):
             return reverse("axe_detail", args=[self.axe_id])
         if self.manufacturer_id:
             return reverse("manufacturer_detail", args=[self.manufacturer_id])
+        if self.stamp_id:
+            return reverse("stamp_detail", args=[self.stamp_id])
         return None
 
     @property

@@ -11,7 +11,7 @@ from django.utils import timezone
 from django.views.decorators.http import require_POST
 
 from .forms import CommentForm
-from .models import Axe, Comment, Manufacturer, Settings
+from .models import Axe, Comment, Manufacturer, Settings, Stamp
 
 logger = logging.getLogger(__name__)
 
@@ -91,6 +91,14 @@ def submit_manufacturer_comment(request, pk):
         manufacturer,
         "manufacturer",
         reverse("manufacturer_detail", args=[manufacturer.pk]),
+    )
+
+
+@require_POST
+def submit_stamp_comment(request, pk):
+    stamp = get_object_or_404(Stamp, pk=pk)
+    return _submit_comment(
+        request, stamp, "stamp", reverse("stamp_detail", args=[stamp.pk])
     )
 
 

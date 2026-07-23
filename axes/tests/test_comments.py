@@ -5,7 +5,7 @@ from django.test import TestCase
 from django.urls import reverse
 
 from axes.models import Comment, Settings
-from axes.tests.factories import make_axe, make_manufacturer
+from axes.tests.factories import make_axe, make_manufacturer, make_stamp
 
 
 class CommentModelTest(TestCase):
@@ -151,6 +151,39 @@ class SubmitManufacturerCommentTest(TestCase):
         self.assertEqual(response.status_code, 302)
         comment = Comment.objects.get(manufacturer=self.manufacturer)
         self.assertEqual(comment.status, "PENDING")
+
+
+class SubmitStampCommentTest(TestCase):
+    def setUp(self):
+        cache.clear()
+        self.stamp = make_stamp()
+        self.url = reverse("submit_stamp_comment", args=[self.stamp.pk])
+
+    def tearDown(self):
+        cache.clear()
+
+    def test_submit_creates_pending_comment_not_visible_on_stamp_detail(self):
+        response = self.client.post(
+            self.url,
+            {
+                "author_name": "Kalle",
+                "body": "Väntande stämpelkommentar",
+                "website": "",
+            },
+        )
+        self.assertEqual(response.status_code, 302)
+        comment = Comment.objects.get(stamp=self.stamp)
+        self.assertEqual(comment.status, "PENDING")
+
+        detail_response = self.client.get(reverse("stamp_detail", args=[self.stamp.pk]))
+        self.assertNotIn("Väntande stämpelkommentar".encode(), detail_response.content)
+
+    def test_approved_comment_visible_on_stamp_detail(self):
+        Comment.objects.create(
+            stamp=self.stamp, body="Godkänd stämpelkommentar", status="APPROVED"
+        )
+        response = self.client.get(reverse("stamp_detail", args=[self.stamp.pk]))
+        self.assertIn("Godkänd stämpelkommentar".encode(), response.content)
 
 
 class CommentModerationViewTest(TestCase):
