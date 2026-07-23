@@ -56,6 +56,10 @@
     const form = document.getElementById('comment-form');
     if (!form) return;
 
+    const authorInput = document.getElementById('comment-author-name');
+    const savedName = localStorage.getItem('comment_author_name');
+    if (authorInput && savedName) { authorInput.value = savedName; }
+
     form.addEventListener('submit', function (event) {
         event.preventDefault();
 
@@ -76,7 +80,11 @@
             .then(({ ok, data }) => {
                 submitBtn.disabled = false;
                 if (ok && data.success) {
+                    const nameToSave = document.getElementById('comment-author-name').value.trim();
+                    if (nameToSave) { localStorage.setItem('comment_author_name', nameToSave); }
                     form.reset();
+                    // återställ namnet efter reset så användaren slipper skriva om det
+                    if (nameToSave) { document.getElementById('comment-author-name').value = nameToSave; }
                     if (window.showToast) {
                         window.showToast(data.message, 'success');
                     } else {
