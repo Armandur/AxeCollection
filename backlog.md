@@ -181,6 +181,18 @@ Utöka CI/CD (GitHub Actions) med automatisk deployment till en testmiljö.
 
 ---
 
+## [P4][todo] [axecollection] Notifieringstjänst för väntande kommentarer
+
+Rasmus 2026-07-23: implementera en notifieringstjänst som meddelar om väntande kommentarer (utöver header-badgen som redan finns). 
+
+Idéer/överväg: e-post till admin när en ny kommentar kommer in (smtplib + Lettermint SMTP enligt Rasmus stack), ev. sammanfattning/digest i stället för per kommentar. Kanske en enkel notifierings-modell/inkorg i appen. Trigga vid submit_comment (status PENDING) i axes/views_comment.py. Respektera att spam (honeypot) INTE ska notifiera. Header-badgen (pending_comments_count i context processor) finns redan som passiv indikator.
+
+- ID: `01KY7XP0JSAJGVF6FMM7X8KZ5H`
+- Type: feature
+- Actor: ai:claude-opus-4-8
+
+---
+
 ## [P4][todo] [axecollection] Utöka kommentarsystemet till stämplar
 
 Rasmus 2026-07-23: bygg kommentarer även på stämpel-funktionaliteten, som utökning av det publika kommentarsystemet (TASK-130, commit 9e28136).
