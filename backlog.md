@@ -253,7 +253,7 @@ På inställningssidan (backup-upload) ligger 'Ladda upp backup'-knappen snett m
 
 ---
 
-## [P4][todo] [axecollection] Kommentarsystem för yxor och tillverkare
+## [P4][done] [axecollection] Kommentarsystem för yxor och tillverkare
 
 Framtida funktion.
 
