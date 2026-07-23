@@ -6,6 +6,30 @@
         </h5>
     </div>
     <div class="card-body">
+        {% if user.is_authenticated and pending_comments %}
+        <div class="mb-4">
+            <h6 class="text-warning"><i class="bi bi-hourglass-split"></i> Väntar på granskning ({{ pending_comments|length }})</h6>
+            {% if not comments_enabled %}
+            {% csrf_token %}
+            {% endif %}
+            {% for comment in pending_comments %}
+            <div class="border rounded p-2 mb-2 bg-body-tertiary" id="pending-comment-{{ comment.pk }}">
+                <div class="d-flex justify-content-between">
+                    <strong>{{ comment.display_author }}</strong>
+                    <span class="text-muted small">{{ comment.created_at|date:"c" }}</span>
+                </div>
+                <div>{{ comment.body|linebreaks }}</div>
+                <div class="btn-group btn-group-sm mt-2" role="group">
+                    <button type="button" class="btn btn-outline-success inline-moderate-btn" data-url="{% url 'moderate_comment' comment.pk %}" data-action="approve" data-comment-id="{{ comment.pk }}"><i class="bi bi-check-lg"></i> Godkänn</button>
+                    <button type="button" class="btn btn-outline-secondary inline-moderate-btn" data-url="{% url 'moderate_comment' comment.pk %}" data-action="reject" data-comment-id="{{ comment.pk }}"><i class="bi bi-x-lg"></i> Avvisa</button>
+                    <button type="button" class="btn btn-outline-danger inline-moderate-btn" data-url="{% url 'moderate_comment' comment.pk %}" data-action="spam" data-comment-id="{{ comment.pk }}"><i class="bi bi-shield-exclamation"></i> Skräp</button>
+                    <button type="button" class="btn btn-outline-danger inline-moderate-btn" data-url="{% url 'moderate_comment' comment.pk %}" data-action="delete" data-comment-id="{{ comment.pk }}"><i class="bi bi-trash"></i> Ta bort</button>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
         {% if approved_comments %}
             <ul class="list-unstyled">
                 {% for comment in approved_comments %}
@@ -107,6 +131,65 @@
                     alert('Något gick fel. Försök igen.');
                 }
             });
+    });
+})();
+</script>
+{% endif %}
+
+{% if user.is_authenticated and pending_comments %}
+<script>
+(function () {
+    document.querySelectorAll('.inline-moderate-btn').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            const url = btn.dataset.url;
+            const action = btn.dataset.action;
+            const commentId = btn.dataset.commentId;
+
+            if (action === 'delete' && !confirm('Ta bort kommentaren permanent? Detta kan inte ångras.')) {
+                return;
+            }
+
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                },
+                body: new URLSearchParams({ action: action }),
+            })
+                .then(response => response.json().then(data => ({ ok: response.ok, data })))
+                .then(({ ok, data }) => {
+                    if (ok && data.success) {
+                        const el = document.getElementById('pending-comment-' + commentId);
+                        if (el) el.remove();
+                        let message = 'Kommentaren uppdaterades.';
+                        if (data.deleted) {
+                            message = 'Kommentaren togs bort.';
+                        } else if (data.status === 'APPROVED') {
+                            message = 'Kommentaren godkändes.';
+                        }
+                        if (window.showToast) {
+                            window.showToast(message, 'success');
+                        } else {
+                            alert(message);
+                        }
+                    } else {
+                        const message = data.error || 'Kunde inte uppdatera kommentaren.';
+                        if (window.showToast) {
+                            window.showToast(message, 'danger');
+                        } else {
+                            alert(message);
+                        }
+                    }
+                })
+                .catch(function () {
+                    if (window.showToast) {
+                        window.showToast('Något gick fel. Försök igen.', 'danger');
+                    } else {
+                        alert('Något gick fel. Försök igen.');
+                    }
+                });
+        });
     });
 })();
 </script>

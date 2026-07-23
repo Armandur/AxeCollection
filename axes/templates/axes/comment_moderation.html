@@ -91,20 +91,31 @@
                             </td>
                             <td>
                                 <div class="btn-group btn-group-sm" role="group">
+                                    {% if comment.status != 'APPROVED' %}
                                     <button type="button" class="btn btn-outline-success moderate-btn"
                                             data-url="{% url 'moderate_comment' comment.pk %}"
                                             data-action="approve" data-comment-id="{{ comment.pk }}">
                                         <i class="bi bi-check-lg"></i> Godkänn
                                     </button>
+                                    {% endif %}
+                                    {% if comment.status != 'REJECTED' %}
                                     <button type="button" class="btn btn-outline-secondary moderate-btn"
                                             data-url="{% url 'moderate_comment' comment.pk %}"
                                             data-action="reject" data-comment-id="{{ comment.pk }}">
                                         <i class="bi bi-x-lg"></i> Avvisa
                                     </button>
+                                    {% endif %}
+                                    {% if comment.status != 'SPAM' %}
                                     <button type="button" class="btn btn-outline-danger moderate-btn"
                                             data-url="{% url 'moderate_comment' comment.pk %}"
                                             data-action="spam" data-comment-id="{{ comment.pk }}">
                                         <i class="bi bi-shield-exclamation"></i> Skräp
+                                    </button>
+                                    {% endif %}
+                                    <button type="button" class="btn btn-outline-danger moderate-btn"
+                                            data-url="{% url 'moderate_comment' comment.pk %}"
+                                            data-action="delete" data-comment-id="{{ comment.pk }}">
+                                        <i class="bi bi-trash"></i> Ta bort
                                     </button>
                                 </div>
                             </td>
@@ -178,6 +189,10 @@ document.addEventListener('DOMContentLoaded', function () {
             const action = btn.dataset.action;
             const commentId = btn.dataset.commentId;
 
+            if (action === 'delete' && !confirm('Ta bort kommentaren permanent? Detta kan inte ångras.')) {
+                return;
+            }
+
             fetch(url, {
                 method: 'POST',
                 headers: {
@@ -191,7 +206,9 @@ document.addEventListener('DOMContentLoaded', function () {
                     if (ok && data.success) {
                         const row = document.getElementById('comment-row-' + commentId);
                         if (row) row.remove();
-                        const message = 'Kommentaren markerades som "' + data.status_display + '".';
+                        const message = data.deleted
+                            ? 'Kommentaren togs bort.'
+                            : 'Kommentaren markerades som "' + data.status_display + '".';
                         if (window.showToast) {
                             window.showToast(message, 'success');
                         } else {

@@ -532,6 +532,11 @@ def axe_detail(request, pk):
             {"text": f"{axe.display_id} - {axe.model}"},
         ],
         "approved_comments": axe.comments.filter(status="APPROVED"),
+        "pending_comments": (
+            axe.comments.filter(status="PENDING")
+            if request.user.is_authenticated
+            else axe.comments.none()
+        ),
         "comment_submit_url": reverse("submit_axe_comment", args=[axe.pk]),
         "comments_enabled": comment_settings.comments_enabled_public,
     }

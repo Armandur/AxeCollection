@@ -675,6 +675,11 @@ def manufacturer_detail(request, pk):
         "sub_tillverkare": sub_tillverkare,
         "sub_smeder": sub_smeder,
         "approved_comments": manufacturer.comments.filter(status="APPROVED"),
+        "pending_comments": (
+            manufacturer.comments.filter(status="PENDING")
+            if request.user.is_authenticated
+            else manufacturer.comments.none()
+        ),
         "comment_submit_url": reverse(
             "submit_manufacturer_comment", args=[manufacturer.pk]
         ),

@@ -197,6 +197,11 @@ def stamp_detail(request, stamp_id):
         "related_stamps": related_stamps,
         "stamp_images": stamp_images,
         "approved_comments": stamp.comments.filter(status="APPROVED"),
+        "pending_comments": (
+            stamp.comments.filter(status="PENDING")
+            if request.user.is_authenticated
+            else stamp.comments.none()
+        ),
         "comment_submit_url": reverse("submit_stamp_comment", args=[stamp.pk]),
         "comments_enabled": comment_settings.comments_enabled_public,
     }

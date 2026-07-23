@@ -131,6 +131,11 @@ def moderate_comment(request, pk):
     """AJAX-vy: godkänn/avvisa/markera en kommentar som skräp."""
     comment = get_object_or_404(Comment, pk=pk)
     action = request.POST.get("action")
+
+    if action == "delete":
+        comment.delete()
+        return JsonResponse({"success": True, "deleted": True})
+
     action_to_status = {
         "approve": "APPROVED",
         "reject": "REJECTED",
