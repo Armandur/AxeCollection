@@ -28,7 +28,7 @@
                     <form method="get" class="row g-3 align-items-end">
                         <div class="col-md-3">
                             <label for="status" class="form-label">Status</label>
-                            <select class="form-select" id="status" name="status">
+                            <select class="form-select" id="status" name="status" onchange="this.form.submit()">
                                 <option value="ALL" {% if selected_status == "ALL" %}selected{% endif %}>Alla</option>
                                 {% for value, label in status_choices %}
                                     <option value="{{ value }}" {% if selected_status == value %}selected{% endif %}>{{ label }}</option>
@@ -72,6 +72,9 @@
                                 {% elif comment.manufacturer %}
                                     <span class="badge bg-secondary">Tillverkare</span>
                                     <a href="{{ comment.target_url }}">{{ comment.manufacturer }}</a>
+                                {% elif comment.stamp %}
+                                    <span class="badge bg-secondary">Stämpel</span>
+                                    <a href="{{ comment.target_url }}">{{ comment.stamp }}</a>
                                 {% endif %}
                             </td>
                             <td>{{ comment.body|truncatewords:20 }}</td>

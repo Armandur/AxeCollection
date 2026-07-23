@@ -106,7 +106,9 @@ def submit_stamp_comment(request, pk):
 def comment_moderation(request):
     """Admin-vy för att godkänna/avvisa/markera kommentarer som skräp."""
     status = request.GET.get("status", "PENDING")
-    comments = Comment.objects.select_related("axe", "manufacturer", "moderated_by")
+    comments = Comment.objects.select_related(
+        "axe", "manufacturer", "stamp", "moderated_by"
+    )
 
     if status and status != "ALL":
         comments = comments.filter(status=status)
