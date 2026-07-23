@@ -181,6 +181,18 @@ Utöka CI/CD (GitHub Actions) med automatisk deployment till en testmiljö.
 
 ---
 
+## [P4][todo] [axecollection] Kom ihåg kommenterarens visningsnamn i localStorage
+
+Rasmus 2026-07-23: låt en kommenterare slippa skriva sitt namn varje gång - spara author_name i localStorage och förifyll fältet nästa gång (surfar man runt och kommenterar på flera yxor/tillverkare).
+
+Rent klient-sido i _comment_section.html-JS:en: vid lyckad submit, spara #comment-author-name till localStorage (t.ex. nyckel 'comment_author_name'); vid sidladdning, förifyll fältet från localStorage om det finns. Låg risk, progressiv förbättring, inget serverlagras (GDPR-ok, användarens eget val). Ev. en liten 'rensa namn'-länk. Fungerar utan JS ändå (fältet är bara tomt då).
+
+- ID: `01KY7XSG4E2F11QRRDTS133J0Z`
+- Type: improvement
+- Actor: ai:claude-opus-4-8
+
+---
+
 ## [P4][todo] [axecollection] Notifieringstjänst för väntande kommentarer
 
 Rasmus 2026-07-23: implementera en notifieringstjänst som meddelar om väntande kommentarer (utöver header-badgen som redan finns). 
