@@ -20,7 +20,7 @@ Uppladdning av backupfiler via webbgränssnittet fungerar inte för stora filer.
 
 ---
 
-## [P3][todo] [axecollection] Trådat/nästlat kommentarssystem (Reddit-likt) med svara-per-nivå
+## [P3][doing] [axecollection] Trådat/nästlat kommentarssystem (Reddit-likt) med svara-per-nivå
 
 Rasmus 2026-07-23: bygg om kommentarerna till ett TRÅDAT system (Reddit-likt) - kommentarer ska kunna nästlas och besvaras på olika nivåer. Återanvänd hur nivåer visas med en färgad vänsterlinje från viva-engage-rescue-projektet (~/workspace/viva-engage-rescue). Separat UX för att skapa en helt ny TOPPKOMMENTAR, och en 'Svara'-knapp per kommentar för att besvara i tråden. Bygger på befintliga Comment (parent-FK för självreferens, depth/indent, rekursiv rendering, moderering per nod). STORT - designförslag efterfrågat av en kommentarssystem-expert (bifogas som plan på denna task). Överväg: modereringens interaktion med trådar (dölj underträd?), djup-tak, prestanda (prefetch), och att auto-godkänn (separat task) + inline-moderering (TASK-368) ska fungera i trådvyn.
 
