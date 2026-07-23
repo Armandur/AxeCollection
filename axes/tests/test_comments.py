@@ -41,6 +41,19 @@ class SubmitAxeCommentTest(TestCase):
         self.assertEqual(comment.status, "PENDING")
         self.assertEqual(comment.body, "Fin yxa!")
 
+    def test_authenticated_user_comment_is_auto_approved(self):
+        user = User.objects.create_user(username="admin", password="pass1234")
+        self.client.force_login(user)
+
+        response = self.client.post(
+            self.url, {"author_name": "Admin", "body": "Egen kommentar", "website": ""}
+        )
+        self.assertEqual(response.status_code, 302)
+        comment = Comment.objects.get(axe=self.axe)
+        self.assertEqual(comment.status, "APPROVED")
+        self.assertEqual(comment.moderated_by, user)
+        self.assertIsNotNone(comment.moderated_at)
+
     def test_pending_comment_not_visible_on_axe_detail(self):
         self.client.post(
             self.url,

@@ -51,11 +51,21 @@ def _submit_comment(request, target, target_field, redirect_url):
         messages.error(request, "Kommentaren kunde inte skickas. Kontrollera fälten.")
         return redirect(redirect_url)
 
+    if form.is_honeypot_filled:
+        status = "SPAM"
+    elif request.user.is_authenticated:
+        status = "APPROVED"
+    else:
+        status = "PENDING"
+
     comment = Comment(
         author_name=form.cleaned_data["author_name"],
         body=form.cleaned_data["body"],
-        status="SPAM" if form.is_honeypot_filled else "PENDING",
+        status=status,
     )
+    if status == "APPROVED":
+        comment.moderated_by = request.user
+        comment.moderated_at = timezone.now()
     setattr(comment, target_field, target)
     try:
         comment.full_clean()
