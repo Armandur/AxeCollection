@@ -24,7 +24,7 @@ from .models import (
     StampUncertaintyGroup,
 )
 from .forms import AxeForm, MeasurementForm, TransactionForm
-from .services.comments import build_approved_comment_tree
+from .services.comments import build_comment_tree
 from django.db.models import Sum, Count, Max
 from django.utils import timezone
 from django.core.files.base import ContentFile
@@ -532,12 +532,8 @@ def axe_detail(request, pk):
             },
             {"text": f"{axe.display_id} - {axe.model}"},
         ],
-        "comment_tree": build_approved_comment_tree(axe),
-        "pending_comments": (
-            axe.comments.filter(status="PENDING")
-            if request.user.is_authenticated
-            else axe.comments.none()
-        ),
+        "comment_tree": build_comment_tree(axe, request.user.is_authenticated),
+        "is_staff": request.user.is_authenticated,
         "comment_submit_url": reverse("submit_axe_comment", args=[axe.pk]),
         "comments_enabled": comment_settings.comments_enabled_public,
     }

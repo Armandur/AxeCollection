@@ -1,17 +1,41 @@
 <!-- Renderar en (1) kommentar i kommentarsträdet + dess barn rekursivt.
-     comments_enabled och comment_submit_url måste följa med genom hela
-     rekursionen, annars saknas de i djupare noder. -->
+     comments_enabled, comment_submit_url och is_staff måste följa med genom
+     hela rekursionen, annars saknas de i djupare noder. -->
 <li class="mb-3 pb-3 border-bottom" id="comment-{{ comment.pk }}">
+    {% if comment.is_visible_stub %}
+    <p class="text-muted fst-italic mb-0">
+        {% if comment.stub_reason == "pending" %}
+        En kommentar väntar på granskning här.
+        {% else %}
+        Kommentaren har tagits bort.
+        {% endif %}
+    </p>
+    {% else %}
     <div class="d-flex justify-content-between">
         <strong>{{ comment.display_author }}</strong>
         <span class="text-muted small">{{ comment.created_at|date:"c" }}</span>
     </div>
     <div>{{ comment.body|linebreaks }}</div>
+    {% if is_staff %}
+    <div class="btn-group btn-group-sm mt-2" role="group">
+        {% if comment.status != "APPROVED" %}
+        <button type="button" class="btn btn-outline-success inline-moderate-btn" data-url="{% url 'moderate_comment' comment.pk %}" data-action="approve" data-comment-id="{{ comment.pk }}"><i class="bi bi-check-lg"></i> Godkänn</button>
+        {% endif %}
+        {% if comment.status != "REJECTED" %}
+        <button type="button" class="btn btn-outline-secondary inline-moderate-btn" data-url="{% url 'moderate_comment' comment.pk %}" data-action="reject" data-comment-id="{{ comment.pk }}"><i class="bi bi-x-lg"></i> Avvisa</button>
+        {% endif %}
+        {% if comment.status != "SPAM" %}
+        <button type="button" class="btn btn-outline-danger inline-moderate-btn" data-url="{% url 'moderate_comment' comment.pk %}" data-action="spam" data-comment-id="{{ comment.pk }}"><i class="bi bi-shield-exclamation"></i> Skräp</button>
+        {% endif %}
+        <button type="button" class="btn btn-outline-danger inline-moderate-btn" data-url="{% url 'moderate_comment' comment.pk %}" data-action="delete" data-comment-id="{{ comment.pk }}"><i class="bi bi-trash"></i> Ta bort</button>
+    </div>
+    {% endif %}
     {% include "axes/_reply_toggle.html" with comments_enabled=comments_enabled comment_submit_url=comment_submit_url %}
+    {% endif %}
     {% if comment.rendered_children %}
     <ul class="list-unstyled replies {{ comment.line_class }}">
         {% for child in comment.rendered_children %}
-        {% include "axes/_comment_node.html" with comment=child comments_enabled=comments_enabled comment_submit_url=comment_submit_url %}
+        {% include "axes/_comment_node.html" with comment=child comments_enabled=comments_enabled comment_submit_url=comment_submit_url is_staff=is_staff %}
         {% endfor %}
     </ul>
     {% endif %}

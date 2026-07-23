@@ -174,6 +174,12 @@ def moderate_comment(request, pk):
     action = request.POST.get("action")
 
     if action == "delete":
+        if comment.replies.exists():
+            comment.is_removed = True
+            comment.moderated_by = request.user
+            comment.moderated_at = timezone.now()
+            comment.save()
+            return JsonResponse({"success": True, "removed": True})
         comment.delete()
         return JsonResponse({"success": True, "deleted": True})
 

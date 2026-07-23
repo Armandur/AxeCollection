@@ -5,7 +5,7 @@ from django.test import TestCase
 from django.urls import reverse
 
 from axes.models import Comment, Settings
-from axes.services.comments import build_approved_comment_tree
+from axes.services.comments import build_comment_tree
 from axes.tests.factories import make_axe, make_manufacturer, make_stamp
 
 
@@ -55,14 +55,14 @@ class CommentModelTest(TestCase):
             self.assertEqual(comment.line_class, expected_class)
 
 
-class BuildApprovedCommentTreeTest(TestCase):
-    def test_only_approved_comments_are_included(self):
+class BuildCommentTreeTest(TestCase):
+    def test_only_approved_comments_are_included_for_anonymous(self):
         axe = make_axe()
         Comment.objects.create(axe=axe, body="Godkänd", status="APPROVED")
         Comment.objects.create(axe=axe, body="Väntar", status="PENDING")
         Comment.objects.create(axe=axe, body="Avvisad", status="REJECTED")
 
-        tree = build_approved_comment_tree(axe)
+        tree = build_comment_tree(axe, is_staff=False)
 
         self.assertEqual(len(tree), 1)
         self.assertEqual(tree[0].body, "Godkänd")
@@ -72,7 +72,7 @@ class BuildApprovedCommentTreeTest(TestCase):
         first = Comment.objects.create(axe=axe, body="Först", status="APPROVED")
         second = Comment.objects.create(axe=axe, body="Sedan", status="APPROVED")
 
-        tree = build_approved_comment_tree(axe)
+        tree = build_comment_tree(axe, is_staff=False)
 
         self.assertEqual([c.pk for c in tree], [second.pk, first.pk])
 
@@ -80,7 +80,7 @@ class BuildApprovedCommentTreeTest(TestCase):
         axe = make_axe()
         Comment.objects.create(axe=axe, body="Ensam", status="APPROVED")
 
-        tree = build_approved_comment_tree(axe)
+        tree = build_comment_tree(axe, is_staff=False)
 
         self.assertEqual(tree[0].rendered_children, [])
 
@@ -91,7 +91,7 @@ class BuildApprovedCommentTreeTest(TestCase):
             axe=axe, parent=root, body="Svar", status="APPROVED"
         )
 
-        tree = build_approved_comment_tree(axe)
+        tree = build_comment_tree(axe, is_staff=False)
 
         self.assertEqual(len(tree[0].rendered_children), 1)
         self.assertEqual(tree[0].rendered_children[0].pk, reply.pk)
@@ -107,7 +107,7 @@ class BuildApprovedCommentTreeTest(TestCase):
             )
             chain.append(comment)
 
-        tree = build_approved_comment_tree(axe)
+        tree = build_comment_tree(axe, is_staff=False)
 
         # Gå ner till noden som ligger exakt på MAX_DEPTH - varje nivå på
         # vägen dit ska ha exakt ett barn (rak kedja).
@@ -125,6 +125,102 @@ class BuildApprovedCommentTreeTest(TestCase):
         for hoisted_node in node.rendered_children:
             self.assertEqual(hoisted_node.rendered_children, [])
 
+    def test_approved_reply_under_rejected_parent_is_stub_for_anonymous(self):
+        axe = make_axe()
+        parent = Comment.objects.create(axe=axe, body="Avvisad", status="REJECTED")
+        reply = Comment.objects.create(
+            axe=axe, parent=parent, body="Godkänt svar", status="APPROVED"
+        )
+
+        tree = build_comment_tree(axe, is_staff=False)
+
+        self.assertEqual(len(tree), 1)
+        stub = tree[0]
+        self.assertEqual(stub.pk, parent.pk)
+        self.assertTrue(stub.is_visible_stub)
+        self.assertEqual(stub.stub_reason, "moderated")
+        self.assertEqual(len(stub.rendered_children), 1)
+        self.assertEqual(stub.rendered_children[0].pk, reply.pk)
+        self.assertFalse(stub.rendered_children[0].is_visible_stub)
+
+    def test_rejected_leaf_comment_is_pruned_away(self):
+        axe = make_axe()
+        Comment.objects.create(axe=axe, body="Godkänd", status="APPROVED")
+        Comment.objects.create(axe=axe, body="Avvisad lövnod", status="REJECTED")
+
+        tree = build_comment_tree(axe, is_staff=False)
+
+        self.assertEqual(len(tree), 1)
+        self.assertEqual(tree[0].body, "Godkänd")
+
+    def test_pending_with_approved_child_is_stub_for_anonymous_but_full_for_staff(
+        self,
+    ):
+        axe = make_axe()
+        parent = Comment.objects.create(axe=axe, body="Väntar", status="PENDING")
+        Comment.objects.create(
+            axe=axe, parent=parent, body="Godkänt svar", status="APPROVED"
+        )
+
+        anon_tree = build_comment_tree(axe, is_staff=False)
+        self.assertEqual(len(anon_tree), 1)
+        self.assertTrue(anon_tree[0].is_visible_stub)
+        self.assertEqual(anon_tree[0].stub_reason, "pending")
+
+        staff_tree = build_comment_tree(axe, is_staff=True)
+        self.assertEqual(len(staff_tree), 1)
+        self.assertFalse(staff_tree[0].is_visible_stub)
+        self.assertEqual(staff_tree[0].body, "Väntar")
+
+    def test_pending_leaf_comment_is_pruned_for_anonymous(self):
+        axe = make_axe()
+        Comment.objects.create(axe=axe, body="Väntar", status="PENDING")
+
+        tree = build_comment_tree(axe, is_staff=False)
+
+        self.assertEqual(tree, [])
+
+    def test_removed_comment_with_reply_is_stub_with_removed_reason(self):
+        axe = make_axe()
+        parent = Comment.objects.create(
+            axe=axe, body="Borttagen", status="APPROVED", is_removed=True
+        )
+        reply = Comment.objects.create(
+            axe=axe, parent=parent, body="Svar kvar", status="APPROVED"
+        )
+
+        tree = build_comment_tree(axe, is_staff=False)
+
+        self.assertEqual(len(tree), 1)
+        self.assertTrue(tree[0].is_visible_stub)
+        self.assertEqual(tree[0].stub_reason, "removed")
+        self.assertEqual(tree[0].rendered_children[0].pk, reply.pk)
+
+    def test_hoisting_and_pruning_combine_correctly(self):
+        # Kedja MAX_DEPTH+3 djup, med den sista länken REJECTED - den ska
+        # hissas upp som vanligt OCH sedan prunas bort som lövnod, medan
+        # kedjan i övrigt renderas normalt.
+        axe = make_axe()
+        comment = None
+        chain = []
+        for i in range(Comment.MAX_DEPTH + 3):
+            status = "REJECTED" if i == Comment.MAX_DEPTH + 2 else "APPROVED"
+            comment = Comment.objects.create(
+                axe=axe, parent=comment, body=f"Nivå {i}", status=status
+            )
+            chain.append(comment)
+
+        tree = build_comment_tree(axe, is_staff=False)
+
+        node = tree[0]
+        for _ in range(Comment.MAX_DEPTH):
+            node = node.rendered_children[0]
+
+        # Två svar hissas hit (index MAX_DEPTH+1), det sista (REJECTED,
+        # lövnod) ska vara pruned bort.
+        hoisted_survivor = chain[Comment.MAX_DEPTH + 1]
+        self.assertEqual([c.pk for c in node.rendered_children], [hoisted_survivor.pk])
+
 
 class CommentTreeRenderingTest(TestCase):
     def test_reply_renders_nested_with_replies_wrapper_and_line_class(self):
@@ -140,6 +236,71 @@ class CommentTreeRenderingTest(TestCase):
         self.assertIn("Rotkommentar", content)
         self.assertIn("Svarskommentar", content)
         self.assertIn('class="list-unstyled replies lvl1"', content)
+
+    def test_anonymous_sees_stub_for_removed_comment_with_reply(self):
+        axe = make_axe()
+        parent = Comment.objects.create(
+            axe=axe, body="Ursprunglig text", status="APPROVED", is_removed=True
+        )
+        Comment.objects.create(
+            axe=axe, parent=parent, body="Svar som lever kvar", status="APPROVED"
+        )
+
+        response = self.client.get(reverse("axe_detail", args=[axe.pk]))
+        content = response.content.decode()
+
+        self.assertNotIn("Ursprunglig text", content)
+        self.assertIn("Kommentaren har tagits bort.", content)
+        self.assertIn("Svar som lever kvar", content)
+
+    def test_anonymous_sees_pending_stub_with_neutral_text(self):
+        axe = make_axe()
+        parent = Comment.objects.create(axe=axe, body="Väntar", status="PENDING")
+        Comment.objects.create(
+            axe=axe, parent=parent, body="Godkänt barn", status="APPROVED"
+        )
+
+        response = self.client.get(reverse("axe_detail", args=[axe.pk]))
+        content = response.content.decode()
+
+        self.assertNotIn("<p>Väntar</p>", content)
+        self.assertIn("En kommentar väntar på granskning här.", content)
+
+    def test_staff_sees_inline_moderation_with_contextual_buttons(self):
+        user = User.objects.create_user(username="admin", password="pass1234")
+        self.client.force_login(user)
+        axe = make_axe()
+        Comment.objects.create(axe=axe, body="Väntande kommentar", status="PENDING")
+
+        response = self.client.get(reverse("axe_detail", args=[axe.pk]))
+        content = response.content.decode()
+
+        self.assertIn("Väntande kommentar", content)
+        self.assertIn("Godkänn", content)
+        self.assertIn("Avvisa", content)
+        self.assertIn("Skräp", content)
+        self.assertIn("Ta bort", content)
+
+    def test_staff_does_not_see_approve_button_on_already_approved_comment(self):
+        user = User.objects.create_user(username="admin", password="pass1234")
+        self.client.force_login(user)
+        axe = make_axe()
+        Comment.objects.create(axe=axe, body="Redan godkänd", status="APPROVED")
+
+        response = self.client.get(reverse("axe_detail", args=[axe.pk]))
+        content = response.content.decode()
+
+        self.assertNotIn("Godkänn", content)
+        self.assertIn("Ta bort", content)
+
+    def test_anonymous_sees_no_moderation_buttons(self):
+        axe = make_axe()
+        Comment.objects.create(axe=axe, body="Godkänd kommentar", status="APPROVED")
+
+        response = self.client.get(reverse("axe_detail", args=[axe.pk]))
+        content = response.content.decode()
+
+        self.assertNotIn("inline-moderate-btn", content)
 
 
 class SubmitAxeCommentTest(TestCase):
@@ -487,3 +648,37 @@ class CommentModerationViewTest(TestCase):
         self.assertEqual(comment.status, "APPROVED")
         self.assertEqual(comment.moderated_by, user)
         self.assertIsNotNone(comment.moderated_at)
+
+    def test_delete_comment_with_replies_becomes_tombstone_not_deleted(self):
+        user = User.objects.create_user(username="admin", password="pass1234")
+        self.client.force_login(user)
+        parent = Comment.objects.create(axe=self.axe, body="Rot", status="APPROVED")
+        Comment.objects.create(
+            axe=self.axe, parent=parent, body="Svar", status="APPROVED"
+        )
+
+        response = self.client.post(
+            reverse("moderate_comment", args=[parent.pk]), {"action": "delete"}
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), {"success": True, "removed": True})
+
+        parent.refresh_from_db()
+        self.assertTrue(parent.is_removed)
+        self.assertEqual(parent.moderated_by, user)
+        self.assertIsNotNone(parent.moderated_at)
+        self.assertTrue(Comment.objects.filter(pk=parent.pk).exists())
+
+    def test_delete_leaf_comment_is_actually_deleted(self):
+        user = User.objects.create_user(username="admin", password="pass1234")
+        self.client.force_login(user)
+        comment = Comment.objects.create(
+            axe=self.axe, body="Ensam kommentar", status="APPROVED"
+        )
+
+        response = self.client.post(
+            reverse("moderate_comment", args=[comment.pk]), {"action": "delete"}
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), {"success": True, "deleted": True})
+        self.assertFalse(Comment.objects.filter(pk=comment.pk).exists())

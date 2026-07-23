@@ -27,7 +27,7 @@ from .forms import (
     StampImageForm,
     StampImageMarkForm,
 )
-from .services.comments import build_approved_comment_tree
+from .services.comments import build_comment_tree
 import json
 
 
@@ -197,12 +197,8 @@ def stamp_detail(request, stamp_id):
         "stamp": stamp,
         "related_stamps": related_stamps,
         "stamp_images": stamp_images,
-        "comment_tree": build_approved_comment_tree(stamp),
-        "pending_comments": (
-            stamp.comments.filter(status="PENDING")
-            if request.user.is_authenticated
-            else stamp.comments.none()
-        ),
+        "comment_tree": build_comment_tree(stamp, request.user.is_authenticated),
+        "is_staff": request.user.is_authenticated,
         "comment_submit_url": reverse("submit_stamp_comment", args=[stamp.pk]),
         "comments_enabled": comment_settings.comments_enabled_public,
     }
