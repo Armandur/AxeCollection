@@ -27,6 +27,7 @@ from .forms import (
     StampImageForm,
     StampImageMarkForm,
 )
+from .services.comments import build_approved_comment_tree
 import json
 
 
@@ -196,7 +197,7 @@ def stamp_detail(request, stamp_id):
         "stamp": stamp,
         "related_stamps": related_stamps,
         "stamp_images": stamp_images,
-        "approved_comments": stamp.comments.filter(status="APPROVED"),
+        "comment_tree": build_approved_comment_tree(stamp),
         "pending_comments": (
             stamp.comments.filter(status="PENDING")
             if request.user.is_authenticated

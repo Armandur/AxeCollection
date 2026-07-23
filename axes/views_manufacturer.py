@@ -17,6 +17,7 @@ from .models import (
 from django.db.models import Sum, Max, Count
 from django.db import transaction
 from decimal import Decimal
+from .services.comments import build_approved_comment_tree
 import json
 import os
 import shutil
@@ -674,7 +675,7 @@ def manufacturer_detail(request, pk):
         "breadcrumbs": breadcrumbs,
         "sub_tillverkare": sub_tillverkare,
         "sub_smeder": sub_smeder,
-        "approved_comments": manufacturer.comments.filter(status="APPROVED"),
+        "comment_tree": build_approved_comment_tree(manufacturer),
         "pending_comments": (
             manufacturer.comments.filter(status="PENDING")
             if request.user.is_authenticated

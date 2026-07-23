@@ -999,6 +999,8 @@ class Settings(models.Model):
 class Comment(models.Model):
     """Publik kommentar på en yxa eller tillverkare, väntar på moderering."""
 
+    MAX_DEPTH = 4  # 0-indexerat -> 5 visuella nivåer (lvl1-lvl5)
+
     STATUS_CHOICES = [
         ("PENDING", "Väntar"),
         ("APPROVED", "Godkänd"),
@@ -1027,6 +1029,15 @@ class Comment(models.Model):
         on_delete=models.CASCADE,
         related_name="comments",
     )
+    parent = models.ForeignKey(
+        "self",
+        null=True,
+        blank=True,
+        on_delete=models.PROTECT,
+        related_name="replies",
+    )
+    depth = models.PositiveSmallIntegerField(default=0, editable=False)
+    is_removed = models.BooleanField(default=False, editable=False)
     author_name = models.CharField(max_length=80, blank=True, verbose_name="Namn")
     body = models.TextField(max_length=2000, verbose_name="Kommentar")
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default="PENDING")
@@ -1054,6 +1065,29 @@ class Comment(models.Model):
             raise ValidationError(
                 "Exakt en av axe, manufacturer eller stamp måste vara satt."
             )
+
+        if self.parent_id:
+            if self.pk is not None and self.parent_id == self.pk:
+                raise ValidationError("En kommentar kan inte vara svar på sig själv.")
+            if (
+                self.axe_id != self.parent.axe_id
+                or self.manufacturer_id != self.parent.manufacturer_id
+                or self.stamp_id != self.parent.stamp_id
+            ):
+                raise ValidationError(
+                    "Ett svar måste ha samma yxa/tillverkare/stämpel som sin förälder."
+                )
+
+    def save(self, *args, **kwargs):
+        if self.parent_id:
+            self.depth = min(self.parent.depth + 1, Comment.MAX_DEPTH)
+        else:
+            self.depth = 0
+        super().save(*args, **kwargs)
+
+    @property
+    def line_class(self):
+        return f"lvl{(self.depth % 5) + 1}"
 
     @property
     def target(self):

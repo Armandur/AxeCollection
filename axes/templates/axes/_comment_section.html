@@ -1,8 +1,18 @@
 <!-- Kommentarsektion - inkluderas i axe_detail.html och manufacturer_detail.html -->
+<style>
+/* Trådskenor: kontinuerlig färgad vänsterlinje per nästlingsnivå (Reddit-stil),
+   återanvänd rakt av från viva-engage-rescue/app/templates/archive/base.html:31-36 */
+.replies { padding-left: .9rem; margin-left: .45rem; border-left: 2px solid; }
+.replies.lvl1 { border-left-color: #0d6efd; }
+.replies.lvl2 { border-left-color: #20c997; }
+.replies.lvl3 { border-left-color: #fd7e14; }
+.replies.lvl4 { border-left-color: #d63384; }
+.replies.lvl5 { border-left-color: #6f42c1; }
+</style>
 <div class="card mt-4 mb-4" id="comments">
     <div class="card-header">
         <h5 class="card-title mb-0">
-            <i class="bi bi-chat-left-text"></i> Kommentarer ({{ approved_comments|length }})
+            <i class="bi bi-chat-left-text"></i> Kommentarer ({{ comment_tree|length }})
         </h5>
     </div>
     <div class="card-body">
@@ -30,16 +40,10 @@
         </div>
         {% endif %}
 
-        {% if approved_comments %}
+        {% if comment_tree %}
             <ul class="list-unstyled">
-                {% for comment in approved_comments %}
-                <li class="mb-3 pb-3 border-bottom">
-                    <div class="d-flex justify-content-between">
-                        <strong>{{ comment.display_author }}</strong>
-                        <span class="text-muted small">{{ comment.created_at|date:"c" }}</span>
-                    </div>
-                    <div>{{ comment.body|linebreaks }}</div>
-                </li>
+                {% for node in comment_tree %}
+                {% include "axes/_comment_node.html" with comment=node %}
                 {% endfor %}
             </ul>
         {% else %}
