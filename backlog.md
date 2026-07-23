@@ -20,7 +20,7 @@ Uppladdning av backupfiler via webbgränssnittet fungerar inte för stora filer.
 
 ---
 
-## [P3][todo] [axecollection] Bättre modereringskontroller: kontextuella åtgärder, ta bort, inline-moderering på detaljsidor
+## [P3][done] [axecollection] Bättre modereringskontroller: kontextuella åtgärder, ta bort, inline-moderering på detaljsidor
 
 Rasmus 2026-07-23, två sammanhängande delar för kommentarsmodereringen:
 
