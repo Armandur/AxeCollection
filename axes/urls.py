@@ -223,6 +223,16 @@ urlpatterns = [
     path("logout/", auth_views.LogoutView.as_view(next_page="/"), name="logout"),
     # Settings
     path("installningar/", views.settings_view, name="settings"),
+    path(
+        "installningar/spara-ntfy/",
+        views.save_ntfy_settings,
+        name="save_ntfy_settings",
+    ),
+    path(
+        "installningar/test-ntfy/",
+        views.test_ntfy_notification,
+        name="test_ntfy_notification",
+    ),
     path("andringslogg/", views_audit.audit_log, name="audit_log"),
     path(
         "yxor/<int:pk>/kommentar/",

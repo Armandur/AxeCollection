@@ -9,6 +9,7 @@ from .models import (
 )
 from django.db.models import Sum, Q, Count
 from django.http import JsonResponse
+from django.urls import reverse
 from django import forms
 from django.utils import timezone
 
@@ -791,10 +792,6 @@ def settings_view(request):
         settings.external_hosts = request.POST.get("external_hosts", "")
         settings.external_csrf_origins = request.POST.get("external_csrf_origins", "")
 
-        # Notifieringar
-        settings.ntfy_topic_url = request.POST.get("ntfy_topic_url", "")
-        settings.ntfy_token = request.POST.get("ntfy_token", "")
-
         settings.save()
 
         # Uppdatera host-konfigurationen om den ändrades
@@ -836,6 +833,47 @@ def settings_view(request):
     }
 
     return render(request, "axes/settings.html", context)
+
+
+@login_required
+@require_http_methods(["POST"])
+def save_ntfy_settings(request):
+    """Spara ntfy-inställningarna (eget formulär i kommentarssektionen)."""
+    from django.contrib import messages
+    from .models import Settings
+
+    settings = Settings.get_settings()
+    settings.ntfy_topic_url = request.POST.get("ntfy_topic_url", "").strip()
+    settings.ntfy_token = request.POST.get("ntfy_token", "").strip()
+    settings.save()
+    messages.success(request, "Notifieringsinställningar sparade!")
+    return redirect(reverse("settings") + "#comment-moderation-section")
+
+
+@login_required
+@require_http_methods(["POST"])
+def test_ntfy_notification(request):
+    """Skicka en testnotis mot topic-URL/token i formuläret (även osparade)."""
+    from .utils.notifications import send_ntfy
+
+    topic_url = request.POST.get("ntfy_topic_url", "").strip()
+    token = request.POST.get("ntfy_token", "").strip()
+    if not topic_url:
+        return JsonResponse(
+            {"success": False, "error": "Ingen topic-URL angiven."}, status=400
+        )
+
+    ok, error = send_ntfy(
+        topic_url,
+        token,
+        "Testnotis från AxeCollection",
+        "Det här är en testnotis. Ser du den fungerar ntfy-inställningarna.",
+    )
+    if ok:
+        return JsonResponse({"success": True, "message": "Testnotis skickad!"})
+    return JsonResponse(
+        {"success": False, "error": f"Kunde inte skicka: {error}"}, status=502
+    )
 
 
 def handle_backup_action(request):

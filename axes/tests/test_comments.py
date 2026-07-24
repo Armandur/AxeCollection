@@ -441,8 +441,10 @@ class SubmitCommentNotificationTest(TestCase):
         self.assertEqual(response.status_code, 302)
         mock_post.assert_called_once()
         args, kwargs = mock_post.call_args
-        self.assertEqual(args[0], "https://ntfy.sh/test-topic")
-        self.assertIn(reverse("comment_moderation"), kwargs["headers"]["Click"])
+        # JSON-publicering: POST till server-roten, topic/click i body
+        self.assertEqual(args[0], "https://ntfy.sh")
+        self.assertEqual(kwargs["json"]["topic"], "test-topic")
+        self.assertIn(reverse("comment_moderation"), kwargs["json"]["click"])
         # Utan token satt ska ingen Authorization-header skickas
         self.assertNotIn("Authorization", kwargs["headers"])
 
@@ -509,6 +511,78 @@ class SubmitCommentNotificationTest(TestCase):
         self.assertEqual(response.status_code, 302)
         comment = Comment.objects.get(axe=self.axe)
         self.assertEqual(comment.status, "PENDING")
+
+
+class TestNtfyNotificationViewTest(TestCase):
+    def setUp(self):
+        self.url = reverse("test_ntfy_notification")
+        user = User.objects.create_user(username="admin", password="pass1234")
+        self.client.force_login(user)
+
+    @patch("axes.utils.notifications.requests.post")
+    def test_sends_with_form_values(self, mock_post):
+        response = self.client.post(
+            self.url,
+            {"ntfy_topic_url": "https://ntfy.sh/test", "ntfy_token": "tk_x"},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.json()["success"])
+        mock_post.assert_called_once()
+        args, kwargs = mock_post.call_args
+        self.assertEqual(args[0], "https://ntfy.sh")
+        self.assertEqual(kwargs["json"]["topic"], "test")
+        self.assertEqual(kwargs["headers"]["Authorization"], "Bearer tk_x")
+
+    def test_empty_topic_returns_error(self):
+        response = self.client.post(self.url, {"ntfy_topic_url": "", "ntfy_token": ""})
+
+        self.assertEqual(response.status_code, 400)
+        self.assertFalse(response.json()["success"])
+
+    @patch("axes.utils.notifications.requests.post")
+    def test_publish_failure_is_reported(self, mock_post):
+        mock_post.side_effect = Exception("403 forbidden")
+
+        response = self.client.post(
+            self.url, {"ntfy_topic_url": "https://ntfy.sh/test", "ntfy_token": ""}
+        )
+
+        self.assertEqual(response.status_code, 502)
+        self.assertFalse(response.json()["success"])
+
+    def test_requires_login(self):
+        self.client.logout()
+        response = self.client.post(
+            self.url, {"ntfy_topic_url": "https://ntfy.sh/test"}
+        )
+
+        self.assertEqual(response.status_code, 302)
+
+
+class SaveNtfySettingsViewTest(TestCase):
+    def setUp(self):
+        self.url = reverse("save_ntfy_settings")
+        user = User.objects.create_user(username="admin", password="pass1234")
+        self.client.force_login(user)
+
+    def test_saves_topic_and_token(self):
+        response = self.client.post(
+            self.url,
+            {"ntfy_topic_url": "https://ntfy.sh/mitt", "ntfy_token": "tk_abc"},
+        )
+
+        self.assertEqual(response.status_code, 302)
+        settings = Settings.get_settings()
+        self.assertEqual(settings.ntfy_topic_url, "https://ntfy.sh/mitt")
+        self.assertEqual(settings.ntfy_token, "tk_abc")
+
+    def test_requires_login(self):
+        self.client.logout()
+        response = self.client.post(self.url, {"ntfy_topic_url": "https://ntfy.sh/x"})
+
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(Settings.get_settings().ntfy_topic_url, "")
 
 
 class SubmitReplyCommentTest(TestCase):
