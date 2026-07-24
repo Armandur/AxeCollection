@@ -443,6 +443,22 @@ class SubmitCommentNotificationTest(TestCase):
         args, kwargs = mock_post.call_args
         self.assertEqual(args[0], "https://ntfy.sh/test-topic")
         self.assertIn(reverse("comment_moderation"), kwargs["headers"]["Click"])
+        # Utan token satt ska ingen Authorization-header skickas
+        self.assertNotIn("Authorization", kwargs["headers"])
+
+    @patch("axes.utils.notifications.requests.post")
+    def test_token_adds_authorization_header(self, mock_post):
+        settings = Settings.get_settings()
+        settings.ntfy_token = "tk_hemligt"
+        settings.save()
+
+        self.client.post(
+            self.url, {"author_name": "Kalle", "body": "Fin yxa!", "website": ""}
+        )
+
+        mock_post.assert_called_once()
+        _, kwargs = mock_post.call_args
+        self.assertEqual(kwargs["headers"]["Authorization"], "Bearer tk_hemligt")
 
     @patch("axes.utils.notifications.requests.post")
     def test_honeypot_spam_does_not_trigger_notification(self, mock_post):

@@ -793,6 +793,7 @@ def settings_view(request):
 
         # Notifieringar
         settings.ntfy_topic_url = request.POST.get("ntfy_topic_url", "")
+        settings.ntfy_token = request.POST.get("ntfy_token", "")
 
         settings.save()
 

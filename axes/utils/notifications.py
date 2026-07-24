@@ -20,7 +20,8 @@ def send_pending_comment_notification(comment, request):
     Fel vid anropet loggas men höjs aldrig vidare - ett notis-fel ska
     aldrig påverka att kommentaren redan sparats.
     """
-    topic_url = Settings.get_settings().ntfy_topic_url
+    settings = Settings.get_settings()
+    topic_url = settings.ntfy_topic_url
     if not topic_url:
         return
 
@@ -30,15 +31,19 @@ def send_pending_comment_notification(comment, request):
     if target is not None:
         body = f"Ny kommentar på {target} väntar på granskning."
 
+    headers = {
+        "Title": "Ny kommentar väntar",
+        "Click": moderation_url,
+        "Tags": "speech_balloon",
+    }
+    if settings.ntfy_token:
+        headers["Authorization"] = f"Bearer {settings.ntfy_token}"
+
     try:
         requests.post(
             topic_url,
             data=body.encode("utf-8"),
-            headers={
-                "Title": "Ny kommentar väntar",
-                "Click": moderation_url,
-                "Tags": "speech_balloon",
-            },
+            headers=headers,
             timeout=5,
         )
     except Exception:

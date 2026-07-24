@@ -979,6 +979,13 @@ class Settings(models.Model):
         verbose_name="ntfy.sh topic-URL",
         help_text="Topic-URL för push-notiser (t.ex. https://ntfy.sh/mitt-topic). Tom = notiser avstängda.",
     )
+    ntfy_token = models.CharField(
+        max_length=255,
+        blank=True,
+        default="",
+        verbose_name="ntfy.sh access-token",
+        help_text="Bearer-token (tk_...) för skyddade topics på egen ntfy-server. Tom = ingen auth-header (öppna topics).",
+    )
 
     class Meta:
         verbose_name = "Inställning"

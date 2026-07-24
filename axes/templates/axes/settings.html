@@ -340,6 +340,18 @@
                                     </div>
                                 </div>
                             </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="ntfy_token" class="form-label">
+                                        <strong>ntfy.sh access-token</strong>
+                                    </label>
+                                    <input type="password" class="form-control" id="ntfy_token" name="ntfy_token"
+                                           value="{{ settings.ntfy_token }}" placeholder="tk_..." autocomplete="off">
+                                    <div class="form-text">
+                                        Bearer-token för skyddade topics på egen ntfy-server. Tom = ingen auth (öppna topics).
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
