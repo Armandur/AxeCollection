@@ -4,6 +4,12 @@
 {% block title %}Kommentarsmoderering - {{ block.super }}{% endblock %}
 
 {% block content %}
+<style>
+/* Full kommentarstext; bara patologiskt långa kläms med scroll inuti kortet. */
+.comment-moderation-body { max-height: 24rem; overflow-y: auto; }
+.comment-moderation-body p:last-child { margin-bottom: 0; }
+.comment-moderation-list { max-width: 900px; }
+</style>
 <div class="container-fluid">
     <div class="row">
         <div class="col-12">
@@ -48,37 +54,26 @@
             </div>
 
             {% if page_obj.object_list %}
-            <div class="table-responsive">
-                <table class="table table-hover align-middle" id="comment-table">
-                    <thead>
-                        <tr>
-                            <th>Tid</th>
-                            <th>Från</th>
-                            <th>Mål</th>
-                            <th>Text</th>
-                            <th>Status</th>
-                            <th>Åtgärder</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for comment in page_obj %}
-                        <tr id="comment-row-{{ comment.pk }}" data-comment-id="{{ comment.pk }}">
-                            <td class="text-nowrap">{{ comment.created_at|date:"Y-m-d H:i:s" }}</td>
-                            <td>{{ comment.display_author }}</td>
-                            <td>
+            <div class="comment-moderation-list">
+                {% for comment in page_obj %}
+                <div class="card mb-3" id="comment-card-{{ comment.pk }}" data-comment-id="{{ comment.pk }}">
+                    <div class="card-body">
+                        <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-2">
+                            <div>
+                                <strong>{{ comment.display_author }}</strong>
+                                <span class="text-muted small ms-1">{{ comment.created_at|date:"Y-m-d H:i" }}</span>
+                            </div>
+                            <div class="d-flex flex-wrap align-items-center gap-2">
                                 {% if comment.axe %}
-                                    <span class="badge bg-secondary">Yxa</span>
-                                    <a href="{{ comment.target_url }}">{{ comment.axe }}</a>
+                                    <span><span class="badge bg-secondary">Yxa</span>
+                                    <a href="{{ comment.target_url }}">{{ comment.axe }}</a></span>
                                 {% elif comment.manufacturer %}
-                                    <span class="badge bg-secondary">Tillverkare</span>
-                                    <a href="{{ comment.target_url }}">{{ comment.manufacturer }}</a>
+                                    <span><span class="badge bg-secondary">Tillverkare</span>
+                                    <a href="{{ comment.target_url }}">{{ comment.manufacturer }}</a></span>
                                 {% elif comment.stamp %}
-                                    <span class="badge bg-secondary">Stämpel</span>
-                                    <a href="{{ comment.target_url }}">{{ comment.stamp }}</a>
+                                    <span><span class="badge bg-secondary">Stämpel</span>
+                                    <a href="{{ comment.target_url }}">{{ comment.stamp }}</a></span>
                                 {% endif %}
-                            </td>
-                            <td>{{ comment.body|truncatewords:20 }}</td>
-                            <td class="comment-status-cell">
                                 {% if comment.status == "PENDING" %}
                                     <span class="badge bg-warning text-dark">{{ comment.get_status_display }}</span>
                                 {% elif comment.status == "APPROVED" %}
@@ -88,41 +83,50 @@
                                 {% else %}
                                     <span class="badge bg-danger">{{ comment.get_status_display }}</span>
                                 {% endif %}
-                            </td>
-                            <td>
-                                <div class="btn-group btn-group-sm" role="group">
-                                    {% if comment.status != 'APPROVED' %}
-                                    <button type="button" class="btn btn-outline-success moderate-btn"
-                                            data-url="{% url 'moderate_comment' comment.pk %}"
-                                            data-action="approve" data-comment-id="{{ comment.pk }}">
-                                        <i class="bi bi-check-lg"></i> Godkänn
-                                    </button>
-                                    {% endif %}
-                                    {% if comment.status != 'REJECTED' %}
-                                    <button type="button" class="btn btn-outline-secondary moderate-btn"
-                                            data-url="{% url 'moderate_comment' comment.pk %}"
-                                            data-action="reject" data-comment-id="{{ comment.pk }}">
-                                        <i class="bi bi-x-lg"></i> Avvisa
-                                    </button>
-                                    {% endif %}
-                                    {% if comment.status != 'SPAM' %}
-                                    <button type="button" class="btn btn-outline-danger moderate-btn"
-                                            data-url="{% url 'moderate_comment' comment.pk %}"
-                                            data-action="spam" data-comment-id="{{ comment.pk }}">
-                                        <i class="bi bi-shield-exclamation"></i> Skräp
-                                    </button>
-                                    {% endif %}
-                                    <button type="button" class="btn btn-outline-danger moderate-btn"
-                                            data-url="{% url 'moderate_comment' comment.pk %}"
-                                            data-action="delete" data-comment-id="{{ comment.pk }}">
-                                        <i class="bi bi-trash"></i> Ta bort
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+                            </div>
+                        </div>
+
+                        {% if comment.parent %}
+                        <div class="comment-parent-ref border-start border-2 ps-2 mb-2 text-muted small">
+                            <i class="bi bi-reply-fill"></i> Svar på
+                            <a href="{{ comment.target_url }}#comment-{{ comment.parent.pk }}">{{ comment.parent.display_author }}</a>:
+                            <span class="fst-italic">{{ comment.parent.body|truncatechars:120 }}</span>
+                        </div>
+                        {% endif %}
+
+                        <div class="comment-moderation-body mb-3">{{ comment.body|linebreaks }}</div>
+
+                        <div class="btn-group btn-group-sm" role="group">
+                            {% if comment.status != 'APPROVED' %}
+                            <button type="button" class="btn btn-outline-success moderate-btn"
+                                    data-url="{% url 'moderate_comment' comment.pk %}"
+                                    data-action="approve" data-comment-id="{{ comment.pk }}">
+                                <i class="bi bi-check-lg"></i> Godkänn
+                            </button>
+                            {% endif %}
+                            {% if comment.status != 'REJECTED' %}
+                            <button type="button" class="btn btn-outline-secondary moderate-btn"
+                                    data-url="{% url 'moderate_comment' comment.pk %}"
+                                    data-action="reject" data-comment-id="{{ comment.pk }}">
+                                <i class="bi bi-x-lg"></i> Avvisa
+                            </button>
+                            {% endif %}
+                            {% if comment.status != 'SPAM' %}
+                            <button type="button" class="btn btn-outline-danger moderate-btn"
+                                    data-url="{% url 'moderate_comment' comment.pk %}"
+                                    data-action="spam" data-comment-id="{{ comment.pk }}">
+                                <i class="bi bi-shield-exclamation"></i> Skräp
+                            </button>
+                            {% endif %}
+                            <button type="button" class="btn btn-outline-danger moderate-btn"
+                                    data-url="{% url 'moderate_comment' comment.pk %}"
+                                    data-action="delete" data-comment-id="{{ comment.pk }}">
+                                <i class="bi bi-trash"></i> Ta bort
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
             </div>
 
             <!-- Paginering -->
@@ -204,8 +208,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 .then(response => response.json().then(data => ({ ok: response.ok, data })))
                 .then(({ ok, data }) => {
                     if (ok && data.success) {
-                        const row = document.getElementById('comment-row-' + commentId);
-                        if (row) row.remove();
+                        const card = document.getElementById('comment-card-' + commentId);
+                        if (card) card.remove();
                         const message = data.deleted
                             ? 'Kommentaren togs bort.'
                             : 'Kommentaren markerades som "' + data.status_display + '".';

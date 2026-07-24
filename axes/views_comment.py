@@ -152,7 +152,7 @@ def comment_moderation(request):
     """Admin-vy för att godkänna/avvisa/markera kommentarer som skräp."""
     status = request.GET.get("status", "PENDING")
     comments = Comment.objects.select_related(
-        "axe", "manufacturer", "stamp", "moderated_by"
+        "axe", "manufacturer", "stamp", "moderated_by", "parent"
     )
 
     if status and status != "ALL":
