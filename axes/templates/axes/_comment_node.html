@@ -13,7 +13,7 @@
     {% else %}
     <div class="d-flex justify-content-between">
         <strong>{{ comment.display_author }}</strong>
-        <span class="text-muted small">{{ comment.created_at|date:"c" }}</span>
+        <span class="text-muted small">{{ comment.created_at|date:"Y-m-d - H:i" }}</span>
     </div>
     <div>{{ comment.body|linebreaks }}</div>
     {% if is_staff %}
