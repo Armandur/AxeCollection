@@ -20,7 +20,7 @@ Uppladdning av backupfiler via webbgränssnittet fungerar inte för stora filer.
 
 ---
 
-## [P3][doing] [axecollection] Trådat/nästlat kommentarssystem (Reddit-likt) med svara-per-nivå
+## [P3][done] [axecollection] Trådat/nästlat kommentarssystem (Reddit-likt) med svara-per-nivå
 
 Rasmus 2026-07-23: bygg om kommentarerna till ett TRÅDAT system (Reddit-likt) - kommentarer ska kunna nästlas och besvaras på olika nivåer. Återanvänd hur nivåer visas med en färgad vänsterlinje från viva-engage-rescue-projektet (~/workspace/viva-engage-rescue). Separat UX för att skapa en helt ny TOPPKOMMENTAR, och en 'Svara'-knapp per kommentar för att besvara i tråden. Bygger på befintliga Comment (parent-FK för självreferens, depth/indent, rekursiv rendering, moderering per nod). STORT - designförslag efterfrågat av en kommentarssystem-expert (bifogas som plan på denna task). Överväg: modereringens interaktion med trådar (dölj underträd?), djup-tak, prestanda (prefetch), och att auto-godkänn (separat task) + inline-moderering (TASK-368) ska fungera i trådvyn.
 
@@ -249,6 +249,16 @@ Utöka CI/CD (GitHub Actions) med automatisk deployment till en testmiljö.
 
 ---
 
+## [P4][done] [axecollection] Gör kommentarernas tidsstämpel human-readable (Y-m-d - H:i)
+
+Kommentarens tidsstämpel renderas i dag som ISO 8601 via date:"c" (t.ex. 2026-07-23T23:46:07.004489+00:00). Byt till läsbart svenskt format, år-månad-dag - timmar:minuter, t.ex. 'date:"Y-m-d - H:i"'. Endast _comment_node.html rad 16.
+
+- ID: `01KY8P227N2SW5JKQ0D1EW85RV`
+- Type: improvement
+- Actor: ai:claude-opus-4-8
+
+---
+
 ## [P4][done] [axecollection] Kom ihåg kommenterarens visningsnamn i localStorage
 
 Rasmus 2026-07-23: låt en kommenterare slippa skriva sitt namn varje gång - spara author_name i localStorage och förifyll fältet nästa gång (surfar man runt och kommenterar på flera yxor/tillverkare).
@@ -261,11 +271,31 @@ Rent klient-sido i _comment_section.html-JS:en: vid lyckad submit, spara #commen
 
 ---
 
-## [P4][todo] [axecollection] Notifieringstjänst för väntande kommentarer
+## [P4][done] [axecollection] Notifiera om väntande kommentarer via ntfy.sh-push
 
-Rasmus 2026-07-23: implementera en notifieringstjänst som meddelar om väntande kommentarer (utöver header-badgen som redan finns). 
+## Context
+En ny publik kommentar hamnar i PENDING och väntar på moderering. I dag finns bara en passiv header-badge (pending_comments_count). En aktiv push-notis via ntfy.sh meddelar admin direkt i telefonen när något behöver granskas. ntfy valdes framför e-post: en enkel HTTP POST, ingen SMTP-creds-blockare, passar stacken.
 
-Idéer/överväg: e-post till admin när en ny kommentar kommer in (smtplib + Lettermint SMTP enligt Rasmus stack), ev. sammanfattning/digest i stället för per kommentar. Kanske en enkel notifierings-modell/inkorg i appen. Trigga vid submit_comment (status PENDING) i axes/views_comment.py. Respektera att spam (honeypot) INTE ska notifiera. Header-badgen (pending_comments_count i context processor) finns redan som passiv indikator.
+## Acceptance criteria
+- [ ] Settings-modellen har ett fält for ntfy topic-URL (t.ex. ntfy_topic_url, tom sträng = notiser av). Redigerbart i settings-vyn. INTE hårdkodat (instansspecifikt, jfr config/GDPR-regeln).
+- [ ] När en publik kommentar sparas med status PENDING skickas en HTTP POST (requests) till topic-URL:en med kort, icke-teknisk svensk text + en Click-header som länkar till modereringsvyn (comment_moderation).
+- [ ] Spam (honeypot ifyllt) triggar INTE notis.
+- [ ] Auto-godkända kommentarer (inloggad admin, status APPROVED) triggar INTE notis.
+- [ ] Om topic-URL är tom skickas ingen POST (funktionen är av).
+- [ ] Ett fel i notis-anropet (nätverk/timeout/ntfy nere) sänker ALDRIG kommentar-submiten - kommentaren sparas ändå och felet loggas (logger.exception), sväljs inte tyst.
+- [ ] Migration för det nya Settings-fältet finns med.
+
+## Implementation hints
+- Notis-logik i en egen liten hjälpare, t.ex. axes/utils/notifications.py (send_pending_comment_notification(comment, request)), anropad från _submit_comment i axes/views_comment.py efter comment.save() men bara i PENDING-grenen.
+- requests.post(topic_url, data=body.encode("utf-8"), headers={"Title": "...", "Click": absolut-url, "Tags": "speech_balloon"}, timeout=5). Wrappa i try/except och logga.
+- Bygg absolut URL till comment_moderation via request.build_absolute_uri(reverse("comment_moderation")).
+- Nytt Settings-fält -> makemigrations.
+
+## Verifiering
+- ./venv/bin/python manage.py test axes.tests.test_comments  (grönt)
+- Utöka test_comments med tester som mockar axes.utils.notifications.requests.post (unittest.mock.patch): (a) PENDING-submit -> post anropad 1 gång med rätt topic-URL och Click-header; (b) honeypot-submit -> post EJ anropad; (c) inloggad auto-approve -> post EJ anropad; (d) tom topic-URL -> post EJ anropad; (e) requests.post kastar Exception -> kommentaren sparas ändå (Comment finns i DB) och svaret är 200/success.
+- ./venv/bin/python manage.py makemigrations --check --dry-run  ska rapportera att en migration SAKNAS innan den skapats; efter makemigrations ska den vara ren. En ny 0058-migration for Settings-fältet ska finnas.
+- ./venv/bin/python -m black --check på ändrade .py-filer.
 
 - ID: `01KY7XP0JSAJGVF6FMM7X8KZ5H`
 - Type: feature
