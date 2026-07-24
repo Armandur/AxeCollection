@@ -12,6 +12,7 @@ from django.views.decorators.http import require_POST
 
 from .forms import CommentForm
 from .models import Axe, Comment, Manufacturer, Settings, Stamp
+from .utils.notifications import send_pending_comment_notification
 
 logger = logging.getLogger(__name__)
 
@@ -108,6 +109,9 @@ def _submit_comment(request, target, target_field, redirect_url):
         messages.error(request, message)
         return redirect(redirect_url)
     comment.save()
+
+    if status == "PENDING":
+        send_pending_comment_notification(comment, request)
 
     cache.set(rate_limit_key, submit_count + 1, RATE_LIMIT_WINDOW)
 

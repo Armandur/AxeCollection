@@ -972,6 +972,14 @@ class Settings(models.Model):
         help_text="Komma-separerad lista av externa CSRF origins (t.ex. https://demo.domain.com,https://192.168.1.100)",
     )
 
+    # Notifieringar
+    ntfy_topic_url = models.URLField(
+        blank=True,
+        default="",
+        verbose_name="ntfy.sh topic-URL",
+        help_text="Topic-URL för push-notiser (t.ex. https://ntfy.sh/mitt-topic). Tom = notiser avstängda.",
+    )
+
     class Meta:
         verbose_name = "Inställning"
         verbose_name_plural = "Inställningar"

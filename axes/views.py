@@ -791,6 +791,9 @@ def settings_view(request):
         settings.external_hosts = request.POST.get("external_hosts", "")
         settings.external_csrf_origins = request.POST.get("external_csrf_origins", "")
 
+        # Notifieringar
+        settings.ntfy_topic_url = request.POST.get("ntfy_topic_url", "")
+
         settings.save()
 
         # Uppdatera host-konfigurationen om den ändrades

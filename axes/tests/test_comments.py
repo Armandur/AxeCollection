@@ -1,3 +1,5 @@
+from unittest.mock import patch
+
 from django.contrib.auth.models import User
 from django.core.cache import cache
 from django.core.exceptions import ValidationError
@@ -416,6 +418,81 @@ class SubmitAxeCommentTest(TestCase):
         content = response.content.decode()
         self.assertNotIn("<script>alert(1)</script>", content)
         self.assertIn("&lt;script&gt;", content)
+
+
+class SubmitCommentNotificationTest(TestCase):
+    def setUp(self):
+        cache.clear()
+        self.axe = make_axe()
+        self.url = reverse("submit_axe_comment", args=[self.axe.pk])
+        settings = Settings.get_settings()
+        settings.ntfy_topic_url = "https://ntfy.sh/test-topic"
+        settings.save()
+
+    def tearDown(self):
+        cache.clear()
+
+    @patch("axes.utils.notifications.requests.post")
+    def test_pending_comment_triggers_notification(self, mock_post):
+        response = self.client.post(
+            self.url, {"author_name": "Kalle", "body": "Fin yxa!", "website": ""}
+        )
+
+        self.assertEqual(response.status_code, 302)
+        mock_post.assert_called_once()
+        args, kwargs = mock_post.call_args
+        self.assertEqual(args[0], "https://ntfy.sh/test-topic")
+        self.assertIn(reverse("comment_moderation"), kwargs["headers"]["Click"])
+
+    @patch("axes.utils.notifications.requests.post")
+    def test_honeypot_spam_does_not_trigger_notification(self, mock_post):
+        self.client.post(
+            self.url,
+            {
+                "author_name": "Bot",
+                "body": "Köp billiga skor",
+                "website": "http://spam.com",
+            },
+        )
+
+        mock_post.assert_not_called()
+
+    @patch("axes.utils.notifications.requests.post")
+    def test_authenticated_auto_approved_comment_does_not_trigger_notification(
+        self, mock_post
+    ):
+        user = User.objects.create_user(username="admin", password="pass1234")
+        self.client.force_login(user)
+
+        self.client.post(
+            self.url, {"author_name": "Admin", "body": "Egen kommentar", "website": ""}
+        )
+
+        mock_post.assert_not_called()
+
+    @patch("axes.utils.notifications.requests.post")
+    def test_empty_topic_url_does_not_trigger_notification(self, mock_post):
+        settings = Settings.get_settings()
+        settings.ntfy_topic_url = ""
+        settings.save()
+
+        self.client.post(
+            self.url, {"author_name": "Kalle", "body": "Fin yxa!", "website": ""}
+        )
+
+        mock_post.assert_not_called()
+
+    @patch("axes.utils.notifications.requests.post")
+    def test_notification_failure_does_not_break_submit(self, mock_post):
+        mock_post.side_effect = Exception("ntfy nere")
+
+        response = self.client.post(
+            self.url, {"author_name": "Kalle", "body": "Fin yxa!", "website": ""}
+        )
+
+        self.assertEqual(response.status_code, 302)
+        comment = Comment.objects.get(axe=self.axe)
+        self.assertEqual(comment.status, "PENDING")
 
 
 class SubmitReplyCommentTest(TestCase):
