@@ -1589,6 +1589,9 @@ class StampImage(models.Model):
             if not os.path.exists(webp_path):
                 try:
                     with Image.open(image_path) as img:
+                        # Rotera enligt EXIF-orientering (telefonbilder) så webp:en
+                        # visas rättvänd - webbläsare auto-roterar JPEG men inte webp
+                        img = ImageOps.exif_transpose(img)
                         # Konvertera till RGB om nödvändigt
                         if img.mode in ("RGBA", "LA", "P"):
                             img = img.convert("RGB")
@@ -1726,6 +1729,9 @@ class StampImage(models.Model):
 
                 if not os.path.exists(webp_path):
                     with Image.open(image_path) as img:
+                        # Rotera enligt EXIF-orientering (telefonbilder) så webp:en
+                        # visas rättvänd - webbläsare auto-roterar JPEG men inte webp
+                        img = ImageOps.exif_transpose(img)
                         if img.mode in ("RGBA", "LA", "P"):
                             img = img.convert("RGB")
                         img.save(webp_path, "WEBP", quality=85)
