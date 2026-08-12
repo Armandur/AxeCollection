@@ -95,7 +95,7 @@ black . && flake8                   # formatering + linting
 
 Management-kommandon av intresse: `generate_test_data`, `reset_to_test_data`,
 `backup_database`, `restore_backup`, `import_csv`/`export_csv`,
-`init_stamp_symbols`, `update_hosts`.
+`init_stamp_symbols`, `update_hosts`, `regenerate_webp`.
 
 ## Konventioner (från .cursorrules)
 
