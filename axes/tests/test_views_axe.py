@@ -1225,6 +1225,34 @@ class AxeImageCommentBadgeTest(ViewsAxeTestCase):
     def test_anonymous_badge_counts_only_approved(self):
         self.assertEqual(self._badge_count(), 1)
 
+    def test_gallery_keeps_image_order(self):
+        """Bildernas order-fält styr galleriet, inte pk.
+
+        annotate() med ett aggregat lägger till GROUP BY och tappar
+        Meta.ordering, så badge-annoteringen sorterade om galleriet till
+        pk-ordning tills order_by sattes explicit.
+        """
+        # Skapa bilder där order och pk går i MOTSATT riktning - annars kan en
+        # trasig sortering råka se rätt ut.
+        extra = [
+            AxeImage.objects.create(
+                axe=self.axe,
+                image=SimpleUploadedFile(f"o{n}.jpg", b"fake_image_content"),
+                order=n,
+            )
+            for n in (5, 4, 3, 2)
+        ]
+        response = self.client.get(reverse("axe_detail", args=[self.axe.pk]))
+        orders = [img.order for img in response.context["axe"].images.all()]
+        assert orders, "yxan måste ha bilder för att ordningen ska kunna mätas"
+        self.assertEqual(orders, sorted(orders))
+        self.assertEqual(orders[-1], 5)
+        self.assertNotEqual(
+            [img.pk for img in response.context["axe"].images.all()],
+            [self.image.pk] + [i.pk for i in extra],
+            "ordningen får inte vara pk-ordning",
+        )
+
     def test_staff_badge_also_counts_pending(self):
         self.client.force_login(self.user)
         self.assertEqual(self._badge_count(), 2)

@@ -408,9 +408,12 @@ def axe_detail(request, pk):
         .prefetch_related(
             Prefetch(
                 "images",
+                # order_by måste stå explicit: annotate() med ett aggregat lägger
+                # till GROUP BY och tappar Meta.ordering, så galleriet hamnade i
+                # pk-ordning i stället för bildernas order-fält.
                 queryset=AxeImage.objects.annotate(
                     comment_count=_visible_comment_count(request.user.is_authenticated)
-                ),
+                ).order_by("order"),
             ),
             "images__stamp_markings__stamp__manufacturer",
         )
