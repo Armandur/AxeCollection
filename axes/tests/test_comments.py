@@ -1,13 +1,15 @@
+import os
 from unittest.mock import patch
 
 from django.contrib.auth.models import User
 from django.core.cache import cache
 from django.core.exceptions import ValidationError
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.db.models import RestrictedError
 from django.test import TestCase
 from django.urls import reverse
 
-from axes.models import AxeImage, Comment, Settings
+from axes.models import Axe, AxeImage, Comment, Settings
 from axes.services.comments import build_comment_tree
 from axes.tests.factories import make_axe, make_manufacturer, make_stamp
 
@@ -973,3 +975,49 @@ class PendingCommentNotificationTargetTest(TestCase):
         body = mock_send.call_args.args[3]
         self.assertIn(str(self.axe_image), body)
         self.assertIn("väntar på granskning", body)
+
+
+class DeleteTargetWithThreadTest(TestCase):
+    """Ett kommentarsmål med en TRÅDAD kommentar måste gå att radera.
+
+    Comment.parent var PROTECT, vilket fick AxeImage.delete() att kasta
+    ProtectedError - och eftersom delete() tar bort jpg/webp FÖRE raden blev
+    utfallet fil borta, rad kvar, serverfel. RESTRICT släpper igenom cascaden
+    när hela tråden raderas i samma operation men blockerar fortfarande en
+    naken förälder-radering, som modereringen förlitar sig på.
+    """
+
+    def _thread_on_image(self):
+        axe = make_axe()
+        image = _make_axe_image(axe, order=1)
+        root = Comment.objects.create(axe_image=image, body="rot", status="APPROVED")
+        reply = Comment.objects.create(
+            axe_image=image, parent=root, body="svar", status="APPROVED"
+        )
+        return axe, image, root, reply
+
+    def test_deleting_image_takes_the_whole_thread(self):
+        axe, image, root, reply = self._thread_on_image()
+        path = image.image.path
+        image.delete()
+        self.assertFalse(AxeImage.objects.filter(pk=image.pk).exists())
+        self.assertFalse(Comment.objects.filter(pk__in=[root.pk, reply.pk]).exists())
+        self.assertFalse(os.path.exists(path), "filen ska vara borta med raden")
+
+    def test_deleting_axe_takes_image_comments(self):
+        axe, image, root, reply = self._thread_on_image()
+        axe.delete()
+        self.assertFalse(Comment.objects.filter(pk__in=[root.pk, reply.pk]).exists())
+
+    def test_deleting_axe_takes_its_own_thread(self):
+        axe = make_axe()
+        root = Comment.objects.create(axe=axe, body="rot", status="APPROVED")
+        Comment.objects.create(axe=axe, parent=root, body="svar", status="APPROVED")
+        axe.delete()
+        self.assertFalse(Comment.objects.filter(axe_id=axe.pk).exists())
+
+    def test_bare_parent_delete_is_still_blocked(self):
+        axe, image, root, reply = self._thread_on_image()
+        with self.assertRaises(RestrictedError):
+            root.delete()
+        self.assertTrue(Comment.objects.filter(pk=reply.pk).exists())

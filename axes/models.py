@@ -1060,7 +1060,13 @@ class Comment(models.Model):
         "self",
         null=True,
         blank=True,
-        on_delete=models.PROTECT,
+        # RESTRICT, inte PROTECT: en förälder får fortfarande inte raderas bakom
+        # sina svar (moderate_comment döljer den med is_removed i stället), men
+        # när HELA tråden följer med i samma radering - bilden, yxan eller
+        # stämpeln den hänger på tas bort - ska cascaden gå igenom. Med PROTECT
+        # kastade AxeImage.delete() ProtectedError efter att filerna redan
+        # raderats: fil borta, rad kvar, serverfel.
+        on_delete=models.RESTRICT,
         related_name="replies",
     )
     depth = models.PositiveSmallIntegerField(default=0, editable=False)
