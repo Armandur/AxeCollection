@@ -4,6 +4,7 @@ from django.contrib.auth.models import User
 from django.urls import reverse
 from axes.models import (
     Axe,
+    Comment,
     Contact,
     Manufacturer,
     Platform,
@@ -1136,3 +1137,100 @@ class MoveImagesToUnlinkedFolderTest(ViewsAxeTestCase):
 
         # Kontrollera att bilden togs bort
         self.assertFalse(AxeImage.objects.filter(id=image.id).exists())
+
+
+class AxeImageDetailViewTest(ViewsAxeTestCase):
+    def test_axe_image_detail_view_returns_200_with_description(self):
+        """Testa att bildsidan visas och innehåller bildens beskrivning"""
+        image = AxeImage.objects.create(
+            axe=self.axe,
+            image=SimpleUploadedFile("test.jpg", b"fake_image_content"),
+            description="En fin bild",
+            order=1,
+        )
+        response = self.client.get(
+            reverse("axe_image_detail", args=[self.axe.pk, image.pk])
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "axes/axe_image_detail.html")
+        self.assertContains(response, "En fin bild")
+
+    def test_axe_image_detail_view_404_for_image_on_other_axe(self):
+        """En bild som hör till en annan yxa ska ge 404 på denna yxas URL"""
+        other_axe = Axe.objects.create(
+            manufacturer=self.manufacturer, model="Annan yxa", status="KÖPT"
+        )
+        image = AxeImage.objects.create(
+            axe=other_axe,
+            image=SimpleUploadedFile("test.jpg", b"fake_image_content"),
+            order=1,
+        )
+        response = self.client.get(
+            reverse("axe_image_detail", args=[self.axe.pk, image.pk])
+        )
+        self.assertEqual(response.status_code, 404)
+
+    def test_axe_image_detail_view_navigation_at_edges(self):
+        """Första bilden har ingen förra, sista ingen nästa"""
+        image1 = AxeImage.objects.create(
+            axe=self.axe,
+            image=SimpleUploadedFile("test1.jpg", b"fake_image_content"),
+            order=1,
+        )
+        image2 = AxeImage.objects.create(
+            axe=self.axe,
+            image=SimpleUploadedFile("test2.jpg", b"fake_image_content"),
+            order=2,
+        )
+
+        first_response = self.client.get(
+            reverse("axe_image_detail", args=[self.axe.pk, image1.pk])
+        )
+        self.assertIsNone(first_response.context["prev_image"])
+        self.assertEqual(first_response.context["next_image"], image2)
+
+        last_response = self.client.get(
+            reverse("axe_image_detail", args=[self.axe.pk, image2.pk])
+        )
+        self.assertIsNone(last_response.context["next_image"])
+        self.assertEqual(last_response.context["prev_image"], image1)
+
+
+class AxeImageCommentBadgeTest(ViewsAxeTestCase):
+    """Galleriets kommentarsbadge får bara räkna kommentarer besökaren ser.
+
+    Räknas alla oavsett status visar badgen "3" för en anonym besökare som
+    bara hittar en kommentar på bildsidan - siffran avslöjar då att det finns
+    omodererade kommentarer, och skräppost bidrar till antalet.
+    """
+
+    def setUp(self):
+        super().setUp()
+        self.image = AxeImage.objects.create(
+            axe=self.axe,
+            image=SimpleUploadedFile("badge.jpg", b"fake_image_content"),
+            order=1,
+        )
+        Comment.objects.create(axe_image=self.image, body="godkänd", status="APPROVED")
+        Comment.objects.create(axe_image=self.image, body="väntar", status="PENDING")
+        Comment.objects.create(axe_image=self.image, body="skräp", status="SPAM")
+        Comment.objects.create(axe_image=self.image, body="avvisad", status="REJECTED")
+
+    def _badge_count(self):
+        response = self.client.get(reverse("axe_detail", args=[self.axe.pk]))
+        images = list(response.context["axe"].images.all())
+        assert images, "yxan måste ha minst en bild för att badgen ska kunna mätas"
+        return images[0].comment_count
+
+    def test_anonymous_badge_counts_only_approved(self):
+        self.assertEqual(self._badge_count(), 1)
+
+    def test_staff_badge_also_counts_pending(self):
+        self.client.force_login(self.user)
+        self.assertEqual(self._badge_count(), 2)
+
+    def test_removed_comment_is_not_counted(self):
+        approved = Comment.objects.get(axe_image=self.image, status="APPROVED")
+        approved.is_removed = True
+        approved.save()
+        self.assertEqual(self._badge_count(), 0)

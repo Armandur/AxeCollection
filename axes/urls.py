@@ -15,6 +15,11 @@ urlpatterns = [
     path("yxor/", views_axe.axe_list, name="axe_list"),
     path("yxor/ny/", views_axe.axe_create, name="axe_create"),
     path("yxor/<int:pk>/", views_axe.axe_detail, name="axe_detail"),
+    path(
+        "yxor/<int:pk>/bild/<int:image_pk>/",
+        views_axe.axe_image_detail,
+        name="axe_image_detail",
+    ),
     path("yxor/<int:pk>/redigera/", views_axe.axe_edit, name="axe_edit"),
     path(
         "yxor/<int:pk>/mottagning/",
@@ -248,6 +253,11 @@ urlpatterns = [
         "stamplar/<int:pk>/kommentar/",
         views_comment.submit_stamp_comment,
         name="submit_stamp_comment",
+    ),
+    path(
+        "yxor/<int:pk>/bild/<int:image_pk>/kommentar/",
+        views_comment.submit_axe_image_comment,
+        name="submit_axe_image_comment",
     ),
     path("kommentarer/", views_comment.comment_moderation, name="comment_moderation"),
     path(

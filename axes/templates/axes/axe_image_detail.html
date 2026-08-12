@@ -1,0 +1,58 @@
+{% extends 'axes/base.html' %}
+{% load axe_filters %}
+
+{% block title %}Bild {{ image_index }} av {{ image_count }} - {{ axe.display_id }} - {{ block.super }}{% endblock %}
+
+{% block content %}
+{% include 'axes/_breadcrumbs.html' with breadcrumbs=breadcrumbs %}
+
+<div class="row justify-content-center mb-4">
+    <div class="col-12 col-lg-8">
+        <div class="text-center mb-3">
+            <picture>
+                {% if image.webp_url %}
+                    <source srcset="{{ image.webp_url }}" type="image/webp">
+                {% endif %}
+                <img src="{{ image.image_url_with_cache_busting }}"
+                     class="img-fluid rounded"
+                     style="max-width: 100%;"
+                     alt="{{ image.description|default:axe.display_id }}">
+            </picture>
+        </div>
+
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <div>
+                {% if prev_image %}
+                    <a href="{% url 'axe_image_detail' axe.pk prev_image.pk %}" class="btn btn-outline-secondary btn-sm">
+                        <i class="bi bi-chevron-left"></i> Föregående
+                    </a>
+                {% endif %}
+            </div>
+            <span class="text-muted small">Bild {{ image_index }} av {{ image_count }}</span>
+            <div>
+                {% if next_image %}
+                    <a href="{% url 'axe_image_detail' axe.pk next_image.pk %}" class="btn btn-outline-secondary btn-sm">
+                        Nästa <i class="bi bi-chevron-right"></i>
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+
+        {% if image.description %}
+            <p class="text-center">{{ image.description }}</p>
+        {% endif %}
+
+        <p class="text-center">
+            <a href="{% url 'axe_detail' axe.pk %}">Tillbaka till {{ axe.display_id }} - {{ axe.model }}</a>
+        </p>
+    </div>
+</div>
+
+<!-- Samma kolumnbredd som bilden ovan, annars blir sektionen bredare än
+     innehållet den hör till (jfr 6ee6a9c, samma fälla på stämpelsidan). -->
+<div class="row justify-content-center">
+    <div class="col-12 col-lg-8">
+        {% include "axes/_comment_section.html" %}
+    </div>
+</div>
+{% endblock %}

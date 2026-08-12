@@ -3,12 +3,20 @@ from unittest.mock import patch
 from django.contrib.auth.models import User
 from django.core.cache import cache
 from django.core.exceptions import ValidationError
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
 from django.urls import reverse
 
-from axes.models import Comment, Settings
+from axes.models import AxeImage, Comment, Settings
 from axes.services.comments import build_comment_tree
 from axes.tests.factories import make_axe, make_manufacturer, make_stamp
+
+
+def _make_axe_image(axe=None, **kwargs):
+    if axe is None:
+        axe = make_axe()
+    kwargs.setdefault("image", SimpleUploadedFile("test.jpg", b"fake_image_content"))
+    return AxeImage.objects.create(axe=axe, **kwargs)
 
 
 class CommentModelTest(TestCase):
@@ -24,6 +32,17 @@ class CommentModelTest(TestCase):
 
         # Exakt en satt (axe) ska passera clean() utan att höja ValidationError
         Comment(axe=axe, body="Test").full_clean()
+
+    def test_clean_rejects_axe_and_axe_image_both_set(self):
+        axe = make_axe()
+        axe_image = _make_axe_image(axe)
+
+        with self.assertRaises(ValidationError):
+            Comment(axe=axe, axe_image=axe_image, body="Test").full_clean()
+
+    def test_clean_accepts_axe_image_only(self):
+        axe_image = _make_axe_image()
+        Comment(axe_image=axe_image, body="Test").full_clean()
 
     def test_clean_rejects_self_reference(self):
         axe = make_axe()
@@ -789,6 +808,80 @@ class SubmitStampCommentTest(TestCase):
         self.assertIn("Godkänd stämpelkommentar".encode(), response.content)
 
 
+class SubmitAxeImageCommentTest(TestCase):
+    def setUp(self):
+        cache.clear()
+        self.axe = make_axe()
+        self.axe_image = _make_axe_image(self.axe)
+        self.url = reverse(
+            "submit_axe_image_comment", args=[self.axe.pk, self.axe_image.pk]
+        )
+
+    def tearDown(self):
+        cache.clear()
+
+    def test_submit_creates_pending_comment_not_visible_on_image_detail(self):
+        response = self.client.post(
+            self.url,
+            {
+                "author_name": "Kalle",
+                "body": "Väntande bildkommentar",
+                "website": "",
+            },
+        )
+        self.assertEqual(response.status_code, 302)
+        comment = Comment.objects.get(axe_image=self.axe_image)
+        self.assertEqual(comment.status, "PENDING")
+
+        detail_response = self.client.get(
+            reverse("axe_image_detail", args=[self.axe.pk, self.axe_image.pk])
+        )
+        self.assertNotIn("Väntande bildkommentar".encode(), detail_response.content)
+
+    def test_approved_comment_visible_on_image_detail(self):
+        Comment.objects.create(
+            axe_image=self.axe_image, body="Godkänd bildkommentar", status="APPROVED"
+        )
+        response = self.client.get(
+            reverse("axe_image_detail", args=[self.axe.pk, self.axe_image.pk])
+        )
+        self.assertIn("Godkänd bildkommentar".encode(), response.content)
+
+    def test_submit_to_image_on_other_axe_is_404(self):
+        other_axe = make_axe()
+        url = reverse(
+            "submit_axe_image_comment", args=[other_axe.pk, self.axe_image.pk]
+        )
+        response = self.client.post(
+            url, {"author_name": "Kalle", "body": "Fel yxa", "website": ""}
+        )
+        self.assertEqual(response.status_code, 404)
+
+    def test_reply_to_image_comment_is_nested_in_tree(self):
+        parent = Comment.objects.create(
+            axe_image=self.axe_image, body="Rot", status="APPROVED"
+        )
+
+        response = self.client.post(
+            self.url,
+            {
+                "author_name": "Kalle",
+                "body": "Svar på bildkommentar",
+                "website": "",
+                "parent_id": parent.pk,
+            },
+        )
+        self.assertEqual(response.status_code, 302)
+        reply = Comment.objects.get(body="Svar på bildkommentar")
+        self.assertEqual(reply.parent_id, parent.pk)
+        self.assertEqual(reply.axe_image_id, self.axe_image.pk)
+
+        tree = build_comment_tree(self.axe_image, is_staff=True)
+        self.assertEqual(len(tree), 1)
+        self.assertEqual(tree[0].pk, parent.pk)
+        self.assertEqual(tree[0].rendered_children[0].pk, reply.pk)
+
+
 class CommentModerationViewTest(TestCase):
     def setUp(self):
         cache.clear()
@@ -849,3 +942,34 @@ class CommentModerationViewTest(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json(), {"success": True, "deleted": True})
         self.assertFalse(Comment.objects.filter(pk=comment.pk).exists())
+
+
+class PendingCommentNotificationTargetTest(TestCase):
+    """Notisen ska namnge målet även för en bildkommentar.
+
+    send_pending_comment_notification räknade tidigare upp axe/manufacturer/
+    stamp för hand, så en bildkommentar gav target=None och notisen föll
+    tillbaka på att citera kommentarstexten utan att säga var den hamnat.
+    """
+
+    def setUp(self):
+        cache.clear()
+        settings_obj = Settings.get_settings()
+        settings_obj.ntfy_topic_url = "https://ntfy.example/test"
+        settings_obj.comments_enabled_public = True
+        settings_obj.save()
+        self.axe = make_axe()
+        self.axe_image = _make_axe_image(self.axe, order=1)
+
+    @patch("axes.utils.notifications.send_ntfy")
+    def test_notification_names_the_image(self, mock_send):
+        response = self.client.post(
+            reverse("submit_axe_image_comment", args=[self.axe.pk, self.axe_image.pk]),
+            {"author_name": "Anon", "body": "En kommentar på bilden"},
+        )
+        self.assertEqual(response.status_code, 302)
+
+        assert mock_send.called, "notisen måste skickas för en väntande kommentar"
+        body = mock_send.call_args.args[3]
+        self.assertIn(str(self.axe_image), body)
+        self.assertIn("väntar på granskning", body)

@@ -386,6 +386,11 @@ class AxeImage(models.Model):
             except Exception:
                 pass  # Kan logga fel om så önskas
 
+    def __str__(self):
+        # Syns i modereringsvyn och i ntfy-notisen om en bildkommentar, så
+        # standardsträngen ("AxeImage object (3)") duger inte.
+        return f"bild {self.order or self.pk} på {self.axe.display_id}"
+
     def delete(self, *args, **kwargs):
         # Ta bort både originalfilen och .webp-filen
         if self.image and self.image.name:
@@ -1044,6 +1049,13 @@ class Comment(models.Model):
         on_delete=models.CASCADE,
         related_name="comments",
     )
+    axe_image = models.ForeignKey(
+        "AxeImage",
+        null=True,
+        blank=True,
+        on_delete=models.CASCADE,
+        related_name="comments",
+    )
     parent = models.ForeignKey(
         "self",
         null=True,
@@ -1075,10 +1087,15 @@ class Comment(models.Model):
         return f"Kommentar av {self.display_author} på {self.target}"
 
     def clean(self):
-        targets = [bool(self.axe_id), bool(self.manufacturer_id), bool(self.stamp_id)]
+        targets = [
+            bool(self.axe_id),
+            bool(self.manufacturer_id),
+            bool(self.stamp_id),
+            bool(self.axe_image_id),
+        ]
         if sum(targets) != 1:
             raise ValidationError(
-                "Exakt en av axe, manufacturer eller stamp måste vara satt."
+                "Exakt en av axe, manufacturer, stamp eller axe_image måste vara satt."
             )
 
         if self.parent_id:
@@ -1088,9 +1105,11 @@ class Comment(models.Model):
                 self.axe_id != self.parent.axe_id
                 or self.manufacturer_id != self.parent.manufacturer_id
                 or self.stamp_id != self.parent.stamp_id
+                or self.axe_image_id != self.parent.axe_image_id
             ):
                 raise ValidationError(
-                    "Ett svar måste ha samma yxa/tillverkare/stämpel som sin förälder."
+                    "Ett svar måste ha samma yxa/tillverkare/stämpel/bild som sin "
+                    "förälder."
                 )
 
     def save(self, *args, **kwargs):
@@ -1106,7 +1125,7 @@ class Comment(models.Model):
 
     @property
     def target(self):
-        return self.axe or self.manufacturer or self.stamp
+        return self.axe or self.manufacturer or self.stamp or self.axe_image
 
     @property
     def target_url(self):
@@ -1118,6 +1137,10 @@ class Comment(models.Model):
             return reverse("manufacturer_detail", args=[self.manufacturer_id])
         if self.stamp_id:
             return reverse("stamp_detail", args=[self.stamp_id])
+        if self.axe_image_id:
+            return reverse(
+                "axe_image_detail", args=[self.axe_image.axe_id, self.axe_image_id]
+            )
         return None
 
     @property

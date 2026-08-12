@@ -73,6 +73,9 @@
                                 {% elif comment.stamp %}
                                     <span><span class="badge bg-secondary">Stämpel</span>
                                     <a href="{{ comment.target_url }}">{{ comment.stamp }}</a></span>
+                                {% elif comment.axe_image %}
+                                    <span><span class="badge bg-secondary">Bild</span>
+                                    <a href="{{ comment.target_url }}">{{ comment.axe_image }}</a></span>
                                 {% endif %}
                                 {% if comment.status == "PENDING" %}
                                     <span class="badge bg-warning text-dark">{{ comment.get_status_display }}</span>

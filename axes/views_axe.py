@@ -385,13 +385,37 @@ def _build_og_context(request, axe):
     }
 
 
+def _visible_comment_count(is_staff):
+    """Count-annotering för galleriets kommentarsbadge.
+
+    Måste följa samma synlighetsregel som build_comment_tree, annars räknar
+    badgen kommentarer besökaren inte får se: en anonym besökare skulle se
+    "3" i galleriet, hitta en enda kommentar på bildsidan, och därmed få veta
+    att det finns två omodererade (kanske skräppost) bakom siffran.
+    """
+    visible_statuses = ["APPROVED", "PENDING"] if is_staff else ["APPROVED"]
+    return Count(
+        "comments",
+        filter=Q(comments__status__in=visible_statuses, comments__is_removed=False),
+    )
+
+
 def axe_detail(request, pk):
+    from django.db.models import Prefetch
+
     axe = get_object_or_404(
         Axe.objects.select_related("manufacturer")
         .prefetch_related(
-            "measurements", "images", "images__stamp_markings__stamp__manufacturer"
+            Prefetch(
+                "images",
+                queryset=AxeImage.objects.annotate(
+                    comment_count=_visible_comment_count(request.user.is_authenticated)
+                ),
+            ),
+            "images__stamp_markings__stamp__manufacturer",
         )
         .prefetch_related(
+            "measurements",
             "stamps__stamp__manufacturer",
             "stamps__stamp__transcriptions",
             "stamps__stamp__images",
@@ -538,6 +562,46 @@ def axe_detail(request, pk):
         "comments_enabled": comment_settings.comments_enabled_public,
     }
     return render(request, "axes/axe_detail.html", context)
+
+
+def axe_image_detail(request, pk, image_pk):
+    """Egen sida för en enskild yxbild, med kommentarer knutna till bilden."""
+    axe_image = get_object_or_404(AxeImage, pk=image_pk, axe_id=pk)
+    axe = axe_image.axe
+
+    axe_images = list(axe.images.all())
+    index = next((i for i, img in enumerate(axe_images) if img.pk == axe_image.pk), 0)
+    prev_image = axe_images[index - 1] if index > 0 else None
+    next_image = axe_images[index + 1] if index < len(axe_images) - 1 else None
+
+    from .models import Settings
+
+    comment_settings = Settings.get_settings()
+
+    context = {
+        "axe": axe,
+        "image": axe_image,
+        "image_index": index + 1,
+        "image_count": len(axe_images),
+        "prev_image": prev_image,
+        "next_image": next_image,
+        "breadcrumbs": [
+            {"text": "Yxsamling", "url": "/yxor/"},
+            {
+                "text": axe.manufacturer.name,
+                "url": f"/tillverkare/{axe.manufacturer.id}/",
+            },
+            {"text": f"{axe.display_id} - {axe.model}", "url": f"/yxor/{axe.pk}/"},
+            {"text": f"Bild {index + 1} av {len(axe_images)}"},
+        ],
+        "comment_tree": build_comment_tree(axe_image, request.user.is_authenticated),
+        "is_staff": request.user.is_authenticated,
+        "comment_submit_url": reverse(
+            "submit_axe_image_comment", args=[axe.pk, axe_image.pk]
+        ),
+        "comments_enabled": comment_settings.comments_enabled_public,
+    }
+    return render(request, "axes/axe_image_detail.html", context)
 
 
 def _create_axe_from_form(form, user):

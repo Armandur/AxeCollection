@@ -400,7 +400,9 @@
                         <div id="axeCarousel" class="carousel slide" data-bs-ride="carousel">
                             <div class="carousel-inner">
                                 {% for image in axe.images.all %}
-                                    <div class="carousel-item {% if forloop.first %}active{% endif %}">
+                                    <div class="carousel-item {% if forloop.first %}active{% endif %}"
+                                         data-image-url="{% url 'axe_image_detail' axe.pk image.pk %}"
+                                         data-comment-count="{{ image.comment_count|default:0 }}">
                                         <div class="position-relative">
                                            <a href="{{ image.image_url_with_cache_busting }}">
                                                 <picture>
@@ -421,7 +423,6 @@
                                                     {% endif %}
                                                 </div>
                                             {% endfor %}
-                                            
 
                                         </div>
                                     </div>
@@ -438,12 +439,39 @@
                                 </button>
                             {% endif %}
                         </div>
+                        <!-- Ingången till bildsidan ligger UTANFÖR carousel-slidesen.
+                             Inuti dem är den oklickbar i praktiken: bara aktiv slide är
+                             synlig, och data-bs-ride får galleriet att glida undan mitt
+                             i klicket. Här står den stilla och pekar på aktuell bild. -->
+                        <a href="#" id="axeImageCommentLink" class="btn btn-sm btn-outline-secondary w-100 mt-2">
+                            <i class="bi bi-chat-left-text"></i> Kommentera bilden<span id="axeImageCommentCount"></span>
+                        </a>
                     </div>
                 </div>
             </div>
         {% endif %}
     </div>
 </div>
+
+<script>
+(function () {
+    const carousel = document.getElementById('axeCarousel');
+    const link = document.getElementById('axeImageCommentLink');
+    const countEl = document.getElementById('axeImageCommentCount');
+    if (!carousel || !link) { return; }
+
+    function syncLink() {
+        const active = carousel.querySelector('.carousel-item.active');
+        if (!active) { return; }
+        link.href = active.dataset.imageUrl;
+        const count = parseInt(active.dataset.commentCount || '0', 10);
+        countEl.textContent = count > 0 ? ` (${count})` : '';
+    }
+
+    syncLink();
+    carousel.addEventListener('slid.bs.carousel', syncLink);
+})();
+</script>
 
 <!-- Modal för att lägga till/redigera transaktion (alltid i DOM) -->
 <div class="modal fade" id="addTransactionModal" tabindex="-1" aria-labelledby="addTransactionModalLabel" aria-hidden="true">

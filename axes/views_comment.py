@@ -11,7 +11,7 @@ from django.utils import timezone
 from django.views.decorators.http import require_POST
 
 from .forms import CommentForm
-from .models import Axe, Comment, Manufacturer, Settings, Stamp
+from .models import Axe, AxeImage, Comment, Manufacturer, Settings, Stamp
 from .utils.notifications import send_pending_comment_notification
 
 logger = logging.getLogger(__name__)
@@ -147,12 +147,29 @@ def submit_stamp_comment(request, pk):
     )
 
 
+@require_POST
+def submit_axe_image_comment(request, pk, image_pk):
+    axe_image = get_object_or_404(AxeImage, pk=image_pk, axe_id=pk)
+    return _submit_comment(
+        request,
+        axe_image,
+        "axe_image",
+        reverse("axe_image_detail", args=[pk, image_pk]),
+    )
+
+
 @login_required
 def comment_moderation(request):
     """Admin-vy för att godkänna/avvisa/markera kommentarer som skräp."""
     status = request.GET.get("status", "PENDING")
     comments = Comment.objects.select_related(
-        "axe", "manufacturer", "stamp", "moderated_by", "parent"
+        "axe",
+        "manufacturer",
+        "stamp",
+        "axe_image",
+        "axe_image__axe",
+        "moderated_by",
+        "parent",
     )
 
     if status and status != "ALL":

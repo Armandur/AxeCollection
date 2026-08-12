@@ -67,7 +67,10 @@ def send_pending_comment_notification(comment, request):
         return
 
     moderation_url = request.build_absolute_uri(reverse("comment_moderation"))
-    target = comment.axe or comment.manufacturer or comment.stamp
+    # comment.target täcker alla kommentarsmål (yxa/tillverkare/stämpel/bild) -
+    # en egen uppräkning här tappar tysta nya mål och ger notisen utan
+    # målbeskrivning.
+    target = comment.target
     body = f'Ny kommentar väntar på granskning: "{comment.body[:200]}"'
     if target is not None:
         body = f"Ny kommentar på {target} väntar på granskning."
