@@ -20,6 +20,58 @@ Uppladdning av backupfiler via webbgränssnittet fungerar inte för stora filer.
 
 ---
 
+## [P3][todo] [axecollection] Snabbare lösenordshashning i testsviten, och städa skräpfilerna den lämnar
+
+Två fynd från utrullningen av pytest-xdist 2026-08-16 (infra TASK-1219). Samlade i en task eftersom båda rör hur testsviten körs.
+
+1. PBKDF2 KOSTAR 8,5 MINUTERS CPU-TID PER SVITKÖRNING.
+
+Mätt på maskinen (12 trådar, 1068 tester, -n 6):
+  som nu            128 s wall, 12 min CPU
+  utan coverage     121 s wall, 11 min CPU
+  MD5PasswordHasher 103 s wall, 2 min 50 CPU
+
+Wall-clock-vinsten är 18 s (15 procent) eftersom hashandet parallelliseras bort, men CPU-tiden är det som märks för allt ANNAT på maskinen - portalen, mailpit och fyra containrar delar samma kärnor. Alla 1068 tester var gröna med MD5 i mätningen.
+
+Samma idé som hemslojd redan använder (där sänks bcrypt till fyra varv i tests/conftest.py, se den filens kommentar). Mekanismen här: en conftest.py i repo-roten - projektet har ingen i dag - med
+
+    def pytest_configure():
+        from django.conf import settings
+        settings.PASSWORD_HASHERS = ["django.contrib.auth.hashers.MD5PasswordHasher"]
+
+Produktionen rörs inte: conftest.py laddas bara av pytest. Skriv in mätningen som kommentar i filen, annars ser nästa läsare bara en osäker hasher.
+
+Coverage däremot kostar bara 7 s av 128 - lämna --cov ifred.
+
+2. TESTERNA SKRÄPAR NER REPO-ROTEN.
+
+test_db.sqlite3 och test_db.sqlite3.backup ligger i ~/workspace/yxsamling/ med innehållet 'test database content'. De skapas av backup-testerna i axes/tests/test_management_commands.py, som pekar ut ett temp_dir (raderna kring 456, 461, 496) men uppenbarligen inte i alla kodvägar. Ofarligt, men de ser ut som riktiga databaser i en git-status och kan förväxlas med db.sqlite3.
+
+Klart när: sviten kör med snabb hashning och är grön, mätningen står i conftest.py, och en full svitkörning lämnar inga nya filer i repo-roten (git status ren efteråt).
+
+- ID: `01M0648C6S566QC2DP2D2PZ04C`
+- Type: improvement
+- Actor: ai:claude-code
+
+---
+
+## [P3][todo] [axecollection] Utveckla projektet
+
+Utöver att både handha min egna samling har jag utvecklat projektet med lite historik kring smeder och tillverkare, samt också skapat ett system för att markera, identifiera och transkribera stämplar så att de ska bli sökbara, både bland mina egna yxor samt andra bilder.
+
+Funderar på lite saker:
+* Jag har också mitt filarkiv på yxa.pettersson-vik.se där jag har samlat kataloger, journalfilmer m.m, skulle man kunna bygga ihop dessa mer?
+* Om jag stöter på annan kuriosa, typ mest det som ligger på filarkivet, hur skulle jag kunna förbättra?
+* Jag har också ett försök till blogg på rasmus.pettersson-vik.se/yxa som jag inte uppdaterar så ofta, men det kanske också kunde inkluderas bättre här? Som det är nu kör jag ju allt via squarespace och jag undrar om jag inte bara skulle lyfta över allt till selfhosting igen.
+* AI-modell som känner igen stämplar?
+* AI-modell som automatiskt tar foton på yxorna när man placerar dem framför webbkamera och beskär, roterar osv?
+
+- ID: `01KYF4SM2AVQVM15GQPJWGYGBN`
+- Type: task
+- Actor: human:rasmus
+
+---
+
 ## [P3][done] [axecollection] Trådat/nästlat kommentarssystem (Reddit-likt) med svara-per-nivå
 
 Rasmus 2026-07-23: bygg om kommentarerna till ett TRÅDAT system (Reddit-likt) - kommentarer ska kunna nästlas och besvaras på olika nivåer. Återanvänd hur nivåer visas med en färgad vänsterlinje från viva-engage-rescue-projektet (~/workspace/viva-engage-rescue). Separat UX för att skapa en helt ny TOPPKOMMENTAR, och en 'Svara'-knapp per kommentar för att besvara i tråden. Bygger på befintliga Comment (parent-FK för självreferens, depth/indent, rekursiv rendering, moderering per nod). STORT - designförslag efterfrågat av en kommentarssystem-expert (bifogas som plan på denna task). Överväg: modereringens interaktion med trådar (dölj underträd?), djup-tak, prestanda (prefetch), och att auto-godkänn (separat task) + inline-moderering (TASK-368) ska fungera i trådvyn.
@@ -249,6 +301,20 @@ Utöka CI/CD (GitHub Actions) med automatisk deployment till en testmiljö.
 
 ---
 
+## [P4][done] [axecollection] Kommentarer på enskilda bilder (AxeImage som kommentarsmål)
+
+Delad ut ur TASK-138, som buntade ihop två arbeten. Detta är del 1: låt Comment peka på en enskild bild.
+
+Följer mönstret från 11aa8ae (Utöka kommentarsystemet till stämplar, 92 rader/7 filer): nullbar axe_image-FK på Comment, clean() kräver exakt EN av axe/manufacturer/stamp/axe_image, target/target_url hanterar bild, ny submit-vy + url, _comment_section.html inkluderas i bildvyn.
+
+ÖPPET BESLUT: var visas de? Bilderna ligger i en PhotoSwipe-lightbox (axe_detail.html:605-613) som har eget DOM - en kommentarssektion inuti den är illa lämpad, särskilt på mobil. Förslag: egen bildsida /yxor/<pk>/bild/<bildpk>/ med bilden stor + kommentarer under. Ger också en delbar URL, vilket @-mentions (del 2) behöver kunna peka på.
+
+- ID: `01KZVHYWSHR1H7DZBAAEAV3S61`
+- Type: feature
+- Actor: human:rasmus
+
+---
+
 ## [P4][done] [axecollection] Gör kommentarernas tidsstämpel human-readable (Y-m-d - H:i)
 
 Kommentarens tidsstämpel renderas i dag som ISO 8601 via date:"c" (t.ex. 2026-07-23T23:46:07.004489+00:00). Byt till läsbart svenskt format, år-månad-dag - timmar:minuter, t.ex. 'date:"Y-m-d - H:i"'. Endast _comment_node.html rad 16.
@@ -334,7 +400,7 @@ Kräver nät: eBay 403:ar utan riktig session/headers - gå via pia-proxy-skille
 
 ---
 
-## [P4][todo] [axecollection] Regenerera webp för befintliga bilder (applicera EXIF-rotation retroaktivt)
+## [P4][doing] [axecollection] Regenerera webp för befintliga bilder (applicera EXIF-rotation retroaktivt)
 
 TASK-136 roterar bilder enligt EXIF vid webp-generering, men bara för nya/omsparade bilder. Befintliga (redan genererade) webp:ar i prod/demo är oförändrade - telefonbilder som var felvända förblir felvända tills de sparas om. Lägg ett management-kommando som itererar AxeImage + ManufacturerImage och regenererar webp (Image.open -> exif_transpose -> spara webp). Kör sen gång i prod efter deploy av 5d2fabd.
 
@@ -354,7 +420,13 @@ På inställningssidan (backup-upload) ligger 'Ladda upp backup'-knappen snett m
 
 ---
 
-## [P4][todo] [axecollection] Bildkommentarer med @-mentions (länka till tillverkare eller yxor)
+## [P4][todo] [axecollection] @-mentions i kommentarer (länka till tillverkare, yxor eller stämplar)
+
+Delad: bilddelen ligger nu i TASK-1184 (kommentarer på enskilda bilder). Detta är del 2 - mentions i kommentarstexten.
+
+Bygger på Comment-modellen (axes/models.py:1014). Body renderas i dag med {{ comment.body|linebreaks }} i _comment_node.html:18, så mentions kräver ett eget filter/renderingssteg där.
+
+ÖPPNA BESLUT (ta med Rasmus före bygge): syntax för en mention, vad som händer när målet raderas, om mentions ska vara sökbara, och hur de renderas i trådvyn.
 
 - ID: `01KXX7K2N94Y53WJK9HSX36Z6D`
 - Type: feature
